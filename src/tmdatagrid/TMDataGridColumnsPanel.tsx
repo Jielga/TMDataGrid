@@ -2,9 +2,9 @@ import { Button, Checkbox, ScrollArea, Text, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import classes from "./TMDataGrid.module.css";
-import { useTMDataGridContext } from "./TMDataGridContext.js";
-import { getColumnLabel } from "./columnUtils.js";
-import { SearchIcon } from "./icons.js";
+import { useTMDataGridContext } from "./TMDataGridContext";
+import { getColumnLabel } from "./columnUtils";
+import { SearchIcon } from "./icons";
 
 /**
  * The "Manage columns" surface. Reachable from every column header menu and

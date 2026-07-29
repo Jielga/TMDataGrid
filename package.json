@@ -33,10 +33,10 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/types/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
@@ -45,7 +45,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rollup -c rollup.dts.config.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "prepublishOnly": "npm run lint && npm run build:lib"
@@ -57,6 +57,7 @@
     "@tanstack/react-table": "^9.0.0-beta.21",
     "@tanstack/react-virtual": "^3.14.4",
     "@tanstack/store": "^0.11.0",
+    "@tanstack/table-core": "^9.0.0-beta.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -71,6 +72,7 @@
     "@tanstack/react-table": "^9.0.0-beta.21",
     "@tanstack/react-virtual": "^3.14.4",
     "@tanstack/store": "^0.11.0",
+    "@tanstack/table-core": "^9.0.0-beta.21",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
@@ -82,6 +84,8 @@
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "rollup": "^4.62.3",
+    "rollup-plugin-dts": "^6.4.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.0"
   }

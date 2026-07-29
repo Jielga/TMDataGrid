@@ -1,9 +1,9 @@
-export { TMDataGrid, type TMDataGridProps } from "./TMDataGrid.js";
+export { TMDataGrid, type TMDataGridProps } from "./TMDataGrid";
 export {
   useTMDataGridContext,
   type TMDataGridContextValue,
   type TMDataGridRowData,
-} from "./TMDataGridContext.js";
+} from "./TMDataGridContext";
 export {
   createTMDataGridColumnHelper,
   openColumnFilter,
@@ -19,15 +19,15 @@ export {
   type TMDataGridUiStore,
   useTMDataGrid,
   type UseTMDataGridOptions,
-} from "./useTMDataGrid.js";
+} from "./useTMDataGrid";
 export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
   FILTER_OPERATOR_LABELS,
   isFilterActive,
-} from "./filterOperators.js";
-export { getColumnLabel, getColumnType } from "./columnUtils.js";
+} from "./filterOperators";
+export { getColumnLabel, getColumnType } from "./columnUtils";
 export {
   getColumnCapabilities,
   getGridCapabilities,
@@ -35,13 +35,13 @@ export {
   type TMDataGridCapabilities,
   type TMDataGridColumnCapabilities,
   type TMDataGridFeatureFlags,
-} from "./capabilities.js";
+} from "./capabilities";
 export {
   DEFAULT_TMDATAGRID_SIZE,
   SIZE_CONTROL_SIZE,
   SIZE_ROW_HEIGHT,
   type TMDataGridSize,
-} from "./sizes.js";
+} from "./sizes";
 export {
   DATA_STATE_SLICES,
   SETTINGS_STATE_SLICES,
@@ -50,5 +50,5 @@ export {
   type TMDataGridPersistKey,
   type TMDataGridSettingsSlice,
   type TMDataGridStorageMode,
-} from "./persistence.js";
-export type { TMDataGridColumnLayout } from "./TMDataGridTable.js";
+} from "./persistence";
+export type { TMDataGridColumnLayout } from "./TMDataGridTable";

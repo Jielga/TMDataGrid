@@ -2,12 +2,12 @@ import { ActionIcon, Popover, Text, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGrid.module.css";
-import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel.js";
-import { useTMDataGridContext } from "./TMDataGridContext.js";
-import { getGridCapabilities } from "./capabilities.js";
-import { isFilterActive } from "./filterOperators.js";
-import { BurgerIcon, FilterIcon } from "./icons.js";
-import { openColumnFilter } from "./useTMDataGrid.js";
+import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
+import { useTMDataGridContext } from "./TMDataGridContext";
+import { getGridCapabilities } from "./capabilities";
+import { isFilterActive } from "./filterOperators";
+import { BurgerIcon, FilterIcon } from "./icons";
+import { openColumnFilter } from "./useTMDataGrid";
 
 /** Row above the grid. Compose it from the pieces below, or anything else. */
 export function TMDataGridToolbar({ children }: { children?: ReactNode }) {

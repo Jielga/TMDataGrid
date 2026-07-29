@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
-import type { TMDataGridSize } from "./sizes.js";
-import type { TMDataGridApi } from "./useTMDataGrid.js";
+import type { TMDataGridSize } from "./sizes";
+import type { TMDataGridApi } from "./useTMDataGrid";
 
 /**
  * Row shape the chrome components work against. They only ever touch columns,

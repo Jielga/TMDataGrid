@@ -9,12 +9,12 @@ import { useSelector } from "@tanstack/react-store";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useRef } from "react";
 import classes from "./TMDataGrid.module.css";
-import { type TMDataGridRowData, useTMDataGridContext } from "./TMDataGridContext.js";
-import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel.js";
-import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell.js";
-import { getColumnAlign } from "./columnUtils.js";
-import { SearchIcon } from "./icons.js";
-import type { TMDataGridFeatures } from "./useTMDataGrid.js";
+import { type TMDataGridRowData, useTMDataGridContext } from "./TMDataGridContext";
+import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
+import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell";
+import { getColumnAlign } from "./columnUtils";
+import { SearchIcon } from "./icons";
+import type { TMDataGridFeatures } from "./useTMDataGrid";
 
 /** Where a column sits relative to the pinned regions, resolved once per render. */
 export type TMDataGridColumnLayout = {

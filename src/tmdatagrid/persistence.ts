@@ -1,5 +1,5 @@
 import type { TableState } from "@tanstack/react-table";
-import type { TMDataGridFeatures } from "./useTMDataGrid.js";
+import type { TMDataGridFeatures } from "./useTMDataGrid";
 
 type GridState = TableState<TMDataGridFeatures>;
 

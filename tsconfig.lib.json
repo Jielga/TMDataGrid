@@ -5,9 +5,12 @@
     "noEmit": false,
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationMap": true,
     "rootDir": "src/tmdatagrid",
-    "outDir": "dist/types"
+    // Per-file declarations are an intermediate artefact: rollup-plugin-dts
+    // flattens them into a single dist/index.d.ts. This must not live under
+    // node_modules — rollup-plugin-dts treats anything resolving in there as
+    // external and would re-export the files instead of inlining them.
+    "outDir": ".types-tmp"
   },
   "include": ["src/tmdatagrid"]
 }

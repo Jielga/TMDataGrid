@@ -1,5 +1,5 @@
-import type { TMDataGridColumnType } from "./filterOperators.js";
-import type { TMDataGridColumnMeta } from "./useTMDataGrid.js";
+import type { TMDataGridColumnType } from "./filterOperators";
+import type { TMDataGridColumnMeta } from "./useTMDataGrid";
 
 /**
  * Structural shape of the column bits the chrome reads. Kept minimal so these
