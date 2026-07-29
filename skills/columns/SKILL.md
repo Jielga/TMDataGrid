@@ -2,8 +2,8 @@
 name: columns
 description: >
   Define TMDataGrid columns with createTMDataGridColumnHelper: column meta
-  (label, type, flex, align), fluid minmax sizing versus fixed width, minSize
-  and maxSize, per-column
+  (label, type, flex, align, enableOrdering), fluid minmax sizing versus fixed
+  width, minSize and maxSize, per-column
   enableSorting/enableColumnFilter/enableHiding/enablePinning/ enableResizing,
   the generated SELECT_COLUMN_ID checkbox column, and the shared filter function
   with its operator list and isFilterActive. Load when adding or changing
@@ -54,6 +54,10 @@ column model.
 | `type` | `"string" \| "number"` | `"string"` | Determines which filter operators are offered. |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Applied to both header and cells. |
+| `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
+
+`enableOrdering` lives in `meta` because column ordering is the one feature
+TanStack defines no column option for. See the `features` skill.
 
 ## Sizing
 
@@ -93,6 +97,10 @@ Standard TanStack column options. Each also removes the corresponding interface.
 | `enablePinning` | No pin menu items. |
 | `enableResizing` | The divider is displayed but cannot be dragged. |
 
+`meta.enableOrdering: false` belongs to the same set and removes the column's
+header dragging and move menu items. A column inside a header group is never
+movable whatever it says, because `columnOrder` sequences leaf columns.
+
 A column whose menu has no remaining items renders no menu button.
 
 ## Checkbox column
@@ -100,7 +108,10 @@ A column whose menu has no remaining items renders no menu button.
 Unless `enableRowSelection` is `false`, a column with the id `SELECT_COLUMN_ID`
 is added as the first column and pinned to the left. It is listed as "Checkbox
 selection" in the column manager and can be hidden like any other column. It has
-no column menu and cannot be sorted, filtered, resized or re-pinned.
+no column menu and cannot be sorted, filtered, resized, re-pinned or moved.
+
+Because it cannot be moved, it also anchors the left pinned region: no column
+can be placed in front of it.
 
 ## Filtering
 

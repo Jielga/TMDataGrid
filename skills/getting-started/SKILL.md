@@ -96,16 +96,18 @@ Spread the hook result (`{...grid}`) rather than assigning `table`, `ui` and
 | --- | --- |
 | Virtualized rows | Always enabled, not configurable. Only rows in view are mounted. |
 | Resizable columns | Drag the divider on a header's trailing edge. |
+| Reorderable columns | Drag a header sideways, or use the column menu. |
 | Sorting | Click a header, or use the column menu. |
-| Column menu | On hover: sort, filter, pin, hide, manage columns. |
+| Column menu | On hover: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
 | Row selection | Checkbox column pinned to the left. |
 | Pagination | Only when `TMDataGrid.Footer` is rendered. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
-Each is bound to a TanStack capability check — disabling the standard table or
-column option also removes its interface. See the `features` skill.
+Each is bound to a capability check — disabling the standard table or column
+option also removes its interface. Column ordering is the one switch the grid
+defines itself, as `enableColumnOrdering`. See the `features` skill.
 
 ## Layout
 
@@ -169,6 +171,8 @@ mirrors them. Set `meta.rowHeight` for a height outside the scale.
 | `openColumnFilter(api, columnId)` | Adds an empty filter for a column and opens the panel. |
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
+| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See the `features` skill. |
+| `moveColumnByStep({ table, columnId, direction })` | Moves a column one position within its region. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |
 
 ## Common mistakes

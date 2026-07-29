@@ -2,7 +2,7 @@ import { ActionIcon, Menu, Tooltip } from "@mantine/core";
 import { flexRender, type Header } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
-import { type ReactNode, useRef, useState } from "react";
+import { type DragEvent, type ReactNode, useRef, useState } from "react";
 import classes from "./TMDataGrid.module.css";
 import {
   type TMDataGridRowData,
@@ -10,6 +10,13 @@ import {
 } from "./TMDataGridContext";
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import { getColumnCapabilities, getGridCapabilities } from "./capabilities";
+import {
+  getColumnRegion,
+  getStepTargetColumn,
+  moveColumn,
+  moveColumnByStep,
+  type TMDataGridDropSide,
+} from "./columnOrdering";
 import { getColumnAlign, getColumnLabel } from "./columnUtils";
 import { isFilterActive } from "./filterOperators";
 import {
@@ -19,6 +26,8 @@ import {
   DotsVerticalIcon,
   EyeOffIcon,
   FilterIcon,
+  MoveLeftIcon,
+  MoveRightIcon,
   PinLeftIcon,
   PinOffIcon,
   PinRightIcon,
@@ -46,6 +55,7 @@ export function TMDataGridHeaderCell({
   const { table, features } = api;
   const column = header.column;
   const [menuOpened, setMenuOpened] = useState(false);
+  const [dropSide, setDropSide] = useState<TMDataGridDropSide | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   // A resize drag ends with a click that bubbles to the header — without this
   // every resize would also toggle the column's sort order.
@@ -53,15 +63,21 @@ export function TMDataGridHeaderCell({
 
   // Subscribing to the slices this cell renders from keeps it live even when the
   // surrounding tree is memoized (React Compiler) or the table lives elsewhere.
-  const { sorting, columnFilters, resizingColumnId } = useSelector(
-    table.store,
-    (state) => ({
-      sorting: state.sorting,
-      columnFilters: state.columnFilters,
-      resizingColumnId: state.columnResizing.isResizingColumn,
-    }),
-    { compare: shallow },
-  );
+  // `columnOrder` is in the list because the move menu items are derived from
+  // the column's neighbours, which is exactly what an order change invalidates.
+  const { sorting, columnFilters, resizingColumnId, columnPinning } =
+    useSelector(
+      table.store,
+      (state) => ({
+        sorting: state.sorting,
+        columnFilters: state.columnFilters,
+        resizingColumnId: state.columnResizing.isResizingColumn,
+        columnPinning: state.columnPinning,
+        columnOrder: state.columnOrder,
+      }),
+      { compare: shallow },
+    );
+  const draggedColumnId = useSelector(api.ui, (state) => state.draggedColumnId);
 
   const isLeaf = header.subHeaders.length === 0;
   const label = getColumnLabel(column);
@@ -82,8 +98,63 @@ export function TMDataGridHeaderCell({
   const canHide = isLeaf && capabilities.canHide;
   const canPin = isLeaf && capabilities.canPin;
   const canResize = capabilities.canResize;
+  const canReorder = isLeaf && capabilities.canReorder;
   const canManageColumns =
     isLeaf && getGridCapabilities(table, features).canHideAny;
+
+  // A column only moves inside its own pinned lane, so a header in another one
+  // never lights up as a target. See TMDataGridColumnRegion.
+  const isDragged = draggedColumnId === column.id;
+  const isDropTarget =
+    canReorder &&
+    draggedColumnId !== null &&
+    !isDragged &&
+    getColumnRegion(columnPinning, draggedColumnId) ===
+      getColumnRegion(columnPinning, column.id);
+
+  function handleDragStart(event: DragEvent<HTMLDivElement>) {
+    event.dataTransfer.effectAllowed = "move";
+    // Some browsers refuse to start a drag with an empty payload.
+    event.dataTransfer.setData("text/plain", column.id);
+    api.ui.actions.startColumnDrag(column.id);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!isDropTarget) return;
+    // Only a prevented dragover marks an element as a drop target.
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const bounds = cellRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    setDropSide(
+      event.clientX < bounds.left + bounds.width / 2 ? "before" : "after",
+    );
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    // dragleave also fires when the pointer crosses into a child element.
+    const next = event.relatedTarget;
+    if (next instanceof Node && event.currentTarget.contains(next)) return;
+    setDropSide(null);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDropSide(null);
+    api.ui.actions.endColumnDrag();
+    if (!isDropTarget || !dropSide || !draggedColumnId) return;
+    moveColumn({
+      table,
+      columnId: draggedColumnId,
+      targetId: column.id,
+      side: dropSide,
+    });
+  }
+
+  function handleDragEnd() {
+    setDropSide(null);
+    api.ui.actions.endColumnDrag();
+  }
 
   /**
    * Pinned columns are positioned with `getStart()` / `getAfter()`, which sum
@@ -168,6 +239,45 @@ export function TMDataGridHeaderCell({
     }
     menuItems.push(<Menu.Divider key="pin-divider" />);
   }
+  if (canReorder) {
+    // The keyboard path to reordering, and the discoverable one — a header you
+    // can drag looks no different from one you cannot.
+    const previous = getStepTargetColumn({
+      table,
+      columnId: column.id,
+      direction: -1,
+    });
+    const next = getStepTargetColumn({
+      table,
+      columnId: column.id,
+      direction: 1,
+    });
+    if (previous || next) {
+      menuItems.push(
+        <Menu.Item
+          key="move-left"
+          disabled={!previous}
+          leftSection={<MoveLeftIcon size={16} stroke={1.6} />}
+          onClick={() =>
+            moveColumnByStep({ table, columnId: column.id, direction: -1 })
+          }
+        >
+          Move left
+        </Menu.Item>,
+        <Menu.Item
+          key="move-right"
+          disabled={!next}
+          leftSection={<MoveRightIcon size={16} stroke={1.6} />}
+          onClick={() =>
+            moveColumnByStep({ table, columnId: column.id, direction: 1 })
+          }
+        >
+          Move right
+        </Menu.Item>,
+        <Menu.Divider key="move-divider" />,
+      );
+    }
+  }
   if (canHide) {
     menuItems.push(
       <Menu.Item
@@ -198,6 +308,9 @@ export function TMDataGridHeaderCell({
   const cellClass = [
     classes.headerCell,
     canSort ? classes.headerCellSortable : "",
+    isDragged ? classes.headerCellDragging : "",
+    dropSide === "before" ? classes.headerCellDropBefore : "",
+    dropSide === "after" ? classes.headerCellDropAfter : "",
     layout.isBoundary && pinnedAt === "left" ? classes.stickyLeft : "",
     layout.isBoundary && pinnedAt === "right" ? classes.stickyRight : "",
   ]
@@ -212,6 +325,15 @@ export function TMDataGridHeaderCell({
       data-active={isSorted || isFiltered}
       data-align={align}
       className={cellClass}
+      // Dropped while a resize is running, so that dragging the separator
+      // resizes the column instead of starting to move it. The resize handler
+      // records the column on mousedown, before the first pointer move.
+      draggable={canReorder && !isResizing}
+      onDragStart={canReorder ? handleDragStart : undefined}
+      onDragEnd={canReorder ? handleDragEnd : undefined}
+      onDragOver={isDropTarget ? handleDragOver : undefined}
+      onDragLeave={isDropTarget ? handleDragLeave : undefined}
+      onDrop={isDropTarget ? handleDrop : undefined}
       style={{
         left: pinnedAt === "left" ? layout.offset : undefined,
         right: pinnedAt === "right" ? layout.offset : undefined,
@@ -316,6 +438,9 @@ export function TMDataGridHeaderCell({
         ]
           .filter(Boolean)
           .join(" ")}
+        // Keeps a drag that starts on the separator from being picked up by the
+        // draggable header around it.
+        draggable={false}
         onMouseDown={
           canResize
             ? (event) => {

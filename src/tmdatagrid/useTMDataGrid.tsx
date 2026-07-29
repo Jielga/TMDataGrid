@@ -55,6 +55,12 @@ export type TMDataGridColumnMeta = {
   /** Share of the leftover width this column claims. Defaults to `1`. */
   flex?: number;
   align?: "left" | "right" | "center";
+  /**
+   * `false` keeps the column where it is: no header dragging, no move items.
+   * Column ordering is the one feature TanStack defines no column option for,
+   * so its switch lives here rather than on the column definition.
+   */
+  enableOrdering?: boolean;
 };
 
 /** Grid-wide configuration passed through `options.meta`. */
@@ -122,6 +128,11 @@ export type TMDataGridUiState = {
   columnsPanelOpen: boolean;
   /** Column whose filter row should be focused when the panel opens. */
   filterPanelColumnId: string | null;
+  /**
+   * Column being dragged by its header, if any. Held here rather than read from
+   * `dataTransfer`, which browsers keep unreadable until the drop.
+   */
+  draggedColumnId: string | null;
 };
 
 export type TMDataGridUiActions = {
@@ -129,6 +140,8 @@ export type TMDataGridUiActions = {
   closeFilterPanel: () => void;
   setColumnsPanelOpen: (open: boolean) => void;
   toggleColumnsPanel: () => void;
+  startColumnDrag: (columnId: string) => void;
+  endColumnDrag: () => void;
 };
 
 export type TMDataGridUiStore = Store<TMDataGridUiState, TMDataGridUiActions>;
@@ -153,6 +166,15 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * dependency of the subscription that writes back.
    */
   persist?: TMDataGridPersistence;
+  /**
+   * Header drag-and-drop and the move items in the column menu. Defaults to
+   * `true`.
+   *
+   * The one feature switch the grid defines itself: TanStack's
+   * `columnOrderingFeature` ships state and APIs but no `enable` option, since
+   * reordering is entirely a matter of interface.
+   */
+  enableColumnOrdering?: boolean;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -182,7 +204,13 @@ function withTMDataGridDefaults<TData extends RowData>(
 function createSelectColumn<TData extends RowData>(): TMDataGridColumnDef<TData> {
   return {
     id: SELECT_COLUMN_ID,
-    meta: { label: "Checkbox selection", align: "center" },
+    meta: {
+      label: "Checkbox selection",
+      align: "center",
+      // Structurally the first column; it also anchors the left pinned lane, so
+      // no other column can be moved in front of it.
+      enableOrdering: false,
+    },
     size: 48,
     minSize: 48,
     maxSize: 48,
@@ -226,6 +254,8 @@ function createSelectColumn<TData extends RowData>(): TMDataGridColumnDef<TData>
  */
 export function useTMDataGrid<TData extends RowData>({
   persist,
+  // Not a TanStack option, so it is kept out of what `useTable` receives.
+  enableColumnOrdering,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   const selectionEnabled = options.enableRowSelection !== false;
@@ -291,7 +321,12 @@ export function useTMDataGrid<TData extends RowData>({
   }, [persist, table]);
 
   const ui = useCreateStore<TMDataGridUiState, TMDataGridUiActions>(
-    { filterPanelOpen: false, columnsPanelOpen: false, filterPanelColumnId: null },
+    {
+      filterPanelOpen: false,
+      columnsPanelOpen: false,
+      filterPanelColumnId: null,
+      draggedColumnId: null,
+    },
     ({ setState }) => ({
       openFilterPanel: (columnId = null) =>
         setState((prev) => ({
@@ -309,13 +344,17 @@ export function useTMDataGrid<TData extends RowData>({
         setState((prev) => ({ ...prev, columnsPanelOpen: open })),
       toggleColumnsPanel: () =>
         setState((prev) => ({ ...prev, columnsPanelOpen: !prev.columnsPanelOpen })),
+      startColumnDrag: (columnId) =>
+        setState((prev) => ({ ...prev, draggedColumnId: columnId })),
+      endColumnDrag: () =>
+        setState((prev) => ({ ...prev, draggedColumnId: null })),
     }),
   );
 
   // Deliberately not memoized on `table`: the flags must re-derive whenever the
   // caller passes different options, and `table` keeps the same identity when
   // they do. See readFeatureFlags.
-  const features = readFeatureFlags(options);
+  const features = readFeatureFlags({ ...options, enableColumnOrdering });
 
   return { table, ui, features };
 }

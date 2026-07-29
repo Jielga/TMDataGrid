@@ -131,4 +131,9 @@ Search field, column checkboxes, show/hide all and reset. Rendered by
 | `getColumnCapabilities(column, features)` | Column-level capability checks. |
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
+| `isColumnReorderable(column)` | `meta.enableOrdering`, and not inside a header group. |
+| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See [Features](#features). |
+| `moveColumnByStep({ table, columnId, direction })` | Moves a column one position within its region. |
+| `getStepTargetColumn({ table, columnId, direction })` | The column a step would swap with, or `null`. |
+| `getColumnRegion(columnPinning, columnId)` | `"left"`, `"center"` or `"right"`. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |

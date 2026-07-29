@@ -59,16 +59,17 @@ table's column model.
 | --- | --- |
 | Virtualized rows | Always enabled. Only rows in view are mounted. |
 | Resizable columns | Drag the divider on a header's trailing edge. |
+| Reorderable columns | Drag a header sideways, or use the column menu. |
 | Sorting | Click a header, or use the column menu. |
-| Column menu | Appears on hover: sort, filter, pin, hide, manage columns. |
+| Column menu | Appears on hover: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
 | Row selection | Checkbox column pinned to the left. |
 | Pagination | Rendered by `TMDataGrid.Footer`. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
-Each of these is controlled by a TanStack capability check. Disabling a feature
-through the standard table options also removes its interface. See
+Each of these is controlled by a capability check. Disabling a feature through
+the standard table options also removes its interface. See
 [Features](#features).
 
 ## Layout

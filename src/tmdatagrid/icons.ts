@@ -7,6 +7,8 @@
  */
 export {
   IconArrowDown as ArrowDownIcon,
+  IconArrowLeft as MoveLeftIcon,
+  IconArrowRight as MoveRightIcon,
   IconArrowUp as ArrowUpIcon,
   IconChevronLeft as ChevronLeftIcon,
   IconChevronRight as ChevronRightIcon,

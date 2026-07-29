@@ -2,8 +2,8 @@
 
 A data grid for React built on [TanStack Table v9](https://tanstack.com/table) and
 [Mantine](https://mantine.dev). Rows are always virtualized, columns are resizable,
-sortable, filterable, hideable and pinnable, and every piece of grid chrome is a
-component you opt into.
+reorderable, sortable, filterable, hideable and pinnable, and every piece of grid
+chrome is a component you opt into.
 
 ## Installation
 

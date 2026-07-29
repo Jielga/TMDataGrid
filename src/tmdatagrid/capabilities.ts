@@ -1,5 +1,6 @@
 import type { Column, RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "./TMDataGridContext";
+import { isColumnReorderable } from "./columnUtils";
 import type {
   TMDataGridFeatures,
   TMDataGridTable,
@@ -24,6 +25,7 @@ export type TMDataGridFeatureFlags = {
   hiding: boolean;
   pinning: boolean;
   resizing: boolean;
+  ordering: boolean;
   rowSelection: boolean;
 };
 
@@ -35,6 +37,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableHiding"
     | "enableColumnPinning"
     | "enableColumnResizing"
+    | "enableColumnOrdering"
     | "enableRowSelection"
   >,
 ): TMDataGridFeatureFlags {
@@ -44,6 +47,7 @@ export function readFeatureFlags<TData extends RowData>(
     hiding: options.enableHiding !== false,
     pinning: options.enableColumnPinning !== false,
     resizing: options.enableColumnResizing !== false,
+    ordering: options.enableColumnOrdering !== false,
     rowSelection: options.enableRowSelection !== false,
   };
 }
@@ -58,6 +62,7 @@ export function readFeatureFlags<TData extends RowData>(
  * | Hide column               | `enableHiding` (table or column) |
  * | Pin to left / right       | `enableColumnPinning` / `enablePinning` |
  * | Resize dragging           | `enableColumnResizing` / `enableResizing` |
+ * | Header dragging, Move left / right | `enableColumnOrdering` / `meta.enableOrdering` |
  */
 export type TMDataGridColumnCapabilities = {
   canSort: boolean;
@@ -65,6 +70,7 @@ export type TMDataGridColumnCapabilities = {
   canHide: boolean;
   canPin: boolean;
   canResize: boolean;
+  canReorder: boolean;
 };
 
 export function getColumnCapabilities(
@@ -77,6 +83,8 @@ export function getColumnCapabilities(
     canHide: features.hiding && column.getCanHide(),
     canPin: features.pinning && column.getCanPin(),
     canResize: features.resizing && column.getCanResize(),
+    // Ordering has no TanStack capability method — see isColumnReorderable.
+    canReorder: features.ordering && isColumnReorderable(column),
   };
 }
 
@@ -86,6 +94,7 @@ export type TMDataGridCapabilities = {
   canFilterAny: boolean;
   canHideAny: boolean;
   canPinAny: boolean;
+  canReorderAny: boolean;
   canSelectRows: boolean;
 };
 
@@ -102,6 +111,7 @@ export function getGridCapabilities(
     canFilterAny: any((c) => c.canFilter),
     canHideAny: any((c) => c.canHide),
     canPinAny: any((c) => c.canPin),
+    canReorderAny: any((c) => c.canReorder),
     canSelectRows: features.rowSelection,
   };
 }

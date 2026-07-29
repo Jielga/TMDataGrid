@@ -16,6 +16,9 @@ including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
 `manual*` flags and `rowCount`. The `features` option is supplied internally and
 cannot be overridden.
 
+`persist` and `enableColumnOrdering` are the grid's own options and are consumed
+here rather than forwarded to TanStack.
+
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
@@ -27,6 +30,7 @@ cannot be overridden.
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
 | `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. |
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
+| `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid, see [Features](#features). |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
@@ -166,6 +170,12 @@ re-render when the value changes.
 | `closeFilterPanel` | `() => void` |
 | `setColumnsPanelOpen` | `(open: boolean) => void` |
 | `toggleColumnsPanel` | `() => void` |
+| `startColumnDrag` | `(columnId: string) => void` |
+| `endColumnDrag` | `() => void` |
+
+The last two are called by the header cells while a column is being dragged.
+`ui.draggedColumnId` holds the column being moved, because browsers keep
+`dataTransfer` unreadable until the drop.
 
 `openColumnFilter(grid, columnId)` combines two steps used by the column menu:
 it adds an empty filter row for the column if none exists, then opens the panel.

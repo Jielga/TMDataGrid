@@ -4,8 +4,9 @@ description: >
   useTMDataGrid options, return value and state persistence. Covers passthrough
   of TanStack TableOptions, the default initialState (pagination, columnPinning,
   globalFilterFn), the meta object (loading, noResultsLabel, rowHeight,
-  totalRowCount), the persist option with dataKey/settingsKey slice selection
-  and storageMode, the returned table/ui/features triple, ui panel actions, and
+  totalRowCount), the grid's own persist and enableColumnOrdering options, the
+  persist option with dataKey/settingsKey slice selection and storageMode, the
+  returned table/ui/features triple, ui panel and column drag actions, and
   reading grid state with useSelector. Load when configuring the hook,
   persisting column layout or filters, or reacting to grid state from a parent.
 metadata:
@@ -36,6 +37,9 @@ All TanStack `TableOptions` are supported and passed through unchanged, includin
 flags and `rowCount`. The `features` option is supplied internally and cannot be
 overridden.
 
+`persist` and `enableColumnOrdering` are the grid's own options and are consumed
+by the hook rather than forwarded to TanStack.
+
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
@@ -47,6 +51,7 @@ overridden.
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
 | `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. |
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
+| `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
@@ -156,6 +161,12 @@ const filterPanelOpen = useSelector(grid.ui, (state) => state.filterPanelOpen);
 | `closeFilterPanel` | `() => void` |
 | `setColumnsPanelOpen` | `(open: boolean) => void` |
 | `toggleColumnsPanel` | `() => void` |
+| `startColumnDrag` | `(columnId: string) => void` |
+| `endColumnDrag` | `() => void` |
+
+The last two are called by the header cells while a column is being dragged, and
+`ui.draggedColumnId` holds the column being moved — browsers keep `dataTransfer`
+unreadable until the drop.
 
 `openColumnFilter(grid, columnId)` combines the two steps the column menu uses:
 add an empty filter row for the column if none exists, then open the panel.

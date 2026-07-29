@@ -138,6 +138,7 @@ const FEATURE_TOGGLES = [
   { key: "enableHiding", label: "Hiding" },
   { key: "enableColumnPinning", label: "Pinning" },
   { key: "enableColumnResizing", label: "Resizing" },
+  { key: "enableColumnOrdering", label: "Reordering" },
 ] as const;
 
 type FeatureKey = (typeof FEATURE_TOGGLES)[number]["key"];
@@ -146,8 +147,8 @@ export function DataGridExample() {
   const data = useMemo(() => generateEmployees(5000), []);
   const [size, setSize] = useState<TMDataGridSize>("md");
 
-  // Nothing grid-specific here — these are the stock TanStack options. Turning
-  // one off removes the matching chrome on its own.
+  // Stock TanStack options, apart from `enableColumnOrdering` which the grid
+  // defines itself. Turning one off removes the matching chrome on its own.
   const [features, setFeatures] = useState<Record<FeatureKey, boolean>>({
     enableRowSelection: true,
     enableSorting: true,
@@ -155,6 +156,7 @@ export function DataGridExample() {
     enableHiding: true,
     enableColumnPinning: true,
     enableColumnResizing: true,
+    enableColumnOrdering: true,
   });
 
   const grid = useTMDataGrid({

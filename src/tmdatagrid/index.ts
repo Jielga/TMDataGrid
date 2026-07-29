@@ -27,7 +27,21 @@ export {
   FILTER_OPERATOR_LABELS,
   isFilterActive,
 } from "./filterOperators";
-export { getColumnLabel, getColumnType } from "./columnUtils";
+export {
+  getColumnLabel,
+  getColumnType,
+  isColumnReorderable,
+} from "./columnUtils";
+export {
+  getColumnRegion,
+  getStepTargetColumn,
+  moveColumn,
+  moveColumnByStep,
+  type ColumnStepArgs,
+  type MoveColumnArgs,
+  type TMDataGridColumnRegion,
+  type TMDataGridDropSide,
+} from "./columnOrdering";
 export {
   getColumnCapabilities,
   getGridCapabilities,

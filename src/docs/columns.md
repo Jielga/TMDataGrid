@@ -34,6 +34,10 @@ table's column model.
 | `type` | `"string" \| "number"` | `"string"` | Determines which filter operators are offered. |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment applied to both header and cells. |
+| `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
+
+`enableOrdering` lives in `meta` because column ordering is the one feature
+TanStack defines no column option for. See [Features](#features).
 
 ## Sizing
 
@@ -64,12 +68,22 @@ interface.
 | `enablePinning` | No pin menu items. |
 | `enableResizing` | The divider is displayed but cannot be dragged. |
 
+`meta.enableOrdering: false` belongs to the same set and removes the column's
+header dragging and move menu items.
+
+A column inside a header group is never movable, whatever `meta.enableOrdering`
+says: `columnOrder` sequences leaf columns, so moving one would leave the group
+header spanning columns that no longer belong to it.
+
 ## Checkbox column
 
 Unless `enableRowSelection` is `false`, a column with the id `SELECT_COLUMN_ID`
 is added as the first column and pinned to the left. It is listed as "Checkbox
 selection" in the column manager and can be hidden like any other column. It has
-no column menu and cannot be sorted, filtered, resized or re-pinned.
+no column menu and cannot be sorted, filtered, resized, re-pinned or moved.
+
+Because it cannot be moved, it also anchors the left pinned region: no column
+can be placed in front of it.
 
 ## Filtering
 

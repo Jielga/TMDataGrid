@@ -179,6 +179,33 @@
   cursor: pointer;
 }
 
+/* Column reordering. The dragged header stays in place and dims — the browser
+   already carries a snapshot of it under the pointer — while the header being
+   dragged over draws a bar on the edge the column will land against. */
+.headerCellDragging {
+  opacity: 0.4;
+}
+
+.headerCellDropBefore::before,
+.headerCellDropAfter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--mantine-primary-color-filled);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.headerCellDropBefore::before {
+  left: 0;
+}
+
+.headerCellDropAfter::before {
+  right: 0;
+}
+
 /* Doubles as the column divider seen between every header cell. */
 .columnSeparator {
   position: absolute;
