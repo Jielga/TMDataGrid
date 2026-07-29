@@ -1,10 +1,10 @@
 import type { Column, RowData } from "@tanstack/react-table";
-import type { TMDataGridRowData } from "./TMDataGridContext";
+import type { TMDataGridRowData } from "./TMDataGridContext.js";
 import type {
   TMDataGridFeatures,
   TMDataGridTable,
   UseTMDataGridOptions,
-} from "./useTMDataGrid";
+} from "./useTMDataGrid.js";
 
 /**
  * Table-level feature switches, read straight off the options object.

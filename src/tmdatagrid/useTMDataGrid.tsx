@@ -35,14 +35,14 @@ import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
   getDefaultOperator,
-} from "./filterOperators";
+} from "./filterOperators.js";
 import {
   hasPersistenceKeys,
   readPersistedState,
   type TMDataGridPersistence,
   writePersistedState,
-} from "./persistence";
-import { readFeatureFlags, type TMDataGridFeatureFlags } from "./capabilities";
+} from "./persistence.js";
+import { readFeatureFlags, type TMDataGridFeatureFlags } from "./capabilities.js";
 
 export const SELECT_COLUMN_ID = "__select__";
 

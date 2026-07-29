@@ -1,25 +1,25 @@
 import type { RowData } from "@tanstack/react-table";
 import { type CSSProperties, type ReactNode, useMemo } from "react";
 import classes from "./TMDataGrid.module.css";
-import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
-import { TMDataGridContextProvider } from "./TMDataGridContext";
-import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
-import { TMDataGridFooter } from "./TMDataGridFooter";
-import { TMDataGridTable } from "./TMDataGridTable";
+import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel.js";
+import { TMDataGridContextProvider } from "./TMDataGridContext.js";
+import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel.js";
+import { TMDataGridFooter } from "./TMDataGridFooter.js";
+import { TMDataGridTable } from "./TMDataGridTable.js";
 import {
   TMDataGridColumnsButton,
   TMDataGridFilterButton,
   TMDataGridSummaryCount,
   TMDataGridToolbar,
   TMDataGridToolbarSpacer,
-} from "./TMDataGridToolbar";
+} from "./TMDataGridToolbar.js";
 import {
   DEFAULT_TMDATAGRID_SIZE,
   SIZE_CONTROL_SIZE,
   SIZE_ROW_HEIGHT,
   type TMDataGridSize,
-} from "./sizes";
-import type { TMDataGridApi } from "./useTMDataGrid";
+} from "./sizes.js";
+import type { TMDataGridApi } from "./useTMDataGrid.js";
 
 export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
   children: ReactNode;

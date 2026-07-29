@@ -7,11 +7,11 @@ import classes from "./TMDataGrid.module.css";
 import {
   type TMDataGridRowData,
   useTMDataGridContext,
-} from "./TMDataGridContext";
-import type { TMDataGridColumnLayout } from "./TMDataGridTable";
-import { getColumnCapabilities, getGridCapabilities } from "./capabilities";
-import { getColumnAlign, getColumnLabel } from "./columnUtils";
-import { isFilterActive } from "./filterOperators";
+} from "./TMDataGridContext.js";
+import type { TMDataGridColumnLayout } from "./TMDataGridTable.js";
+import { getColumnCapabilities, getGridCapabilities } from "./capabilities.js";
+import { getColumnAlign, getColumnLabel } from "./columnUtils.js";
+import { isFilterActive } from "./filterOperators.js";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -22,12 +22,12 @@ import {
   PinLeftIcon,
   PinOffIcon,
   PinRightIcon,
-} from "./icons";
+} from "./icons.js";
 import {
   type TMDataGridFeatures,
   openColumnFilter,
   SELECT_COLUMN_ID,
-} from "./useTMDataGrid";
+} from "./useTMDataGrid.js";
 
 export type TMDataGridHeader = Header<
   TMDataGridFeatures,

@@ -9,8 +9,10 @@ lerna-debug.log*
 .playwright-mcp
 node_modules
 dist
+dist-demo
 dist-ssr
 *.local
+*.tgz
 .serena
 # Editor directories and files
 .vscode/*

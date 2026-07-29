@@ -1,8 +1,8 @@
 import { ActionIcon, Group, Select, Text } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGrid.module.css";
-import { useTMDataGridContext } from "./TMDataGridContext";
-import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
+import { useTMDataGridContext } from "./TMDataGridContext.js";
+import { ChevronLeftIcon, ChevronRightIcon } from "./icons.js";
 
 export type TMDataGridFooterProps = {
   pageSizeOptions?: ReadonlyArray<number>;

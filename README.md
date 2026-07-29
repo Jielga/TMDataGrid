@@ -11,14 +11,18 @@ component you opt into.
 npm install @jielga/tmdatagrid
 ```
 
-Peer dependencies: `react`, `react-dom`, `@mantine/core`, `@tanstack/react-table`,
-`@tanstack/react-store`, `@tanstack/react-virtual` and `@tabler/icons-react`.
+Peer dependencies: `react` and `react-dom` (19.1 or later), `@mantine/core`,
+`@tanstack/react-table` (v9), `@tanstack/react-store`, `@tanstack/store`,
+`@tanstack/react-virtual` and `@tabler/icons-react`.
 
-Mantine's stylesheet must be imported once in your app:
+Import both stylesheets once in your app, Mantine's first:
 
 ```ts
 import "@mantine/core/styles.css";
+import "@jielga/tmdatagrid/styles.css";
 ```
+
+The grid must be rendered inside a Mantine `MantineProvider`.
 
 ## Usage
 
