@@ -62,7 +62,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-skill-version.mjs",
     "release": "changeset publish",
-    "prepublishOnly": "npm run lint && npm run build:lib"
+    "prepublishOnly": "npm run lint && npm run build:lib",
+    "prepare": "husky"
   },
   "peerDependencies": {
     "@mantine/core": "^9.4.0",
@@ -96,6 +97,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
+    "husky": "^9.1.7",
     "oxlint": "^1.69.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

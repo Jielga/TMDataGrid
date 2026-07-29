@@ -1,0 +1,15 @@
+# Hooks are for local commits. In CI the workflows run these checks properly,
+# and Changesets commits the version PR with the default GITHUB_TOKEN -- there
+# is nothing useful to catch there.
+[ -n "$CI" ] && exit 0
+
+# Cheapest first, so an obvious failure comes back fast.
+npm run lint
+npx tsc -b
+node scripts/check-changeset.mjs
+
+# Only worth running when the published library changed. The dts rollup can
+# fail in ways tsc -b does not catch, which is the point of running it here.
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^src/tmdatagrid/'; then
+  npm run build:lib
+fi
