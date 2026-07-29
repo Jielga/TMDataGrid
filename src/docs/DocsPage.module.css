@@ -1,0 +1,62 @@
+.scroller {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.article {
+  /* Mantine's docs measure — long prose stays readable. */
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-xl)
+    calc(var(--mantine-spacing-xl) * 3);
+  text-align: left;
+}
+
+.article h1 {
+  margin-top: 0;
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.article h2 {
+  margin-top: calc(var(--mantine-spacing-xl) * 1.5);
+  padding-top: var(--mantine-spacing-md);
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.article h3 {
+  margin-top: var(--mantine-spacing-xl);
+}
+
+/* Mantine's Typography styles inline code but leaves fenced blocks plain. */
+.article pre {
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-default);
+  overflow-x: auto;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.55;
+}
+
+.article pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.article td,
+.article th {
+  font-size: var(--mantine-font-size-sm);
+  vertical-align: top;
+}
+
+/* `break-word` rather than `anywhere`: it leaves the column's min-content width
+   at the full identifier, so names stay on one line while there is room, and
+   only break when the cell would otherwise clip them. */
+.article td code,
+.article th code {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
