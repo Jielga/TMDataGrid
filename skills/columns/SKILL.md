@@ -2,11 +2,12 @@
 name: columns
 description: >
   Define TMDataGrid columns with createTMDataGridColumnHelper: column meta
-  (label, type, flex, align), fluid minmax sizing versus fixed width, minSize and
-  maxSize, per-column enableSorting/enableColumnFilter/enableHiding/enablePinning/
-  enableResizing, the generated SELECT_COLUMN_ID checkbox column, and the shared
-  filter function with its operator list and isFilterActive. Load when adding or
-  changing columns, controlling widths, or wiring column filters.
+  (label, type, flex, align), fluid minmax sizing versus fixed width, minSize
+  and maxSize, per-column
+  enableSorting/enableColumnFilter/enableHiding/enablePinning/ enableResizing,
+  the generated SELECT_COLUMN_ID checkbox column, and the shared filter function
+  with its operator list and isFilterActive. Load when adding or changing
+  columns, controlling widths, or wiring column filters.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'

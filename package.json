@@ -59,6 +59,9 @@
     "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rollup -c rollup.dts.config.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/sync-skill-version.mjs",
+    "release": "changeset publish",
     "prepublishOnly": "npm run lint && npm run build:lib"
   },
   "peerDependencies": {
@@ -74,6 +77,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.1",
     "@mantine/core": "^9.4.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tabler/icons-react": "^3.46.0",

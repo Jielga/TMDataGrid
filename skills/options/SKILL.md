@@ -1,13 +1,13 @@
 ---
 name: options
 description: >
-  useTMDataGrid options, return value and state persistence. Covers passthrough of
-  TanStack TableOptions, the default initialState (pagination, columnPinning,
+  useTMDataGrid options, return value and state persistence. Covers passthrough
+  of TanStack TableOptions, the default initialState (pagination, columnPinning,
   globalFilterFn), the meta object (loading, noResultsLabel, rowHeight,
-  totalRowCount), the persist option with dataKey/settingsKey slice selection and
-  storageMode, the returned table/ui/features triple, ui panel actions, and
-  reading grid state with useSelector. Load when configuring the hook, persisting
-  column layout or filters, or reacting to grid state from a parent.
+  totalRowCount), the persist option with dataKey/settingsKey slice selection
+  and storageMode, the returned table/ui/features triple, ui panel actions, and
+  reading grid state with useSelector. Load when configuring the hook,
+  persisting column layout or filters, or reacting to grid state from a parent.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'

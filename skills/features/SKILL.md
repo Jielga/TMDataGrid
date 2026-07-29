@@ -1,14 +1,14 @@
 ---
 name: features
 description: >
-  Enable or disable TMDataGrid interface elements through standard TanStack table
-  and column options, and reuse the same checks in your own components. Covers the
-  enableSorting/enableColumnFilters/enableHiding/enableColumnPinning/
+  Enable or disable TMDataGrid interface elements through standard TanStack
+  table and column options, and reuse the same checks in your own components.
+  Covers the enableSorting/enableColumnFilters/enableHiding/enableColumnPinning/
   enableColumnResizing/enableRowSelection matrix, getGridCapabilities and
   getColumnCapabilities, why the features argument is required for reactivity
   under the React Compiler, column pinning, and always-on virtualization. Load
-  when building a read-only grid, hiding grid chrome, or writing a custom toolbar
-  button.
+  when building a read-only grid, hiding grid chrome, or writing a custom
+  toolbar button.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'

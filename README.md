@@ -123,18 +123,37 @@ works everywhere without putting `.js` extensions in the sources.
 
 ## Publishing
 
-Versions are bumped explicitly — nothing publishes on a merge to `main`.
+Releases are managed by [Changesets](https://github.com/changesets/changesets).
+Nothing publishes from an ordinary push — a release happens only when the
+version PR is merged.
+
+Describe your change in the same PR that makes it:
 
 ```sh
-npm version patch      # or minor / major — bumps package.json, commits, tags
-git push --follow-tags
+npm run changeset      # pick patch/minor/major, write a summary
 ```
 
-Pushing the tag runs [`publish.yml`](.github/workflows/publish.yml), which
-fails if the tag disagrees with `package.json`, then lints, type-checks and
-publishes with provenance. The package build runs from `prepublishOnly`
-rather than as a workflow step, so `npm publish` cannot ship a stale `dist`
-whether it runs in CI or by hand.
+That writes a markdown file under `.changeset/`. Commit it alongside the code.
+
+Once on `main`, [`release.yml`](.github/workflows/release.yml) opens a
+**chore: version packages** PR that collects every pending changeset, bumps
+`package.json`, writes `CHANGELOG.md` and syncs the skills. The PR is the
+release proposal: review the version it picked and the changelog it wrote, then
+merge it to publish to npm with provenance.
+
+The package build runs from `prepublishOnly` rather than as a workflow step, so
+`npm publish` cannot ship a stale `dist` whether it runs in CI or by hand.
+
+### Skill versions
+
+`npm run version-packages` is `changeset version` followed by
+[`scripts/sync-skill-version.mjs`](scripts/sync-skill-version.mjs), which sets
+`metadata.library_version` in every `skills/*/SKILL.md` to the new version.
+
+Intent reports a skill as stale when its `library_version` trails the package
+version, so without that step every release would leave all five skills stale.
+Because it runs inside the version command, the bump and the skill sync land in
+the same PR and are reviewed together.
 
 To check what a release would contain without publishing anything:
 

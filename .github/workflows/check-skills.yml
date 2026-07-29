@@ -4,13 +4,17 @@
 # updates one review PR when existing skills, artifact coverage, or workspace
 # package coverage need review.
 #
-# Triggers: pull requests touching skills/artifacts, a pushed version tag, or
+# Triggers: pull requests touching skills/artifacts, a weekly schedule, or
 # manual workflow_dispatch.
 #
-# Releases here are cut by pushing a tag rather than by publishing a GitHub
-# Release, so this listens for the same `v*` tag that triggers publish.yml. The
-# upstream template listens for `release: [published]`, which never fires for a
-# tag-only flow.
+# The upstream template runs the review job on `release: [published]`. That
+# cannot work here: Changesets creates the tag and the Release using the default
+# GITHUB_TOKEN, and events raised by GITHUB_TOKEN do not start new workflow runs.
+# A `push: tags` trigger is dead for the same reason. Version drift is instead
+# prevented up front -- `npm run version-packages` bumps each skill's
+# library_version in the same PR that bumps package.json -- so the only drift
+# left for this job to find is a source doc changing under a skill, which a
+# schedule catches perfectly well.
 #
 # intent-workflow-version: 3
 #
@@ -25,8 +29,8 @@ on:
       - '**/skills/**'
       - '_artifacts/**'
       - '**/_artifacts/**'
-  push:
-    tags: ["v*"]
+  schedule:
+    - cron: '0 6 * * 1' # Mondays, 06:00 UTC
   workflow_dispatch: {}
 
 permissions:
@@ -81,7 +85,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'manual' }}"
+          # A constant label keeps one long-lived review PR that later runs
+          # update, rather than opening a fresh PR every week.
+          VERSION="review"
           BRANCH="skills/review-${VERSION}"
           BASE_BRANCH="${{ github.event.repository.default_branch }}"
 
