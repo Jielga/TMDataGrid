@@ -16,8 +16,9 @@ including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
 `manual*` flags and `rowCount`. The `features` option is supplied internally and
 cannot be overridden.
 
-`persist`, `enableColumnOrdering` and `enablePagination` are the grid's own
-options and are consumed here rather than forwarded to TanStack.
+`persist`, `enableColumnOrdering`, `enablePagination`, `rowSelectionMode` and
+`highlightSelectedRows` are the grid's own options and are consumed here rather
+than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -26,6 +27,7 @@ options and are consumed here rather than forwarded to TanStack.
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
 | `rowSelectionMode` | `"checkbox" \| "row"` | `"checkbox"` | `"row"` drops the checkbox column and selects on row click. Defined by the grid, see [Features](#features). |
+| `highlightSelectedRows` | `boolean` | Follows the mode | Highlight background on selected rows: off for `"checkbox"`, on for `"row"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid, see [Features](#features). |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |

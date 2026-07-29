@@ -29,7 +29,12 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
    */
   size?: TMDataGridSize;
   className?: string;
-  style?: CSSProperties;
+  /**
+   * Inline styles. Widened to accept CSS variables, which is how the grid's
+   * colours are themed — `--dg-row-selected-bg` for the selected row
+   * background. Plain `CSSProperties` rejects `--*` keys.
+   */
+  style?: CSSProperties & Record<`--${string}`, string | number>;
 };
 
 /**

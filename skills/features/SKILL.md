@@ -6,6 +6,7 @@ description: >
   Covers the enableSorting/enableColumnFilters/enableHiding/enableColumnPinning/
   enableColumnResizing/enableColumnOrdering/enableRowSelection matrix, the
   checkbox and row selection modes behind rowSelectionMode, the
+  highlightSelectedRows flag and the --dg-row-selected-bg colour, the
   default-off enablePagination switch and its three modes (none, client,
   manual), getGridCapabilities and getColumnCapabilities, why the features
   argument is required for reactivity under the React Compiler, column pinning,
@@ -50,6 +51,7 @@ like the options around it; pagination is the one switch that defaults to off.
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
 | `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See Row selection |
+| `highlightSelectedRows: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 
 A column whose menu has no remaining items renders no menu button. Dividers are
@@ -74,16 +76,17 @@ everything downstream — the toolbar count, `getSelectedRowModel()`, persistenc
 — is unaffected by the choice.
 
 **Checkbox** — the default. A checkbox column is added as the first column, with
-a select-all box in its header. Clicking a row elsewhere does not select it.
+a select-all box in its header. Clicking a row elsewhere does not select it, and
+a selected row is not highlighted: the checkbox already says so.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });
 ```
 
-**Row** — no checkbox column. Clicking a row toggles it, and the row keeps the
-selected highlight. Other rows keep their state, so a click never clears the
-rest of the selection. Rows are focusable in this mode and Space or Enter
-toggles the focused row.
+**Row** — no checkbox column. Clicking a row toggles it, and the row takes the
+highlight background — the only feedback a click gives. Other rows keep their
+state, so a click never clears the rest of the selection. Rows are focusable in
+this mode and Space or Enter toggles the focused row.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
@@ -92,6 +95,24 @@ const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
 `enableRowSelection: false` removes both, and `rowSelectionMode` is then
 ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode — under
 `"row"` it runs in addition to the selection, not instead of it.
+
+`highlightSelectedRows` follows the mode — on for `"row"`, off for
+`"checkbox"` — and can be set to override either way. The colour is the
+`--dg-row-selected-bg` CSS variable (default `--mantine-primary-color-light`);
+change it on the grid element without touching the flag:
+
+```tsx
+// Checkbox column, and selected rows are highlighted too.
+const grid = useTMDataGrid({ data, columns, highlightSelectedRows: true });
+
+<TMDataGrid
+  {...grid}
+  style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }}
+/>
+```
+
+Rows carry `data-selected` whenever selected and `data-highlighted` only when
+also highlighted, so custom styling can key off either.
 
 ## Pagination
 

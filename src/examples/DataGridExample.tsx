@@ -166,6 +166,10 @@ export function DataGridExample() {
   const [customPager, setCustomPager] = useState(false);
   const [rowSelectionMode, setRowSelectionMode] =
     useState<TMDataGridRowSelectionMode>("checkbox");
+  // Undefined follows the mode: off with checkboxes, on when rows select.
+  const [highlightSelectedRows, setHighlightSelectedRows] = useState<
+    boolean | undefined
+  >(undefined);
 
   const grid = useTMDataGrid({
     data,
@@ -175,6 +179,7 @@ export function DataGridExample() {
     meta: { loading: false },
     persist,
     rowSelectionMode,
+    highlightSelectedRows,
     ...features,
     initialState: {
       sorting: [{ id: "id", desc: false }],
@@ -226,21 +231,41 @@ export function DataGridExample() {
           onChange={(event) => setCustomPager(event.currentTarget.checked)}
         />
         {features.enableRowSelection && (
-          <SegmentedControl
-            size="xs"
-            value={rowSelectionMode}
-            onChange={(value) =>
-              setRowSelectionMode(value as TMDataGridRowSelectionMode)
-            }
-            data={[
-              { value: "checkbox", label: "Checkbox selection" },
-              { value: "row", label: "Row selection" },
-            ]}
-          />
+          <>
+            <SegmentedControl
+              size="xs"
+              value={rowSelectionMode}
+              onChange={(value) =>
+                setRowSelectionMode(value as TMDataGridRowSelectionMode)
+              }
+              data={[
+                { value: "checkbox", label: "Checkbox selection" },
+                { value: "row", label: "Row selection" },
+              ]}
+            />
+            <Switch
+              size="xs"
+              label="Highlight selected rows"
+              checked={grid.features.highlightSelectedRows}
+              onChange={(event) =>
+                setHighlightSelectedRows(event.currentTarget.checked)
+              }
+            />
+          </>
         )}
       </Group>
 
-      <TMDataGrid {...grid} size={size} style={{ flex: 1, minHeight: 0 }}>
+      <TMDataGrid
+        {...grid}
+        size={size}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          // The highlight colour is a CSS variable, changeable without touching
+          // the highlightSelectedRows flag.
+          "--dg-row-selected-bg": "var(--mantine-primary-color-light)",
+        }}
+      >
         <TMDataGrid.Toolbar>
           <TMDataGrid.SummaryCount />
           {selectedCount > 0 && (

@@ -41,6 +41,9 @@
   --dg-header-height: 44px;
   --dg-font-size: var(--mantine-font-size-sm);
   --dg-padding: 10px;
+  /* Background of a highlighted (selected) row. Override it on the grid:
+     <TMDataGrid style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }} /> */
+  --dg-row-selected-bg: var(--mantine-primary-color-light);
 
   display: flex;
   flex-direction: column;
@@ -259,8 +262,11 @@
   --row-bg: var(--mantine-color-default-hover);
 }
 
-.bodyRow[data-selected="true"] {
-  --row-bg: var(--mantine-primary-color-light);
+/* Selection and highlight are separate: a row is always `data-selected`, but it
+   only takes the highlight colour when `highlightSelectedRows` is on — the
+   default in row selection mode, off with checkboxes. */
+.bodyRow[data-highlighted="true"] {
+  --row-bg: var(--dg-row-selected-bg);
 }
 
 /* Row selection mode: the row is the control, so it takes focus and must not

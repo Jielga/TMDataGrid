@@ -267,6 +267,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   role="row"
                   data-testid={`dg-row-${row.id}`}
                   data-selected={row.getIsSelected()}
+                  // Selection is state; the highlight is a display choice, so
+                  // the two are separate attributes.
+                  data-highlighted={
+                    features.highlightSelectedRows && row.getIsSelected()
+                  }
                   data-selects-on-click={selectsOnRowClick}
                   aria-selected={
                     features.rowSelection ? row.getIsSelected() : undefined

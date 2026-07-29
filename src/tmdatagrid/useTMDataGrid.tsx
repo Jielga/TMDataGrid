@@ -202,6 +202,22 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * `rowSelection` state.
    */
   rowSelectionMode?: TMDataGridRowSelectionMode;
+  /**
+   * Give selected rows the highlight background. Defaults to `true` under
+   * `rowSelectionMode: "row"`, where the highlight is the only feedback a click
+   * gives, and `false` under `"checkbox"`, where the box already shows it.
+   *
+   * The colour is the `--dg-row-selected-bg` CSS variable, so it can be changed
+   * without turning the flag on or off:
+   *
+   * ```tsx
+   * <TMDataGrid
+   *   {...grid}
+   *   style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }}
+   * />
+   * ```
+   */
+  highlightSelectedRows?: boolean;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -245,6 +261,7 @@ export function useTMDataGrid<TData extends RowData>({
   enableColumnOrdering,
   enablePagination,
   rowSelectionMode,
+  highlightSelectedRows,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   const selectionEnabled = options.enableRowSelection !== false;
@@ -351,6 +368,7 @@ export function useTMDataGrid<TData extends RowData>({
     enableColumnOrdering,
     enablePagination,
     rowSelectionMode,
+    highlightSelectedRows,
   });
 
   return { table, ui, features };

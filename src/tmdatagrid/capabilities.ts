@@ -34,6 +34,8 @@ export type TMDataGridFeatureFlags = {
   rowSelection: boolean;
   /** Only meaningful while `rowSelection` is on. Defaults to `"checkbox"`. */
   rowSelectionMode: TMDataGridRowSelectionMode;
+  /** Whether a selected row takes the highlight colour. Follows the mode. */
+  highlightSelectedRows: boolean;
   /**
    * The one default-off flag: pagination must be asked for, either with the
    * grid's `enablePagination` or implicitly by declaring `manualPagination`.
@@ -53,6 +55,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableColumnOrdering"
     | "enableRowSelection"
     | "rowSelectionMode"
+    | "highlightSelectedRows"
     | "enablePagination"
     | "manualPagination"
   >,
@@ -66,6 +69,10 @@ export function readFeatureFlags<TData extends RowData>(
     ordering: options.enableColumnOrdering !== false,
     rowSelection: options.enableRowSelection !== false,
     rowSelectionMode: options.rowSelectionMode ?? "checkbox",
+    // In "row" mode the highlight *is* the feedback for a click, so it is on.
+    // With checkboxes the box already says it, so it is off unless asked for.
+    highlightSelectedRows:
+      options.highlightSelectedRows ?? options.rowSelectionMode === "row",
     pagination:
       options.enablePagination === true || options.manualPagination === true,
   };
