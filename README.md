@@ -82,10 +82,28 @@ demo site:
 
 ```sh
 npm install
-npm run dev      # demo site — grid example and docs
-npm run build    # type-check and bundle
-npm run lint     # oxlint
+npm run dev        # demo site — grid example and docs
+npm run build      # demo site  → dist-demo
+npm run build:lib  # package    → dist
+npm run lint       # oxlint
 ```
 
 The demo site lives in [`src/examples/`](src/examples) and the grid itself in
 [`src/tmdatagrid/`](src/tmdatagrid).
+
+## Releasing
+
+Versions are bumped explicitly; there is no automatic release on merge.
+
+```sh
+npm version patch      # or minor / major — commits and creates the tag
+git push --follow-tags
+```
+
+Pushing the tag runs [`.github/workflows/publish.yml`](.github/workflows/publish.yml),
+which verifies the tag matches `package.json`, lints, type-checks and publishes
+to npm with provenance. The package build runs from `prepublishOnly`, so `dist`
+is always rebuilt from the tagged commit.
+
+Publishing requires an `NPM_TOKEN` repository secret — an npm granular access
+token with write access to the `@jielga` scope.
