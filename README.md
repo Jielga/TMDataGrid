@@ -30,7 +30,11 @@ The grid must be rendered inside a Mantine `MantineProvider`.
 the parts rendered inside read what they need from that context.
 
 ```tsx
-import { createTMDataGridColumnHelper, TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
+import {
+  createTMDataGridColumnHelper,
+  TMDataGrid,
+  useTMDataGrid,
+} from "@jielga/tmdatagrid";
 
 type Employee = { id: number; firstName: string; age: number };
 
@@ -39,11 +43,18 @@ const columnHelper = createTMDataGridColumnHelper<Employee>();
 const columns = columnHelper.columns([
   columnHelper.accessor("id", { header: "ID", meta: { type: "number" } }),
   columnHelper.accessor("firstName", { header: "First name" }),
-  columnHelper.accessor("age", { header: "Age", meta: { type: "number", align: "right" } }),
+  columnHelper.accessor("age", {
+    header: "Age",
+    meta: { type: "number", align: "right" },
+  }),
 ]);
 
 export function Employees({ data }: { data: Employee[] }) {
-  const grid = useTMDataGrid({ data, columns, getRowId: (row) => String(row.id) });
+  const grid = useTMDataGrid({
+    data,
+    columns,
+    getRowId: (row) => String(row.id),
+  });
 
   return (
     <TMDataGrid {...grid} size="md" style={{ flex: 1, minHeight: 0 }}>
@@ -69,14 +80,14 @@ pagination; a column that defines no filter shows no filter control.
 The documentation is written as markdown under [`src/docs/`](src/docs) and served by the
 demo site:
 
-| Page | Contents |
-| --- | --- |
-| [Getting started](src/docs/getting-started.md) | Structure and defaults |
-| [useTMDataGrid](src/docs/use-tm-data-grid.md) | Options, meta and persistence |
-| [Components](src/docs/components.md) | Props for every component |
-| [Columns](src/docs/columns.md) | Definitions, sizing and filters |
-| [Features](src/docs/features.md) | Enabling and disabling behaviour |
-| [Server-side](src/docs/server-side.md) | Manual pagination and filtering |
+| Page                                           | Contents                         |
+| ---------------------------------------------- | -------------------------------- |
+| [Getting started](src/docs/getting-started.md) | Structure and defaults           |
+| [useTMDataGrid](src/docs/use-tm-data-grid.md)  | Options, meta and persistence    |
+| [Components](src/docs/components.md)           | Props for every component        |
+| [Columns](src/docs/columns.md)                 | Definitions, sizing and filters  |
+| [Features](src/docs/features.md)               | Enabling and disabling behaviour |
+| [Server-side](src/docs/server-side.md)         | Manual pagination and filtering  |
 
 ## Development
 
@@ -93,10 +104,10 @@ npm run lint   # oxlint
 
 Two independent outputs, neither committed:
 
-| Command | Output | Contents |
-| --- | --- | --- |
-| `npm run build:lib` | `dist/` | The published package |
-| `npm run build` | `dist-demo/` | The demo site |
+| Command             | Output       | Contents              |
+| ------------------- | ------------ | --------------------- |
+| `npm run build:lib` | `dist/`      | The published package |
+| `npm run build`     | `dist-demo/` | The demo site         |
 
 `build:lib` runs three steps. Vite bundles `src/tmdatagrid/index.ts` into
 `dist/index.js` with every peer dependency left external, and emits the CSS
@@ -129,11 +140,4 @@ To check what a release would contain without publishing anything:
 
 ```sh
 npm publish --dry-run
-```
-
-**First-time setup:** publishing needs an `NPM_TOKEN` repository secret — an
-npm granular access token with read-write access to the `@jielga` scope.
-
-```sh
-gh secret set NPM_TOKEN --repo Jielga/TMDataGrid
 ```
