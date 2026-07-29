@@ -80,30 +80,60 @@ demo site:
 
 ## Development
 
+The grid lives in [`src/tmdatagrid/`](src/tmdatagrid); everything else in `src`
+is the demo site that documents it.
+
 ```sh
 npm install
-npm run dev        # demo site — grid example and docs
-npm run build      # demo site  → dist-demo
-npm run build:lib  # package    → dist
-npm run lint       # oxlint
+npm run dev    # demo site with the grid example and docs
+npm run lint   # oxlint
 ```
 
-The demo site lives in [`src/examples/`](src/examples) and the grid itself in
-[`src/tmdatagrid/`](src/tmdatagrid).
+## Building
 
-## Releasing
+Two independent outputs, neither committed:
 
-Versions are bumped explicitly; there is no automatic release on merge.
+| Command | Output | Contents |
+| --- | --- | --- |
+| `npm run build:lib` | `dist/` | The published package |
+| `npm run build` | `dist-demo/` | The demo site |
+
+`build:lib` runs three steps. Vite bundles `src/tmdatagrid/index.ts` into
+`dist/index.js` with every peer dependency left external, and emits the CSS
+modules as a single `dist/styles.css`. TypeScript then writes per-file
+declarations to `.types-tmp/`, and rollup flattens those into one
+`dist/index.d.ts`.
+
+The declarations are flattened rather than shipped as a tree because
+TypeScript emits relative imports verbatim: an extensionless `./TMDataGrid`
+resolves only under `moduleResolution: bundler` and breaks for anyone on
+`node16`/`nodenext`. A single file has no relative imports to resolve, so it
+works everywhere without putting `.js` extensions in the sources.
+
+## Publishing
+
+Versions are bumped explicitly — nothing publishes on a merge to `main`.
 
 ```sh
-npm version patch      # or minor / major — commits and creates the tag
+npm version patch      # or minor / major — bumps package.json, commits, tags
 git push --follow-tags
 ```
 
-Pushing the tag runs [`.github/workflows/publish.yml`](.github/workflows/publish.yml),
-which verifies the tag matches `package.json`, lints, type-checks and publishes
-to npm with provenance. The package build runs from `prepublishOnly`, so `dist`
-is always rebuilt from the tagged commit.
+Pushing the tag runs [`publish.yml`](.github/workflows/publish.yml), which
+fails if the tag disagrees with `package.json`, then lints, type-checks and
+publishes with provenance. The package build runs from `prepublishOnly`
+rather than as a workflow step, so `npm publish` cannot ship a stale `dist`
+whether it runs in CI or by hand.
 
-Publishing requires an `NPM_TOKEN` repository secret — an npm granular access
-token with write access to the `@jielga` scope.
+To check what a release would contain without publishing anything:
+
+```sh
+npm publish --dry-run
+```
+
+**First-time setup:** publishing needs an `NPM_TOKEN` repository secret — an
+npm granular access token with read-write access to the `@jielga` scope.
+
+```sh
+gh secret set NPM_TOKEN --repo Jielga/TMDataGrid
+```
