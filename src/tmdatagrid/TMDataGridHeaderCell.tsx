@@ -32,11 +32,8 @@ import {
   PinOffIcon,
   PinRightIcon,
 } from "./icons";
-import {
-  type TMDataGridFeatures,
-  openColumnFilter,
-  SELECT_COLUMN_ID,
-} from "./useTMDataGrid";
+import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
+import { type TMDataGridFeatures, openColumnFilter } from "./useTMDataGrid";
 
 export type TMDataGridHeader = Header<
   TMDataGridFeatures,

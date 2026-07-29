@@ -4,10 +4,11 @@ Almost every control is bound to the TanStack capability check for that feature,
 so setting the standard table or column option removes the corresponding
 interface. Empty menus and inactive buttons are never rendered.
 
-Column ordering is the one exception. TanStack's `columnOrderingFeature` ships
-state and APIs but no `enable` option, because reordering is entirely a matter
-of interface, so the grid defines `enableColumnOrdering` and
-`meta.enableOrdering` itself. They behave like the options around them.
+Column ordering and pagination are the two exceptions. TanStack ships state and
+APIs for both but no `enable` option, so the grid defines `enableColumnOrdering`
+(with `meta.enableOrdering`) and `enablePagination` itself. Ordering behaves
+like the options around it; pagination is the one switch that defaults to off —
+see [Pagination](#pagination).
 
 ## Option reference
 
@@ -24,6 +25,8 @@ of interface, so the grid defines `enableColumnOrdering` and
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
+| `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See [Row selection](#row-selection) |
+| `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 
 A column whose menu has no remaining items renders no menu button. Dividers are
 never left at the end of a menu.
@@ -40,8 +43,69 @@ const grid = useTMDataGrid({
 });
 ```
 
-Pagination is not controlled by an option. Omit `TMDataGrid.Footer` and no
-pagination controls are rendered.
+## Row selection
+
+On by default, in two modes. Both write to the same `rowSelection` state, so
+everything downstream — the toolbar count, `getSelectedRowModel()`, persistence
+— is unaffected by the choice.
+
+**Checkbox** — the default. A checkbox column is added as the first column, with
+a select-all box in its header. Clicking a row elsewhere does not select it.
+
+```tsx
+const grid = useTMDataGrid({ data, columns });
+```
+
+**Row** — no checkbox column. Clicking a row toggles it, and the row keeps the
+selected highlight. Other rows keep their state, so a click never clears the
+rest of the selection. Rows are focusable in this mode and Space or Enter
+toggles the focused row.
+
+```tsx
+const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
+```
+
+`enableRowSelection: false` removes both, and `rowSelectionMode` is then
+ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode — under
+`"row"` it runs in addition to the selection, not instead of it.
+
+## Pagination
+
+Off by default: the grid renders every filtered and sorted row and relies on
+virtualization, which handles any row count. There are three modes.
+
+**No pagination** — the default. `TMDataGrid.Footer` renders nothing.
+
+```tsx
+const grid = useTMDataGrid({ data, columns });
+```
+
+**Client pagination** — set `enablePagination: true`. The table pages the data
+itself (initial page size 25, configurable through `initialState.pagination`)
+and `TMDataGrid.Footer` renders its pager.
+
+```tsx
+const grid = useTMDataGrid({ data, columns, enablePagination: true });
+```
+
+**Manual pagination** — set the standard TanStack options for server-driven
+paging. `manualPagination: true` implies `enablePagination`, so no extra flag is
+needed; see [server-side](#server-side).
+
+```tsx
+const grid = useTMDataGrid({
+  data: page.rows,
+  columns,
+  manualPagination: true,
+  rowCount: page.total,
+  state: { pagination },
+  onPaginationChange: setPagination,
+});
+```
+
+The built-in pager can be replaced through the Footer's `pagination` render
+prop, or bypassed entirely by building on the table API — see
+[components](#components).
 
 ## Capability helpers
 
@@ -68,7 +132,8 @@ function ExportButton() {
 | `canHideAny` | At least one leaf column can be hidden. |
 | `canPinAny` | At least one leaf column can be pinned. |
 | `canReorderAny` | At least one leaf column can be moved. |
-| `canSelectRows` | `enableRowSelection` is not `false`. |
+| `canSelectRows` | `enableRowSelection` is not `false`. The mode is in `features.rowSelectionMode`. |
+| `canPaginate` | `enablePagination` or `manualPagination` is `true`. |
 
 `getColumnCapabilities(column, features)` returns the same information for a
 single column as `canSort`, `canFilter`, `canHide`, `canPin`, `canResize` and

@@ -4,7 +4,8 @@ description: >
   useTMDataGrid options, return value and state persistence. Covers passthrough
   of TanStack TableOptions, the default initialState (pagination, columnPinning,
   globalFilterFn), the meta object (loading, noResultsLabel, rowHeight,
-  totalRowCount), the grid's own persist and enableColumnOrdering options, the
+  totalRowCount), the grid's own persist, enableColumnOrdering and
+  enablePagination options, the
   persist option with dataKey/settingsKey slice selection and storageMode, the
   returned table/ui/features triple, ui panel and column drag actions, and
   reading grid state with useSelector. Load when configuring the hook,
@@ -37,21 +38,23 @@ All TanStack `TableOptions` are supported and passed through unchanged, includin
 flags and `rowCount`. The `features` option is supplied internally and cannot be
 overridden.
 
-`persist` and `enableColumnOrdering` are the grid's own options and are consumed
-by the hook rather than forwarded to TanStack.
+`persist`, `enableColumnOrdering` and `enablePagination` are the grid's own
+options and are consumed by the hook rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
-| `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes the checkbox column. |
+| `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
+| `rowSelectionMode` | `"checkbox" \| "row"` | `"checkbox"` | `"row"` drops the checkbox column and selects on row click. Defined by the grid. |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
 | `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. |
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid. |
+| `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
@@ -61,7 +64,7 @@ by the hook rather than forwarded to TanStack.
 
 | Slice | Default |
 | --- | --- |
-| `pagination` | `{ pageIndex: 0, pageSize: 25 }` |
+| `pagination` | `{ pageIndex: 0, pageSize: 25 }` — inert until pagination is enabled |
 | `columnPinning.left` | The checkbox column, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
 

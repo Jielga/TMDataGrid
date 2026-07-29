@@ -263,6 +263,17 @@
   --row-bg: var(--mantine-primary-color-light);
 }
 
+/* Row selection mode: the row is the control, so it takes focus and must not
+   start a text selection on the click that toggles it. */
+.bodyRow[data-selects-on-click="true"] {
+  user-select: none;
+}
+
+.bodyRow:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
 /* Clipping lives on .cellContent, not here — a pinned cell has to let its
    boundary gradient escape past its own right/left edge. */
 .bodyCell {

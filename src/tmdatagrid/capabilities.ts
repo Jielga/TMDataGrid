@@ -19,6 +19,11 @@ import type {
  * TanStack still decides: these flags are combined with `getCanX()`, which is
  * what applies the per-column overrides.
  */
+/**
+ * How rows are selected — see `rowSelectionMode` on {@link UseTMDataGridOptions}.
+ */
+export type TMDataGridRowSelectionMode = "checkbox" | "row";
+
 export type TMDataGridFeatureFlags = {
   sorting: boolean;
   filtering: boolean;
@@ -27,6 +32,14 @@ export type TMDataGridFeatureFlags = {
   resizing: boolean;
   ordering: boolean;
   rowSelection: boolean;
+  /** Only meaningful while `rowSelection` is on. Defaults to `"checkbox"`. */
+  rowSelectionMode: TMDataGridRowSelectionMode;
+  /**
+   * The one default-off flag: pagination must be asked for, either with the
+   * grid's `enablePagination` or implicitly by declaring `manualPagination`.
+   * Off, the grid renders every filtered row and relies on virtualization.
+   */
+  pagination: boolean;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -39,6 +52,9 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableColumnResizing"
     | "enableColumnOrdering"
     | "enableRowSelection"
+    | "rowSelectionMode"
+    | "enablePagination"
+    | "manualPagination"
   >,
 ): TMDataGridFeatureFlags {
   return {
@@ -49,6 +65,9 @@ export function readFeatureFlags<TData extends RowData>(
     resizing: options.enableColumnResizing !== false,
     ordering: options.enableColumnOrdering !== false,
     rowSelection: options.enableRowSelection !== false,
+    rowSelectionMode: options.rowSelectionMode ?? "checkbox",
+    pagination:
+      options.enablePagination === true || options.manualPagination === true,
   };
 }
 
@@ -96,6 +115,7 @@ export type TMDataGridCapabilities = {
   canPinAny: boolean;
   canReorderAny: boolean;
   canSelectRows: boolean;
+  canPaginate: boolean;
 };
 
 export function getGridCapabilities(
@@ -113,5 +133,6 @@ export function getGridCapabilities(
     canPinAny: any((c) => c.canPin),
     canReorderAny: any((c) => c.canReorder),
     canSelectRows: features.rowSelection,
+    canPaginate: features.pagination,
   };
 }

@@ -50,7 +50,7 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. |
+| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. Under `rowSelectionMode: "row"` it runs in addition to the selection. |
 
 Pass the row type to keep `onRowClick` typed:
 
@@ -58,20 +58,49 @@ Pass the row type to keep `onRowClick` typed:
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-Rows come from `getPaginatedRowModel()`, so a table using `manualPagination`
-renders exactly the page returned by the server.
+With pagination off (the default) rows come from `getPrePaginatedRowModel()`:
+every filtered and sorted row, virtualized. With pagination on they come from
+`getPaginatedRowModel()`, so a table using `manualPagination` renders exactly
+the page returned by the server.
 
 ## TMDataGrid.Footer
 
 Pagination controls: rows per page, current range and previous/next buttons.
+Renders nothing unless pagination is enabled (`enablePagination: true` or
+`manualPagination: true`) — the footer is a pager; other footer content belongs
+in your own layout.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `pageSizeOptions` | `readonly number[]` | `[10, 25, 50, 100]` | Available page sizes. |
+| `pagination` | `(api: TMDataGridPaginationApi) => ReactNode` | – | Replaces the built-in pager. |
 
 Totals are read from `table.getRowCount()`, which prefers `options.rowCount`.
 Server-paginated tables therefore display the server total without further
 configuration.
+
+The `pagination` render prop receives the distilled pagination API — state
+values plus plain-number setters — and renders inside the footer bar:
+
+```tsx
+<TMDataGrid.Footer
+  pagination={(api) => (
+    <Pagination
+      total={api.pageCount}
+      value={api.pageIndex + 1}
+      onChange={(page) => api.setPageIndex(page - 1)}
+    />
+  )}
+/>
+```
+
+`TMDataGridPaginationApi` carries `pageIndex`, `pageSize`, `pageCount`
+(`-1` when a manual grid declares an unknown total), `rowCount`,
+`canPreviousPage`, `canNextPage`, and the actions `setPageIndex`, `setPageSize`,
+`previousPage`, `nextPage`, `firstPage` and `lastPage`. A pager living outside
+the footer can read the same object with
+`getTMDataGridPaginationApi(grid.table)` — subscribe to `table.store` first so
+it re-renders.
 
 ## TMDataGrid.Toolbar
 

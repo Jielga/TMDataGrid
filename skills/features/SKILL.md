@@ -4,12 +4,15 @@ description: >
   Enable or disable TMDataGrid interface elements through standard TanStack
   table and column options, and reuse the same checks in your own components.
   Covers the enableSorting/enableColumnFilters/enableHiding/enableColumnPinning/
-  enableColumnResizing/enableColumnOrdering/enableRowSelection matrix,
-  getGridCapabilities and getColumnCapabilities, why the features argument is
-  required for reactivity under the React Compiler, column pinning, column
-  ordering with moveColumn and moveColumnByStep, and always-on virtualization.
-  Load when building a read-only grid, hiding grid chrome, reordering columns
-  from code, or writing a custom toolbar button.
+  enableColumnResizing/enableColumnOrdering/enableRowSelection matrix, the
+  checkbox and row selection modes behind rowSelectionMode, the
+  default-off enablePagination switch and its three modes (none, client,
+  manual), getGridCapabilities and getColumnCapabilities, why the features
+  argument is required for reactivity under the React Compiler, column pinning,
+  column ordering with moveColumn and moveColumnByStep, and always-on
+  virtualization. Load when building a read-only grid, hiding grid chrome,
+  enabling pagination, reordering columns from code, or writing a custom
+  toolbar button.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -26,10 +29,10 @@ Almost every control is bound to the TanStack capability check for that feature,
 so setting the standard table or column option removes the corresponding
 interface. Empty menus and inactive buttons are never rendered.
 
-Column ordering is the one exception. TanStack's `columnOrderingFeature` ships
-state and APIs but no `enable` option, so the grid defines
-`enableColumnOrdering` and `meta.enableOrdering` itself. They behave like the
-options around them.
+Column ordering and pagination are the two exceptions. TanStack ships state and
+APIs for both but no `enable` option, so the grid defines `enableColumnOrdering`
+(with `meta.enableOrdering`) and `enablePagination` itself. Ordering behaves
+like the options around it; pagination is the one switch that defaults to off.
 
 ## Option reference
 
@@ -46,6 +49,8 @@ options around them.
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
+| `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See Row selection |
+| `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 
 A column whose menu has no remaining items renders no menu button. Dividers are
 never left at the end of a menu.
@@ -62,8 +67,57 @@ const grid = useTMDataGrid({
 });
 ```
 
-Pagination is not controlled by an option — omit `TMDataGrid.Footer` and no
-pagination controls are rendered.
+## Row selection
+
+On by default, in two modes. Both write to the same `rowSelection` state, so
+everything downstream — the toolbar count, `getSelectedRowModel()`, persistence
+— is unaffected by the choice.
+
+**Checkbox** — the default. A checkbox column is added as the first column, with
+a select-all box in its header. Clicking a row elsewhere does not select it.
+
+```tsx
+const grid = useTMDataGrid({ data, columns });
+```
+
+**Row** — no checkbox column. Clicking a row toggles it, and the row keeps the
+selected highlight. Other rows keep their state, so a click never clears the
+rest of the selection. Rows are focusable in this mode and Space or Enter
+toggles the focused row.
+
+```tsx
+const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
+```
+
+`enableRowSelection: false` removes both, and `rowSelectionMode` is then
+ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode — under
+`"row"` it runs in addition to the selection, not instead of it.
+
+## Pagination
+
+Off by default: the grid renders every filtered and sorted row and relies on
+virtualization. Three modes:
+
+```tsx
+// No pagination (default) — TMDataGrid.Footer renders nothing.
+const grid = useTMDataGrid({ data, columns });
+
+// Client pagination — pages locally, Footer renders its pager.
+const grid = useTMDataGrid({ data, columns, enablePagination: true });
+
+// Manual pagination — manualPagination implies enablePagination.
+const grid = useTMDataGrid({
+  data: page.rows,
+  columns,
+  manualPagination: true,
+  rowCount: page.total,
+  state: { pagination },
+  onPaginationChange: setPagination,
+});
+```
+
+The built-in pager can be replaced with the Footer's `pagination` render prop
+(see the `getting-started` skill) or built from scratch on the table API.
 
 ## Capability helpers
 
@@ -90,7 +144,8 @@ function ExportButton() {
 | `canHideAny` | At least one leaf column can be hidden. |
 | `canPinAny` | At least one leaf column can be pinned. |
 | `canReorderAny` | At least one leaf column can be moved. |
-| `canSelectRows` | `enableRowSelection` is not `false`. |
+| `canSelectRows` | `enableRowSelection` is not `false`. The mode is in `features.rowSelectionMode`. |
+| `canPaginate` | `enablePagination` or `manualPagination` is `true`. |
 
 `getColumnCapabilities(column, features)` returns the same information for a
 single column as `canSort`, `canFilter`, `canHide`, `canPin`, `canResize` and
@@ -205,6 +260,18 @@ table.setColumnOrder(["__select__", "department", "id", …]);
 
 // Right — moveColumn writes whichever slice the column's region uses.
 moveColumn({ table, columnId: "department", targetId: "id", side: "before" });
+```
+
+### Rendering the Footer without enabling pagination
+
+```tsx
+// Wrong — pagination defaults to off, so the Footer renders nothing.
+const grid = useTMDataGrid({ data, columns });
+<TMDataGrid.Footer />
+
+// Right — opt in (manualPagination: true also counts).
+const grid = useTMDataGrid({ data, columns, enablePagination: true });
+<TMDataGrid.Footer />
 ```
 
 ### Expecting a table-level flag to override a column

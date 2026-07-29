@@ -21,7 +21,10 @@ sources:
 The grid reads rows through `getPaginatedRowModel()` and totals through
 `getRowCount()` and `getPageCount()`, all of which respect TanStack's manual
 modes. A server-driven grid therefore needs only the standard `manual*`
-configuration — no grid-specific options.
+configuration — no grid-specific options. `manualPagination: true` also
+switches the grid's pagination flag on, so `TMDataGrid.Footer` renders its
+pager without `enablePagination`. Declare `pageCount: -1` when the total is
+unknown; the next button then stays enabled.
 
 ## Setup
 

@@ -1,4 +1,3 @@
-import { Checkbox } from "@mantine/core";
 import { useCreateStore } from "@tanstack/react-store";
 import {
   type ColumnDef,
@@ -42,9 +41,15 @@ import {
   type TMDataGridPersistence,
   writePersistedState,
 } from "./persistence";
-import { readFeatureFlags, type TMDataGridFeatureFlags } from "./capabilities";
-
-export const SELECT_COLUMN_ID = "__select__";
+import {
+  readFeatureFlags,
+  type TMDataGridFeatureFlags,
+  type TMDataGridRowSelectionMode,
+} from "./capabilities";
+import {
+  createSelectColumn,
+  SELECT_COLUMN_ID,
+} from "./TMDataGridSelectColumn";
 
 /** Per-column configuration the TMDataGrid chrome reads. */
 export type TMDataGridColumnMeta = {
@@ -175,6 +180,28 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * reordering is entirely a matter of interface.
    */
   enableColumnOrdering?: boolean;
+  /**
+   * Client-side pagination and the built-in `TMDataGrid.Footer` pager.
+   * Defaults to `false`: the grid renders every filtered row and relies on
+   * virtualization.
+   *
+   * The second grid-defined switch (TanStack defines no `enablePagination`
+   * option). `manualPagination: true` implies it — a server-paged grid needs
+   * no extra flag.
+   */
+  enablePagination?: boolean;
+  /**
+   * How rows are selected. Defaults to `"checkbox"`.
+   *
+   * - `"checkbox"` — the generated checkbox column selects; clicking a row
+   *   elsewhere does not.
+   * - `"row"` — no checkbox column; clicking a row toggles it. Other rows keep
+   *   their state, so a click never clears the rest of the selection.
+   *
+   * Ignored when `enableRowSelection` is `false`. Both modes write to the same
+   * `rowSelection` state.
+   */
+  rowSelectionMode?: TMDataGridRowSelectionMode;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -201,48 +228,6 @@ function withTMDataGridDefaults<TData extends RowData>(
   });
 }
 
-function createSelectColumn<TData extends RowData>(): TMDataGridColumnDef<TData> {
-  return {
-    id: SELECT_COLUMN_ID,
-    meta: {
-      label: "Checkbox selection",
-      align: "center",
-      // Structurally the first column; it also anchors the left pinned lane, so
-      // no other column can be moved in front of it.
-      enableOrdering: false,
-    },
-    size: 48,
-    minSize: 48,
-    maxSize: 48,
-    enableResizing: false,
-    enableSorting: false,
-    enableColumnFilter: false,
-    enableGlobalFilter: false,
-    // Structurally pinned to the left; users shouldn't be able to move it.
-    enablePinning: false,
-    header: ({ table }) => (
-      <Checkbox
-        size="xs"
-        aria-label="Select all rows"
-        checked={table.getIsAllRowsSelected()}
-        indeterminate={table.getIsSomeRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        size="xs"
-        aria-label="Select row"
-        checked={row.getIsSelected()}
-        disabled={!row.getCanSelect()}
-        indeterminate={row.getIsSomeSelected()}
-        onChange={row.getToggleSelectedHandler()}
-        onClick={(event) => event.stopPropagation()}
-      />
-    ),
-  };
-}
-
 /**
  * Builds a TMDataGrid table plus its chrome store.
  *
@@ -250,23 +235,30 @@ function createSelectColumn<TData extends RowData>(): TMDataGridColumnDef<TData>
  * only needs `manualPagination` / `manualFiltering` / `manualSorting`,
  * `rowCount` and the matching `onXChange` callbacks — the chrome reads
  * `getRowCount()` / `getPageCount()` / `getPaginatedRowModel()`, all of which
- * already respect manual mode.
+ * already respect manual mode. `manualPagination` also switches the pagination
+ * flag on, so `<TMDataGrid.Footer />` renders its pager without further
+ * options.
  */
 export function useTMDataGrid<TData extends RowData>({
   persist,
-  // Not a TanStack option, so it is kept out of what `useTable` receives.
+  // Not TanStack options, so they are kept out of what `useTable` receives.
   enableColumnOrdering,
+  enablePagination,
+  rowSelectionMode,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   const selectionEnabled = options.enableRowSelection !== false;
   const pinningEnabled = options.enableColumnPinning !== false;
+  // Only "checkbox" mode owns a column; "row" mode selects from the row itself.
+  const selectColumnEnabled =
+    selectionEnabled && rowSelectionMode !== "row";
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
       options.columns as ReadonlyArray<TMDataGridColumnDef<TData>>,
     );
-    return selectionEnabled ? [createSelectColumn<TData>(), ...base] : base;
-  }, [options.columns, selectionEnabled]);
+    return selectColumnEnabled ? [createSelectColumn<TData>(), ...base] : base;
+  }, [options.columns, selectColumnEnabled]);
 
   // Read once on mount: `initialState` is only consumed on the first render,
   // and re-reading later would fight the user's live edits.
@@ -287,7 +279,7 @@ export function useTMDataGrid<TData extends RowData>({
         // The checkbox column is structurally pinned, so it is re-applied on
         // top of anything restored from storage.
         left: [
-          ...(selectionEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
+          ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
           ...(
             persistedState.columnPinning?.left ??
             options.initialState?.columnPinning?.left ??
@@ -354,7 +346,12 @@ export function useTMDataGrid<TData extends RowData>({
   // Deliberately not memoized on `table`: the flags must re-derive whenever the
   // caller passes different options, and `table` keeps the same identity when
   // they do. See readFeatureFlags.
-  const features = readFeatureFlags({ ...options, enableColumnOrdering });
+  const features = readFeatureFlags({
+    ...options,
+    enableColumnOrdering,
+    enablePagination,
+    rowSelectionMode,
+  });
 
   return { table, ui, features };
 }

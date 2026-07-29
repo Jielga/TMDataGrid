@@ -2,6 +2,7 @@ import {
   Badge,
   Flex,
   Group,
+  Pagination,
   SegmentedControl,
   Switch,
   Text,
@@ -12,6 +13,7 @@ import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   type TMDataGridPersistence,
+  type TMDataGridRowSelectionMode,
   type TMDataGridSize,
   useTMDataGrid,
 } from "../tmdatagrid";
@@ -139,6 +141,7 @@ const FEATURE_TOGGLES = [
   { key: "enableColumnPinning", label: "Pinning" },
   { key: "enableColumnResizing", label: "Resizing" },
   { key: "enableColumnOrdering", label: "Reordering" },
+  { key: "enablePagination", label: "Pagination" },
 ] as const;
 
 type FeatureKey = (typeof FEATURE_TOGGLES)[number]["key"];
@@ -147,8 +150,9 @@ export function DataGridExample() {
   const data = useMemo(() => generateEmployees(5000), []);
   const [size, setSize] = useState<TMDataGridSize>("md");
 
-  // Stock TanStack options, apart from `enableColumnOrdering` which the grid
-  // defines itself. Turning one off removes the matching chrome on its own.
+  // Stock TanStack options, apart from `enableColumnOrdering` and
+  // `enablePagination` which the grid defines itself. Turning one off removes
+  // the matching chrome on its own.
   const [features, setFeatures] = useState<Record<FeatureKey, boolean>>({
     enableRowSelection: true,
     enableSorting: true,
@@ -157,7 +161,11 @@ export function DataGridExample() {
     enableColumnPinning: true,
     enableColumnResizing: true,
     enableColumnOrdering: true,
+    enablePagination: true,
   });
+  const [customPager, setCustomPager] = useState(false);
+  const [rowSelectionMode, setRowSelectionMode] =
+    useState<TMDataGridRowSelectionMode>("checkbox");
 
   const grid = useTMDataGrid({
     data,
@@ -166,6 +174,7 @@ export function DataGridExample() {
     // No rowHeight — let the `size` prop drive it.
     meta: { loading: false },
     persist,
+    rowSelectionMode,
     ...features,
     initialState: {
       sorting: [{ id: "id", desc: false }],
@@ -210,6 +219,25 @@ export function DataGridExample() {
             }}
           />
         ))}
+        <Switch
+          size="xs"
+          label="Custom pager"
+          checked={customPager}
+          onChange={(event) => setCustomPager(event.currentTarget.checked)}
+        />
+        {features.enableRowSelection && (
+          <SegmentedControl
+            size="xs"
+            value={rowSelectionMode}
+            onChange={(value) =>
+              setRowSelectionMode(value as TMDataGridRowSelectionMode)
+            }
+            data={[
+              { value: "checkbox", label: "Checkbox selection" },
+              { value: "row", label: "Row selection" },
+            ]}
+          />
+        )}
       </Group>
 
       <TMDataGrid {...grid} size={size} style={{ flex: 1, minHeight: 0 }}>
@@ -227,7 +255,22 @@ export function DataGridExample() {
 
         <TMDataGrid.Table<Employee> />
 
-        <TMDataGrid.Footer pageSizeOptions={[10, 25, 50, 100]} />
+        {customPager ? (
+          // The render prop replaces the built-in pager with any UI built on
+          // the distilled pagination API — here Mantine's Pagination.
+          <TMDataGrid.Footer
+            pagination={(api) => (
+              <Pagination
+                size="sm"
+                total={api.pageCount}
+                value={api.pageIndex + 1}
+                onChange={(page) => api.setPageIndex(page - 1)}
+              />
+            )}
+          />
+        ) : (
+          <TMDataGrid.Footer pageSizeOptions={[10, 25, 50, 100]} />
+        )}
       </TMDataGrid>
     </Flex>
   );

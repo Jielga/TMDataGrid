@@ -31,6 +31,7 @@ export function Employees({ data }: { data: Employee[] }) {
     data,
     columns,
     getRowId: (row) => String(row.id),
+    enablePagination: true,
   });
 
   return (
@@ -64,8 +65,8 @@ table's column model.
 | Column menu | Appears on hover: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
-| Row selection | Checkbox column pinned to the left. |
-| Pagination | Rendered by `TMDataGrid.Footer`. |
+| Row selection | Checkbox column pinned to the left, or click-to-select rows with `rowSelectionMode: "row"`. |
+| Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`; `TMDataGrid.Footer` renders the pager. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
 Each of these is controlled by a capability check. Disabling a feature through

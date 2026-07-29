@@ -54,6 +54,7 @@ export function Employees({ data }: { data: Employee[] }) {
     data,
     columns,
     getRowId: (row) => String(row.id),
+    enablePagination: true,
   });
 
   return (
@@ -72,8 +73,10 @@ export function Employees({ data }: { data: Employee[] }) {
 }
 ```
 
-Only the parts you render exist. Leave out `TMDataGrid.Footer` and there is no
-pagination; a column that defines no filter shows no filter control.
+Only the parts you render exist, and only the features you enable have state.
+Pagination is opt-in via `enablePagination` (implied by `manualPagination`) —
+by default every row renders, virtualized. A column that defines no filter
+shows no filter control.
 
 ## Documentation
 

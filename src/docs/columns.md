@@ -77,10 +77,11 @@ header spanning columns that no longer belong to it.
 
 ## Checkbox column
 
-Unless `enableRowSelection` is `false`, a column with the id `SELECT_COLUMN_ID`
-is added as the first column and pinned to the left. It is listed as "Checkbox
-selection" in the column manager and can be hidden like any other column. It has
-no column menu and cannot be sorted, filtered, resized, re-pinned or moved.
+Unless `enableRowSelection` is `false` or `rowSelectionMode` is `"row"`, a column
+with the id `SELECT_COLUMN_ID` is added as the first column and pinned to the
+left. It is listed as "Checkbox selection" in the column manager and can be
+hidden like any other column. It has no column menu and cannot be sorted,
+filtered, resized, re-pinned or moved.
 
 Because it cannot be moved, it also anchors the left pinned region: no column
 can be placed in front of it.

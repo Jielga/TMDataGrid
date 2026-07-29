@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import classes from "./TMDataGrid.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "./TMDataGridContext";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
@@ -69,18 +69,23 @@ function TMDataGridBodyCell({
 }
 
 export type TMDataGridTableProps<TData extends RowData> = {
-  /** Called when a body row is clicked. */
+  /**
+   * Called when a body row is clicked. Runs in addition to row selection under
+   * `rowSelectionMode: "row"`, not instead of it.
+   */
   onRowClick?: (row: Row<TMDataGridFeatures, TData>) => void;
 };
 
 /**
  * The scrollable grid surface. Always virtualized: only the rows inside the
- * viewport (plus overscan) are mounted, regardless of page size.
+ * viewport (plus overscan) are mounted — which is what makes the default
+ * no-pagination mode viable at any row count. Pagination is opt-in via
+ * `enablePagination` (or implied by `manualPagination`).
  */
 export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onRowClick,
 }: TMDataGridTableProps<TData>) {
-  const { table, rowHeight, controlSize } = useTMDataGridContext();
+  const { table, features, rowHeight, controlSize } = useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
   // visibility, selection), so it subscribes to the whole table store.
@@ -90,8 +95,23 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     table.options.meta ?? {};
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // Respects `manualPagination`: server-paged grids get the rows as delivered.
-  const rows = table.getPaginatedRowModel().rows;
+  // Pagination off (the default): every filtered+sorted row, virtualized.
+  // Pagination on: the current page; under `manualPagination` TanStack returns
+  // the rows as delivered, so the same branch serves server paging.
+  const rows = features.pagination
+    ? table.getPaginatedRowModel().rows
+    : table.getPrePaginatedRowModel().rows;
+
+  // A persisted pageIndex can outlive the data that produced it; TanStack only
+  // auto-resets on live filter/sort/data changes, not on restored state. The
+  // guard makes the dependency-free effect idempotent.
+  useEffect(() => {
+    if (!features.pagination) return;
+    const pageCount = table.getPageCount();
+    if (pageCount > 0 && table.store.state.pagination.pageIndex >= pageCount) {
+      table.setPageIndex(pageCount - 1);
+    }
+  });
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -200,6 +220,17 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   const isEmpty = rows.length === 0;
 
+  // "row" mode: the row itself is the selection control — clicking it toggles
+  // that row and leaves the rest of the selection alone.
+  const selectsOnRowClick =
+    features.rowSelection && features.rowSelectionMode === "row";
+  const rowIsInteractive = selectsOnRowClick || onRowClick !== undefined;
+
+  const handleRowActivate = (row: Row<TMDataGridFeatures, TMDataGridRowData>) => {
+    if (selectsOnRowClick && row.getCanSelect()) row.toggleSelected();
+    onRowClick?.(row as unknown as Row<TMDataGridFeatures, TData>);
+  };
+
   return (
     <div className={classes.tableWrapper}>
       <div ref={scrollContainerRef} className={classes.scrollContainer}>
@@ -236,17 +267,28 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   role="row"
                   data-testid={`dg-row-${row.id}`}
                   data-selected={row.getIsSelected()}
+                  data-selects-on-click={selectsOnRowClick}
+                  aria-selected={
+                    features.rowSelection ? row.getIsSelected() : undefined
+                  }
                   className={classes.bodyRow}
                   style={{
                     minHeight: rowHeight,
-                    cursor: onRowClick ? "pointer" : undefined,
+                    cursor: rowIsInteractive ? "pointer" : undefined,
                   }}
+                  // Keyboard parity with the checkbox the row replaces.
+                  tabIndex={selectsOnRowClick ? 0 : undefined}
                   onClick={
-                    onRowClick
-                      ? () =>
-                          onRowClick(
-                            row as unknown as Row<TMDataGridFeatures, TData>,
-                          )
+                    rowIsInteractive ? () => handleRowActivate(row) : undefined
+                  }
+                  onKeyDown={
+                    selectsOnRowClick
+                      ? (event) => {
+                          if (event.key !== " " && event.key !== "Enter") return;
+                          if (event.target !== event.currentTarget) return;
+                          event.preventDefault();
+                          handleRowActivate(row);
+                        }
                       : undefined
                   }
                 >

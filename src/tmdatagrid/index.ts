@@ -4,10 +4,10 @@ export {
   type TMDataGridContextValue,
   type TMDataGridRowData,
 } from "./TMDataGridContext";
+export { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 export {
   createTMDataGridColumnHelper,
   openColumnFilter,
-  SELECT_COLUMN_ID,
   tmDataGridFeatures,
   type TMDataGridApi,
   type TMDataGridColumnMeta,
@@ -49,6 +49,7 @@ export {
   type TMDataGridCapabilities,
   type TMDataGridColumnCapabilities,
   type TMDataGridFeatureFlags,
+  type TMDataGridRowSelectionMode,
 } from "./capabilities";
 export {
   DEFAULT_TMDATAGRID_SIZE,
@@ -66,3 +67,8 @@ export {
   type TMDataGridStorageMode,
 } from "./persistence";
 export type { TMDataGridColumnLayout } from "./TMDataGridTable";
+export {
+  getTMDataGridPaginationApi,
+  type TMDataGridFooterProps,
+  type TMDataGridPaginationApi,
+} from "./TMDataGridFooter";

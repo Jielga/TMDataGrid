@@ -22,7 +22,8 @@ sources:
 
 `useTMDataGrid` creates the table, `TMDataGrid` provides it through context, and
 the parts rendered inside read what they need from that context. Only the parts
-you render exist: leave out `TMDataGrid.Footer` and there is no pagination.
+you render exist, and only the features you enable have state: pagination is
+opt-in via `enablePagination` — by default every row renders, virtualized.
 
 ## Install
 
@@ -69,6 +70,7 @@ export function Employees({ data }: { data: Employee[] }) {
     data,
     columns,
     getRowId: (row) => String(row.id),
+    enablePagination: true,
   });
 
   return (
@@ -101,13 +103,14 @@ Spread the hook result (`{...grid}`) rather than assigning `table`, `ui` and
 | Column menu | On hover: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
-| Row selection | Checkbox column pinned to the left. |
-| Pagination | Only when `TMDataGrid.Footer` is rendered. |
+| Row selection | Checkbox column pinned to the left, or click-to-select rows with `rowSelectionMode: "row"`. |
+| Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
 Each is bound to a capability check — disabling the standard table or column
-option also removes its interface. Column ordering is the one switch the grid
-defines itself, as `enableColumnOrdering`. See the `features` skill.
+option also removes its interface. Column ordering (`enableColumnOrdering`) and
+pagination (`enablePagination`) are the two switches the grid defines itself.
+See the `features` skill.
 
 ## Layout
 
@@ -126,8 +129,8 @@ and presence are up to you — the root is a plain flex column.
 | Component | Props | Notes |
 | --- | --- | --- |
 | `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. |
-| `TMDataGrid.Table` | `onRowClick(row)` | Header, virtualized body, filter panel. |
-| `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`) | Pagination controls. |
+| `TMDataGrid.Table` | `onRowClick(row)` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
+| `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | — | Pushes later toolbar items right. |
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
@@ -145,6 +148,26 @@ Pass the row type so `onRowClick` stays typed:
 `TMDataGrid.Footer` reads totals from `table.getRowCount()`, which prefers
 `options.rowCount`. `TMDataGrid.SummaryCount` uses `meta.totalRowCount` when
 provided, otherwise the pre-filtered row count.
+
+The Footer's `pagination` render prop replaces the built-in pager with your own
+UI, fed by the distilled pagination API:
+
+```tsx
+<TMDataGrid.Footer
+  pagination={(api) => (
+    <Pagination
+      total={api.pageCount}
+      value={api.pageIndex + 1}
+      onChange={(page) => api.setPageIndex(page - 1)}
+    />
+  )}
+/>
+```
+
+`TMDataGridPaginationApi` carries `pageIndex`, `pageSize`, `pageCount`,
+`rowCount`, `canPreviousPage`, `canNextPage` and the actions `setPageIndex`,
+`setPageSize`, `previousPage`, `nextPage`, `firstPage`, `lastPage`. Outside the
+Footer, `getTMDataGridPaginationApi(grid.table)` returns the same object.
 
 ## size
 
@@ -201,9 +224,9 @@ is no error.
 `<TMDataGrid table={grid.table}>` omits `ui` and `features`. Panels stop opening
 and feature toggles stop being reactive. Spread instead: `<TMDataGrid {...grid}>`.
 
-### Expecting Footer to control pagination
+### Expecting Footer to enable pagination
 
-Pagination is not an option. Omitting `TMDataGrid.Footer` removes the controls
-but the table still paginates at `pageSize: 25` — rows beyond the first page
-simply become unreachable. Set `initialState.pagination.pageSize` if you want
-every row on one page.
+Rendering `TMDataGrid.Footer` does not switch pagination on — the option does.
+With pagination off (the default) the Footer renders nothing and every row is
+rendered, virtualized. Set `enablePagination: true` (or `manualPagination:
+true` for server paging) to page the data and show the pager.
