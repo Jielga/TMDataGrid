@@ -16,12 +16,32 @@ Root component. Provides `{ table, ui, features }` to its children.
 | `size` | `MantineSize` | `"md"` | Size scale, see below. |
 | `children` | `ReactNode` | – | Grid components. |
 | `className` | `string` | – | Added to the root element class. |
-| `style` | `CSSProperties` | – | Root element styles. Set a bounded height. |
+| `style` | `CSSProperties` + `--*` variables | – | Root element styles. Set a bounded height. |
 
 Spread the hook result rather than assigning the first three props individually:
 
 ```tsx
 <TMDataGrid {...grid} size="sm" style={{ flex: 1, minHeight: 0 }}>
+```
+
+### CSS variables
+
+`style` accepts custom properties, which is how the grid's own values are
+themed. They can equally be set from a stylesheet through `className`.
+
+| Variable | Default | Applies to |
+| --- | --- | --- |
+| `--dg-row-selected-bg` | `--mantine-primary-color-light` | Background of a highlighted row, see [Features](#features) |
+| `--dg-row-height` | From `size` | Row height. `meta.rowHeight` is the supported way to change it, since the virtualizer needs the number |
+| `--dg-header-height` | From `size` | Header row height |
+| `--dg-font-size` | From `size` | Cell and header font size |
+| `--dg-padding` | From `size` | Horizontal cell padding |
+
+```tsx
+<TMDataGrid
+  {...grid}
+  style={{ flex: 1, minHeight: 0, "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }}
+>
 ```
 
 ### size

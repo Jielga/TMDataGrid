@@ -128,7 +128,7 @@ and presence are up to you — the root is a plain flex column.
 
 | Component | Props | Notes |
 | --- | --- | --- |
-| `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. |
+| `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. `style` also takes CSS variables: `--dg-row-selected-bg`, `--dg-row-height`, `--dg-header-height`, `--dg-font-size`, `--dg-padding`. |
 | `TMDataGrid.Table` | `onRowClick(row)` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
