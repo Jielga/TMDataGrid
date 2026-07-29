@@ -22,14 +22,25 @@
     "table",
     "mantine",
     "tanstack-table",
-    "virtualized"
+    "virtualized",
+    "tanstack-intent"
   ],
   "publishConfig": {
     "access": "public"
   },
+  "intent": {
+    "docs": "src/docs/",
+    "skills": [
+      "@tanstack/react-table",
+      "@tanstack/table-core",
+      "@tanstack/router-core"
+    ]
+  },
   "files": [
     "dist",
-    "src/tmdatagrid"
+    "src/tmdatagrid",
+    "skills",
+    "!skills/_artifacts"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -66,6 +77,7 @@
     "@mantine/core": "^9.4.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tabler/icons-react": "^3.46.0",
+    "@tanstack/intent": "0.3.6",
     "@tanstack/react-router": "^1.170.17",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/react-store": "^0.11.0",
