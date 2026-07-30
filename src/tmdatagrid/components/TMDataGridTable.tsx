@@ -238,11 +238,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
         <div
           role="table"
           className={classes.grid}
+          // Virtualization means most rows are not in the DOM, so the counts
+          // have to be stated rather than inferred from what is rendered. Every
+          // row carries its aria-rowindex for the same reason.
+          aria-rowcount={rows.length + headerGroups.length}
+          aria-colcount={orderedColumns.length}
           style={{ gridTemplateColumns, minWidth: gridMinWidth }}
         >
           <div role="rowgroup" style={{ display: "contents" }}>
-            {headerGroups.map((headerGroup) => (
-              <div key={headerGroup.id} role="row" className={classes.headerRow}>
+            {headerGroups.map((headerGroup, groupIndex) => (
+              <div
+                key={headerGroup.id}
+                role="row"
+                aria-rowindex={groupIndex + 1}
+                className={classes.headerRow}
+              >
                 {headerGroup.headers.map((header) => (
                   <TMDataGridHeaderCell
                     key={header.id}
@@ -266,6 +276,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 <div
                   key={virtualItem.key}
                   role="row"
+                  aria-rowindex={virtualItem.index + headerGroups.length + 1}
                   data-testid={`dg-row-${row.id}`}
                   data-selected={row.getIsSelected()}
                   // Selection is state; the highlight is a display choice, so

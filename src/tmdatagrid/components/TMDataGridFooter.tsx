@@ -87,6 +87,12 @@ export function TMDataGridFooter({
   const total = table.getRowCount();
   const from = total === 0 ? 0 : pageIndex * pageSize + 1;
   const to = Math.min(total, (pageIndex + 1) * pageSize);
+  // A page size restored from storage, or set through `initialState`, need not
+  // be one of the offered sizes. Without it in the list the Select renders
+  // blank, so the current size is folded in rather than shown as nothing.
+  const sizeOptions = pageSizeOptions.includes(pageSize)
+    ? pageSizeOptions
+    : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
 
   return (
     <div className={classes.footer}>
@@ -99,7 +105,7 @@ export function TMDataGridFooter({
           w={78}
           allowDeselect={false}
           variant="unstyled"
-          data={pageSizeOptions.map(String)}
+          data={sizeOptions.map(String)}
           value={String(pageSize)}
           onChange={(value) => {
             table.setPageSize(Number(value) || pageSizeOptions[0]);

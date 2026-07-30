@@ -322,6 +322,17 @@ export function TMDataGridHeaderCell({
       data-testid={`dg-header-${column.id}`}
       data-active={isSorted || isFiltered}
       data-align={align}
+      // Only meaningful on a sortable column: "none" advertises that this
+      // header sorts, which is a lie on one that doesn't.
+      aria-sort={
+        canSort
+          ? isSorted
+            ? sortDirection
+              ? "descending"
+              : "ascending"
+            : "none"
+          : undefined
+      }
       className={cellClass}
       // Dropped while a resize is running, so that dragging the separator
       // resizes the column instead of starting to move it. The resize handler

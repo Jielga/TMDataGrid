@@ -100,6 +100,82 @@ function resolveStorage(
   }
 }
 
+/**
+ * Shape guards for restored state.
+ *
+ * A stored payload outlives the code that wrote it: a slice can change shape
+ * between releases, and nothing stops anyone from editing storage by hand. The
+ * value goes straight into `initialState`, where a wrong shape surfaces as a
+ * crash inside TanStack rather than as a bad read here. A slice that fails its
+ * guard is dropped; the rest still restore.
+ */
+function prop(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
+}
+
+const isString = (value: unknown): value is string => typeof value === "string";
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+function isArrayOf(
+  value: unknown,
+  isItem: (item: unknown) => boolean,
+): boolean {
+  return Array.isArray(value) && value.every(isItem);
+}
+
+function isRecordOf(
+  value: unknown,
+  isItem: (item: unknown) => boolean,
+): boolean {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value).every(isItem);
+}
+
+const hasStringId = (entry: unknown): boolean => isString(prop(entry, "id"));
+
+const SLICE_GUARDS: Record<
+  TMDataGridDataSlice | TMDataGridSettingsSlice,
+  (value: unknown) => boolean
+> = {
+  columnFilters: (value) => isArrayOf(value, hasStringId),
+  // TanStack leaves the global filter value untyped — the grid's own default
+  // filters on a string, but a consumer may store anything here.
+  globalFilter: () => true,
+  sorting: (value) =>
+    isArrayOf(
+      value,
+      (entry) => hasStringId(entry) && typeof prop(entry, "desc") === "boolean",
+    ),
+  pagination: (value) => {
+    const pageIndex = prop(value, "pageIndex");
+    const pageSize = prop(value, "pageSize");
+    return (
+      isFiniteNumber(pageIndex) &&
+      pageIndex >= 0 &&
+      isFiniteNumber(pageSize) &&
+      pageSize > 0
+    );
+  },
+  columnVisibility: (value) =>
+    isRecordOf(value, (entry) => typeof entry === "boolean"),
+  columnSizing: (value) => isRecordOf(value, isFiniteNumber),
+  columnOrder: (value) => isArrayOf(value, isString),
+  columnPinning: (value) =>
+    isArrayOf(prop(value, "left"), isString) &&
+    isArrayOf(prop(value, "right"), isString),
+};
+
+function isValidSlice(slice: keyof GridState, value: unknown): boolean {
+  const guard = SLICE_GUARDS[slice as keyof typeof SLICE_GUARDS];
+  return guard === undefined || guard(value);
+}
+
 function readSlices(
   storage: Storage | null,
   resolved: ResolvedKey | null,
@@ -117,7 +193,9 @@ function readSlices(
     // Only copy the selected slices. A payload written before the selection was
     // narrowed cannot reintroduce slices the caller has since opted out of.
     for (const slice of resolved.slices) {
-      if (slice in record) restored[slice] = record[slice];
+      if (!(slice in record)) continue;
+      if (!isValidSlice(slice, record[slice])) continue;
+      restored[slice] = record[slice];
     }
     return restored as Partial<GridState>;
   } catch {

@@ -26,6 +26,7 @@ import {
   type Table,
   tableFeatures,
   type TableOptions,
+  type TableState,
   useTable,
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
@@ -50,6 +51,13 @@ import {
   createSelectColumn,
   SELECT_COLUMN_ID,
 } from "./components/TMDataGridSelectColumn";
+
+/**
+ * How long the grid waits after the last state change before writing to
+ * storage. Long enough to collapse a resize drag into one write, short enough
+ * that a reload right after a change still sees it.
+ */
+const PERSIST_DEBOUNCE_MS = 200;
 
 /** Per-column configuration the TMDataGrid chrome reads. */
 export type TMDataGridColumnMeta = {
@@ -320,13 +328,37 @@ export function useTMDataGrid<TData extends RowData>({
   // Mirror every state change back to storage. Subscribing (rather than writing
   // from an effect on a state snapshot) means nothing is missed, including
   // changes made straight through the table API by the consumer.
+  //
+  // Writes are debounced because `columnResizeMode: "onChange"` publishes a new
+  // state on every pointer move of a resize drag, and `setItem` serialises
+  // synchronously on the main thread. The trailing edge is enough: storage only
+  // has to agree with the table once the user stops.
   useEffect(() => {
     if (!hasPersistenceKeys(persist)) return;
     writePersistedState(table.store.state, persist);
+
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let pending: TableState<TMDataGridFeatures> | null = null;
+
+    const flush = () => {
+      timeout = undefined;
+      if (pending === null) return;
+      writePersistedState(pending, persist);
+      pending = null;
+    };
+
     const subscription = table.store.subscribe((state) => {
-      writePersistedState(state, persist);
+      pending = state;
+      if (timeout !== undefined) clearTimeout(timeout);
+      timeout = setTimeout(flush, PERSIST_DEBOUNCE_MS);
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      if (timeout !== undefined) clearTimeout(timeout);
+      // An unmount mid-debounce would otherwise drop the last change.
+      flush();
+    };
   }, [persist, table]);
 
   const ui = useCreateStore<TMDataGridUiState, TMDataGridUiActions>(
