@@ -8,7 +8,8 @@ import {
 import { useSelector } from "@tanstack/react-store";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useRef } from "react";
-import classes from "./TMDataGrid.module.css";
+import classes from "./TMDataGridTable.module.css";
+import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell";
@@ -46,9 +47,9 @@ function TMDataGridBodyCell({
       data-align={getColumnAlign(cell.column)}
       className={[
         classes.bodyCell,
-        layout.isBoundary && layout.pinnedAt === "left" ? classes.stickyLeft : "",
+        layout.isBoundary && layout.pinnedAt === "left" ? sticky.stickyLeft : "",
         layout.isBoundary && layout.pinnedAt === "right"
-          ? classes.stickyRight
+          ? sticky.stickyRight
           : "",
       ]
         .filter(Boolean)

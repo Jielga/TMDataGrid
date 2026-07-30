@@ -1,6 +1,6 @@
 import { ActionIcon, Button, Select, Stack, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
-import classes from "./TMDataGrid.module.css";
+import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel, getColumnType } from "../core/columnUtils";
 import {

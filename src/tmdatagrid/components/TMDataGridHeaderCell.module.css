@@ -1,0 +1,153 @@
+.headerCell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 var(--dg-padding);
+  min-width: 0;
+  min-height: var(--dg-header-height);
+  font-weight: 600;
+  font-size: var(--dg-font-size);
+  background-color: var(--mantine-color-body);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  user-select: none;
+}
+
+.headerCell[data-align="right"] {
+  justify-content: flex-end;
+}
+
+.headerCell[data-align="center"] {
+  justify-content: center;
+}
+
+/* Sorted or filtered columns read as active, like the MUI data grid. */
+.headerCell[data-active="true"] .headerTitle {
+  color: var(--mantine-primary-color-filled);
+}
+
+.headerTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Right-aligned headers stay text so the ellipsis still works; centered ones
+   hold a control (the select-all checkbox), so they become a flex box. */
+.headerCell[data-align="right"] .headerTitle {
+  text-align: right;
+}
+
+.headerCell[data-align="center"] .headerTitle {
+  display: flex;
+  justify-content: center;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Actions always reserve their width. On right-aligned columns they move to the
+   leading edge so the header text stays flush with the cell values below it. */
+.headerCell[data-align="right"] .headerActions {
+  order: -1;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Idle actions are removed from layout, not just faded — reserving their width
+   would truncate header text that otherwise fits. Indicators that must stay
+   visible (active sort, active filter, open menu) set data-pinned-visible. */
+.headerAction {
+  display: none;
+}
+
+.headerCell:hover .headerAction,
+.headerCell:focus-within .headerAction,
+.headerAction[data-pinned-visible="true"] {
+  display: flex;
+}
+
+.headerCellSortable {
+  cursor: pointer;
+}
+
+/* Column reordering. The dragged header stays in place and dims — the browser
+   already carries a snapshot of it under the pointer — while the header being
+   dragged over draws a bar on the edge the column will land against. */
+.headerCellDragging {
+  opacity: 0.4;
+}
+
+.headerCellDropBefore::before,
+.headerCellDropAfter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--mantine-primary-color-filled);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.headerCellDropBefore::before {
+  left: 0;
+}
+
+.headerCellDropAfter::before {
+  right: 0;
+}
+
+/* Doubles as the column divider seen between every header cell. */
+.columnSeparator {
+  position: absolute;
+  top: 25%;
+  right: 0;
+  height: 50%;
+  width: 10px;
+  transform: translateX(50%);
+  display: flex;
+  justify-content: center;
+  z-index: 1;
+}
+
+.columnSeparatorResizable {
+  cursor: col-resize;
+  touch-action: none;
+}
+
+/* The divider is a hover affordance, not permanent chrome — it only appears on
+   the header cell you are pointing at, or on the column being resized. */
+.columnSeparator::after {
+  content: "";
+  width: 1px;
+  height: 100%;
+  background-color: transparent;
+  transition:
+    background-color 120ms ease,
+    width 120ms ease;
+}
+
+.headerCell:hover .columnSeparator::after,
+.headerCell:focus-within .columnSeparator::after {
+  background-color: var(--mantine-color-default-border);
+}
+
+.columnSeparatorResizable:hover::after,
+.columnSeparatorActive::after {
+  width: 2px;
+  background-color: var(--mantine-primary-color-filled);
+}
+
+/* Marks the pin position a column is currently in. */
+.menuItemActive {
+  background-color: var(--mantine-color-default-hover);
+  font-weight: 600;
+}

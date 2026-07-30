@@ -1,7 +1,7 @@
 import { ActionIcon, Popover, Text, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
-import classes from "./TMDataGrid.module.css";
+import classes from "./TMDataGridToolbar.module.css";
 import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";

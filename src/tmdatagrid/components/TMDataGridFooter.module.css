@@ -1,0 +1,10 @@
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--mantine-spacing-lg);
+  padding: 4px var(--mantine-spacing-sm);
+  min-height: 48px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--mantine-color-default-border);
+}

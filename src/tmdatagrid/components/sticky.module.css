@@ -1,0 +1,45 @@
+/* Boundary of a pinned column group. Shared, because the edge is cast by both
+   the header cell and every body cell in the same column — the two have to
+   draw an identical band or the seam shows at the header.
+
+   A box-shadow is drawn per cell, and its blur fades in at each cell's own top
+   and bottom edge — stacked down a column that reads as banding at every row
+   seam. Instead: a crisp 1px border for the hard edge, plus a gradient pseudo
+   element pinned to `top: 0; bottom: 0` so consecutive cells butt together into
+   one unbroken band. Mantine sets `color-scheme` on the root, so light-dark()
+   resolves without a second selector. */
+.stickyLeft {
+  border-right: 1px solid var(--mantine-color-default-border);
+}
+
+.stickyRight {
+  border-left: 1px solid var(--mantine-color-default-border);
+}
+
+.stickyLeft::after,
+.stickyRight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  pointer-events: none;
+}
+
+.stickyLeft::after {
+  left: 100%;
+  background: linear-gradient(
+    to right,
+    light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.28)),
+    transparent
+  );
+}
+
+.stickyRight::after {
+  right: 100%;
+  background: linear-gradient(
+    to left,
+    light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.28)),
+    transparent
+  );
+}

@@ -3,7 +3,8 @@ import { flexRender, type Header } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
 import { type DragEvent, type ReactNode, useRef, useState } from "react";
-import classes from "./TMDataGrid.module.css";
+import classes from "./TMDataGridHeaderCell.module.css";
+import sticky from "./sticky.module.css";
 import {
   type TMDataGridRowData,
   useTMDataGridContext,
@@ -308,8 +309,8 @@ export function TMDataGridHeaderCell({
     isDragged ? classes.headerCellDragging : "",
     dropSide === "before" ? classes.headerCellDropBefore : "",
     dropSide === "after" ? classes.headerCellDropAfter : "",
-    layout.isBoundary && pinnedAt === "left" ? classes.stickyLeft : "",
-    layout.isBoundary && pinnedAt === "right" ? classes.stickyRight : "",
+    layout.isBoundary && pinnedAt === "left" ? sticky.stickyLeft : "",
+    layout.isBoundary && pinnedAt === "right" ? sticky.stickyRight : "",
   ]
     .filter(Boolean)
     .join(" ");

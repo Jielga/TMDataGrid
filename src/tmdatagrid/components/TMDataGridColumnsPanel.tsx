@@ -1,7 +1,7 @@
 import { Button, Checkbox, ScrollArea, Text, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
-import classes from "./TMDataGrid.module.css";
+import classes from "./TMDataGridColumnsPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
 import { SearchIcon } from "./icons";

@@ -1,0 +1,20 @@
+/* Floats over the first body rows, anchored to `.tableWrapper`. Sits just
+   below the header row, so its offset follows the size scale rather than a
+   fixed pixel count. */
+.filterPanel {
+  position: absolute;
+  top: calc(var(--dg-header-height) + 2px);
+  left: var(--mantine-spacing-md);
+  z-index: 5;
+  padding: var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid var(--mantine-color-default-border);
+  background-color: var(--mantine-color-body);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.filterRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--mantine-spacing-xs);
+}
