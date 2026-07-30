@@ -5,6 +5,7 @@ import {
   Fieldset,
   Flex,
   Group,
+  Menu,
   Pagination,
   SegmentedControl,
   Stack,
@@ -22,6 +23,7 @@ import {
 import {
   createTMDataGridColumnHelper,
   TMDataGrid,
+  type TMDataGridFilterValue,
   type TMDataGridPersistence,
   type TMDataGridSelectionMode,
   type TMDataGridSize,
@@ -78,6 +80,10 @@ const sek = (value: number) =>
     currency: "SEK",
     maximumFractionDigits: 0,
   });
+
+/** Keeps a menu item on one line whatever the cell holds. */
+const truncate = (value: string, max = 20) =>
+  value.length > max ? `${value.slice(0, max - 1)}…` : value;
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
@@ -248,6 +254,7 @@ export function DataGridExample() {
     enablePagination: true,
   });
   const [customPager, setCustomPager] = useState(false);
+  const [rowContextMenu, setRowContextMenu] = useState(true);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   // Undefined follows the mode: off with checkboxes, on when rows select.
@@ -312,6 +319,7 @@ export function DataGridExample() {
           size,
           customPager,
           showSelectedBackground,
+          rowContextMenu,
         }}
       />
 
@@ -382,6 +390,21 @@ export function DataGridExample() {
                 checked={customPager}
                 onChange={(event) => setCustomPager(event.currentTarget.checked)}
               />
+              <Tooltip
+                label="Right-click any row — the grid owns the Menu, you fill the dropdown"
+                withArrow
+                multiline
+                w={240}
+              >
+                <Switch
+                  size="xs"
+                  label="Context menu"
+                  checked={rowContextMenu}
+                  onChange={(event) =>
+                    setRowContextMenu(event.currentTarget.checked)
+                  }
+                />
+              </Tooltip>
             </Group>
           </Stack>
         </Fieldset>
@@ -413,7 +436,69 @@ export function DataGridExample() {
             <TMDataGrid.ColumnsButton />
           </TMDataGrid.Toolbar>
 
-          <TMDataGrid.Table<Employee> />
+          <TMDataGrid.Table<Employee>
+            // The render prop fills a Mantine dropdown the grid opens at the
+            // pointer. `cell` is the one that was right-clicked, which is what
+            // makes a per-cell action like "copy" possible at all.
+            rowContextMenu={
+              rowContextMenu
+                ? ({ row, cell }) => {
+                    // The raw cell value, not the rendered one: Salary shows
+                    // "42 000 kr" but filters and copies as 42000.
+                    const value = cell ? String(cell.getValue() ?? "") : "";
+                    const canFilter =
+                      cell !== null && cell.column.getCanFilter() && value !== "";
+
+                    return (
+                      <>
+                        <Menu.Label>
+                          {row.original.firstName} {row.original.lastName}
+                        </Menu.Label>
+                        <Menu.Item
+                          disabled={!grid.features.highlightRow}
+                          onClick={() =>
+                            grid.ui.actions.setHighlightedRow(row.id)
+                          }
+                        >
+                          Show details
+                        </Menu.Item>
+                        <Menu.Item
+                          disabled={!cell}
+                          onClick={() =>
+                            navigator.clipboard.writeText(value)
+                          }
+                        >
+                          Copy cell value
+                        </Menu.Item>
+                        <Menu.Item
+                          disabled={!canFilter}
+                          onClick={() => {
+                            if (!cell) return;
+                            // The operator travels inside the filter value, so
+                            // adding a filter is one `setFilterValue` call —
+                            // and opening the panel shows what just happened.
+                            cell.column.setFilterValue({
+                              operator: "equals",
+                              value,
+                            } satisfies TMDataGridFilterValue);
+                            grid.ui.actions.openFilterPanel(cell.column.id);
+                          }}
+                        >
+                          Filter by “{truncate(value)}”
+                        </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item
+                          color="red"
+                          disabled={row.original.status === "Terminated"}
+                        >
+                          Terminate
+                        </Menu.Item>
+                      </>
+                    );
+                  }
+                : undefined
+            }
+          />
 
           {customPager ? (
             // The render prop replaces the built-in pager with any UI built on

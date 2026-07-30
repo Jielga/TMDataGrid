@@ -73,7 +73,12 @@ export {
   type TMDataGridSettingsSlice,
   type TMDataGridStorageMode,
 } from "./core/persistence";
-export type { TMDataGridColumnLayout } from "./components/TMDataGridTable";
+export type {
+  TMDataGridColumnLayout,
+  TMDataGridRowContextMenu,
+  TMDataGridRowContextMenuArgs,
+  TMDataGridTableProps,
+} from "./components/TMDataGridTable";
 export {
   getTMDataGridPaginationApi,
   type TMDataGridFooterProps,

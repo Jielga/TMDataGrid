@@ -71,12 +71,93 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 | Prop | Type | Description |
 | --- | --- | --- |
 | `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. Under `rowSelectionMode: "row"` it runs in addition to the selection. |
+| `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
+| `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 
 Pass the row type to keep `onRowClick` typed:
 
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
+
+### rowContextMenu
+
+Right-clicking a row opens a Mantine `Menu` at the pointer. The grid owns the
+`Menu` and its `Menu.Dropdown` — opening it at the cursor, closing it on Escape,
+on an outside click, on a body scroll and after an item is picked. The render
+prop only says what goes inside, so anything valid in a dropdown works:
+`Menu.Item`, `Menu.Label`, `Menu.Divider`, `Menu.Sub`, or your own components.
+
+```tsx
+<TMDataGrid.Table<Employee>
+  rowContextMenu={({ row, cell }) => (
+    <>
+      <Menu.Label>{row.original.firstName}</Menu.Label>
+      <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
+      <Menu.Item
+        onClick={() =>
+          navigator.clipboard.writeText(String(cell?.getValue() ?? ""))
+        }
+      >
+        Copy cell value
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item color="red" onClick={() => remove(row.original.id)}>
+        Delete
+      </Menu.Item>
+    </>
+  )}
+/>
+```
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `table` | `Table<TMDataGridFeatures, TData>` | The table, for actions that read the wider state — `getSelectedRowModel()`, for instance. |
+| `row` | `Row<TMDataGridFeatures, TData>` | The right-clicked row. |
+| `cell` | `Cell<...> \| null` | The cell under the pointer, so a per-cell action such as "copy value" is possible. `null` only if a custom cell renderer stopped the event. |
+| `close` | `() => void` | Closes the menu. `Menu.Item` already closes on click, so this is for content that is not a menu item. |
+
+Called during render, and only for the row whose menu is open — so keep it a
+pure function of its arguments and do the work in the item handlers.
+
+Return `null` to leave a row without a menu. The browser's own context menu
+stays suppressed over the grid either way:
+
+```tsx
+rowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit</Menu.Item>)}
+```
+
+Right-clicking does not change the selection or the highlighted row — it only
+marks the row with `data-context-menu` while its menu is open, which is what gives
+it the hover background. An action that should apply to a multi-selection can
+read it off `table` and fall back to the clicked row:
+
+```tsx
+rowContextMenu={({ table, row }) => {
+  const selected = table.getSelectedRowModel().rows;
+  const targets = selected.some((r) => r.id === row.id) ? selected : [row];
+  return <Menu.Item onClick={() => archive(targets)}>Archive {targets.length}</Menu.Item>;
+}}
+```
+
+Set the dropdown's own options through `rowContextMenuProps`, which reaches the
+`Menu` untouched apart from its open state:
+
+```tsx
+<TMDataGrid.Table<Employee>
+  rowContextMenu={items}
+  rowContextMenuProps={{ width: 260, shadow: "lg", position: "right-start" }}
+/>
+```
+
+On touch devices a long press (500 ms) opens the same menu. Mantine sets
+`user-select: none` on the element it hangs a context menu off, so body cell
+text is no longer selectable with the mouse in a grid that has one — the trade
+for a long press opening the menu rather than selecting text.
+
+One `Menu` serves the whole body, not one per row: a closed Mantine `Popover`
+still runs its hooks on every render, and the virtualized body re-renders on
+every scroll frame.
 
 With pagination off (the default) rows come from `getPrePaginatedRowModel()`:
 every filtered and sorted row, virtualized. With pagination on they come from
