@@ -17,8 +17,12 @@ describe("readFeatureFlags", () => {
       resizing: true,
       ordering: true,
       rowSelection: true,
-      rowSelectionMode: "checkbox",
-      highlightSelectedRows: false,
+      selectionMode: "checkbox",
+      selectColumn: true,
+      rowClickSelects: false,
+      multiRowSelection: true,
+      showSelectedBackground: false,
+      highlightRow: false,
       pagination: false,
     });
   });
@@ -55,21 +59,21 @@ describe("readFeatureFlags", () => {
 
   describe("row selection mode", () => {
     it("highlights by default only in row mode", () => {
-      expect(readFeatureFlags({}).highlightSelectedRows).toBe(false);
+      expect(readFeatureFlags({}).showSelectedBackground).toBe(false);
       expect(
-        readFeatureFlags({ rowSelectionMode: "row" }).highlightSelectedRows,
+        readFeatureFlags({ selectionMode: "row" }).showSelectedBackground,
       ).toBe(true);
     });
 
     it("lets the highlight be set against the mode", () => {
       expect(
-        readFeatureFlags({ highlightSelectedRows: true }).highlightSelectedRows,
+        readFeatureFlags({ showSelectedBackground: true }).showSelectedBackground,
       ).toBe(true);
       expect(
         readFeatureFlags({
-          rowSelectionMode: "row",
-          highlightSelectedRows: false,
-        }).highlightSelectedRows,
+          selectionMode: "row",
+          showSelectedBackground: false,
+        }).showSelectedBackground,
       ).toBe(false);
     });
   });

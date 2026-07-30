@@ -14,6 +14,10 @@ import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridConte
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell";
 import { getColumnAlign } from "../core/columnUtils";
+import {
+  getDisplayedRows,
+  resolveRowSelectionClick,
+} from "../core/rowSelection";
 import { SearchIcon } from "./icons";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 
@@ -72,7 +76,7 @@ function TMDataGridBodyCell({
 export type TMDataGridTableProps<TData extends RowData> = {
   /**
    * Called when a body row is clicked. Runs in addition to row selection under
-   * `rowSelectionMode: "row"`, not instead of it.
+   * `selectionMode: "row"`, not instead of it.
    */
   onRowClick?: (row: Row<TMDataGridFeatures, TData>) => void;
 };
@@ -86,11 +90,14 @@ export type TMDataGridTableProps<TData extends RowData> = {
 export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onRowClick,
 }: TMDataGridTableProps<TData>) {
-  const { table, features, rowHeight, controlSize } = useTMDataGridContext();
+  const { table, ui, features, rowHeight, controlSize } =
+    useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
   // visibility, selection), so it subscribes to the whole table store.
   useSelector(table.store);
+  // The active row lives in the chrome store, so it needs its own subscription.
+  const highlightedRowId = useSelector(ui, (state) => state.highlightedRowId);
 
   const { loading, noResultsLabel = "No rows match your filters" } =
     table.options.meta ?? {};
@@ -99,9 +106,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Pagination off (the default): every filtered+sorted row, virtualized.
   // Pagination on: the current page; under `manualPagination` TanStack returns
   // the rows as delivered, so the same branch serves server paging.
-  const rows = features.pagination
-    ? table.getPaginatedRowModel().rows
-    : table.getPrePaginatedRowModel().rows;
+  const rows = getDisplayedRows(table, features);
 
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
@@ -221,14 +226,32 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   const isEmpty = rows.length === 0;
 
-  // "row" mode: the row itself is the selection control — clicking it toggles
-  // that row and leaves the rest of the selection alone.
-  const selectsOnRowClick =
-    features.rowSelection && features.rowSelectionMode === "row";
-  const rowIsInteractive = selectsOnRowClick || onRowClick !== undefined;
+  // "row" mode: the row itself is the selection control, with the modifier
+  // conventions of any desktop list — see resolveRowSelectionClick.
+  const selectsOnRowClick = features.rowClickSelects;
+  const rowIsInteractive =
+    selectsOnRowClick || features.highlightRow || onRowClick !== undefined;
 
-  const handleRowActivate = (row: Row<TMDataGridFeatures, TMDataGridRowData>) => {
-    if (selectsOnRowClick && row.getCanSelect()) row.toggleSelected();
+  const handleRowActivate = (
+    row: Row<TMDataGridFeatures, TMDataGridRowData>,
+    modifiers: { toggle: boolean; extend: boolean },
+  ) => {
+    if (selectsOnRowClick && row.getCanSelect()) {
+      const resolved = resolveRowSelectionClick({
+        rows,
+        rowId: row.id,
+        anchorRowId: ui.state.selectionAnchorRowId,
+        modifiers,
+        selection: table.store.state.rowSelection,
+        canReplaceSelection: true,
+      });
+      table.setRowSelection(resolved.selection);
+      ui.actions.setSelectionAnchor(resolved.anchorRowId);
+    }
+    // Set, never toggle: a second click on the highlighted row must not close
+    // the detail panel showing it. Clearing is
+    // `ui.actions.setHighlightedRow(null)`.
+    if (features.highlightRow) ui.actions.setHighlightedRow(row.id);
     onRowClick?.(row as unknown as Row<TMDataGridFeatures, TData>);
   };
 
@@ -278,15 +301,39 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   role="row"
                   aria-rowindex={virtualItem.index + headerGroups.length + 1}
                   data-testid={`dg-row-${row.id}`}
-                  data-selected={row.getIsSelected()}
-                  // Selection is state; the highlight is a display choice, so
+                  // Gated on the flag, not just on `getIsSelected()`: under
+                  // `"highlight"` there is no selection, but `rowSelection` may
+                  // still hold ids from before the mode changed — TanStack never
+                  // prunes it — and a row must not report itself selected in a
+                  // mode where selecting is not a thing.
+                  data-selected={features.rowSelection && row.getIsSelected()}
+                  // Being selected is state; painting it is a display choice, so
                   // the two are separate attributes.
+                  data-selected-bg={
+                    features.rowSelection &&
+                    features.showSelectedBackground &&
+                    row.getIsSelected()
+                  }
+                  // The highlighted row is its own concept, so its own attribute
+                  // pair — `data-highlighted` / `aria-current` against
+                  // `data-selected` / `aria-selected` for selection. Under
+                  // `"checkboxAndHighlight"` a row can carry both.
+                  //
+                  // Not `data-active`: header cells already use that for
+                  // sorted-or-filtered, and Mantine puts it on its own controls,
+                  // so a consumer styling or querying rows by it would cast far
+                  // wider than they meant to.
                   data-highlighted={
-                    features.highlightSelectedRows && row.getIsSelected()
+                    features.highlightRow && row.id === highlightedRowId
                   }
                   data-selects-on-click={selectsOnRowClick}
                   aria-selected={
                     features.rowSelection ? row.getIsSelected() : undefined
+                  }
+                  aria-current={
+                    features.highlightRow && row.id === highlightedRowId
+                      ? true
+                      : undefined
                   }
                   className={classes.bodyRow}
                   style={{
@@ -294,17 +341,39 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     cursor: rowIsInteractive ? "pointer" : undefined,
                   }}
                   // Keyboard parity with the checkbox the row replaces.
-                  tabIndex={selectsOnRowClick ? 0 : undefined}
+                  tabIndex={selectsOnRowClick || features.highlightRow ? 0 : undefined}
+                  // Shift-click extends the browser's text selection across
+                  // every row it passes. `user-select: none` would fix it too,
+                  // but at the cost of ever copying a cell value, so the smear
+                  // is stopped at the one gesture that causes it.
+                  onMouseDown={
+                    selectsOnRowClick
+                      ? (event) => {
+                          if (event.shiftKey) event.preventDefault();
+                        }
+                      : undefined
+                  }
                   onClick={
-                    rowIsInteractive ? () => handleRowActivate(row) : undefined
+                    rowIsInteractive
+                      ? (event) =>
+                          handleRowActivate(row, {
+                            toggle: event.ctrlKey || event.metaKey,
+                            extend: event.shiftKey,
+                          })
+                      : undefined
                   }
                   onKeyDown={
-                    selectsOnRowClick
+                    selectsOnRowClick || features.highlightRow
                       ? (event) => {
                           if (event.key !== " " && event.key !== "Enter") return;
                           if (event.target !== event.currentTarget) return;
                           event.preventDefault();
-                          handleRowActivate(row);
+                          // Space/Enter toggle rather than replace, so a
+                          // keyboard-only user can still build a selection.
+                          handleRowActivate(row, {
+                            toggle: true,
+                            extend: event.shiftKey,
+                          });
                         }
                       : undefined
                   }

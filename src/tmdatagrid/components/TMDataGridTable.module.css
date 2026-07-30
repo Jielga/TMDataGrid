@@ -42,11 +42,19 @@
   --row-bg: var(--mantine-color-default-hover);
 }
 
-/* Selection and highlight are separate: a row is always `data-selected`, but it
-   only takes the highlight colour when `highlightSelectedRows` is on — the
-   default in row selection mode, off with checkboxes. */
-.bodyRow[data-highlighted="true"] {
+/* Being selected and being painted for it are separate: a row is always
+   `data-selected`, but only takes the background when `showSelectedBackground`
+   is on — the default under `"row"`, off with checkboxes. */
+.bodyRow[data-selected-bg="true"] {
   --row-bg: var(--dg-row-selected-bg);
+}
+
+/* The highlighted row wins over the selected background: under
+   `"checkboxAndHighlight"` the two coexist, and the highlighted row is the one
+   the detail panel is about, so it must stay distinguishable inside a
+   selection. Declared after, so the later rule takes it at equal specificity. */
+.bodyRow[data-highlighted="true"] {
+  --row-bg: var(--dg-row-highlight-bg);
 }
 
 /* Row selection mode: the row is the control, so it takes focus and must not

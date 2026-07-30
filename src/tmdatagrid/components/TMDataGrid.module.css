@@ -46,9 +46,14 @@
   --dg-header-height: 44px;
   --dg-font-size: var(--mantine-font-size-sm);
   --dg-padding: 10px;
-  /* Background of a highlighted (selected) row. Override it on the grid:
+  /* Background of a selected row, when `showSelectedBackground` is on. Override
+     it on the grid:
      <TMDataGrid style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }} /> */
   --dg-row-selected-bg: var(--mantine-primary-color-light);
+  /* Background of the highlighted row, under a selectionMode that has one.
+     Stronger than the selected background by default, since under
+     "checkboxAndHighlight" the two show up together. */
+  --dg-row-highlight-bg: var(--mantine-primary-color-light-hover);
 
   display: flex;
   flex-direction: column;
