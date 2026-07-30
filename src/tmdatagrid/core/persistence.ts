@@ -28,6 +28,10 @@ export const DATA_STATE_SLICES = [
   "globalFilter",
   "sorting",
   "pagination",
+  // Which groups are open. Keyed by group ids built from the values themselves
+  // (`department:Design`), so a restored entry for a group the data no longer
+  // produces is simply never looked up.
+  "expanded",
 ] as const satisfies ReadonlyArray<keyof GridState>;
 
 /**
@@ -39,6 +43,10 @@ export const SETTINGS_STATE_SLICES = [
   "columnSizing",
   "columnOrder",
   "columnPinning",
+  // Which columns the rows are grouped by. A settings slice rather than a data
+  // one: it names columns, not values, so it survives the data changing under
+  // it the way the column layout does.
+  "grouping",
 ] as const satisfies ReadonlyArray<keyof GridState>;
 
 export type TMDataGridDataSlice = (typeof DATA_STATE_SLICES)[number];
@@ -162,6 +170,9 @@ const SLICE_GUARDS: Record<
       pageSize > 0
     );
   },
+  // `true` is a legal ExpandedState of its own, meaning every row is open.
+  expanded: (value) =>
+    value === true || isRecordOf(value, (entry) => typeof entry === "boolean"),
   columnVisibility: (value) =>
     isRecordOf(value, (entry) => typeof entry === "boolean"),
   columnSizing: (value) => isRecordOf(value, isFiniteNumber),
@@ -169,6 +180,7 @@ const SLICE_GUARDS: Record<
   columnPinning: (value) =>
     isArrayOf(prop(value, "left"), isString) &&
     isArrayOf(prop(value, "right"), isString),
+  grouping: (value) => isArrayOf(value, isString),
 };
 
 function isValidSlice(slice: keyof GridState, value: unknown): boolean {

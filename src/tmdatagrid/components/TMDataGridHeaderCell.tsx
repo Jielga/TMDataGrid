@@ -23,16 +23,21 @@ import { isFilterActive } from "../core/filterOperators";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  CollapseAllIcon,
   ColumnsIcon,
   DotsVerticalIcon,
+  ExpandAllIcon,
   EyeOffIcon,
   FilterIcon,
+  GroupIcon,
   MoveLeftIcon,
   MoveRightIcon,
   PinLeftIcon,
   PinOffIcon,
   PinRightIcon,
+  UngroupIcon,
 } from "./icons";
+import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { type TMDataGridFeatures, openColumnFilter } from "../useTMDataGrid";
 
@@ -63,7 +68,7 @@ export function TMDataGridHeaderCell({
   // surrounding tree is memoized (React Compiler) or the table lives elsewhere.
   // `columnOrder` is in the list because the move menu items are derived from
   // the column's neighbours, which is exactly what an order change invalidates.
-  const { sorting, columnFilters, resizingColumnId, columnPinning } =
+  const { sorting, columnFilters, resizingColumnId, columnPinning, grouping } =
     useSelector(
       table.store,
       (state) => ({
@@ -72,6 +77,7 @@ export function TMDataGridHeaderCell({
         resizingColumnId: state.columnResizing.isResizingColumn,
         columnPinning: state.columnPinning,
         columnOrder: state.columnOrder,
+        grouping: state.grouping,
       }),
       { compare: shallow },
     );
@@ -97,8 +103,17 @@ export function TMDataGridHeaderCell({
   const canPin = isLeaf && capabilities.canPin;
   const canResize = capabilities.canResize;
   const canReorder = isLeaf && capabilities.canReorder;
+  const canGroup = isLeaf && capabilities.canGroup;
   const canManageColumns =
     isLeaf && getGridCapabilities(table, features).canHideAny;
+
+  // Read off the subscribed slice, not from `column.getIsGrouped()`: that is a
+  // call on a `column` whose identity survives a grouping change, so the React
+  // Compiler would cache the answer and the menu would keep offering to group
+  // a column that already is. Same reason the sort and filter flags above are
+  // derived from state rather than from `getIsSorted()`.
+  const isGrouped = grouping.includes(column.id);
+  const isGroupingActive = grouping.length > 0;
 
   // A column only moves inside its own pinned lane, so a header in another one
   // never lights up as a target. See TMDataGridColumnRegion.
@@ -204,6 +219,64 @@ export function TMDataGridHeaderCell({
       </Menu.Item>,
       <Menu.Divider key="filter-divider" />,
     );
+  }
+  if (canGroup) {
+    menuItems.push(
+      <Menu.Item
+        key="group"
+        className={isGrouped ? classes.menuItemActive : undefined}
+        leftSection={
+          isGrouped ? (
+            <UngroupIcon size={16} stroke={1.6} />
+          ) : (
+            <GroupIcon size={16} stroke={1.6} />
+          )
+        }
+        onClick={column.getToggleGroupingHandler()}
+      >
+        {isGrouped ? `Ungroup ${label}` : `Group by ${label}`}
+      </Menu.Item>,
+    );
+  }
+  if (isGroupingActive) {
+    // Under the default `groupedColumnMode: "remove"` a grouped column is taken
+    // out of the grid, so its own header — and the Ungroup item on it — is no
+    // longer reachable. The tree column that replaced it carries them instead,
+    // which is also where someone would look for them.
+    if (column.id === GROUP_COLUMN_ID) {
+      for (const groupedId of grouping) {
+        const groupedColumn = table.getColumn(groupedId);
+        if (!groupedColumn) continue;
+        menuItems.push(
+          <Menu.Item
+            key={`ungroup-${groupedId}`}
+            leftSection={<UngroupIcon size={16} stroke={1.6} />}
+            onClick={() => groupedColumn.toggleGrouping()}
+          >
+            {`Ungroup ${getColumnLabel(groupedColumn)}`}
+          </Menu.Item>,
+        );
+      }
+    }
+    menuItems.push(
+      <Menu.Item
+        key="expand-all"
+        leftSection={<ExpandAllIcon size={16} stroke={1.6} />}
+        onClick={() => table.toggleAllRowsExpanded(true)}
+      >
+        Expand all groups
+      </Menu.Item>,
+      <Menu.Item
+        key="collapse-all"
+        leftSection={<CollapseAllIcon size={16} stroke={1.6} />}
+        onClick={() => table.toggleAllRowsExpanded(false)}
+      >
+        Collapse all groups
+      </Menu.Item>,
+    );
+  }
+  if (canGroup || isGroupingActive) {
+    menuItems.push(<Menu.Divider key="group-divider" />);
   }
   if (canPin) {
     menuItems.push(

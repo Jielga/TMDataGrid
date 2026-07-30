@@ -4,6 +4,7 @@ import { useState } from "react";
 import classes from "./TMDataGridColumnsPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
+import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SearchIcon } from "./icons";
 
 /**
@@ -20,7 +21,12 @@ export function TMDataGridColumnsPanel() {
     (state) => state.columnVisibility,
   );
 
-  const columns = table.getAllLeafColumns();
+  // The tree column is left out rather than listed and disabled: its visibility
+  // is not a setting at all, it follows the grouping state, so an unchecked box
+  // that cannot be ticked would only invite the question.
+  const columns = table
+    .getAllLeafColumns()
+    .filter((column) => column.id !== GROUP_COLUMN_ID);
   const needle = search.trim().toLowerCase();
   const visibleInPanel = needle
     ? columns.filter((column) =>

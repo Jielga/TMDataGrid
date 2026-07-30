@@ -54,6 +54,11 @@
      Stronger than the selected background by default, since under
      "checkboxAndHighlight" the two show up together. */
   --dg-row-highlight-bg: var(--mantine-primary-color-light-hover);
+  /* Background of a group row. Transparent by default — the bold label and the
+     chevron are enough, and with the tree collapsed every row on screen is a
+     group row, so a tint would grey out the whole grid. Set it to give groups a
+     band of their own. */
+  --dg-row-group-bg: var(--mantine-color-body);
 
   display: flex;
   flex-direction: column;

@@ -119,6 +119,10 @@ const columns = columnHelper.columns([
     meta: { type: "number", align: "right" },
     minSize: 130,
     cell: (info) => sek(info.getValue()),
+    // The one column told how to summarise itself. Group by Department and this
+    // fills in per group while the others stay blank — aggregation is opt-in.
+    aggregationFn: "sum",
+    aggregatedCell: (info) => sek(Number(info.getValue() ?? 0)),
   }),
   columnHelper.accessor("status", {
     header: "Status",
@@ -158,7 +162,14 @@ const COLUMN_TOGGLES = [
   { key: "enableColumnOrdering", label: "Reordering" },
 ] as const;
 
-const ROW_TOGGLES = [{ key: "enablePagination", label: "Pagination" }] as const;
+const ROW_TOGGLES = [
+  { key: "enablePagination", label: "Pagination" },
+  {
+    key: "enableGrouping",
+    label: "Grouping",
+    hint: "Group by … in any column menu. Salary sums per group; the rest stay blank",
+  },
+] as const;
 
 const SELECTION_TOGGLES = [
   {
@@ -246,6 +257,7 @@ export function DataGridExample() {
     enableColumnResizing: true,
     enableColumnOrdering: true,
     enablePagination: true,
+    enableGrouping: true,
   });
   const [customPager, setCustomPager] = useState(false);
   const [selectionMode, setSelectionMode] =

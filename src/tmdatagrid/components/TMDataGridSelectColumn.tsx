@@ -4,6 +4,7 @@ import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import {
   getDisplayedRows,
+  getSelectableRowIds,
   resolveRowSelectionClick,
 } from "../core/rowSelection";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
@@ -75,17 +76,34 @@ function SelectRowCheckbox<TData extends RowData>({
   // chrome store — it needs the shift-click pivot, and the feature flags to know
   // which row model a range is measured over.
   const { ui, features } = useTMDataGridContext();
-  const selected = useSelector(row.table.store, () => row.getIsSelected());
+  const isGroupRow = row.subRows.length > 0;
+
+  // A group row is never selected by id: `rowSelection` only ever holds the
+  // leaves, and TanStack's `getIsSelected()` is a plain lookup in that map. So
+  // a group asks about its descendants instead, which is also the honest
+  // reading — the box means "all of these", and it goes indeterminate as soon
+  // as that stops being true.
+  const selected = useSelector(row.table.store, () =>
+    isGroupRow ? row.getIsAllSubRowsSelected() : row.getIsSelected(),
+  );
   const someSelected = useSelector(row.table.store, () =>
     row.getIsSomeSelected(),
   );
 
+  // The resolver expands a tick back out to the descendant ids; all the group
+  // case needs here is to know whether any of them may be selected at all.
+  const selectableIds = getSelectableRowIds(row);
+
+  // Single-select has no way to express "this group": one box for several rows
+  // would either overrun the limit or lie about what it did.
+  if (isGroupRow && !row.getCanMultiSelect()) return null;
+
   return (
     <Checkbox
       size="xs"
-      aria-label="Select row"
+      aria-label={isGroupRow ? "Select group" : "Select row"}
       checked={selected}
-      disabled={!row.getCanSelect()}
+      disabled={selectableIds.length === 0}
       indeterminate={someSelected && !selected}
       // Every tick goes through the resolver, shift held or not — plain becomes
       // a toggle that moves the pivot, so a later shift-click extends from the
@@ -150,5 +168,10 @@ export function createSelectColumn<TData extends RowData>(): ColumnDef<
     enablePinning: false,
     header: ({ table }) => <SelectAllHeader table={table} />,
     cell: ({ row }) => <SelectRowCheckbox row={row} />,
+    // Every cell on a group row that is not the grouped column counts as
+    // aggregated, this lane included, and an aggregated cell with nothing
+    // declared renders blank. Without this the checkbox would disappear from
+    // exactly the rows that select a whole group. See renderCellContent.
+    aggregatedCell: ({ row }) => <SelectRowCheckbox row={row} />,
   };
 }

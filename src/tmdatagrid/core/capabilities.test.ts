@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { erased, renderGrid } from "../../test/gridHarness";
+import { GROUP_COLUMN_ID } from "../components/TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import {
   getColumnCapabilities,
@@ -24,6 +25,7 @@ describe("readFeatureFlags", () => {
       showSelectedBackground: false,
       highlightRow: false,
       pagination: false,
+      grouping: true,
     });
   });
 
@@ -54,6 +56,24 @@ describe("readFeatureFlags", () => {
 
     it("is implied by manual pagination", () => {
       expect(readFeatureFlags({ manualPagination: true }).pagination).toBe(true);
+    });
+  });
+
+  describe("grouping", () => {
+    it("is on unless turned off", () => {
+      expect(readFeatureFlags({}).grouping).toBe(true);
+      expect(readFeatureFlags({ enableGrouping: false }).grouping).toBe(false);
+    });
+
+    it("stands down for a server-paged grid, which holds only one page", () => {
+      expect(readFeatureFlags({ manualPagination: true }).grouping).toBe(false);
+    });
+
+    it("can still be asked for alongside manual pagination", () => {
+      expect(
+        readFeatureFlags({ manualPagination: true, enableGrouping: true })
+          .grouping,
+      ).toBe(true);
     });
   });
 
@@ -93,6 +113,7 @@ describe("getColumnCapabilities", () => {
       canPin: true,
       canResize: true,
       canReorder: true,
+      canGroup: true,
     });
   });
 
@@ -107,6 +128,23 @@ describe("getColumnCapabilities", () => {
     expect(capabilities?.canPin).toBe(false);
     expect(capabilities?.canResize).toBe(false);
     expect(capabilities?.canReorder).toBe(false);
+    // Not written anywhere: `getCanGroup()` insists on an accessor, and a
+    // display column has none.
+    expect(capabilities?.canGroup).toBe(false);
+  });
+
+  it("locks down the generated tree column", () => {
+    const { result } = renderGrid();
+    const column = erased(result.current).table.getColumn(GROUP_COLUMN_ID);
+    const capabilities =
+      column && getColumnCapabilities(column, result.current.features);
+
+    expect(capabilities?.canSort).toBe(false);
+    expect(capabilities?.canFilter).toBe(false);
+    expect(capabilities?.canHide).toBe(false);
+    expect(capabilities?.canPin).toBe(false);
+    expect(capabilities?.canReorder).toBe(false);
+    expect(capabilities?.canGroup).toBe(false);
   });
 
   it("a table-level switch overrides a column that allows the feature", () => {

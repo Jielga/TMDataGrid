@@ -379,3 +379,220 @@ describe("pagination", () => {
     expect(screen.getAllByDisplayValue("7").length).toBeGreaterThan(0);
   });
 });
+
+describe("grouping", () => {
+  /** Opens a header's column menu and returns its items. */
+  const openColumnMenu = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+  ) => {
+    await user.click(
+      screen.getByRole("button", { name: `${label} column menu` }),
+    );
+    return screen.getAllByRole("menuitem");
+  };
+
+  const clickMenuItem = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+    item: string | RegExp,
+  ) => {
+    await openColumnMenu(user, label);
+    await user.click(screen.getByRole("menuitem", { name: item }));
+  };
+
+  it("offers to group on a column that has an accessor", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    const items = (await openColumnMenu(user, "City")).map(
+      (item) => item.textContent,
+    );
+
+    expect(items).toContain("Group by City");
+  });
+
+  it("replaces the rows with a collapsed tree and takes the column out", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    // Three cities over twelve rows, none of them open yet.
+    const groups = bodyRows();
+    expect(groups).toHaveLength(3);
+    expect(groups.every((row) => row.dataset.grouped === "true")).toBe(true);
+    // The tree lane replaced the column it groups on.
+    expect(screen.getByTestId("dg-header-__group__")).toBeInTheDocument();
+    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+  });
+
+  it("writes the group value and how many rows are under it", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    expect(
+      screen.getByRole("button", { name: "Expand Stockholm" }),
+    ).toHaveTextContent("Stockholm(4)");
+  });
+
+  it("brings the rows into view when the group is expanded", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+
+    expect(bodyRows()).toHaveLength(3 + 4);
+    expect(
+      screen.getByRole("button", { name: "Collapse Stockholm" }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("ungroups from the tree column, the grouped one having gone", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    // The City header no longer exists to be ungrouped from, which is why the
+    // tree column carries the item.
+    await clickMenuItem(user, "Group", "Ungroup City");
+
+    expect(screen.getByTestId("dg-header-city")).toBeInTheDocument();
+    expect(screen.queryByTestId("dg-header-__group__")).not.toBeInTheDocument();
+    expect(bodyRows()).toHaveLength(12);
+  });
+
+  it("selects every row under a group from its checkbox", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    const groupBoxes = screen.getAllByRole("checkbox", { name: "Select group" });
+    expect(groupBoxes).toHaveLength(3);
+
+    await user.click(groupBoxes[0]!);
+
+    // Four leaves ticked, and the group's own box follows them. The rows cycle
+    // through the cities, so the first group is Stockholm's.
+    expect(groupBoxes[0]).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+    expect(
+      screen
+        .getAllByRole("checkbox", { name: "Select row" })
+        .filter((box) => (box as HTMLInputElement).checked),
+    ).toHaveLength(4);
+  });
+
+  it("leaves a column with no aggregation blank on a group row", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    // Cell 0 is the checkbox lane, 1 the tree, then ID / Name / Age. A plain
+    // "group by" is a tree, not a summary — nothing was told how to aggregate.
+    expect(renderedColumn(2)).toEqual(["", "", ""]);
+    expect(renderedColumn(4)).toEqual(["", "", ""]);
+  });
+});
+
+describe("grouping — rendering stays in step", () => {
+  const openMenu = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+  ) => {
+    await user.click(
+      screen.getByRole("button", { name: `${label} column menu` }),
+    );
+  };
+
+  /** Header ids in render order. */
+  const headerIds = () =>
+    screen
+      .getAllByRole("columnheader")
+      .map((header) => (header.getAttribute("data-testid") ?? "").replace("dg-header-", ""));
+
+  it("drops the second grouped column's header, not only the first", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await openMenu(user, "City");
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    expect(headerIds()).not.toContain("city");
+
+    await openMenu(user, "Name");
+    await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
+    expect(headerIds()).not.toContain("name");
+  });
+
+  it("gives every row as many cells as there are headers", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await openMenu(user, "City");
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await openMenu(user, "Name");
+    await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
+
+    // A stale header list would leave a track and a header with no cell under
+    // it, shifting every column after it out of alignment.
+    const columnCount = headerIds().length;
+    for (const row of bodyRows()) {
+      expect(within(row).getAllByRole("cell")).toHaveLength(columnCount);
+    }
+  });
+});
+
+describe("grouping and the pager", () => {
+  const groupIt = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+  };
+
+  it("greys the pager out rather than hiding it", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enablePagination: true });
+
+    expect(screen.getByText("1–12 of 12")).toBeInTheDocument();
+
+    await groupIt(user);
+
+    // Still there — a footer that vanished would read as a bug rather than as a
+    // mode the grid is in.
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    expect(screen.getByText("Grouped · all 12 rows")).toBeInTheDocument();
+  });
+
+  it("renders every group rather than a page of them", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      enablePagination: true,
+      initialState: { pagination: { pageIndex: 0, pageSize: 2 } },
+    });
+    expect(bodyRows()).toHaveLength(2);
+
+    await groupIt(user);
+
+    // Three cities, none sliced off by a page size of two.
+    expect(bodyRows()).toHaveLength(3);
+  });
+
+  it("pages again once the grouping is dropped", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      enablePagination: true,
+      initialState: { pagination: { pageIndex: 0, pageSize: 2 } },
+    });
+
+    await groupIt(user);
+    await user.click(screen.getByRole("button", { name: "Group column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Ungroup City" }));
+
+    expect(bodyRows()).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
+  });
+});

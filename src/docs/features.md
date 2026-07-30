@@ -28,6 +28,7 @@ see [Pagination](#pagination).
 | `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See [Row selection](#row-selection) |
 | `highlightSelectedRows: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
+| `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 
 A column whose menu has no remaining items renders no menu button. Dividers are
 never left at the end of a menu.
@@ -134,6 +135,9 @@ The built-in pager can be replaced through the Footer's `pagination` render
 prop, or bypassed entirely by building on the table API — see
 [components](#components).
 
+> Client pagination is suspended while the rows are grouped, and the pager greys
+> itself out to say so. See [Grouping suspends pagination](#grouping-suspends-pagination).
+
 ## Capability helpers
 
 Use these to apply the same checks in your own toolbar components.
@@ -159,12 +163,13 @@ function ExportButton() {
 | `canHideAny` | At least one leaf column can be hidden. |
 | `canPinAny` | At least one leaf column can be pinned. |
 | `canReorderAny` | At least one leaf column can be moved. |
+| `canGroupAny` | At least one leaf column can be grouped on. |
 | `canSelectRows` | `enableRowSelection` is not `false`. The mode is in `features.rowSelectionMode`. |
-| `canPaginate` | `enablePagination` or `manualPagination` is `true`. |
+| `canPaginate` | `enablePagination` or `manualPagination` is `true`. Configuration, not live state — use `isPagingActive(table, features)` for whether the pager is currently slicing anything, which grouping suspends. |
 
 `getColumnCapabilities(column, features)` returns the same information for a
-single column as `canSort`, `canFilter`, `canHide`, `canPin`, `canResize` and
-`canReorder`.
+single column as `canSort`, `canFilter`, `canHide`, `canPin`, `canResize`,
+`canReorder` and `canGroup`.
 
 ### The features argument
 
@@ -248,6 +253,122 @@ Both are no-ops for a move that is not allowed, including one across regions.
 `getStepTargetColumn({ table, columnId, direction })` returns the column a step
 would swap with, or `null` at the edge of a region — that is what the menu items
 use to disable themselves.
+
+## Row grouping
+
+**Group by X** in any column menu collapses the rows into a tree. On by default;
+nothing changes until a column is picked. Grouping suspends the built-in pager —
+see [below](#grouping-suspends-pagination).
+
+Grouping a column removes it from the grid — its values have moved into the tree
+lane — and a generated **Group** column appears at the front, pinned beside the
+checkbox lane. Each group row shows its value, how many records are under it,
+and a chevron. Group again from a second column's menu to nest.
+
+Because a grouped column is no longer in the grid, **Ungroup** lives on the tree
+column's menu, one item per grouped column. **Expand all groups** and **Collapse
+all groups** are in every column menu while a grouping is active.
+
+```tsx
+// Grouped on mount. `grouping` is a settings slice, so a persisted grid comes
+// back to the same tree; `expanded` is a data slice.
+const grid = useTMDataGrid({
+  data,
+  columns,
+  initialState: { grouping: ["department"] },
+});
+```
+
+### Aggregation
+
+Off unless asked for. A grouped grid is a tree, not a summary: a group row
+leaves every cell blank except the tree lane. Give a column an `aggregationFn`
+and it fills in.
+
+```tsx
+columnHelper.accessor("salary", {
+  header: "Salary",
+  aggregationFn: "sum",
+  meta: { type: "number", align: "right" },
+});
+```
+
+`"sum"`, `"min"`, `"max"`, `"extent"`, `"mean"`, `"median"`, `"unique"`,
+`"uniqueCount"` and `"count"` are registered, as is `"auto"` — which picks `sum`
+for numbers and `extent` for dates. A function is accepted too. Pass
+`aggregatedCell` to render the group row's value differently from the data rows.
+
+> TanStack's grouping feature defaults every column to `aggregationFn: "auto"`.
+> The grid clears that default so grouping does not silently start summing
+> numeric columns. Setting `aggregationFn: "auto"` yourself restores it.
+
+Grouping runs before sorting, so sorting a grouped grid sorts the rows inside
+each group and orders the groups by their aggregated value. A column with no
+aggregation has no value on a group row, so sorting on it reorders the rows
+within each group but leaves the groups where they are.
+
+### Selection
+
+A group row's checkbox selects every record under it, at any depth, including
+records inside collapsed sub-groups. It shows a tick once all of them are
+selected and a dash while only some are. Only the records are written to
+`rowSelection` — a group row is never in it, so `getSelectedRowModel()` and the
+toolbar count are unaffected by how the tree is arranged.
+
+Under `enableMultiRowSelection: false` group rows carry no checkbox: one box
+cannot stand for several rows.
+
+### Group rows and row clicks
+
+A group row does not fire `onRowClick` and cannot be highlighted. TanStack builds
+it on top of its first child's record, so a click would hand you a real-looking
+row that is the wrong one. Rows carry `data-grouped` and `data-depth` for
+styling, and `--dg-row-group-bg` sets their background.
+
+### Grouping suspends pagination
+
+**Grouping and the built-in pager do not work together, and grouping wins.** As
+soon as a column is grouped the grid renders the whole tree and relies on
+virtualization; `TMDataGrid.Footer` greys its pager out, replaces the range with
+`Grouped · all N rows`, and explains itself on hover. Ungroup and paging resumes
+where it left off.
+
+This is deliberate rather than a limitation worked around. A page can only count
+one kind of thing, and once the rows are a tree neither answer is usable:
+
+- Counting **every row** splits a group across a page boundary, so opening one
+  group fills the page with its children and strands every group after it on
+  pages the user has to go looking for.
+- Counting **top-level rows** quietly redefines "rows per page" as groups per
+  page, so a page of 25 can hold thousands of rows and the number in the footer
+  stops meaning anything.
+
+Rendering the whole tree is also the grid's default mode — pagination is the
+opt-in — so nothing is lost but the pager.
+
+If you need both, page on the server: group the rows there and feed the grid one
+page of a tree at a time with `manualPagination` and `manualGrouping`.
+
+`isPagingActive(table, features)` is exported, so a custom pager can grey itself
+out the same way:
+
+```tsx
+import { getTMDataGridPaginationApi, isPagingActive } from "./tmdatagrid";
+
+<TMDataGrid.Footer
+  pagination={(api) => <MyPager {...api} disabled={!isPagingActive(table, features)} />}
+/>
+```
+
+### Server-side grids
+
+`manualPagination: true` turns grouping off, because the client holds one page
+and would build groups out of an arbitrary slice. A grid that groups server-side
+can set `enableGrouping: true` alongside `manualGrouping: true`.
+
+To keep a grouped column in the grid instead of removing it, pass
+`groupedColumnMode: "reorder"` — TanStack's own default, which moves grouped
+columns to the front rather than taking them out.
 
 ## Virtualization
 

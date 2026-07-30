@@ -19,10 +19,12 @@ function gridState(overrides: Partial<GridState> = {}): GridState {
     globalFilter: "search",
     sorting: [{ id: "name", desc: true }],
     pagination: { pageIndex: 2, pageSize: 50 },
+    expanded: { "city:Malmö": true },
     columnVisibility: { name: false },
     columnSizing: { name: 120 },
     columnOrder: ["name", "age"],
     columnPinning: { left: ["name"], right: [] },
+    grouping: ["city"],
     ...overrides,
   } as GridState;
 }

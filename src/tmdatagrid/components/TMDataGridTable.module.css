@@ -42,6 +42,16 @@
   --row-bg: var(--mantine-color-default-hover);
 }
 
+/* A group row takes no background of its own. Collapsed, every row on screen is
+   a group row, so a tint would grey out the whole grid and read as if
+   everything were selected. The bold label and the chevron carry the
+   distinction instead — and `--dg-row-group-bg` is there for a consumer who
+   wants the tint back. Declared before the selection rules, so a selected or
+   highlighted group still reads as one. */
+.bodyRow[data-grouped="true"] {
+  --row-bg: var(--dg-row-group-bg);
+}
+
 /* Being selected and being painted for it are separate: a row is always
    `data-selected`, but only takes the background when `showSelectedBackground`
    is on — the default under `"row"`, off with checkboxes. */

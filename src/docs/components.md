@@ -102,6 +102,13 @@ Totals are read from `table.getRowCount()`, which prefers `options.rowCount`.
 Server-paginated tables therefore display the server total without further
 configuration.
 
+While the rows are grouped the built-in pager greys itself out and shows
+`Grouped · all N rows` instead of a range, because grouping suspends client-side
+paging — see [Grouping suspends pagination](/docs/features#grouping-suspends-pagination).
+The `pagination` render prop is left alone; a custom pager decides for itself,
+and `isPagingActive(table, features)` is exported so it can grey out the same
+way.
+
 The `pagination` render prop receives the distilled pagination API — state
 values plus plain-number setters — and renders inside the footer bar:
 

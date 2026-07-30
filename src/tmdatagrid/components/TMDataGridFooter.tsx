@@ -1,12 +1,17 @@
-import { ActionIcon, Group, Select, Text } from "@mantine/core";
+import { ActionIcon, Group, Select, Text, Tooltip } from "@mantine/core";
 import type { RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGridFooter.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";
+import { isPagingActive } from "../core/rowSelection";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import type { TMDataGridTable } from "../useTMDataGrid";
+
+/** Shown on the greyed-out pager, and the reason it is greyed out. */
+const PAGING_SUSPENDED_HINT =
+  "Paging is off while the rows are grouped: the whole tree is rendered and virtualized. Ungroup to page again.";
 
 /** Distilled pagination state and actions for building a custom pager. */
 export type TMDataGridPaginationApi = {
@@ -83,6 +88,10 @@ export function TMDataGridFooter({
     );
   }
 
+  // Grouping suspends paging — see isPagingActive. The pager is greyed out
+  // rather than dropped, so that a footer going quiet reads as a state the grid
+  // is in rather than as something that broke.
+  const paging = isPagingActive(table, features);
   const { pageIndex, pageSize } = table.store.state.pagination;
   const total = table.getRowCount();
   const from = total === 0 ? 0 : pageIndex * pageSize + 1;
@@ -95,49 +104,68 @@ export function TMDataGridFooter({
     : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
 
   return (
-    <div className={classes.footer}>
-      <Group gap="xs" wrap="nowrap">
+    <Tooltip
+      label={PAGING_SUSPENDED_HINT}
+      disabled={paging}
+      withArrow
+      multiline
+      w={260}
+      position="top"
+    >
+      <div className={classes.footer} data-paging-suspended={!paging}>
+        <Group gap="xs" wrap="nowrap">
+          <Text size={controlSize} c="dimmed">
+            Rows per page:
+          </Text>
+          <Select
+            size={controlSize}
+            w={78}
+            allowDeselect={false}
+            variant="unstyled"
+            disabled={!paging}
+            data={sizeOptions.map(String)}
+            value={String(pageSize)}
+            onChange={(value) => {
+              table.setPageSize(Number(value) || pageSizeOptions[0]);
+              table.setPageIndex(0);
+            }}
+          />
+        </Group>
+
         <Text size={controlSize} c="dimmed">
-          Rows per page:
+          {paging ? (
+            <>
+              {from}–{to} of {total}
+            </>
+          ) : (
+            // Not a range: nothing is being sliced, so a range would be a lie.
+            // Counted before grouping too — `getRowCount()` would be counting
+            // the tree, so a collapsed grid would claim to hold eight rows.
+            <>Grouped · all {table.getFilteredRowModel().rows.length} rows</>
+          )}
         </Text>
-        <Select
-          size={controlSize}
-          w={78}
-          allowDeselect={false}
-          variant="unstyled"
-          data={sizeOptions.map(String)}
-          value={String(pageSize)}
-          onChange={(value) => {
-            table.setPageSize(Number(value) || pageSizeOptions[0]);
-            table.setPageIndex(0);
-          }}
-        />
-      </Group>
 
-      <Text size={controlSize} c="dimmed">
-        {from}–{to} of {total}
-      </Text>
-
-      <Group gap={4} wrap="nowrap">
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          aria-label="Previous page"
-          disabled={!table.getCanPreviousPage()}
-          onClick={() => table.previousPage()}
-        >
-          <ChevronLeftIcon size={18} stroke={1.6} />
-        </ActionIcon>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          aria-label="Next page"
-          disabled={!table.getCanNextPage()}
-          onClick={() => table.nextPage()}
-        >
-          <ChevronRightIcon size={18} stroke={1.6} />
-        </ActionIcon>
-      </Group>
-    </div>
+        <Group gap={4} wrap="nowrap">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label="Previous page"
+            disabled={!paging || !table.getCanPreviousPage()}
+            onClick={() => table.previousPage()}
+          >
+            <ChevronLeftIcon size={18} stroke={1.6} />
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label="Next page"
+            disabled={!paging || !table.getCanNextPage()}
+            onClick={() => table.nextPage()}
+          >
+            <ChevronRightIcon size={18} stroke={1.6} />
+          </ActionIcon>
+        </Group>
+      </div>
+    </Tooltip>
   );
 }
