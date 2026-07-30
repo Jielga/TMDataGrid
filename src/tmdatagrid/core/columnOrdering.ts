@@ -1,7 +1,7 @@
 import type { Column, ColumnPinningState } from "@tanstack/react-table";
-import type { TMDataGridRowData } from "./TMDataGridContext";
+import type { TMDataGridRowData } from "../TMDataGridContext";
 import { isColumnReorderable } from "./columnUtils";
-import type { TMDataGridFeatures, TMDataGridTable } from "./useTMDataGrid";
+import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 type GridColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 type GridTable = TMDataGridTable<TMDataGridRowData>;

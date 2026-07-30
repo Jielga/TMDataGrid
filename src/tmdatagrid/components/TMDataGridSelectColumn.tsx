@@ -1,7 +1,7 @@
 import { Checkbox } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
-import type { TMDataGridFeatures, TMDataGridTable } from "./useTMDataGrid";
+import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 export const SELECT_COLUMN_ID = "__select__";
 

@@ -14,8 +14,8 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:src/docs/getting-started.md'
   - 'Jielga/TMDataGrid:src/docs/components.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/TMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/sizes.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/sizes.ts'
 ---
 
 # TMDataGrid — Getting started

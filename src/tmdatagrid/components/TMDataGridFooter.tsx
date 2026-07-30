@@ -3,10 +3,10 @@ import type { RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGrid.module.css";
-import { useTMDataGridContext } from "./TMDataGridContext";
-import { getGridCapabilities } from "./capabilities";
+import { useTMDataGridContext } from "../TMDataGridContext";
+import { getGridCapabilities } from "../core/capabilities";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
-import type { TMDataGridTable } from "./useTMDataGrid";
+import type { TMDataGridTable } from "../useTMDataGrid";
 
 /** Distilled pagination state and actions for building a custom pager. */
 export type TMDataGridPaginationApi = {

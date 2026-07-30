@@ -20,8 +20,8 @@ metadata:
   library_version: '0.1.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/features.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/capabilities.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/columnOrdering.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/capabilities.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnOrdering.ts'
 ---
 
 # TMDataGrid — Features and capabilities

@@ -97,6 +97,13 @@ demo site:
 The grid lives in [`src/tmdatagrid/`](src/tmdatagrid); everything else in `src`
 is the demo site that documents it.
 
+| Path                | Contents                                                     |
+| ------------------- | ------------------------------------------------------------ |
+| `index.ts`          | The public API — the only entry point the package exposes     |
+| `useTMDataGrid.tsx` | The hook that builds the table, and the types it is built on  |
+| `core/`             | Headless logic: filtering, ordering, persistence, capabilities |
+| `components/`       | The React chrome and its co-located CSS modules               |
+
 ```sh
 npm install
 npm run dev    # demo site with the grid example and docs

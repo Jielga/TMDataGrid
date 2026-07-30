@@ -14,8 +14,8 @@ metadata:
   library_version: '0.1.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/columns.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/filterOperators.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/columnUtils.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/filterOperators.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnUtils.ts'
 ---
 
 # TMDataGrid — Columns

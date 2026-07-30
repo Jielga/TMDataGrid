@@ -1,10 +1,10 @@
-export { TMDataGrid, type TMDataGridProps } from "./TMDataGrid";
+export { TMDataGrid, type TMDataGridProps } from "./components/TMDataGrid";
 export {
   useTMDataGridContext,
   type TMDataGridContextValue,
   type TMDataGridRowData,
 } from "./TMDataGridContext";
-export { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
+export { SELECT_COLUMN_ID } from "./components/TMDataGridSelectColumn";
 export {
   createTMDataGridColumnHelper,
   openColumnFilter,
@@ -26,12 +26,12 @@ export {
   type TMDataGridFilterValue,
   FILTER_OPERATOR_LABELS,
   isFilterActive,
-} from "./filterOperators";
+} from "./core/filterOperators";
 export {
   getColumnLabel,
   getColumnType,
   isColumnReorderable,
-} from "./columnUtils";
+} from "./core/columnUtils";
 export {
   getColumnRegion,
   getStepTargetColumn,
@@ -41,7 +41,7 @@ export {
   type MoveColumnArgs,
   type TMDataGridColumnRegion,
   type TMDataGridDropSide,
-} from "./columnOrdering";
+} from "./core/columnOrdering";
 export {
   getColumnCapabilities,
   getGridCapabilities,
@@ -50,13 +50,13 @@ export {
   type TMDataGridColumnCapabilities,
   type TMDataGridFeatureFlags,
   type TMDataGridRowSelectionMode,
-} from "./capabilities";
+} from "./core/capabilities";
 export {
   DEFAULT_TMDATAGRID_SIZE,
   SIZE_CONTROL_SIZE,
   SIZE_ROW_HEIGHT,
   type TMDataGridSize,
-} from "./sizes";
+} from "./core/sizes";
 export {
   DATA_STATE_SLICES,
   SETTINGS_STATE_SLICES,
@@ -65,10 +65,10 @@ export {
   type TMDataGridPersistKey,
   type TMDataGridSettingsSlice,
   type TMDataGridStorageMode,
-} from "./persistence";
-export type { TMDataGridColumnLayout } from "./TMDataGridTable";
+} from "./core/persistence";
+export type { TMDataGridColumnLayout } from "./components/TMDataGridTable";
 export {
   getTMDataGridPaginationApi,
   type TMDataGridFooterProps,
   type TMDataGridPaginationApi,
-} from "./TMDataGridFooter";
+} from "./components/TMDataGridFooter";

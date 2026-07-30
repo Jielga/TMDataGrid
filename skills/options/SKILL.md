@@ -17,7 +17,7 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:src/docs/use-tm-data-grid.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/persistence.ts'
+  - 'Jielga/TMDataGrid:src/tmdatagrid/core/persistence.ts'
 ---
 
 # TMDataGrid — useTMDataGrid

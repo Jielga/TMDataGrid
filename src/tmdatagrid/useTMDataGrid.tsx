@@ -34,22 +34,22 @@ import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
   getDefaultOperator,
-} from "./filterOperators";
+} from "./core/filterOperators";
 import {
   hasPersistenceKeys,
   readPersistedState,
   type TMDataGridPersistence,
   writePersistedState,
-} from "./persistence";
+} from "./core/persistence";
 import {
   readFeatureFlags,
   type TMDataGridFeatureFlags,
   type TMDataGridRowSelectionMode,
-} from "./capabilities";
+} from "./core/capabilities";
 import {
   createSelectColumn,
   SELECT_COLUMN_ID,
-} from "./TMDataGridSelectColumn";
+} from "./components/TMDataGridSelectColumn";
 
 /** Per-column configuration the TMDataGrid chrome reads. */
 export type TMDataGridColumnMeta = {

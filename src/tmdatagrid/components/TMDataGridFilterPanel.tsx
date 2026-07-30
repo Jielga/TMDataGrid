@@ -1,8 +1,8 @@
 import { ActionIcon, Button, Select, Stack, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGrid.module.css";
-import { useTMDataGridContext } from "./TMDataGridContext";
-import { getColumnLabel, getColumnType } from "./columnUtils";
+import { useTMDataGridContext } from "../TMDataGridContext";
+import { getColumnLabel, getColumnType } from "../core/columnUtils";
 import {
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
@@ -11,7 +11,7 @@ import {
   getOperatorsForType,
   isTMDataGridFilterValue,
   operatorNeedsValue,
-} from "./filterOperators";
+} from "../core/filterOperators";
 import { CloseIcon } from "./icons";
 
 const FALLBACK_FILTER: TMDataGridFilterValue = { operator: "contains", value: "" };

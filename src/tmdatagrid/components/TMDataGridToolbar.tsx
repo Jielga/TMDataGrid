@@ -3,11 +3,11 @@ import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGrid.module.css";
 import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
-import { useTMDataGridContext } from "./TMDataGridContext";
-import { getGridCapabilities } from "./capabilities";
-import { isFilterActive } from "./filterOperators";
+import { useTMDataGridContext } from "../TMDataGridContext";
+import { getGridCapabilities } from "../core/capabilities";
+import { isFilterActive } from "../core/filterOperators";
 import { BurgerIcon, FilterIcon } from "./icons";
-import { openColumnFilter } from "./useTMDataGrid";
+import { openColumnFilter } from "../useTMDataGrid";
 
 /** Row above the grid. Compose it from the pieces below, or anything else. */
 export function TMDataGridToolbar({ children }: { children?: ReactNode }) {

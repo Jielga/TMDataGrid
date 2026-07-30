@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { TMDataGridSize } from "./sizes";
+import type { TMDataGridSize } from "./core/sizes";
 import type { TMDataGridApi } from "./useTMDataGrid";
 
 /**

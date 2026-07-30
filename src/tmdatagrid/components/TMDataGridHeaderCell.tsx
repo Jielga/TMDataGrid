@@ -7,18 +7,18 @@ import classes from "./TMDataGrid.module.css";
 import {
   type TMDataGridRowData,
   useTMDataGridContext,
-} from "./TMDataGridContext";
+} from "../TMDataGridContext";
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
-import { getColumnCapabilities, getGridCapabilities } from "./capabilities";
+import { getColumnCapabilities, getGridCapabilities } from "../core/capabilities";
 import {
   getColumnRegion,
   getStepTargetColumn,
   moveColumn,
   moveColumnByStep,
   type TMDataGridDropSide,
-} from "./columnOrdering";
-import { getColumnAlign, getColumnLabel } from "./columnUtils";
-import { isFilterActive } from "./filterOperators";
+} from "../core/columnOrdering";
+import { getColumnAlign, getColumnLabel } from "../core/columnUtils";
+import { isFilterActive } from "../core/filterOperators";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -33,7 +33,7 @@ import {
   PinRightIcon,
 } from "./icons";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
-import { type TMDataGridFeatures, openColumnFilter } from "./useTMDataGrid";
+import { type TMDataGridFeatures, openColumnFilter } from "../useTMDataGrid";
 
 export type TMDataGridHeader = Header<
   TMDataGridFeatures,
