@@ -113,7 +113,25 @@ is the demo site that documents it.
 npm install
 npm run dev    # demo site with the grid example and docs
 npm run lint   # oxlint
+npm run test   # vitest, once
+npm run test:watch
 ```
+
+## Testing
+
+Vitest with React Testing Library, in jsdom. Tests sit next to the code they
+cover as `*.test.ts(x)` and are excluded from both the package and the
+declaration build; shared fixtures live in [`src/test/`](src/test) so they stay
+out of `src/tmdatagrid/` entirely.
+
+Two things worth knowing before adding to them:
+
+- `vitest.setup.ts` installs what jsdom does not provide — an in-memory
+  `Storage`, `matchMedia`, `ResizeObserver`, and element sizes. The last one
+  matters: without a measurable box, the virtualizer renders no rows at all.
+- The Mantine provider in the harness runs with `env="test"`, which disables
+  transitions. Without it a popover never finishes mounting and its panel is
+  never found.
 
 ## Building
 

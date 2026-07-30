@@ -22,5 +22,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  // vitest.setup.ts is in here rather than in the node project because it runs
+  // in jsdom, and because its `@testing-library/jest-dom/vitest` import is what
+  // teaches TypeScript about the DOM matchers the tests under src use.
+  "include": ["src", "vitest.setup.ts"]
 }

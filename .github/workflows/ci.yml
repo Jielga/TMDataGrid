@@ -22,6 +22,8 @@ jobs:
 
       - run: npx tsc -b
 
+      - run: npm run test
+
       # Build both outputs: the package and the demo site.
       - run: npm run build:lib
 
