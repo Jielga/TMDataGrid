@@ -4,6 +4,9 @@ Every component below reads the grid from context and must be rendered inside
 `TMDataGrid`. Their order and presence are up to you: the root is a plain flex
 column.
 
+`TMDataGrid.FilterPills` is the one exception — it takes the grid as an `api`
+prop, so it can be rendered anywhere on the page.
+
 ## TMDataGrid
 
 Root component. Provides `{ table, ui, features }` to its children.
@@ -35,7 +38,7 @@ themed. They can equally be set from a stylesheet through `className`.
 | `--dg-row-height` | From `size` | Row height. `meta.rowHeight` is the supported way to change it, since the virtualizer needs the number |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-font-size` | From `size` | Cell and header font size |
-| `--dg-padding` | From `size` | Horizontal cell padding |
+| `--dg-padding` | From `size` | Horizontal cell padding. The generated checkbox column is exempt — it is a fixed 48px track, so it centres its box instead |
 
 ```tsx
 <TMDataGrid
@@ -180,6 +183,13 @@ Totals are read from `table.getRowCount()`, which prefers `options.rowCount`.
 Server-paginated tables therefore display the server total without further
 configuration.
 
+While the rows are grouped the built-in pager greys itself out and shows
+`Grouped · all N rows` instead of a range, because grouping suspends client-side
+paging — see [Grouping suspends pagination](/docs/features#grouping-suspends-pagination).
+The `pagination` render prop is left alone; a custom pager decides for itself,
+and `isPagingActive(table, features)` is exported so it can grey out the same
+way.
+
 The `pagination` render prop receives the distilled pagination API — state
 values plus plain-number setters — and renders inside the footer bar:
 
@@ -242,9 +252,51 @@ Renders nothing if no column can be hidden. Accepts no props.
 
 ## TMDataGrid.FilterPanel
 
-Column, operator and value rows. Rendered by `TMDataGrid.Table` and exported for
-custom layouts. Positions itself against the nearest positioned ancestor.
-Accepts no props.
+Column, operator and value rows, under a "Filters" header with a close button
+and above "Add filter" / "Clear all". Escape and a click outside close it too —
+`TMDataGrid.FilterButton` is exempt from the click-away, so it stays a toggle.
+Rendered by `TMDataGrid.Table` and exported for custom layouts. Positions itself
+against the nearest positioned ancestor. Accepts no props.
+
+Closing only hides the panel; the filters stay. "Clear all" drops every filter,
+half-typed ones included, and closes the panel — the same exit as removing the
+last filter row by hand.
+
+## TMDataGrid.FilterPills
+
+One pill per active filter — `First name: Sofia ✕` — where the ✕ clears that
+filter and a click on the label reopens the filter panel on its column. Renders
+nothing while no filter is active.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `api` | `TMDataGridApi<TData>` | – | The object returned by `useTMDataGrid`. |
+| `size` | `MantineSize` | `"sm"` | Pill size. |
+| `showClearAll` | `boolean` | `true` | "Clear all" button, shown once two filters are active. |
+| `onPillClick` | `(columnId: string) => void` | – | Replaces the default click behaviour. |
+| `className` | `string` | – | Added to the wrapper class. |
+
+The only grid component that takes the api as a prop rather than reading
+context, so it can live outside the grid — a page header, a card title, a
+breadcrumb row:
+
+```tsx
+const grid = useTMDataGrid({ data, columns });
+
+<Group>
+  <Title order={3}>Employees</Title>
+  <TMDataGrid.FilterPills api={grid} />
+</Group>
+
+<TMDataGrid {...grid}>…</TMDataGrid>
+```
+
+It is also exported as `TMDataGridFilterPills`, which is the import to use when
+nothing else in that file touches `TMDataGrid`.
+
+Half-typed filters are left out: a filter that is not narrowing the rows yet has
+nothing to report. The label spells the operator out unless it is the column
+type's default — `Age is greater than 30`, but `First name: Sofia`.
 
 ## TMDataGrid.ColumnsPanel
 
@@ -260,6 +312,7 @@ Search field, column checkboxes, show/hide all and reset. Rendered by
 | `getGridCapabilities(table, features)` | Grid-level capability checks. See [Features](#features). |
 | `getColumnCapabilities(column, features)` | Column-level capability checks. |
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
+| `formatFilterLabel({ label, type, filter })` | The one-line filter description used on the pills. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
 | `isColumnReorderable(column)` | `meta.enableOrdering`, and not inside a header group. |
 | `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See [Features](#features). |

@@ -9,6 +9,7 @@ import {
   type TestRow,
 } from "../../test/gridHarness";
 import { TMDataGrid } from "./TMDataGrid";
+import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import type { TMDataGridTableProps } from "./TMDataGridTable";
 import { useTMDataGrid, type UseTMDataGridOptions } from "../useTMDataGrid";
 
@@ -31,16 +32,22 @@ function Grid({ tableProps, ...options }: GridProps = {}) {
   } as UseTMDataGridOptions<TestRow>);
 
   return (
-    <TMDataGrid {...grid}>
-      <TMDataGrid.Toolbar>
-        <TMDataGrid.SummaryCount />
-        <TMDataGrid.Spacer />
-        <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
-      </TMDataGrid.Toolbar>
-      <TMDataGrid.Table<TestRow> {...tableProps} />
-      <TMDataGrid.Footer />
-    </TMDataGrid>
+    <>
+      {/* Rendered outside the provider on purpose: the pills take the api as a
+          prop, and nothing else in the grid may. */}
+      <TMDataGridFilterPills api={grid} />
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.SummaryCount />
+          <TMDataGrid.Spacer />
+          <TMDataGrid.FilterButton />
+          <TMDataGrid.ColumnsButton />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> {...tableProps} />
+        <TMDataGrid.Footer />
+      </TMDataGrid>
+    </>
+
   );
 }
 
@@ -181,6 +188,86 @@ describe("filtering", () => {
       screen.queryByRole("button", { name: "Filters" }),
     ).not.toBeInTheDocument();
   });
+
+  it("hides the panel from its close button, keeping the filter", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByRole("button", { name: "Close filters" }));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds()).toEqual(["3"]);
+  });
+
+  it("hides the panel on a click away", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByTestId("dg-header-name"));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds()).toEqual(["3"]);
+  });
+
+  it("keeps the toolbar button a toggle, not a reopen", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+    const filterButton = screen.getByRole("button", { name: "Filters" });
+
+    await user.click(filterButton);
+    expect(screen.getByLabelText("Value")).toBeInTheDocument();
+
+    // The click-away handler fires on this button too — if it closed the panel
+    // there, the button's own click would open it straight back up.
+    await user.click(filterButton);
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+  });
+
+  it("drops every filter and the panel from Clear all", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByRole("button", { name: "Clear all" }));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds().length).toBe(testRows.length);
+  });
+});
+
+describe("filter pills", () => {
+  it("names the active filters and clears one from its pill", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+
+    // "equals" is the numeric default, so the operator stays implicit.
+    expect(screen.getByText("ID: 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear ID filter" }));
+
+    expect(screen.queryByText("ID: 3")).not.toBeInTheDocument();
+    expect(renderedRowIds().length).toBe(testRows.length);
+  });
+
+  it("shows no pill for a filter that is not narrowing yet", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    expect(
+      screen.queryByRole("group", { name: "Active filters" }),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("column visibility", () => {
@@ -218,6 +305,28 @@ describe("row selection", () => {
 
     expect(firstRow).toHaveAttribute("data-selected", "true");
     expect(firstRow).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("marks the checkbox column, which the stylesheet unpads", () => {
+    renderGridUi();
+    const [firstRow] = bodyRows();
+
+    // jsdom has no layout, so the clipping this guards against cannot be
+    // asserted here: the cell padding grows with `size` and would squeeze the
+    // box out of its fixed 48px track at `xl`. The attribute is what the CSS
+    // hangs off, so it is what the test pins down.
+    expect(screen.getByTestId("dg-header-__select__")).toHaveAttribute(
+      "data-select-column",
+      "true",
+    );
+    expect(within(firstRow).getAllByRole("cell")[0]).toHaveAttribute(
+      "data-select-column",
+      "true",
+    );
+    expect(within(firstRow).getAllByRole("cell")[1]).toHaveAttribute(
+      "data-select-column",
+      "false",
+    );
   });
 
   it("drops the checkbox column in row selection mode", () => {
@@ -346,5 +455,269 @@ describe("pagination", () => {
     // rather than render blank. Mantine's Select renders a visible input and a
     // hidden one, so both carry the value.
     expect(screen.getAllByDisplayValue("7").length).toBeGreaterThan(0);
+  });
+});
+
+describe("grouping", () => {
+  /** Opens a header's column menu and returns its items. */
+  const openColumnMenu = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+  ) => {
+    await user.click(
+      screen.getByRole("button", { name: `${label} column menu` }),
+    );
+    return screen.getAllByRole("menuitem");
+  };
+
+  const clickMenuItem = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+    item: string | RegExp,
+  ) => {
+    await openColumnMenu(user, label);
+    await user.click(screen.getByRole("menuitem", { name: item }));
+  };
+
+  it("offers to group on a column that has an accessor", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    const items = (await openColumnMenu(user, "City")).map(
+      (item) => item.textContent,
+    );
+
+    expect(items).toContain("Group by City");
+  });
+
+  it("replaces the rows with a collapsed tree and takes the column out", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    // Three cities over twelve rows, none of them open yet.
+    const groups = bodyRows();
+    expect(groups).toHaveLength(3);
+    expect(groups.every((row) => row.dataset.grouped === "true")).toBe(true);
+    // The tree lane replaced the column it groups on.
+    expect(screen.getByTestId("dg-header-__group__")).toBeInTheDocument();
+    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+  });
+
+  it("writes the group value and how many rows are under it", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    expect(
+      screen.getByRole("button", { name: "Expand Stockholm" }),
+    ).toHaveTextContent("Stockholm(4)");
+  });
+
+  it("brings the rows into view when the group is expanded", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+
+    expect(bodyRows()).toHaveLength(3 + 4);
+    expect(
+      screen.getByRole("button", { name: "Collapse Stockholm" }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("ungroups from the tree column, the grouped one having gone", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    // The City header no longer exists to be ungrouped from, which is why the
+    // tree column carries the item.
+    await clickMenuItem(user, "Group", "Ungroup City");
+
+    expect(screen.getByTestId("dg-header-city")).toBeInTheDocument();
+    expect(screen.queryByTestId("dg-header-__group__")).not.toBeInTheDocument();
+    expect(bodyRows()).toHaveLength(12);
+  });
+
+  it("selects every row under a group from its checkbox", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+    const groupBoxes = screen.getAllByRole("checkbox", { name: "Select group" });
+    expect(groupBoxes).toHaveLength(3);
+
+    await user.click(groupBoxes[0]!);
+
+    // Four leaves ticked, and the group's own box follows them. The rows cycle
+    // through the cities, so the first group is Stockholm's.
+    expect(groupBoxes[0]).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+    expect(
+      screen
+        .getAllByRole("checkbox", { name: "Select row" })
+        .filter((box) => (box as HTMLInputElement).checked),
+    ).toHaveLength(4);
+  });
+
+  it("leaves a column with no aggregation blank on a group row", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    // Cell 0 is the checkbox lane, 1 the tree, then ID / Name / Age. A plain
+    // "group by" is a tree, not a summary — nothing was told how to aggregate.
+    expect(renderedColumn(2)).toEqual(["", "", ""]);
+    expect(renderedColumn(4)).toEqual(["", "", ""]);
+  });
+});
+
+describe("grouping — rendering stays in step", () => {
+  const openMenu = async (
+    user: ReturnType<typeof userEvent.setup>,
+    label: string,
+  ) => {
+    await user.click(
+      screen.getByRole("button", { name: `${label} column menu` }),
+    );
+  };
+
+  /** Header ids in render order. */
+  const headerIds = () =>
+    screen
+      .getAllByRole("columnheader")
+      .map((header) => (header.getAttribute("data-testid") ?? "").replace("dg-header-", ""));
+
+  it("drops the second grouped column's header, not only the first", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await openMenu(user, "City");
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    expect(headerIds()).not.toContain("city");
+
+    await openMenu(user, "Name");
+    await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
+    expect(headerIds()).not.toContain("name");
+  });
+
+  it("gives every row as many cells as there are headers", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await openMenu(user, "City");
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await openMenu(user, "Name");
+    await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
+
+    // A stale header list would leave a track and a header with no cell under
+    // it, shifting every column after it out of alignment.
+    const columnCount = headerIds().length;
+    for (const row of bodyRows()) {
+      expect(within(row).getAllByRole("cell")).toHaveLength(columnCount);
+    }
+  });
+});
+
+describe("grouping and the pager", () => {
+  const groupIt = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+  };
+
+  it("greys the pager out rather than hiding it", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enablePagination: true });
+
+    expect(screen.getByText("1–12 of 12")).toBeInTheDocument();
+
+    await groupIt(user);
+
+    // Still there — a footer that vanished would read as a bug rather than as a
+    // mode the grid is in.
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    expect(screen.getByText("Grouped · all 12 rows")).toBeInTheDocument();
+  });
+
+  it("renders every group rather than a page of them", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      enablePagination: true,
+      initialState: { pagination: { pageIndex: 0, pageSize: 2 } },
+    });
+    expect(bodyRows()).toHaveLength(2);
+
+    await groupIt(user);
+
+    // Three cities, none sliced off by a page size of two.
+    expect(bodyRows()).toHaveLength(3);
+  });
+
+  it("pages again once the grouping is dropped", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      enablePagination: true,
+      initialState: { pagination: { pageIndex: 0, pageSize: 2 } },
+    });
+
+    await groupIt(user);
+    await user.click(screen.getByRole("button", { name: "Group column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Ungroup City" }));
+
+    expect(bodyRows()).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
+  });
+});
+
+describe("grouping and the row context menu", () => {
+  it("leaves group rows without a context menu", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: ({ row }) => {
+          seen.push(row.id);
+          return <Menu.Item>Open</Menu.Item>;
+        },
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+
+    // A group row is built on its first child's record, so a render prop
+    // reaching for `row.original` would be handed the wrong employee. Same
+    // reason group rows sit out `onRowClick`.
+    fireEvent.contextMenu(within(bodyRows()[0]!).getAllByRole("cell")[2]!);
+
+    expect(screen.queryByRole("menuitem", { name: "Open" })).not.toBeInTheDocument();
+    expect(seen).toEqual([]);
+    expect(bodyRows()[0]).not.toHaveAttribute("data-context-menu", "true");
+  });
+
+  it("still opens one on the rows inside a group", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: () => <Menu.Item>Open</Menu.Item>,
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+
+    const dataRow = bodyRows().find((row) => row.dataset.grouped !== "true");
+    fireEvent.contextMenu(within(dataRow!).getAllByRole("cell")[2]!);
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Open" }),
+    ).toBeInTheDocument();
   });
 });

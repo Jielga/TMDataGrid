@@ -45,7 +45,7 @@ than forwarded to TanStack.
 | Slice | Default |
 | --- | --- |
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }` — inert until pagination is enabled |
-| `columnPinning.left` | The checkbox column, followed by any columns you provide |
+| `columnPinning.left` | The checkbox and tree columns, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
 
 ## meta
@@ -104,8 +104,8 @@ const persist = {
 
 | Group | Available slices |
 | --- | --- |
-| `dataKey` | `columnFilters`, `globalFilter`, `sorting`, `pagination` |
-| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning` |
+| `dataKey` | `columnFilters`, `globalFilter`, `sorting`, `pagination`, `expanded` |
+| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning`, `grouping` |
 
 The exported `DATA_STATE_SLICES` and `SETTINGS_STATE_SLICES` arrays contain the
 same values. Slice names are typed per group, so only valid names are accepted.

@@ -4,7 +4,7 @@ description: >
   Set up TMDataGrid, a compound React data grid built on TanStack Table v9 and
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
   catalog (Table, Footer, Toolbar, Spacer, SummaryCount, FilterButton,
-  ColumnsButton, FilterPanel, ColumnsPanel), the size scale and the
+  ColumnsButton, FilterPanel, FilterPills, ColumnsPanel), the size scale and the
   bounded-height layout requirement. Load when adding a grid, choosing which
   parts to render, or when rows do not appear.
 metadata:
@@ -123,8 +123,10 @@ takes a fixed pixel width once resized or pinned.
 
 ## Components
 
-All read the grid from context and must be rendered inside `TMDataGrid`. Order
-and presence are up to you — the root is a plain flex column.
+All read the grid from context and must be rendered inside `TMDataGrid`, except
+`TMDataGrid.FilterPills`, which takes the grid as an `api` prop and can live
+anywhere on the page. Order and presence are up to you — the root is a plain
+flex column.
 
 | Component | Props | Notes |
 | --- | --- | --- |
@@ -136,8 +138,9 @@ and presence are up to you — the root is a plain flex column.
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
 | `TMDataGrid.FilterButton` | — | Toggles filter panel. Renders nothing if no column is filterable. |
 | `TMDataGrid.ColumnsButton` | — | Opens column manager. Renders nothing if no column is hideable. |
-| `TMDataGrid.FilterPanel` | — | Rendered by `.Table`; exported for custom layouts. |
+| `TMDataGrid.FilterPanel` | — | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
 | `TMDataGrid.ColumnsPanel` | — | Rendered by `.ColumnsButton`; exported for custom layouts. |
+| `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
 
 Pass the row type so `onRowClick` stays typed:
 
@@ -225,6 +228,7 @@ mirrors them. Set `meta.rowHeight` for a height outside the scale.
 | `openColumnFilter(api, columnId)` | Adds an empty filter for a column and opens the panel. |
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
+| `formatFilterLabel({ label, type, filter })` | The one-line filter description used on the pills. |
 | `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See the `features` skill. |
 | `moveColumnByStep({ table, columnId, direction })` | Moves a column one position within its region. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |

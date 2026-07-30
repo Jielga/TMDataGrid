@@ -106,6 +106,31 @@ export function isFilterActive(value: unknown): boolean {
   return !operatorNeedsValue(value.operator) || value.value.trim() !== "";
 }
 
+/**
+ * One-line description of a single filter, as shown on a filter pill.
+ *
+ * The type's default operator is left implicit — "First name: Sofia" reads the
+ * way a person would say it — while any other operator is spelled out, since
+ * that is the part a reader cannot guess.
+ */
+export function formatFilterLabel({
+  label,
+  type,
+  filter,
+}: {
+  label: string;
+  type: TMDataGridColumnType;
+  filter: TMDataGridFilterValue;
+}): string {
+  const { operator, value } = filter;
+  if (!operatorNeedsValue(operator)) {
+    return `${label} ${FILTER_OPERATOR_LABELS[operator]}`;
+  }
+  const text = value.trim();
+  if (operator === getDefaultOperator(type)) return `${label}: ${text}`;
+  return `${label} ${FILTER_OPERATOR_LABELS[operator]} ${text}`;
+}
+
 export function matchesFilter(
   cellValue: unknown,
   { operator, value }: TMDataGridFilterValue,

@@ -76,6 +76,18 @@ export type TMDataGridFeatureFlags = {
    * Off, the grid renders every filtered row and relies on virtualization.
    */
   pagination: boolean;
+  /**
+   * Row grouping: the "Group by" items in the header menu and the generated
+   * tree column. On unless `enableGrouping: false`, since an ungrouped grid
+   * looks and behaves exactly as it did before — `grouping` starts empty, and
+   * an empty grouping state passes straight through the row model.
+   *
+   * The exception is `manualPagination`, where the client holds one page rather
+   * than the whole set: grouping that page would build groups out of an
+   * arbitrary slice and quietly show wrong counts. A server-side grid that does
+   * its own grouping can still say `enableGrouping: true` to override.
+   */
+  grouping: boolean;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -93,6 +105,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "showSelectedBackground"
     | "enablePagination"
     | "manualPagination"
+    | "enableGrouping"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
@@ -124,6 +137,7 @@ export function readFeatureFlags<TData extends RowData>(
       selectionMode === "checkboxAndHighlight" || selectionMode === "highlight",
     pagination:
       options.enablePagination === true || options.manualPagination === true,
+    grouping: options.enableGrouping ?? options.manualPagination !== true,
   };
 }
 
@@ -138,6 +152,7 @@ export function readFeatureFlags<TData extends RowData>(
  * | Pin to left / right       | `enableColumnPinning` / `enablePinning` |
  * | Resize dragging           | `enableColumnResizing` / `enableResizing` |
  * | Header dragging, Move left / right | `enableColumnOrdering` / `meta.enableOrdering` |
+ * | Group by / Ungroup        | `enableGrouping` (table or column) |
  */
 export type TMDataGridColumnCapabilities = {
   canSort: boolean;
@@ -146,6 +161,7 @@ export type TMDataGridColumnCapabilities = {
   canPin: boolean;
   canResize: boolean;
   canReorder: boolean;
+  canGroup: boolean;
 };
 
 export function getColumnCapabilities(
@@ -160,6 +176,9 @@ export function getColumnCapabilities(
     canResize: features.resizing && column.getCanResize(),
     // Ordering has no TanStack capability method — see isColumnReorderable.
     canReorder: features.ordering && isColumnReorderable(column),
+    // `getCanGroup()` also insists on an accessor, which is what keeps the
+    // generated checkbox and tree columns from offering to group on themselves.
+    canGroup: features.grouping && column.getCanGroup(),
   };
 }
 
@@ -170,6 +189,7 @@ export type TMDataGridCapabilities = {
   canHideAny: boolean;
   canPinAny: boolean;
   canReorderAny: boolean;
+  canGroupAny: boolean;
   canSelectRows: boolean;
   canPaginate: boolean;
 };
@@ -188,6 +208,7 @@ export function getGridCapabilities(
     canHideAny: any((c) => c.canHide),
     canPinAny: any((c) => c.canPin),
     canReorderAny: any((c) => c.canReorder),
+    canGroupAny: any((c) => c.canGroup),
     canSelectRows: features.rowSelection,
     canPaginate: features.pagination,
   };

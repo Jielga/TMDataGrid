@@ -1,24 +1,29 @@
 import { useCreateStore } from "@tanstack/react-store";
 import {
+  aggregationFns,
   type ColumnDef,
   columnFacetingFeature,
   columnFilteringFeature,
+  columnGroupingFeature,
   columnOrderingFeature,
   columnPinningFeature,
   columnResizingFeature,
   columnSizingFeature,
   columnVisibilityFeature,
   createColumnHelper,
+  createExpandedRowModel,
   createFacetedMinMaxValues,
   createFacetedRowModel,
   createFacetedUniqueValues,
   createFilteredRowModel,
+  createGroupedRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
   filterFns,
   globalFilteringFeature,
   metaHelper,
   type RowData,
+  rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
@@ -51,6 +56,10 @@ import {
   createSelectColumn,
   SELECT_COLUMN_ID,
 } from "./components/TMDataGridSelectColumn";
+import {
+  createGroupColumn,
+  GROUP_COLUMN_ID,
+} from "./components/TMDataGridGroupColumn";
 
 /**
  * How long the grid waits after the last state change before writing to
@@ -105,9 +114,16 @@ export const tmDataGridFeatures = tableFeatures({
   columnSizingFeature,
   columnResizingFeature,
   columnFacetingFeature,
+  columnGroupingFeature,
+  // Registered for grouping's sake rather than for tree data: the grouped row
+  // model builds the parent rows, and this is what flattens the expanded ones
+  // back into the flat list the body virtualizes.
+  rowExpandingFeature,
 
   filteredRowModel: createFilteredRowModel(),
+  groupedRowModel: createGroupedRowModel(),
   sortedRowModel: createSortedRowModel(),
+  expandedRowModel: createExpandedRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
   facetedRowModel: createFacetedRowModel(),
   facetedMinMaxValues: createFacetedMinMaxValues(),
@@ -115,6 +131,10 @@ export const tmDataGridFeatures = tableFeatures({
 
   filterFns: { ...filterFns, tmDataGrid: tmDataGridFilterFn },
   sortFns,
+  // The names `columnDef.aggregationFn` accepts. Only consulted for columns
+  // that ask for one — a column with no `aggregationFn` reports `undefined` on
+  // a group row, which is what keeps a plain "group by" free of aggregates.
+  aggregationFns,
 
   tableMeta: metaHelper<TMDataGridTableMeta>(),
   columnMeta: metaHelper<TMDataGridColumnMeta>(),
@@ -290,8 +310,17 @@ type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
 >;
 
 /**
- * Point every column at the operator-dispatching filter function unless the
- * column opted into its own.
+ * Point every column at the operator-dispatching filter function, and take
+ * grouping's aggregation defaults back off, unless the column opted into its
+ * own. Anything the consumer set wins — it is spread over these.
+ *
+ * The aggregation pair needs explaining. TanStack's grouping feature hands
+ * every column `aggregationFn: "auto"` and an `aggregatedCell` that stringifies
+ * whatever comes out, so merely registering the feature would have every
+ * numeric column silently sum itself and every date column show a range the
+ * moment anything is grouped. That is a summary table, and "group by" is not a
+ * request for one. Cleared here, so a grouped grid is a tree until a column
+ * says otherwise — `aggregationFn: "sum"` on the column that wants it.
  */
 function withTMDataGridDefaults<TData extends RowData>(
   columns: ReadonlyArray<TMDataGridColumnDef<TData>>,
@@ -303,7 +332,12 @@ function withTMDataGridDefaults<TData extends RowData>(
         columns: withTMDataGridDefaults<TData>(column.columns),
       };
     }
-    return { filterFn: "tmDataGrid", ...column } as TMDataGridColumnDef<TData>;
+    return {
+      filterFn: "tmDataGrid",
+      aggregationFn: undefined,
+      aggregatedCell: undefined,
+      ...column,
+    } as TMDataGridColumnDef<TData>;
   });
 }
 
@@ -345,39 +379,69 @@ export function useTMDataGrid<TData extends RowData>({
 
   const pinningEnabled = options.enableColumnPinning !== false;
   const selectColumnEnabled = features.selectColumn;
+  const groupColumnEnabled = features.grouping;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
       options.columns as ReadonlyArray<TMDataGridColumnDef<TData>>,
     );
-    return selectColumnEnabled ? [createSelectColumn<TData>(), ...base] : base;
-  }, [options.columns, selectColumnEnabled]);
+    // Both generated columns are always present when their feature is on, and
+    // the tree column hides itself while nothing is grouped. Adding it to the
+    // array only once a column is grouped would make the column list depend on
+    // table state, which is the one thing that cannot be a `useMemo` dependency
+    // here — the table is built from these columns.
+    return [
+      ...(selectColumnEnabled ? [createSelectColumn<TData>()] : []),
+      ...(groupColumnEnabled ? [createGroupColumn<TData>()] : []),
+      ...base,
+    ];
+  }, [options.columns, selectColumnEnabled, groupColumnEnabled]);
 
   // Read once on mount: `initialState` is only consumed on the first render,
   // and re-reading later would fight the user's live edits.
   const [persistedState] = useState(() => readPersistedState(persist));
+
+  // Restored grouping decides whether the tree column starts out visible, so a
+  // reload comes back to the tree the user left rather than to a hidden lane.
+  const initialGrouping =
+    persistedState.grouping ?? options.initialState?.grouping ?? [];
 
   const table = useTable({
     columnResizeMode: "onChange",
     enableSorting: true,
     enableColumnResizing: true,
     globalFilterFn: "includesString",
+    // Grouping by a column takes it out of the grid, the way AG Grid does it:
+    // its values have moved into the tree column, so leaving it in place would
+    // show every row the same value it was grouped under. Overridable — pass
+    // `"reorder"` to keep the column and have it moved to the front instead.
+    groupedColumnMode: "remove",
     ...options,
     features: tmDataGridFeatures,
     columns: columns as TableOptions<TMDataGridFeatures, TData>["columns"],
     initialState: {
       ...options.initialState,
       ...persistedState,
+      columnVisibility: {
+        ...options.initialState?.columnVisibility,
+        ...persistedState.columnVisibility,
+        // Last word, because the tree column's visibility is not a user setting
+        // — it tracks the grouping state. See the effect below.
+        ...(groupColumnEnabled
+          ? { [GROUP_COLUMN_ID]: initialGrouping.length > 0 }
+          : {}),
+      },
       columnPinning: {
-        // The checkbox column is structurally pinned, so it is re-applied on
-        // top of anything restored from storage.
+        // The generated columns are structurally pinned, so they are re-applied
+        // on top of anything restored from storage.
         left: [
           ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
+          ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
           ...(
             persistedState.columnPinning?.left ??
             options.initialState?.columnPinning?.left ??
             []
-          ).filter((id) => id !== SELECT_COLUMN_ID),
+          ).filter((id) => id !== SELECT_COLUMN_ID && id !== GROUP_COLUMN_ID),
         ],
         right:
           persistedState.columnPinning?.right ??
@@ -392,6 +456,60 @@ export function useTMDataGrid<TData extends RowData>({
       },
     },
   });
+
+  // Two things have to happen whenever `grouping` changes.
+  //
+  // One: the tree column appears with the first grouped column and goes away
+  // with the last, so an ungrouped grid looks exactly as it did before grouping
+  // existed. Driven from a subscription rather than by rebuilding the column
+  // array, because the array is what the table is built from — deriving it from
+  // table state would close the loop. Visibility is the one column property
+  // that can be changed after the fact without touching the definitions.
+  //
+  // Two, and this one is a workaround. In table-core 9.0.0-beta.21 the
+  // per-region column APIs do not list `grouping` among their memo
+  // dependencies, even though they all derive from `getAllLeafColumns()`, which
+  // does:
+  //
+  // | API | Declares |
+  // | --- | --- |
+  // | `getLeft/Center/RightVisibleLeafColumns` | columns, columnPinning, columnVisibility, columnOrder |
+  // | `getLeft/Center/RightHeaderGroups` | columnPinning, columnOrder |
+  // | `row.getLeft/Center/RightVisibleCells` | columnPinning, columnVisibility |
+  //
+  // So grouping a *second* column leaves every one of them returning the
+  // previous list: the column TanStack removed keeps its header and its grid
+  // track, and the row cells no longer line up with them. The first grouping
+  // appears to work only because the visibility write above happens to touch a
+  // dependency they share.
+  //
+  // Re-publishing `columnVisibility` and `columnOrder` — same contents, new
+  // identity — invalidates all three families. `columnOrder` is the only
+  // dependency the header groups declare, and `columnVisibility` the only one
+  // the cells do, so both are needed. Remove this once the deps are fixed
+  // upstream; the test that fails without it groups two columns and asserts the
+  // second one leaves the grid.
+  //
+  // Writing back into the store from its own subscriber is safe: the guard is
+  // on `grouping`'s identity, and neither write touches it, so the callback
+  // these writes trigger short-circuits.
+  useEffect(() => {
+    if (!groupColumnEnabled) return;
+    let previousGrouping = table.store.state.grouping;
+
+    const subscription = table.store.subscribe((state) => {
+      if (state.grouping === previousGrouping) return;
+      previousGrouping = state.grouping;
+
+      table.setColumnVisibility((old) => ({
+        ...old,
+        [GROUP_COLUMN_ID]: state.grouping.length > 0,
+      }));
+      table.setColumnOrder((old) => [...old]);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [groupColumnEnabled, table]);
 
   // Mirror every state change back to storage. Subscribing (rather than writing
   // from an effect on a state snapshot) means nothing is missed, including

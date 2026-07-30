@@ -1,6 +1,7 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { erased, renderGrid, visibleColumnIds } from "../../test/gridHarness";
+import { GROUP_COLUMN_ID } from "../components/TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import {
   getColumnRegion,
@@ -122,8 +123,11 @@ describe("moveColumn", () => {
     });
 
     // "age" is not rendered, but it is still ordered between name and city.
+    // The tree column is in the order for the same reason: hidden while nothing
+    // is grouped, but still a leaf column that has to hold its place.
     expect(table.store.state.columnOrder).toEqual([
       SELECT_COLUMN_ID,
+      GROUP_COLUMN_ID,
       "id",
       "city",
       "name",

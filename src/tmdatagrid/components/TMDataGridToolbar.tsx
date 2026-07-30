@@ -112,6 +112,9 @@ export function TMDataGridFilterButton() {
         color={activeCount > 0 ? undefined : "gray"}
         size={controlSize}
         aria-label="Filters"
+        // Marks this as the panel's own toggle, so the panel's click-away
+        // handler leaves it alone and the button stays a toggle.
+        data-dg-filter-toggle
         onClick={() => {
           if (opened) {
             ui.actions.closeFilterPanel();

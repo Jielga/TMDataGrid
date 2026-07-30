@@ -120,8 +120,10 @@ server without transformation. See [Server-side](#server-side).
 `meta.type` selects the list. String comparisons are case-insensitive.
 
 A filter with an empty value remains in state so the panel continues to display
-its row while the user types. It matches all rows and does not activate the
-filter indicator in the header. Use `isFilterActive(value)` to test for this.
+its row while the user types. It matches all rows, does not activate the filter
+indicator in the header and gets no pill in
+[`TMDataGrid.FilterPills`](#components). Use `isFilterActive(value)` to test for
+this.
 
 To give a column its own matching logic, set `filterFn` on the column
 definition. The grid only provides `"tmDataGrid"` as the default.

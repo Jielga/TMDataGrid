@@ -1,5 +1,6 @@
-import { ActionIcon, Button, Select, Stack, TextInput } from "@mantine/core";
+import { ActionIcon, Button, Select, Stack, Text, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
+import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel, getColumnType } from "../core/columnUtils";
@@ -33,6 +34,27 @@ export function TMDataGridFilterPanel() {
     table.store,
     (state) => state.columnFilters,
   );
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Clicking away hides the panel, the way any floating surface behaves. On
+  // pointerdown rather than click, so a press that starts outside dismisses it
+  // even when the pointer is released somewhere else.
+  useEffect(() => {
+    if (!opened) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (panelRef.current?.contains(target)) return;
+      // The toolbar button toggles the panel itself. Closing from here first
+      // would leave its click reopening what the user meant to close.
+      if (target.closest("[data-dg-filter-toggle]")) return;
+      ui.actions.closeFilterPanel();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [opened, ui]);
 
   if (!opened) return null;
 
@@ -86,6 +108,14 @@ export function TMDataGridFilterPanel() {
     );
   }
 
+  /** Clears every filter, including half-typed ones the pills never showed. */
+  function clearAllFilters() {
+    table.setColumnFilters([]);
+    // Same exit as removing the last filter row by hand: an empty panel has
+    // nothing to show but its own buttons.
+    ui.actions.closeFilterPanel();
+  }
+
   function addFilter() {
     const nextColumn = filterableColumns.find(
       (column) => !columnFilters.some((filter) => filter.id === column.id),
@@ -103,8 +133,39 @@ export function TMDataGridFilterPanel() {
     ]);
   }
 
+  const canAddFilter = filterableColumns.some(
+    (column) => !columnFilters.some((filter) => filter.id === column.id),
+  );
+
   return (
-    <div className={classes.filterPanel}>
+    <div
+      ref={panelRef}
+      role="group"
+      aria-label="Filters"
+      className={classes.filterPanel}
+      // Escape is what closes a floating surface, and every control that can
+      // hold focus in here sits inside this element.
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        ui.actions.closeFilterPanel();
+      }}
+    >
+      <div className={classes.filterPanelHeader}>
+        <Text size={controlSize} fw={600}>
+          Filters
+        </Text>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          aria-label="Close filters"
+          onClick={ui.actions.closeFilterPanel}
+        >
+          <CloseIcon size={16} stroke={1.6} />
+        </ActionIcon>
+      </div>
+
       <Stack gap="xs">
         {columnFilters.map((filter) => {
           const column = table.getColumn(filter.id);
@@ -129,6 +190,10 @@ export function TMDataGridFilterPanel() {
                 size={controlSize}
                 w={160}
                 allowDeselect={false}
+                // Both dropdowns render inside the panel: a portalled one is
+                // outside it in the DOM, and picking an option would read as a
+                // click away and close the panel under the user.
+                comboboxProps={{ withinPortal: false }}
                 data={columnOptions}
                 value={filter.id}
                 onChange={(next) => next && changeFilterColumn(filter.id, next)}
@@ -139,6 +204,7 @@ export function TMDataGridFilterPanel() {
                 size={controlSize}
                 w={170}
                 allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
                 data={getOperatorsForType(type).map((operator) => ({
                   value: operator,
                   label: FILTER_OPERATOR_LABELS[operator],
@@ -168,14 +234,25 @@ export function TMDataGridFilterPanel() {
           );
         })}
 
-        <Button
-          variant="subtle"
-          size="compact-sm"
-          style={{ alignSelf: "flex-start" }}
-          onClick={addFilter}
-        >
-          Add filter
-        </Button>
+        <div className={classes.filterPanelFooter}>
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            disabled={!canAddFilter}
+            onClick={addFilter}
+          >
+            Add filter
+          </Button>
+          <Button
+            variant="subtle"
+            color="gray"
+            size="compact-sm"
+            disabled={columnFilters.length === 0}
+            onClick={clearAllFilters}
+          >
+            Clear all
+          </Button>
+        </div>
       </Stack>
     </div>
   );

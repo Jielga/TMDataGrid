@@ -27,6 +27,7 @@ import {
   resolveRowSelectionClick,
 } from "../core/rowSelection";
 import { SearchIcon } from "./icons";
+import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 
 /** Where a column sits relative to the pinned regions, resolved once per render. */
@@ -44,6 +45,42 @@ const UNPINNED_LAYOUT: TMDataGridColumnLayout = {
   isBoundary: false,
 };
 
+/**
+ * What a cell shows once grouping is in play.
+ *
+ * A group row carries a cell for every column, but only some of them have
+ * anything to say:
+ *
+ * | Cell | Renders |
+ * | ---- | ------- |
+ * | On a data row | the column's `cell`, as always |
+ * | Placeholder — a grouped column other than this row's own | nothing |
+ * | Aggregated, column declares `aggregatedCell` | that |
+ * | Aggregated, column declares an `aggregationFn` | the column's `cell`, over the aggregate |
+ * | Aggregated, column declares neither | nothing |
+ *
+ * That last row is the one worth spelling out. Without an aggregation function
+ * `getValue()` is `undefined` on a group row, so the column's own renderer
+ * would be handed nothing — and a renderer that formats what it gets
+ * (`value.toFixed(2)`) would throw. Blank is both the safe answer and the right
+ * one: a plain "group by" is a tree, not a summary, and a column only joins in
+ * once it has been told how.
+ */
+function renderCellContent(
+  cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>,
+) {
+  if (cell.getIsPlaceholder()) return null;
+  if (!cell.getIsAggregated()) {
+    return flexRender(cell.column.columnDef.cell, cell.getContext());
+  }
+  const { aggregatedCell, aggregationFn } = cell.column.columnDef;
+  if (aggregatedCell !== undefined) {
+    return flexRender(aggregatedCell, cell.getContext());
+  }
+  if (aggregationFn === undefined) return null;
+  return flexRender(cell.column.columnDef.cell, cell.getContext());
+}
+
 function TMDataGridBodyCell({
   cell,
   rowHeight,
@@ -59,6 +96,9 @@ function TMDataGridBodyCell({
     <div
       role="cell"
       data-align={getColumnAlign(cell.column)}
+      // The checkbox lane is a fixed track, so it cannot take the cell padding
+      // the scale grows for text. See TMDataGridTable.module.css.
+      data-select-column={cell.column.id === SELECT_COLUMN_ID}
       onContextMenu={onContextMenu}
       className={[
         classes.bodyCell,
@@ -77,9 +117,7 @@ function TMDataGridBodyCell({
         zIndex: layout.pinnedAt ? 2 : undefined,
       }}
     >
-      <span className={classes.cellContent}>
-        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-      </span>
+      <span className={classes.cellContent}>{renderCellContent(cell)}</span>
     </div>
   );
 }
@@ -264,9 +302,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const paddingBottom =
     virtualizer.getTotalSize() - (virtualItems.at(-1)?.end ?? 0);
 
-  const leftLeafColumns = table.getLeftLeafColumns();
-  const rightLeafColumns = table.getRightLeafColumns();
-  const centerLeafColumns = table.getCenterLeafColumns();
+  // The *Visible* variants throughout: `getLeftLeafColumns()` and friends
+  // include hidden columns, while the cells below come from
+  // `row.getLeftVisibleCells()`, which does not. Mixing the two would lay down
+  // a grid track for a column that renders no cell, shifting every column after
+  // it out of its header. The tree column is hidden exactly this way while
+  // nothing is grouped.
+  const leftLeafColumns = table.getLeftVisibleLeafColumns();
+  const rightLeafColumns = table.getRightVisibleLeafColumns();
+  const centerLeafColumns = table.getCenterVisibleLeafColumns();
 
   const orderedColumns = [
     ...leftLeafColumns,
@@ -362,6 +406,22 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const selectsOnRowClick = features.rowClickSelects;
   const rowIsInteractive =
     selectsOnRowClick || features.highlightRow || onRowClick !== undefined;
+
+  /**
+   * Group rows sit out every row-level gesture.
+   *
+   * Not squeamishness: TanStack builds a group row on top of its first leaf's
+   * record (`constructRow(table, id, leafRows[0].original, …)`), so an
+   * `onRowClick` firing here would hand a consumer a real-looking row that is
+   * the wrong one — a detail panel would open on an arbitrary child. The same
+   * goes for the highlight, which is what a detail panel follows.
+   *
+   * Selecting a group is still possible, through its checkbox, which resolves
+   * to the descendants rather than to the group itself. See
+   * getSelectableRowIds.
+   */
+  const rowGesturesFor = (row: Row<TMDataGridFeatures, TMDataGridRowData>) =>
+    row.getIsGrouped() ? false : rowIsInteractive;
 
   const handleRowActivate = (
     row: Row<TMDataGridFeatures, TMDataGridRowData>,
@@ -491,13 +551,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             {virtualItems.map((virtualItem) => {
               const row = rows[virtualItem.index];
               if (!row) return null;
-
+              const isGroupRow = row.getIsGrouped();
+              const isInteractive = rowGesturesFor(row);
+              const takesKeyboard =
+                !isGroupRow && (selectsOnRowClick || features.highlightRow);
               return (
                 <div
                   key={virtualItem.key}
                   role="row"
                   aria-rowindex={virtualItem.index + headerGroups.length + 1}
                   data-testid={`dg-row-${row.id}`}
+                  // The tree's own rows. `data-grouped` rather than a class, to
+                  // match how the rest of the row's state is published — and so
+                  // a consumer can restyle them without reaching into modules.
+                  data-grouped={isGroupRow}
+                  data-depth={row.depth}
                   // Gated on the flag, not just on `getIsSelected()`: under
                   // `"highlight"` there is no selection, but `rowSelection` may
                   // still hold ids from before the mode changed — TanStack never
@@ -530,7 +598,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     contextMenuContent !== null &&
                     contextMenuTarget?.rowId === row.id
                   }
-                  data-selects-on-click={selectsOnRowClick}
+                  data-selects-on-click={selectsOnRowClick && !isGroupRow}
                   aria-selected={
                     features.rowSelection ? row.getIsSelected() : undefined
                   }
@@ -542,23 +610,23 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   className={classes.bodyRow}
                   style={{
                     minHeight: rowHeight,
-                    cursor: rowIsInteractive ? "pointer" : undefined,
+                    cursor: isInteractive ? "pointer" : undefined,
                   }}
                   // Keyboard parity with the checkbox the row replaces.
-                  tabIndex={selectsOnRowClick || features.highlightRow ? 0 : undefined}
+                  tabIndex={takesKeyboard ? 0 : undefined}
                   // Shift-click extends the browser's text selection across
                   // every row it passes. `user-select: none` would fix it too,
                   // but at the cost of ever copying a cell value, so the smear
                   // is stopped at the one gesture that causes it.
                   onMouseDown={
-                    selectsOnRowClick
+                    selectsOnRowClick && !isGroupRow
                       ? (event) => {
                           if (event.shiftKey) event.preventDefault();
                         }
                       : undefined
                   }
                   onClick={
-                    rowIsInteractive
+                    isInteractive
                       ? (event) =>
                           handleRowActivate(row, {
                             toggle: event.ctrlKey || event.metaKey,
@@ -567,7 +635,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       : undefined
                   }
                   onKeyDown={
-                    selectsOnRowClick || features.highlightRow
+                    takesKeyboard
                       ? (event) => {
                           if (event.key !== " " && event.key !== "Enter") return;
                           if (event.target !== event.currentTarget) return;
@@ -583,8 +651,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   }
                   // Bubbles to the rowgroup, where the menu opens — so the row
                   // is recorded before the dropdown is built.
+                  //
+                  // Group rows record nothing, which leaves the ref null and the
+                  // menu shut. Same reason they sit out `onRowClick`: TanStack
+                  // builds a group row on its first child's record, so a render
+                  // prop reaching for `row.original` would be handed a real
+                  // employee that has nothing to do with the group. The browser
+                  // menu stays suppressed over them either way.
                   onContextMenu={
-                    rowContextMenu
+                    rowContextMenu && !isGroupRow
                       ? () => {
                           contextMenuRowRef.current = row.id;
                         }

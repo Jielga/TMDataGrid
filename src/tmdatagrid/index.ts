@@ -6,6 +6,10 @@ export {
 } from "./TMDataGridContext";
 export { SELECT_COLUMN_ID } from "./components/TMDataGridSelectColumn";
 export {
+  formatGroupValue,
+  GROUP_COLUMN_ID,
+} from "./components/TMDataGridGroupColumn";
+export {
   createTMDataGridColumnHelper,
   openColumnFilter,
   tmDataGridFeatures,
@@ -21,10 +25,15 @@ export {
   type UseTMDataGridOptions,
 } from "./useTMDataGrid";
 export {
+  TMDataGridFilterPills,
+  type TMDataGridFilterPillsProps,
+} from "./components/TMDataGridFilterPills";
+export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
   FILTER_OPERATOR_LABELS,
+  formatFilterLabel,
   isFilterActive,
 } from "./core/filterOperators";
 export {
@@ -32,6 +41,7 @@ export {
   getColumnType,
   isColumnReorderable,
 } from "./core/columnUtils";
+export { getGroupDataRows } from "./core/grouping";
 export {
   getColumnRegion,
   getStepTargetColumn,
@@ -53,6 +63,8 @@ export {
 } from "./core/capabilities";
 export {
   getDisplayedRows,
+  getSelectableRowIds,
+  isPagingActive,
   resolveRowSelectionClick,
   type ResolvedRowSelection,
   type ResolveRowSelectionClickArgs,
