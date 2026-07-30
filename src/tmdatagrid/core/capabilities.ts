@@ -20,9 +20,23 @@ import type {
  * what applies the per-column overrides.
  */
 /**
- * How rows are selected — see `rowSelectionMode` on {@link UseTMDataGridOptions}.
+ * How rows are selected — see `selectionMode` on {@link UseTMDataGridOptions}.
+ *
+ * One axis, because the two things a config could set independently — which
+ * chrome selects, and what a bare row click does — cannot both be free: a click
+ * can either toggle a multi-selection or move the highlight, never both. Folding
+ * them into one value makes that conflict unrepresentable rather than something
+ * to warn about.
  */
-export type TMDataGridRowSelectionMode = "checkbox" | "row";
+export type TMDataGridSelectionMode =
+  /** Checkbox column, multi-select. Clicking a row elsewhere does nothing. */
+  | "checkbox"
+  /** No checkbox column; row click multi-selects, with Ctrl/Shift modifiers. */
+  | "row"
+  /** Checkbox column multi-selects, and a row click highlights one row. */
+  | "checkboxAndHighlight"
+  /** No selection at all — a row click only highlights. Master-detail. */
+  | "highlight";
 
 export type TMDataGridFeatureFlags = {
   sorting: boolean;
@@ -31,11 +45,31 @@ export type TMDataGridFeatureFlags = {
   pinning: boolean;
   resizing: boolean;
   ordering: boolean;
+  /** Whether any row selection is possible. Off outright under `"highlight"`. */
   rowSelection: boolean;
-  /** Only meaningful while `rowSelection` is on. Defaults to `"checkbox"`. */
-  rowSelectionMode: TMDataGridRowSelectionMode;
+  /** Defaults to `"checkbox"`. */
+  selectionMode: TMDataGridSelectionMode;
+  /** Whether the generated checkbox column is prepended. */
+  selectColumn: boolean;
+  /** Whether a bare row click toggles the selection. Only under `"row"`. */
+  rowClickSelects: boolean;
+  /**
+   * Whether more than one row can be selected at once — TanStack's
+   * `enableMultiRowSelection`. Off, the grid drops the select-all header
+   * checkbox: TanStack's `toggleAllRowsSelected` only consults `getCanSelect`,
+   * so that control would select every row and walk straight past the limit.
+   *
+   * A per-row predicate counts as on, since some rows may still multi-select.
+   */
+  multiRowSelection: boolean;
   /** Whether a selected row takes the highlight colour. Follows the mode. */
-  highlightSelectedRows: boolean;
+  showSelectedBackground: boolean;
+  /**
+   * The single highlighted row — clicking a row highlights it, for a detail
+   * panel to follow. State of its own, not a slice of `rowSelection`, which is
+   * what lets it coexist with a checkbox multi-selection.
+   */
+  highlightRow: boolean;
   /**
    * The one default-off flag: pagination must be asked for, either with the
    * grid's `enablePagination` or implicitly by declaring `manualPagination`.
@@ -54,12 +88,20 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableColumnResizing"
     | "enableColumnOrdering"
     | "enableRowSelection"
-    | "rowSelectionMode"
-    | "highlightSelectedRows"
+    | "enableMultiRowSelection"
+    | "selectionMode"
+    | "showSelectedBackground"
     | "enablePagination"
     | "manualPagination"
   >,
 ): TMDataGridFeatureFlags {
+  const selectionMode = options.selectionMode ?? "checkbox";
+  // `"highlight"` is the master-detail mode: no selection to speak of, so the
+  // checkbox column and the click-to-select behaviour both fall away. Otherwise
+  // `enableRowSelection` still has the final say, including its predicate form.
+  const rowSelection =
+    selectionMode !== "highlight" && options.enableRowSelection !== false;
+
   return {
     sorting: options.enableSorting !== false,
     filtering: options.enableColumnFilters !== false,
@@ -67,12 +109,19 @@ export function readFeatureFlags<TData extends RowData>(
     pinning: options.enableColumnPinning !== false,
     resizing: options.enableColumnResizing !== false,
     ordering: options.enableColumnOrdering !== false,
-    rowSelection: options.enableRowSelection !== false,
-    rowSelectionMode: options.rowSelectionMode ?? "checkbox",
+    rowSelection,
+    selectionMode,
+    selectColumn:
+      rowSelection &&
+      (selectionMode === "checkbox" || selectionMode === "checkboxAndHighlight"),
+    rowClickSelects: rowSelection && selectionMode === "row",
+    multiRowSelection: options.enableMultiRowSelection !== false,
     // In "row" mode the highlight *is* the feedback for a click, so it is on.
     // With checkboxes the box already says it, so it is off unless asked for.
-    highlightSelectedRows:
-      options.highlightSelectedRows ?? options.rowSelectionMode === "row",
+    showSelectedBackground:
+      options.showSelectedBackground ?? selectionMode === "row",
+    highlightRow:
+      selectionMode === "checkboxAndHighlight" || selectionMode === "highlight",
     pagination:
       options.enablePagination === true || options.manualPagination === true,
   };

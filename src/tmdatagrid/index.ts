@@ -49,8 +49,15 @@ export {
   type TMDataGridCapabilities,
   type TMDataGridColumnCapabilities,
   type TMDataGridFeatureFlags,
-  type TMDataGridRowSelectionMode,
+  type TMDataGridSelectionMode,
 } from "./core/capabilities";
+export {
+  getDisplayedRows,
+  resolveRowSelectionClick,
+  type ResolvedRowSelection,
+  type ResolveRowSelectionClickArgs,
+  type TMDataGridRowClickModifiers,
+} from "./core/rowSelection";
 export {
   DEFAULT_TMDATAGRID_SIZE,
   SIZE_CONTROL_SIZE,

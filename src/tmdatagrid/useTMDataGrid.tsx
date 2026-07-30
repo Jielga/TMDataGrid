@@ -30,7 +30,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
@@ -45,7 +45,7 @@ import {
 import {
   readFeatureFlags,
   type TMDataGridFeatureFlags,
-  type TMDataGridRowSelectionMode,
+  type TMDataGridSelectionMode,
 } from "./core/capabilities";
 import {
   createSelectColumn,
@@ -146,6 +146,20 @@ export type TMDataGridUiState = {
    * `dataTransfer`, which browsers keep unreadable until the drop.
    */
   draggedColumnId: string | null;
+  /**
+   * The single highlighted row — the one a detail panel would be showing. Its
+   * own concept, not a slice of `rowSelection`: under
+   * `selectionMode: "checkboxAndHighlight"` the two coexist, and TanStack's one
+   * selection map cannot hold both.
+   *
+   * Not pruned when the row is filtered out, paged away or dropped from `data`,
+   * matching how TanStack treats `rowSelection` — nothing there resets it
+   * either. The row simply renders unhighlighted, and highlights again if it
+   * comes back.
+   */
+  highlightedRowId: string | null;
+  /** The pivot a shift-click extends from. See resolveRowSelectionClick. */
+  selectionAnchorRowId: string | null;
 };
 
 export type TMDataGridUiActions = {
@@ -155,6 +169,12 @@ export type TMDataGridUiActions = {
   toggleColumnsPanel: () => void;
   startColumnDrag: (columnId: string) => void;
   endColumnDrag: () => void;
+  /**
+   * Moves the active row, or clears it with `null` — which is how a consumer
+   * closing its detail panel puts the grid back in step.
+   */
+  setHighlightedRow: (rowId: string | null) => void;
+  setSelectionAnchor: (rowId: string | null) => void;
 };
 
 export type TMDataGridUiStore = Store<TMDataGridUiState, TMDataGridUiActions>;
@@ -201,18 +221,29 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
   /**
    * How rows are selected. Defaults to `"checkbox"`.
    *
-   * - `"checkbox"` — the generated checkbox column selects; clicking a row
-   *   elsewhere does not.
-   * - `"row"` — no checkbox column; clicking a row toggles it. Other rows keep
-   *   their state, so a click never clears the rest of the selection.
+   * | Mode | Checkbox column | Row click |
+   * | ---- | --------------- | --------- |
+   * | `"checkbox"` | yes, multi-select | nothing |
+   * | `"row"` | no | multi-selects, Ctrl/Shift modifiers |
+   * | `"checkboxAndHighlight"` | yes, multi-select | highlights one row |
+   * | `"highlight"` | no | highlights one row, no selection at all |
    *
-   * Ignored when `enableRowSelection` is `false`. Both modes write to the same
-   * `rowSelection` state.
+   * One option rather than two, so the combination that cannot work — a click
+   * that both toggles a multi-selection and moves the highlight — is not
+   * expressible.
+   *
+   * The first two write to TanStack's `rowSelection`. The highlight is separate
+   * state, which is what lets `"checkboxAndHighlight"` run both at once: tick
+   * rows for a bulk action, click one to open its detail panel. See
+   * `defaultHighlightedRowId` / `onHighlightedRowChange`.
+   *
+   * `enableRowSelection` still gates the selection half, predicate form
+   * included; under `"highlight"` there is nothing for it to gate.
    */
-  rowSelectionMode?: TMDataGridRowSelectionMode;
+  selectionMode?: TMDataGridSelectionMode;
   /**
    * Give selected rows the highlight background. Defaults to `true` under
-   * `rowSelectionMode: "row"`, where the highlight is the only feedback a click
+   * `selectionMode: "row"`, where the highlight is the only feedback a click
    * gives, and `false` under `"checkbox"`, where the box already shows it.
    *
    * The colour is the `--dg-row-selected-bg` CSS variable, so it can be changed
@@ -225,7 +256,31 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * />
    * ```
    */
-  highlightSelectedRows?: boolean;
+  showSelectedBackground?: boolean;
+  /**
+   * The row that starts out highlighted, under a `selectionMode` that has a
+   * highlight. Read once on mount, like `initialState`.
+   *
+   * The grid never persists the highlighted row. Pair this with
+   * {@link onHighlightedRowChange} and keep it wherever it belongs — for a
+   * detail panel that is usually the route, which gets you a shareable link and
+   * a working back button as well as surviving a reload:
+   *
+   * ```tsx
+   * const { rowId } = useParams();
+   * useTMDataGrid({
+   *   selectionMode: "highlight",
+   *   defaultHighlightedRowId: rowId,
+   *   onHighlightedRowChange: (id) => navigate(id ? `/employees/${id}` : "/employees"),
+   * });
+   * ```
+   */
+  defaultHighlightedRowId?: string | null;
+  /**
+   * Called with the newly highlighted row id, or `null` when it is cleared.
+   * Fires for `ui.actions.setHighlightedRow` too, not only for clicks.
+   */
+  onHighlightedRowChange?: (rowId: string | null) => void;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -268,15 +323,28 @@ export function useTMDataGrid<TData extends RowData>({
   // Not TanStack options, so they are kept out of what `useTable` receives.
   enableColumnOrdering,
   enablePagination,
-  rowSelectionMode,
-  highlightSelectedRows,
+  selectionMode,
+  showSelectedBackground,
+  defaultHighlightedRowId,
+  onHighlightedRowChange,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
-  const selectionEnabled = options.enableRowSelection !== false;
+  // Derived up here, rather than just before the return, because the rest of the
+  // hook needs `selectColumn` — one place decides what each mode means.
+  //
+  // Deliberately not memoized on `table`: the flags must re-derive whenever the
+  // caller passes different options, and `table` keeps the same identity when
+  // they do. See readFeatureFlags.
+  const features = readFeatureFlags({
+    ...options,
+    enableColumnOrdering,
+    enablePagination,
+    selectionMode,
+    showSelectedBackground,
+  });
+
   const pinningEnabled = options.enableColumnPinning !== false;
-  // Only "checkbox" mode owns a column; "row" mode selects from the row itself.
-  const selectColumnEnabled =
-    selectionEnabled && rowSelectionMode !== "row";
+  const selectColumnEnabled = features.selectColumn;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -367,6 +435,10 @@ export function useTMDataGrid<TData extends RowData>({
       columnsPanelOpen: false,
       filterPanelColumnId: null,
       draggedColumnId: null,
+      // `useCreateStore` builds the store once per mount, so this is a genuine
+      // default rather than a value that would fight later clicks.
+      highlightedRowId: defaultHighlightedRowId ?? null,
+      selectionAnchorRowId: null,
     },
     ({ setState }) => ({
       openFilterPanel: (columnId = null) =>
@@ -389,19 +461,34 @@ export function useTMDataGrid<TData extends RowData>({
         setState((prev) => ({ ...prev, draggedColumnId: columnId })),
       endColumnDrag: () =>
         setState((prev) => ({ ...prev, draggedColumnId: null })),
+      setHighlightedRow: (rowId) =>
+        setState((prev) => ({ ...prev, highlightedRowId: rowId })),
+      setSelectionAnchor: (rowId) =>
+        setState((prev) => ({ ...prev, selectionAnchorRowId: rowId })),
     }),
   );
 
-  // Deliberately not memoized on `table`: the flags must re-derive whenever the
-  // caller passes different options, and `table` keeps the same identity when
-  // they do. See readFeatureFlags.
-  const features = readFeatureFlags({
-    ...options,
-    enableColumnOrdering,
-    enablePagination,
-    rowSelectionMode,
-    highlightSelectedRows,
-  });
+  // `onHighlightedRowChange` is fired from a subscription rather than from the store
+  // action, so it covers every route to a new active row — a row click, and a
+  // consumer calling `setHighlightedRow` itself. Held in a ref because the store is
+  // built once and its actions would otherwise close over the first render's
+  // callback.
+  const onHighlightedRowChangeRef = useRef(onHighlightedRowChange);
+  useEffect(() => {
+    onHighlightedRowChangeRef.current = onHighlightedRowChange;
+  }, [onHighlightedRowChange]);
+
+  useEffect(() => {
+    // Seeded from the current value so mounting with a `defaultHighlightedRowId`
+    // does not report a change that nothing made.
+    let previous = ui.state.highlightedRowId;
+    const subscription = ui.subscribe((state) => {
+      if (state.highlightedRowId === previous) return;
+      previous = state.highlightedRowId;
+      onHighlightedRowChangeRef.current?.(state.highlightedRowId);
+    });
+    return () => subscription.unsubscribe();
+  }, [ui]);
 
   return { table, ui, features };
 }

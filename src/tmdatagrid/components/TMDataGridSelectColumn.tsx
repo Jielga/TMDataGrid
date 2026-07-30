@@ -1,6 +1,11 @@
 import { Checkbox } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
+import { useTMDataGridContext } from "../TMDataGridContext";
+import {
+  getDisplayedRows,
+  resolveRowSelectionClick,
+} from "../core/rowSelection";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 export const SELECT_COLUMN_ID = "__select__";
@@ -43,11 +48,33 @@ function SelectAllCheckbox<TData extends RowData>({
   );
 }
 
+/**
+ * Drops the select-all box when only one row may be selected. Read from the
+ * feature flags rather than `table.options.enableMultiRowSelection` directly:
+ * the flags are re-derived from a fresh object every render, so the switch
+ * cannot be cached along with a `table` identity that survives an options
+ * change — the same reason the rest of the chrome reads them. See
+ * readFeatureFlags.
+ */
+function SelectAllHeader<TData extends RowData>({
+  table,
+}: {
+  table: TMDataGridTable<TData>;
+}) {
+  const { features } = useTMDataGridContext();
+  if (!features.multiRowSelection) return null;
+  return <SelectAllCheckbox table={table} />;
+}
+
 function SelectRowCheckbox<TData extends RowData>({
   row,
 }: {
   row: Row<TMDataGridFeatures, TData>;
 }) {
+  // Cells render inside the grid's provider, so the checkbox can reach the
+  // chrome store — it needs the shift-click pivot, and the feature flags to know
+  // which row model a range is measured over.
+  const { ui, features } = useTMDataGridContext();
   const selected = useSelector(row.table.store, () => row.getIsSelected());
   const someSelected = useSelector(row.table.store, () =>
     row.getIsSomeSelected(),
@@ -60,7 +87,34 @@ function SelectRowCheckbox<TData extends RowData>({
       checked={selected}
       disabled={!row.getCanSelect()}
       indeterminate={someSelected && !selected}
-      onChange={row.getToggleSelectedHandler()}
+      // Every tick goes through the resolver, shift held or not — plain becomes
+      // a toggle that moves the pivot, so a later shift-click extends from the
+      // box the user last touched.
+      //
+      // All of it in `onChange`, not split with an `onClick`: React derives a
+      // checkbox's change event from the click, so the modifier keys ride along
+      // on the native event, and a `preventDefault()` in a click handler cannot
+      // stop the change from firing anyway. Trying to do the range in `onClick`
+      // silently loses the clicked row, which `onChange` then toggles back off.
+      onChange={(event) => {
+        const native = event.nativeEvent;
+        const isMouse = native instanceof MouseEvent;
+        const resolved = resolveRowSelectionClick({
+          rows: getDisplayedRows(row.table, features),
+          rowId: row.id,
+          anchorRowId: ui.state.selectionAnchorRowId,
+          modifiers: {
+            toggle: isMouse && (native.ctrlKey || native.metaKey),
+            extend: isMouse && native.shiftKey,
+          },
+          selection: row.table.store.state.rowSelection,
+          // A checkbox is only ever additive — ticking one has never cleared
+          // the others, so `canReplaceSelection` stays false whatever is held.
+          canReplaceSelection: false,
+        });
+        row.table.setRowSelection(resolved.selection);
+        ui.actions.setSelectionAnchor(resolved.anchorRowId);
+      }}
       // A row can select on click too; the checkbox must not toggle twice.
       onClick={(event) => event.stopPropagation()}
     />
@@ -69,7 +123,7 @@ function SelectRowCheckbox<TData extends RowData>({
 
 /**
  * The generated checkbox column, prepended under
- * `rowSelectionMode: "checkbox"` — the default whenever row selection is on.
+ * `selectionMode: "checkbox"` (the default) or `"checkboxAndHighlight"`.
  */
 export function createSelectColumn<TData extends RowData>(): ColumnDef<
   TMDataGridFeatures,
@@ -94,7 +148,7 @@ export function createSelectColumn<TData extends RowData>(): ColumnDef<
     enableGlobalFilter: false,
     // Structurally pinned to the left; users shouldn't be able to move it.
     enablePinning: false,
-    header: ({ table }) => <SelectAllCheckbox table={table} />,
+    header: ({ table }) => <SelectAllHeader table={table} />,
     cell: ({ row }) => <SelectRowCheckbox row={row} />,
   };
 }

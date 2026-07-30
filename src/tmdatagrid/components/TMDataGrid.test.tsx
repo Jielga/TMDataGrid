@@ -214,7 +214,7 @@ describe("row selection", () => {
   });
 
   it("drops the checkbox column in row selection mode", () => {
-    renderGridUi({ rowSelectionMode: "row" });
+    renderGridUi({ selectionMode: "row" });
 
     expect(
       screen.queryByRole("checkbox", { name: "Select all rows" }),
@@ -223,7 +223,7 @@ describe("row selection", () => {
 
   it("selects on row click in row selection mode", async () => {
     const user = userEvent.setup();
-    renderGridUi({ rowSelectionMode: "row" });
+    renderGridUi({ selectionMode: "row" });
     const [firstRow] = screen.getAllByRole("row").filter((row) =>
       row.getAttribute("data-testid")?.startsWith("dg-row-"),
     );
