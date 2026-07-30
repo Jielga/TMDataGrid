@@ -46,6 +46,7 @@ export type StarterSnippetConfig = {
   customPager: boolean;
   /** `undefined` follows the mode, which needs no line in the snippet. */
   showSelectedBackground: boolean | undefined;
+  rowContextMenu: boolean;
 };
 
 const DEFAULT_SIZE: TMDataGridSize = "md";
@@ -66,6 +67,7 @@ export function buildStarterSnippet({
   size,
   customPager,
   showSelectedBackground,
+  rowContextMenu,
 }: StarterSnippetConfig): string {
   const highlight = hasHighlight(selectionMode);
   const paginated = options.enablePagination;
@@ -119,6 +121,9 @@ export function buildStarterSnippet({
   if (highlight) {
     imports.push('import { useSelector } from "@tanstack/react-store";');
   }
+  if (rowContextMenu) {
+    imports.push('import { Menu } from "@mantine/core";');
+  }
 
   const toolbar = [
     "        <TMDataGrid.Toolbar>",
@@ -154,6 +159,30 @@ export function buildStarterSnippet({
 
   const sizeProp = size === DEFAULT_SIZE ? "" : ` size="${size}"`;
 
+  // The grid opens the Menu at the pointer and closes it again; the render prop
+  // only says what goes in the dropdown.
+  const tableElement = rowContextMenu
+    ? [
+        "        <TMDataGrid.Table<MyRow>",
+        "          rowContextMenu={({ row, cell }) => (",
+        "            <>",
+        "              <Menu.Label>{row.original.name}</Menu.Label>",
+        "              <Menu.Item onClick={() => console.log(row.original)}>",
+        "                Open",
+        "              </Menu.Item>",
+        "              <Menu.Item",
+        "                onClick={() =>",
+        "                  navigator.clipboard.writeText(String(cell?.getValue() ?? ''))",
+        "                }",
+        "              >",
+        "                Copy cell value",
+        "              </Menu.Item>",
+        "            </>",
+        "          )}",
+        "        />",
+      ]
+    : ["        <TMDataGrid.Table<MyRow> />"];
+
   const highlightBlock = highlight
     ? [
         "",
@@ -171,7 +200,7 @@ export function buildStarterSnippet({
     `      <TMDataGrid {...grid}${sizeProp} style={{ height: 480 }}>`,
     ...toolbar,
     "",
-    "        <TMDataGrid.Table<MyRow> />",
+    ...tableElement,
     ...footer,
     "      </TMDataGrid>",
   ];

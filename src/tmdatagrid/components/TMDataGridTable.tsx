@@ -1,13 +1,21 @@
-import { Loader, Text } from "@mantine/core";
+import { Loader, Menu, type MenuProps, Text } from "@mantine/core";
 import {
   type Cell,
   flexRender,
   type Row,
   type RowData,
+  type Table,
 } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useRef } from "react";
+import {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import classes from "./TMDataGridTable.module.css";
 import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
@@ -77,10 +85,12 @@ function TMDataGridBodyCell({
   cell,
   rowHeight,
   layout,
+  onContextMenu,
 }: {
   cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>;
   rowHeight: number;
   layout: TMDataGridColumnLayout;
+  onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
   return (
     <div
@@ -89,6 +99,7 @@ function TMDataGridBodyCell({
       // The checkbox lane is a fixed track, so it cannot take the cell padding
       // the scale grows for text. See TMDataGridTable.module.css.
       data-select-column={cell.column.id === SELECT_COLUMN_ID}
+      onContextMenu={onContextMenu}
       className={[
         classes.bodyCell,
         layout.isBoundary && layout.pinnedAt === "left" ? sticky.stickyLeft : "",
@@ -111,12 +122,130 @@ function TMDataGridBodyCell({
   );
 }
 
+/**
+ * The virtualized body rows, wrapped in the single Menu that serves all of them
+ * when `rowContextMenu` is set.
+ *
+ * One instance for the whole body rather than one per row. A Mantine `Menu` is
+ * a `Popover`, and a closed Popover still runs its hooks on every render — and
+ * the body re-renders on every scroll frame, because that is how virtualization
+ * works. Wrapping each of ~20 mounted rows measured a fifth onto a body render;
+ * wrapping the group is the same behaviour for one instance.
+ *
+ * `display: contents` keeps the group out of the grid's layout while still
+ * taking the right-click, carrying `Menu.ContextMenu`'s handlers, and passing
+ * its inherited `user-select: none` down to the rows.
+ */
+function TMDataGridBodyRowGroup({
+  enabled,
+  menuContent,
+  menuProps,
+  onContextMenu,
+  onClose,
+  children,
+}: {
+  enabled: boolean;
+  menuContent: ReactNode;
+  menuProps?: Omit<MenuProps, "opened" | "onChange" | "children">;
+  onContextMenu: () => void;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const rowGroup = (
+    <div
+      role="rowgroup"
+      style={{ display: "contents" }}
+      // Runs before Mantine's own handler, which `Menu.ContextMenu` composes on
+      // top of this one — so the row and cell are known by the time the
+      // dropdown is built and opened at the pointer.
+      onContextMenu={enabled ? onContextMenu : undefined}
+    >
+      {children}
+    </div>
+  );
+
+  if (!enabled) return rowGroup;
+
+  return (
+    <Menu
+      // Open only once the render prop has returned something: a row it answers
+      // `null` for never opens an empty dropdown.
+      opened={menuContent !== null}
+      onChange={(opened) => {
+        if (!opened) onClose();
+      }}
+      position="bottom-start"
+      shadow="md"
+      width={220}
+      {...menuProps}
+    >
+      <Menu.ContextMenu>{rowGroup}</Menu.ContextMenu>
+      <Menu.Dropdown>{menuContent}</Menu.Dropdown>
+    </Menu>
+  );
+}
+
+/** What a `rowContextMenu` render prop is handed for the right-clicked row. */
+export type TMDataGridRowContextMenuArgs<TData extends RowData> = {
+  table: Table<TMDataGridFeatures, TData>;
+  row: Row<TMDataGridFeatures, TData>;
+  /**
+   * The cell under the pointer. `null` only when the right-click landed on the
+   * row but on no cell — which a custom cell renderer that stops propagation
+   * can cause.
+   */
+  cell: Cell<TMDataGridFeatures, TData, unknown> | null;
+  /**
+   * Closes the menu. `Menu.Item` already closes on click (Mantine's
+   * `closeOnItemClick`), so this is for content that isn't a menu item.
+   */
+  close: () => void;
+};
+
+/**
+ * Builds the contents of a row's context menu — `Menu.Item`, `Menu.Label`,
+ * `Menu.Divider`, `Menu.Sub`, or any other node. The grid owns the `Menu` and
+ * its `Menu.Dropdown`; this fills the dropdown.
+ */
+export type TMDataGridRowContextMenu<TData extends RowData> = (
+  args: TMDataGridRowContextMenuArgs<TData>,
+) => ReactNode;
+
 export type TMDataGridTableProps<TData extends RowData> = {
   /**
    * Called when a body row is clicked. Runs in addition to row selection under
    * `selectionMode: "row"`, not instead of it.
    */
   onRowClick?: (row: Row<TMDataGridFeatures, TData>) => void;
+  /**
+   * Contents of the menu a right-click on a row opens, at the pointer. Return
+   * `null` to leave a row without one — the browser's own menu stays suppressed
+   * either way.
+   *
+   * ```tsx
+   * <TMDataGrid.Table<Employee>
+   *   rowContextMenu={({ row, close }) => (
+   *     <>
+   *       <Menu.Label>{row.original.firstName}</Menu.Label>
+   *       <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
+   *       <Menu.Divider />
+   *       <Menu.Item color="red" onClick={() => remove(row.original.id)}>
+   *         Delete
+   *       </Menu.Item>
+   *     </>
+   *   )}
+   * />
+   * ```
+   *
+   * Called during render, and only for the row whose menu is open — so it stays
+   * a pure function of the row, and cost per row does not matter.
+   */
+  rowContextMenu?: TMDataGridRowContextMenu<TData>;
+  /**
+   * Passed to the Mantine `Menu` the grid wraps the row in — `width`, `shadow`,
+   * `position`, `transitionProps` and the rest. Its open state is the grid's.
+   */
+  rowContextMenuProps?: Omit<MenuProps, "opened" | "onChange" | "children">;
 };
 
 /**
@@ -127,6 +256,8 @@ export type TMDataGridTableProps<TData extends RowData> = {
  */
 export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onRowClick,
+  rowContextMenu,
+  rowContextMenuProps,
 }: TMDataGridTableProps<TData>) {
   const { table, ui, features, rowHeight, controlSize } =
     useTMDataGridContext();
@@ -315,9 +446,68 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     onRowClick?.(row as unknown as Row<TMDataGridFeatures, TData>);
   };
 
+  // Which row's context menu is open, and which cell it was opened from.
+  const [contextMenuTarget, setContextMenuTarget] = useState<{
+    rowId: string;
+    columnId: string | null;
+  } | null>(null);
+  const closeContextMenu = () => setContextMenuTarget(null);
+
+  // Row and cell each record themselves on the way up, so that by the time the
+  // rowgroup's handler opens the menu it knows what was hit. Refs rather than
+  // state: written and read inside the same event, before the render it causes.
+  const contextMenuRowRef = useRef<string | null>(null);
+  const contextMenuColumnRef = useRef<string | null>(null);
+
+  const handleContextMenu = () => {
+    const rowId = contextMenuRowRef.current;
+    const columnId = contextMenuColumnRef.current;
+    contextMenuRowRef.current = null;
+    contextMenuColumnRef.current = null;
+    setContextMenuTarget(rowId === null ? null : { rowId, columnId });
+  };
+
+  const contextMenuRow =
+    contextMenuTarget === null
+      ? undefined
+      : rows.find((row) => row.id === contextMenuTarget.rowId);
+
+  /**
+   * Built for the open row only, so a consumer's render prop is called once per
+   * opened menu rather than once per mounted row. `null` back from it means
+   * this row has no menu, which is also how the menu stays shut.
+   *
+   * The casts put back the concrete row type the context boundary erased — the
+   * same crossing `onRowClick` makes.
+   */
+  const contextMenuContent =
+    rowContextMenu && contextMenuTarget && contextMenuRow
+      ? rowContextMenu({
+          table: table as unknown as Table<TMDataGridFeatures, TData>,
+          row: contextMenuRow as unknown as Row<TMDataGridFeatures, TData>,
+          cell: (contextMenuRow
+            .getAllCells()
+            .find((cell) => cell.column.id === contextMenuTarget.columnId) ??
+            null) as unknown as Cell<TMDataGridFeatures, TData, unknown> | null,
+          close: closeContextMenu,
+        }) ?? null
+      : null;
+
+  /**
+   * The dropdown is anchored to a fixed viewport point, so it does not travel
+   * with the row when the body scrolls — and under virtualization the row it
+   * belongs to may unmount entirely. Closing is the honest answer, and matches
+   * what every desktop context menu does.
+   */
+  const handleScroll = contextMenuTarget ? closeContextMenu : undefined;
+
   return (
     <div className={classes.tableWrapper}>
-      <div ref={scrollContainerRef} className={classes.scrollContainer}>
+      <div
+        ref={scrollContainerRef}
+        className={classes.scrollContainer}
+        onScroll={handleScroll}
+      >
         <div
           role="table"
           className={classes.grid}
@@ -351,7 +541,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             <div aria-hidden style={{ gridColumn: "1/-1", height: paddingTop }} />
           )}
 
-          <div role="rowgroup" style={{ display: "contents" }}>
+          <TMDataGridBodyRowGroup
+            enabled={rowContextMenu !== undefined}
+            menuContent={contextMenuContent}
+            menuProps={rowContextMenuProps}
+            onContextMenu={handleContextMenu}
+            onClose={closeContextMenu}
+          >
             {virtualItems.map((virtualItem) => {
               const row = rows[virtualItem.index];
               if (!row) return null;
@@ -394,6 +590,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // wider than they meant to.
                   data-highlighted={
                     features.highlightRow && row.id === highlightedRowId
+                  }
+                  // The menu is anchored to the rowgroup, so Mantine's own
+                  // `data-expanded` lands there rather than on a row. This is
+                  // what says which row the open menu is about.
+                  data-context-menu={
+                    contextMenuContent !== null &&
+                    contextMenuTarget?.rowId === row.id
                   }
                   data-selects-on-click={selectsOnRowClick && !isGroupRow}
                   aria-selected={
@@ -446,6 +649,22 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                         }
                       : undefined
                   }
+                  // Bubbles to the rowgroup, where the menu opens — so the row
+                  // is recorded before the dropdown is built.
+                  //
+                  // Group rows record nothing, which leaves the ref null and the
+                  // menu shut. Same reason they sit out `onRowClick`: TanStack
+                  // builds a group row on its first child's record, so a render
+                  // prop reaching for `row.original` would be handed a real
+                  // employee that has nothing to do with the group. The browser
+                  // menu stays suppressed over them either way.
+                  onContextMenu={
+                    rowContextMenu && !isGroupRow
+                      ? () => {
+                          contextMenuRowRef.current = row.id;
+                        }
+                      : undefined
+                  }
                 >
                   {[
                     ...row.getLeftVisibleCells(),
@@ -457,12 +676,19 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       cell={cell}
                       rowHeight={rowHeight}
                       layout={layoutFor(cell.column.id)}
+                      onContextMenu={
+                        rowContextMenu
+                          ? () => {
+                              contextMenuColumnRef.current = cell.column.id;
+                            }
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
               );
             })}
-          </div>
+          </TMDataGridBodyRowGroup>
 
           {isEmpty && loading === true && (
             <div role="row" className={classes.messageRow}>

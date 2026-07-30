@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { Menu } from "@mantine/core";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
@@ -9,14 +10,20 @@ import {
 } from "../../test/gridHarness";
 import { TMDataGrid } from "./TMDataGrid";
 import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
+import type { TMDataGridTableProps } from "./TMDataGridTable";
 import { useTMDataGrid, type UseTMDataGridOptions } from "../useTMDataGrid";
+
+type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
+  /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
+  tableProps?: TMDataGridTableProps<TestRow>;
+};
 
 /**
  * Smoke tests for the wiring between the chrome and the table: that a click on
  * a header sorts, that the panels write filter and visibility state, and that
  * the pager pages. TanStack's own behaviour is not re-tested here.
  */
-function Grid(options: Partial<UseTMDataGridOptions<TestRow>> = {}) {
+function Grid({ tableProps, ...options }: GridProps = {}) {
   const grid = useTMDataGrid<TestRow>({
     data: testRows,
     columns: testColumns,
@@ -36,14 +43,15 @@ function Grid(options: Partial<UseTMDataGridOptions<TestRow>> = {}) {
           <TMDataGrid.FilterButton />
           <TMDataGrid.ColumnsButton />
         </TMDataGrid.Toolbar>
-        <TMDataGrid.Table<TestRow> />
+        <TMDataGrid.Table<TestRow> {...tableProps} />
         <TMDataGrid.Footer />
       </TMDataGrid>
     </>
+
   );
 }
 
-const renderGridUi = (options: Partial<UseTMDataGridOptions<TestRow>> = {}) =>
+const renderGridUi = (options: GridProps = {}) =>
   renderWithMantine(<Grid {...options} />);
 
 const bodyRows = () =>
@@ -342,6 +350,76 @@ describe("row selection", () => {
   });
 });
 
+describe("row context menu", () => {
+  /** Right-clicks the Name cell of a row. Cell 0 is the checkbox column. */
+  const contextClickName = (rowIndex: number) =>
+    fireEvent.contextMenu(
+      within(bodyRows()[rowIndex]).getAllByRole("cell")[2],
+    );
+
+  it("opens the menu for the right-clicked row and cell", async () => {
+    const targets: string[] = [];
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: ({ row, cell }) => {
+          targets.push(`${row.id}:${cell?.column.id ?? "none"}`);
+          return <Menu.Item>Open</Menu.Item>;
+        },
+      },
+    });
+
+    contextClickName(1);
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Open" }),
+    ).toBeInTheDocument();
+    // The second row, and the cell the pointer was actually over.
+    expect(targets).toContain("2:name");
+    expect(bodyRows()[1]).toHaveAttribute("data-context-menu", "true");
+  });
+
+  it("closes again when an item is picked", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      tableProps: { rowContextMenu: () => <Menu.Item>Open</Menu.Item> },
+    });
+
+    contextClickName(0);
+    await user.click(await screen.findByRole("menuitem", { name: "Open" }));
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Open" }),
+    ).not.toBeInTheDocument();
+    expect(bodyRows()[0]).not.toHaveAttribute("data-context-menu", "true");
+  });
+
+  it("leaves a row without a menu when the render prop returns null", async () => {
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: ({ row }) =>
+          row.id === "1" ? null : <Menu.Item>Open</Menu.Item>,
+      },
+    });
+
+    contextClickName(0);
+    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+
+    contextClickName(1);
+    expect(
+      await screen.findByRole("menuitem", { name: "Open" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not touch right-click without the prop", () => {
+    renderGridUi();
+
+    contextClickName(0);
+
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(bodyRows()[0]).not.toHaveAttribute("data-context-menu", "true");
+  });
+});
+
 describe("pagination", () => {
   it("renders no pager unless pagination is enabled", () => {
     renderGridUi();
@@ -594,5 +672,52 @@ describe("grouping and the pager", () => {
 
     expect(bodyRows()).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
+  });
+});
+
+describe("grouping and the row context menu", () => {
+  it("leaves group rows without a context menu", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: ({ row }) => {
+          seen.push(row.id);
+          return <Menu.Item>Open</Menu.Item>;
+        },
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+
+    // A group row is built on its first child's record, so a render prop
+    // reaching for `row.original` would be handed the wrong employee. Same
+    // reason group rows sit out `onRowClick`.
+    fireEvent.contextMenu(within(bodyRows()[0]!).getAllByRole("cell")[2]!);
+
+    expect(screen.queryByRole("menuitem", { name: "Open" })).not.toBeInTheDocument();
+    expect(seen).toEqual([]);
+    expect(bodyRows()[0]).not.toHaveAttribute("data-context-menu", "true");
+  });
+
+  it("still opens one on the rows inside a group", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      tableProps: {
+        rowContextMenu: () => <Menu.Item>Open</Menu.Item>,
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+
+    const dataRow = bodyRows().find((row) => row.dataset.grouped !== "true");
+    fireEvent.contextMenu(within(dataRow!).getAllByRole("cell")[2]!);
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Open" }),
+    ).toBeInTheDocument();
   });
 });

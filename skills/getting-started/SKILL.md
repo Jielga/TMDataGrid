@@ -131,7 +131,7 @@ flex column.
 | Component | Props | Notes |
 | --- | --- | --- |
 | `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. `style` also takes CSS variables: `--dg-row-selected-bg`, `--dg-row-height`, `--dg-header-height`, `--dg-font-size`, `--dg-padding`. |
-| `TMDataGrid.Table` | `onRowClick(row)` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
+| `TMDataGrid.Table` | `onRowClick(row)`, `rowContextMenu` render prop, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | — | Pushes later toolbar items right. |
@@ -147,6 +147,37 @@ Pass the row type so `onRowClick` stays typed:
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
+
+`rowContextMenu` fills the dropdown of a Mantine `Menu` the grid opens at the
+pointer on a right-click (or a long press). The grid owns the `Menu` — opening,
+positioning, and closing on Escape, outside click, body scroll or an item pick —
+so the render prop only says what goes in it:
+
+```tsx
+<TMDataGrid.Table<Employee>
+  rowContextMenu={({ table, row, cell, close }) => (
+    <>
+      <Menu.Label>{row.original.firstName}</Menu.Label>
+      <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
+      <Menu.Item
+        onClick={() =>
+          navigator.clipboard.writeText(String(cell?.getValue() ?? ""))
+        }
+      >
+        Copy cell value
+      </Menu.Item>
+    </>
+  )}
+/>
+```
+
+`cell` is the one that was right-clicked, `table` is there for actions that read
+the selection, and `close` is for dropdown content that is not a `Menu.Item`
+(those close themselves). Return `null` to leave a row without a menu. It is
+called during render, and only for the open row, so it must stay pure — put the
+work in the item handlers. Right-clicking does not change the selection or the
+highlight; the row carries `data-context-menu` while its menu is open. Pass
+`rowContextMenuProps` for `width`, `shadow`, `position` and the rest.
 
 `TMDataGrid.Footer` reads totals from `table.getRowCount()`, which prefers
 `options.rowCount`. `TMDataGrid.SummaryCount` uses `meta.totalRowCount` when

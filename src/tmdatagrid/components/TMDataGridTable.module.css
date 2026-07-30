@@ -52,6 +52,14 @@
   --row-bg: var(--dg-row-group-bg);
 }
 
+/* The row an open context menu is about. The pointer has usually left it by
+   then, so without this the menu would be the only thing saying which row it
+   acts on. Declared before the selection rules, which are the stronger
+   statement and win at equal specificity. */
+.bodyRow[data-context-menu="true"] {
+  --row-bg: var(--mantine-color-default-hover);
+}
+
 /* Being selected and being painted for it are separate: a row is always
    `data-selected`, but only takes the background when `showSelectedBackground`
    is on — the default under `"row"`, off with checkboxes. */
