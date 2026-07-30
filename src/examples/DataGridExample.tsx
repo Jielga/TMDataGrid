@@ -27,6 +27,7 @@ import {
   type TMDataGridSize,
   useTMDataGrid,
 } from "../tmdatagrid";
+import { StarterSnippetModal } from "./StarterSnippetModal";
 
 type Employee = {
   id: number;
@@ -253,6 +254,7 @@ export function DataGridExample() {
   const [showSelectedBackground, setShowSelectedBackground] = useState<
     boolean | undefined
   >(undefined);
+  const [snippetOpen, setSnippetOpen] = useState(false);
 
   const grid = useTMDataGrid({
     data,
@@ -288,12 +290,30 @@ export function DataGridExample() {
 
   return (
     <Flex direction="column" gap="md" p="lg" h="100%">
-      <Text fw={600} size="lg">
-        Employees{" "}
-        <Text component="span" size="sm" c="dimmed" fw={400}>
-          — 5 000 rows · virtualized · state persisted to localStorage
+      <Group justify="space-between" wrap="nowrap">
+        <Text fw={600} size="lg">
+          Employees{" "}
+          <Text component="span" size="sm" c="dimmed" fw={400}>
+            — 5 000 rows · virtualized · state persisted to localStorage
+          </Text>
         </Text>
-      </Text>
+        {/* Set the switches below to what you want, then take the code. */}
+        <Button size="xs" variant="light" onClick={() => setSnippetOpen(true)}>
+          Get the code
+        </Button>
+      </Group>
+
+      <StarterSnippetModal
+        opened={snippetOpen}
+        onClose={() => setSnippetOpen(false)}
+        config={{
+          options: features,
+          selectionMode,
+          size,
+          customPager,
+          showSelectedBackground,
+        }}
+      />
 
       <Flex gap="sm" wrap="wrap" align="stretch">
         <Fieldset legend="Selection" p="xs" pt={4}>
