@@ -12,12 +12,12 @@ description: >
   argument is required for reactivity under the React Compiler, column pinning,
   column ordering with moveColumn and moveColumnByStep, and always-on
   virtualization. Load when building a read-only grid, hiding grid chrome,
-  enabling pagination, reordering columns from code, or writing a custom
-  toolbar button.
+  enabling pagination, reordering columns from code, or writing a custom toolbar
+  button.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '0.1.0'
+  library_version: '0.2.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/features.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/capabilities.ts'
