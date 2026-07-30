@@ -57,7 +57,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rollup -c rollup.dts.config.mjs",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rolldown -c rolldown.dts.config.mjs",
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -101,7 +101,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^6.0.4",
     "babel-plugin-react-compiler": "^1.0.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
@@ -110,10 +110,10 @@
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "rollup": "^4.62.3",
-    "rollup-plugin-dts": "^6.4.1",
-    "typescript": "~6.0.2",
-    "vite": "^8.1.0",
+    "rolldown": "~1.1.5",
+    "rolldown-plugin-dts": "^0.27.14",
+    "typescript": "~7.0.2",
+    "vite": "^8.1.5",
     "vitest": "^4.1.10"
   }
 }
