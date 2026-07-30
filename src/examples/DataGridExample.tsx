@@ -291,12 +291,17 @@ export function DataGridExample() {
   return (
     <Flex direction="column" gap="md" p="lg" h="100%">
       <Group justify="space-between" wrap="nowrap">
-        <Text fw={600} size="lg">
-          Employees{" "}
-          <Text component="span" size="sm" c="dimmed" fw={400}>
-            — 5 000 rows · virtualized · state persisted to localStorage
+        <Group gap="sm" wrap="wrap">
+          <Text fw={600} size="lg">
+            Employees{" "}
+            <Text component="span" size="sm" c="dimmed" fw={400}>
+              — 5 000 rows · virtualized · state persisted to localStorage
+            </Text>
           </Text>
-        </Text>
+          {/* Outside the grid, which is the point of the `api` prop: the pills
+              read the same filter state the panel writes. */}
+          <TMDataGrid.FilterPills api={grid} />
+        </Group>
         {/* Set the switches below to what you want, then take the code. */}
         <Button size="xs" variant="light" onClick={() => setSnippetOpen(true)}>
           Get the code

@@ -4,6 +4,7 @@ import classes from "./TMDataGrid.module.css";
 import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
 import { TMDataGridContextProvider } from "../TMDataGridContext";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
+import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import { TMDataGridFooter } from "./TMDataGridFooter";
 import { TMDataGridTable } from "./TMDataGridTable";
 import {
@@ -101,6 +102,11 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
   Footer: TMDataGridFooter,
   /** Rendered by `TMDataGrid.Table`; exported for custom layouts. */
   FilterPanel: TMDataGridFilterPanel,
+  /**
+   * Takes the grid as an `api` prop rather than from context, so it can be
+   * rendered outside `<TMDataGrid>` — a page header, for instance.
+   */
+  FilterPills: TMDataGridFilterPills,
   /** Rendered by `TMDataGrid.ColumnsButton`; exported for custom layouts. */
   ColumnsPanel: TMDataGridColumnsPanel,
 });

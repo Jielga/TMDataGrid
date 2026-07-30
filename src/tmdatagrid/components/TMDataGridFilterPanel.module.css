@@ -18,3 +18,18 @@
   align-items: flex-end;
   gap: var(--mantine-spacing-xs);
 }
+
+.filterPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-md);
+  padding-bottom: var(--mantine-spacing-xs);
+}
+
+.filterPanelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-md);
+}

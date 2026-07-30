@@ -21,10 +21,15 @@ export {
   type UseTMDataGridOptions,
 } from "./useTMDataGrid";
 export {
+  TMDataGridFilterPills,
+  type TMDataGridFilterPillsProps,
+} from "./components/TMDataGridFilterPills";
+export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
   FILTER_OPERATOR_LABELS,
+  formatFilterLabel,
   isFilterActive,
 } from "./core/filterOperators";
 export {

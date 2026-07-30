@@ -8,6 +8,7 @@ import {
   type TestRow,
 } from "../../test/gridHarness";
 import { TMDataGrid } from "./TMDataGrid";
+import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import { useTMDataGrid, type UseTMDataGridOptions } from "../useTMDataGrid";
 
 /**
@@ -24,16 +25,21 @@ function Grid(options: Partial<UseTMDataGridOptions<TestRow>> = {}) {
   } as UseTMDataGridOptions<TestRow>);
 
   return (
-    <TMDataGrid {...grid}>
-      <TMDataGrid.Toolbar>
-        <TMDataGrid.SummaryCount />
-        <TMDataGrid.Spacer />
-        <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
-      </TMDataGrid.Toolbar>
-      <TMDataGrid.Table<TestRow> />
-      <TMDataGrid.Footer />
-    </TMDataGrid>
+    <>
+      {/* Rendered outside the provider on purpose: the pills take the api as a
+          prop, and nothing else in the grid may. */}
+      <TMDataGridFilterPills api={grid} />
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.SummaryCount />
+          <TMDataGrid.Spacer />
+          <TMDataGrid.FilterButton />
+          <TMDataGrid.ColumnsButton />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+        <TMDataGrid.Footer />
+      </TMDataGrid>
+    </>
   );
 }
 
@@ -172,6 +178,86 @@ describe("filtering", () => {
 
     expect(
       screen.queryByRole("button", { name: "Filters" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the panel from its close button, keeping the filter", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByRole("button", { name: "Close filters" }));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds()).toEqual(["3"]);
+  });
+
+  it("hides the panel on a click away", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByTestId("dg-header-name"));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds()).toEqual(["3"]);
+  });
+
+  it("keeps the toolbar button a toggle, not a reopen", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+    const filterButton = screen.getByRole("button", { name: "Filters" });
+
+    await user.click(filterButton);
+    expect(screen.getByLabelText("Value")).toBeInTheDocument();
+
+    // The click-away handler fires on this button too — if it closed the panel
+    // there, the button's own click would open it straight back up.
+    await user.click(filterButton);
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+  });
+
+  it("drops every filter and the panel from Clear all", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    await user.click(screen.getByRole("button", { name: "Clear all" }));
+
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+    expect(renderedRowIds().length).toBe(testRows.length);
+  });
+});
+
+describe("filter pills", () => {
+  it("names the active filters and clears one from its pill", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+
+    // "equals" is the numeric default, so the operator stays implicit.
+    expect(screen.getByText("ID: 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear ID filter" }));
+
+    expect(screen.queryByText("ID: 3")).not.toBeInTheDocument();
+    expect(renderedRowIds().length).toBe(testRows.length);
+  });
+
+  it("shows no pill for a filter that is not narrowing yet", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    expect(
+      screen.queryByRole("group", { name: "Active filters" }),
     ).not.toBeInTheDocument();
   });
 });
