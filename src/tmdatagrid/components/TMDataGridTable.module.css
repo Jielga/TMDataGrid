@@ -80,6 +80,14 @@
   font-size: var(--dg-font-size);
 }
 
+/* The checkbox column is a fixed 48px track holding a control of a known width,
+   not text that can ellipsize. Cell padding is sized for text and grows with
+   the scale, so at `xl` its 18px a side left 12px for a 16px box and the
+   checkbox was clipped. The lane centres its control instead. */
+.bodyCell[data-select-column="true"] {
+  padding: 0;
+}
+
 .cellContent {
   min-width: 0;
   overflow: hidden;

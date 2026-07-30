@@ -19,6 +19,7 @@ import {
   resolveRowSelectionClick,
 } from "../core/rowSelection";
 import { SearchIcon } from "./icons";
+import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 
 /** Where a column sits relative to the pinned regions, resolved once per render. */
@@ -49,6 +50,9 @@ function TMDataGridBodyCell({
     <div
       role="cell"
       data-align={getColumnAlign(cell.column)}
+      // The checkbox lane is a fixed track, so it cannot take the cell padding
+      // the scale grows for text. See TMDataGridTable.module.css.
+      data-select-column={cell.column.id === SELECT_COLUMN_ID}
       className={[
         classes.bodyCell,
         layout.isBoundary && layout.pinnedAt === "left" ? sticky.stickyLeft : "",

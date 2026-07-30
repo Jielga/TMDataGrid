@@ -299,6 +299,28 @@ describe("row selection", () => {
     expect(firstRow).toHaveAttribute("aria-selected", "true");
   });
 
+  it("marks the checkbox column, which the stylesheet unpads", () => {
+    renderGridUi();
+    const [firstRow] = bodyRows();
+
+    // jsdom has no layout, so the clipping this guards against cannot be
+    // asserted here: the cell padding grows with `size` and would squeeze the
+    // box out of its fixed 48px track at `xl`. The attribute is what the CSS
+    // hangs off, so it is what the test pins down.
+    expect(screen.getByTestId("dg-header-__select__")).toHaveAttribute(
+      "data-select-column",
+      "true",
+    );
+    expect(within(firstRow).getAllByRole("cell")[0]).toHaveAttribute(
+      "data-select-column",
+      "true",
+    );
+    expect(within(firstRow).getAllByRole("cell")[1]).toHaveAttribute(
+      "data-select-column",
+      "false",
+    );
+  });
+
   it("drops the checkbox column in row selection mode", () => {
     renderGridUi({ selectionMode: "row" });
 

@@ -38,7 +38,7 @@ themed. They can equally be set from a stylesheet through `className`.
 | `--dg-row-height` | From `size` | Row height. `meta.rowHeight` is the supported way to change it, since the virtualizer needs the number |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-font-size` | From `size` | Cell and header font size |
-| `--dg-padding` | From `size` | Horizontal cell padding |
+| `--dg-padding` | From `size` | Horizontal cell padding. The generated checkbox column is exempt — it is a fixed 48px track, so it centres its box instead |
 
 ```tsx
 <TMDataGrid

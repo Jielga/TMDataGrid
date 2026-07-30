@@ -322,6 +322,9 @@ export function TMDataGridHeaderCell({
       data-testid={`dg-header-${column.id}`}
       data-active={isSorted || isFiltered}
       data-align={align}
+      // The checkbox lane is a fixed track, so it cannot take the cell padding
+      // the scale grows for text. See TMDataGridHeaderCell.module.css.
+      data-select-column={column.id === SELECT_COLUMN_ID}
       // Only meaningful on a sortable column: "none" advertises that this
       // header sorts, which is a lie on one that doesn't.
       aria-sort={

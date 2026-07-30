@@ -21,6 +21,12 @@
   justify-content: center;
 }
 
+/* Same as the body cells: the select-all box sits in a fixed 48px track, which
+   the text padding would squeeze it out of at the larger sizes. */
+.headerCell[data-select-column="true"] {
+  padding: 0;
+}
+
 /* Sorted or filtered columns read as active, like the MUI data grid. */
 .headerCell[data-active="true"] .headerTitle {
   color: var(--mantine-primary-color-filled);
