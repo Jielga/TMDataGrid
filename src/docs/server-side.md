@@ -95,3 +95,43 @@ models:
 ```ts
 const selectedIds = Object.keys(grid.table.store.state.rowSelection);
 ```
+
+## Infinite scroll
+
+The pager's alternative: keep every fetched row in `data` and let the scroll
+ask for more. `onReachEnd` on `TMDataGrid.Table` fires as the scroll nears the
+last row — append the next page and the virtualizer keeps its position:
+
+```tsx
+const [rows, setRows] = useState<Order[]>([]);
+
+const grid = useTMDataGrid({
+  data: rows,
+  columns,
+  getRowId: (row) => String(row.id),
+  meta: { loading: isFetching, totalRowCount: total },
+  enableSorting: false,
+  enableColumnFilters: false,
+});
+
+<TMDataGrid.Table onReachEnd={() => void fetchNextPage()} />
+```
+
+`onReachEnd` fires once per row count, so a pending fetch is not asked again
+until its rows land; `reachEndThreshold` (default 10) sets how many rows
+before the end it fires. `TMDataGrid.LoadingIndicator` in the toolbar is the
+natural fetch signal — the body keeps showing the rows it has.
+
+Two rules come with the pattern:
+
+- **Sorting and filtering must be server-side** (`manualSorting` /
+  `manualFiltering`) or disabled — the client only holds a prefix of the
+  data, so a client-side sort would order a fraction of it and present the
+  result as the whole. When a server-side sort or filter changes, reset the
+  accumulated rows and start from page zero.
+- **Not compatible with `enablePagination`** — the pager slices the same
+  scroll the callback watches, so the end it reaches is the page's. The grid
+  warns once if both are set.
+
+The demo site's *Infinite scroll* page is this pattern end to end, against a
+simulated server.

@@ -23,6 +23,11 @@ const EXAMPLE_LINKS: NavItem[] = [
     label: "TMDataGrid",
     description: "Compound API · virtual, resize, sort, filter, pin",
   },
+  {
+    to: "/infinite-scroll",
+    label: "Infinite scroll",
+    description: "onReachEnd · pages fetched as you scroll",
+  },
 ];
 
 function NavSection({ title, items }: { title: string; items: NavItem[] }) {

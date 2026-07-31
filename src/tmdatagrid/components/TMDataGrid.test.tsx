@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
   erased,
+  makeRows,
   renderGrid,
   renderWithMantine,
   testColumns,
@@ -1821,5 +1822,55 @@ describe("summary row", () => {
       aggregateColumn({ table: result.current.table, columnId: "age" }),
     ).toBe(expected);
     void user;
+  });
+});
+
+describe("onReachEnd", () => {
+  function ReachGrid({
+    rows,
+    onReachEnd,
+  }: {
+    rows: TestRow[];
+    onReachEnd: () => void;
+  }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: rows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+    });
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Table<TestRow> onReachEnd={onReachEnd} />
+      </TMDataGrid>
+    );
+  }
+
+  it("fires once per row count and again when rows are appended", async () => {
+    const calls: number[] = [];
+    // Twelve rows all fit the stubbed 600px viewport, so the last row is
+    // mounted immediately and the threshold is met on mount.
+    const { rerender } = renderWithMantine(
+      <ReachGrid rows={testRows} onReachEnd={() => calls.push(1)} />,
+    );
+    await waitFor(() => expect(calls.length).toBe(1));
+
+    // Same count → the latch holds through re-renders.
+    rerender(<ReachGrid rows={testRows} onReachEnd={() => calls.push(1)} />);
+    expect(calls.length).toBe(1);
+
+    // The append changes the count, which re-arms the latch.
+    rerender(
+      <ReachGrid
+        rows={[...testRows, ...makeRows(2).map((row) => ({ ...row, id: row.id + 100 }))]}
+        onReachEnd={() => calls.push(1)}
+      />,
+    );
+    await waitFor(() => expect(calls.length).toBe(2));
+  });
+
+  it("does not fire on an empty grid", () => {
+    const calls: number[] = [];
+    renderWithMantine(<ReachGrid rows={[]} onReachEnd={() => calls.push(1)} />);
+    expect(calls.length).toBe(0);
   });
 });

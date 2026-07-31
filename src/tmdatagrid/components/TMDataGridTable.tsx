@@ -409,6 +409,25 @@ export type TMDataGridTableProps<TData extends RowData> = {
    * {@link TMDataGridCellExportOptions}.
    */
   cellExport?: TMDataGridCellExportOptions;
+  /**
+   * Called when the scroll approaches the last row — the infinite-scroll
+   * hook-in. Append the next page to `data` and the virtualizer keeps its
+   * position; fires once per row count, so a pending fetch is not asked
+   * again until it lands.
+   *
+   * ```tsx
+   * <TMDataGrid.Table onReachEnd={() => query.fetchNextPage()} />
+   * ```
+   *
+   * Sorting and filtering must be server-side (`manual*`) on a grid that
+   * loads this way — the client only ever holds a prefix of the data. Not
+   * compatible with `enablePagination`, which slices the same scroll.
+   */
+  onReachEnd?: () => void;
+  /**
+   * How many rows before the end {@link onReachEnd} fires at. Defaults to 10.
+   */
+  reachEndThreshold?: number;
 };
 
 /**
@@ -422,6 +441,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   rowContextMenu,
   rowContextMenuProps,
   cellExport,
+  onReachEnd,
+  reachEndThreshold = 10,
 }: TMDataGridTableProps<TData>) {
   const {
     table,
@@ -534,6 +555,32 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const paddingTop = virtualItems[0]?.start ?? 0;
   const paddingBottom =
     virtualizer.getTotalSize() - (virtualItems.at(-1)?.end ?? 0);
+
+  /**
+   * Infinite scroll. Latched on the row count rather than debounced: one call
+   * per count means a pending fetch is never asked twice, and the append that
+   * resolves it changes the count, which re-arms the latch. A failed fetch
+   * stays quiet until something changes the rows — retrying is the
+   * consumer's call, not a scroll side effect.
+   *
+   * Effect (not render): `onReachEnd` sets consumer state.
+   */
+  const reachEndFiredForCountRef = useRef<number | null>(null);
+  const warnedReachEndPaginationRef = useRef(false);
+  const lastMountedIndex = virtualItems.at(-1)?.index ?? -1;
+  useEffect(() => {
+    if (onReachEnd === undefined || rows.length === 0) return;
+    if (features.pagination && !warnedReachEndPaginationRef.current) {
+      warnedReachEndPaginationRef.current = true;
+      console.warn(
+        "TMDataGrid: onReachEnd and pagination slice the same scroll — the pager caps the rows, so the end it reaches is the page's. Use one or the other.",
+      );
+    }
+    if (lastMountedIndex < rows.length - 1 - reachEndThreshold) return;
+    if (reachEndFiredForCountRef.current === rows.length) return;
+    reachEndFiredForCountRef.current = rows.length;
+    onReachEnd();
+  });
 
   // The *Visible* variants throughout: `getLeftLeafColumns()` and friends
   // include hidden columns, while the cells below come from
