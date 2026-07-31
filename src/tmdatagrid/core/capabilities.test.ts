@@ -13,6 +13,7 @@ describe("readFeatureFlags", () => {
     expect(readFeatureFlags({})).toEqual({
       sorting: true,
       filtering: true,
+      globalFiltering: true,
       hiding: true,
       pinning: true,
       resizing: true,

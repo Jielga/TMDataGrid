@@ -23,8 +23,11 @@ import {
   useState,
 } from "react";
 import {
+  aggregateColumn,
   createTMDataGridColumnHelper,
+  exportGridToCsv,
   TMDataGrid,
+  TMDATAGRID_LABELS_SV,
   type TMDataGridFilterValue,
   type TMDataGridPersistence,
   type TMDataGridCellSelectionMode,
@@ -182,6 +185,10 @@ const columns = columnHelper.columns([
     // fills in per group while the others stay blank — aggregation is opt-in.
     aggregationFn: "sum",
     aggregatedCell: (info) => sek(Number(info.getValue() ?? 0)),
+    // A `footer` is what summons the sticky summary row along the bottom —
+    // here the salary total over every filtered row, all pages.
+    footer: ({ table }) =>
+      sek(Number(aggregateColumn({ table, columnId: "salary" }))),
   }),
   columnHelper.accessor("status", {
     header: "Status",
@@ -367,6 +374,8 @@ export function DataGridExample() {
     boolean | undefined
   >(undefined);
   const [snippetOpen, setSnippetOpen] = useState(false);
+  // The whole i18n integration: one option, one dictionary.
+  const [locale, setLocale] = useState<"en" | "sv">("en");
   // `null` until the user says otherwise, and then it is theirs: the viewport
   // picks the opening state, a click overrides it for good. Following the
   // viewport after a click would reopen a panel somebody just shut.
@@ -380,6 +389,7 @@ export function DataGridExample() {
     getRowId: (row) => String(row.id),
     // No rowHeight — let the `size` prop drive it.
     meta: { loading: false },
+    labels: locale === "sv" ? TMDATAGRID_LABELS_SV : undefined,
     persist,
     selectionMode,
     showSelectedBackground,
@@ -438,6 +448,16 @@ export function DataGridExample() {
           <TMDataGrid.FilterPills api={grid} />
         </Group>
         <Group gap="xs" wrap="nowrap">
+          {/* Swaps every string in the grid — labels: TMDATAGRID_LABELS_SV. */}
+          <SegmentedControl
+            size="xs"
+            value={locale}
+            onChange={(value) => setLocale(value as "en" | "sv")}
+            data={[
+              { value: "en", label: "EN" },
+              { value: "sv", label: "SV" },
+            ]}
+          />
           <Button
             size="xs"
             variant="subtle"
@@ -611,7 +631,24 @@ export function DataGridExample() {
                 {selectedCount} selected
               </Badge>
             )}
+            {/* Quick search over every column — writes `globalFilter`. */}
+            <TMDataGrid.Search />
             <TMDataGrid.Spacer />
+            {/* The toolbar is plain composition, so an app's own actions sit
+                beside the built-ins. Export takes every filtered row. */}
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              color="gray"
+              onClick={() =>
+                exportGridToCsv({
+                  table: grid.table,
+                  options: { fileName: "employees" },
+                })
+              }
+            >
+              {locale === "sv" ? "Exportera" : "Export"}
+            </Button>
             <TMDataGrid.FilterButton />
             <TMDataGrid.ColumnsButton />
           </TMDataGrid.Toolbar>
