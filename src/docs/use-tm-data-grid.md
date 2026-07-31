@@ -94,8 +94,17 @@ Keep the object referentially stable (module scope or `useMemo`) — the chrome
 re-renders when its identity changes.
 
 The full dictionary type is `TMDataGridLabels`; the English defaults are
-exported as `TMDATAGRID_LABELS_EN`. `meta.noResultsLabel` still works as a
-per-instance override of `labels.noResults`.
+exported as `TMDATAGRID_LABELS_EN`, and a complete Swedish dictionary as
+`TMDATAGRID_LABELS_SV`:
+
+```tsx
+import { TMDATAGRID_LABELS_SV } from "@jielga/tmdatagrid";
+
+const grid = useTMDataGrid({ data, columns, labels: TMDATAGRID_LABELS_SV });
+```
+
+`meta.noResultsLabel` still works as a per-instance override of
+`labels.noResults`.
 
 The resolved dictionary is returned from the hook as `grid.labels`, so custom
 toolbar components can read the same strings the built-in chrome does.

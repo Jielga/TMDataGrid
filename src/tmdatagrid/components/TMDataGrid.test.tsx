@@ -12,6 +12,7 @@ import {
   type TestRow,
 } from "../../test/gridHarness";
 import { getColumnCapabilities } from "../core/capabilities";
+import { TMDATAGRID_LABELS_SV } from "../core/labelsSv";
 import { DETAILS_COLUMN_ID } from "./TMDataGridDetailsColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
@@ -1565,5 +1566,42 @@ describe("cell selection — ranges", () => {
     expect(
       screen.getByRole("checkbox", { name: "Include headers" }),
     ).not.toBeChecked();
+  });
+});
+
+describe("labels", () => {
+  it("renders the chrome in Swedish from the preset", async () => {
+    renderGridUi({ labels: TMDATAGRID_LABELS_SV });
+
+    expect(
+      screen.getByRole("button", { name: "Hantera kolumner" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: "Markera alla rader" }),
+    ).toBeInTheDocument();
+  });
+
+  it("merges a partial override over the English defaults", () => {
+    renderGridUi({
+      labels: { manageColumns: "Kolumner" },
+      data: [],
+    } as GridProps);
+
+    expect(
+      screen.getByRole("button", { name: "Kolumner" }),
+    ).toBeInTheDocument();
+    // Untouched keys stay English — including the empty state.
+    expect(screen.getByText("No rows match your filters")).toBeInTheDocument();
+  });
+
+  it("puts the localized label on the generated lane's column meta", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ labels: TMDATAGRID_LABELS_SV });
+
+    await user.click(screen.getByRole("button", { name: "Hantera kolumner" }));
+    expect(
+      await screen.findByRole("checkbox", { name: "Kryssrutemarkering" }),
+    ).toBeInTheDocument();
   });
 });

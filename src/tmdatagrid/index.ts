@@ -46,6 +46,7 @@ export {
   type TMDataGridLabels,
   type TMDataGridLabelsOverride,
 } from "./core/labels";
+export { TMDATAGRID_LABELS_SV } from "./core/labelsSv";
 export {
   getColumnLabel,
   getColumnType,
