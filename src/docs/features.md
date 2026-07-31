@@ -31,7 +31,10 @@ see [Pagination](#pagination).
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 
-A column whose menu has no remaining items renders no menu button. Dividers are
+The menu opens from the ⋮ button on the header or from a right-click anywhere on
+it — the same items either way, at the pointer for the right-click. A column
+whose menu has no remaining items renders no menu button and takes no
+right-click, so the browser's own menu comes up there instead. Dividers are
 never left at the end of a menu.
 
 ```tsx

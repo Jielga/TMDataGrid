@@ -62,6 +62,7 @@ export function TMDataGridHeaderCell({
   const { table, features } = api;
   const column = header.column;
   const [menuOpened, setMenuOpened] = useState(false);
+  const [contextMenuOpened, setContextMenuOpened] = useState(false);
   const [dropSide, setDropSide] = useState<TMDataGridDropSide | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   // A resize drag ends with a click that bubbles to the header — without this
@@ -393,6 +394,12 @@ export function TMDataGridHeaderCell({
     menuItems.pop();
   }
 
+  // One gate for both ways into the menu — the button and the right-click —
+  // so the two can never disagree about which headers have one. A control
+  // lane's header is itself a control (select-all, expand-all), so it carries
+  // no column menu, and a right-click there falls through to the browser's.
+  const hasMenu = isLeaf && menuItems.length > 0 && !isControlColumn(column.id);
+
   const cellClass = [
     classes.headerCell,
     canSort ? classes.headerCellSortable : "",
@@ -405,7 +412,7 @@ export function TMDataGridHeaderCell({
     .filter(Boolean)
     .join(" ");
 
-  return (
+  const cell = (
     <div
       ref={cellRef}
       role="columnheader"
@@ -499,9 +506,7 @@ export function TMDataGridHeaderCell({
             </ActionIcon>
           )}
 
-          {/* A control lane's header is itself a control — select-all,
-              expand-all — so it carries no column menu. */}
-          {menuItems.length > 0 && !isControlColumn(column.id) && (
+          {hasMenu && (
             <Menu
               opened={menuOpened}
               onChange={setMenuOpened}
@@ -513,7 +518,10 @@ export function TMDataGridHeaderCell({
               <Menu.Target>
                 <ActionIcon
                   className={classes.headerAction}
-                  data-pinned-visible={menuOpened}
+                  // Held visible for the right-click menu too: that one opens at
+                  // the pointer and is portaled, so the hover that revealed the
+                  // actions is lost the moment the pointer enters the dropdown.
+                  data-pinned-visible={menuOpened || contextMenuOpened}
                   variant="subtle"
                   color="gray"
                   size="xs"
@@ -562,6 +570,38 @@ export function TMDataGridHeaderCell({
         />
       )}
     </div>
+  );
+
+  if (!hasMenu) return cell;
+
+  // A second Menu for the same items, rather than one Menu serving both ways
+  // in: the button's dropdown hangs off the button, while a context menu
+  // belongs at the pointer, and a Mantine Menu has one target. `menuItems` is
+  // built once and rendered by whichever dropdown is open — never both — so
+  // the two can't drift apart.
+  //
+  // The per-header Popover this adds is not the cost the body pays for one per
+  // row (see TMDataGridBodyRowGroup): there are as many headers as columns, and
+  // they don't re-render on every scroll frame.
+  return (
+    <Menu
+      opened={contextMenuOpened}
+      onChange={(opened) => {
+        setContextMenuOpened(opened);
+        // Right-clicking a header whose button menu is still open would
+        // otherwise leave two dropdowns of the same items on screen.
+        if (opened) setMenuOpened(false);
+      }}
+      position="bottom-start"
+      shadow="md"
+      width={220}
+      withinPortal
+    >
+      <Menu.ContextMenu>{cell}</Menu.ContextMenu>
+      <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+        {menuItems}
+      </Menu.Dropdown>
+    </Menu>
   );
 }
 

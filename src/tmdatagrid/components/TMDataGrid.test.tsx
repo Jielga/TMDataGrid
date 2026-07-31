@@ -313,6 +313,35 @@ describe("column visibility", () => {
   });
 });
 
+describe("column menu", () => {
+  const itemLabels = () =>
+    screen.getAllByRole("menuitem").map((item) => item.textContent);
+
+  it("opens the same items from a right-click as from the button", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    const fromButton = itemLabels();
+    await user.keyboard("{Escape}");
+    expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
+
+    fireEvent.contextMenu(screen.getByTestId("dg-header-city"));
+
+    expect(itemLabels()).toEqual(fromButton);
+  });
+
+  it("leaves a control lane's header to the browser's own menu", () => {
+    renderGridUi();
+
+    // No column menu on the select-all lane, so nothing to open — the native
+    // menu is the right answer there rather than an empty dropdown.
+    fireEvent.contextMenu(screen.getByTestId(`dg-header-${SELECT_COLUMN_ID}`));
+
+    expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
+  });
+});
+
 describe("row selection", () => {
   it("selects a row from its checkbox", async () => {
     const user = userEvent.setup();

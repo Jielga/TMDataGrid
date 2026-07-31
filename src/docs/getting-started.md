@@ -62,7 +62,7 @@ table's column model.
 | Resizable columns | Drag the divider on a header's trailing edge. |
 | Reorderable columns | Drag a header sideways, or use the column menu. |
 | Sorting | Click a header, or use the column menu. |
-| Column menu | Appears on hover: sort, filter, pin, move, hide, manage columns. |
+| Column menu | Appears on hover, or right-click the header: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
 | Row selection | Checkbox column pinned to the left, or click-to-select rows with `rowSelectionMode: "row"`. |
