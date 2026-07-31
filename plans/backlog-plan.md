@@ -1,5 +1,10 @@
 # Backlog — master implementation plan
 
+> **Status: executed 2026-07-31.** Steps 1–9 all shipped, one commit per step
+> (`c876388`…`ee7c8ce`); results are summarised under *Done* in
+> [BACKLOG.md](../BACKLOG.md). Kept for the rationale and for the cell-editing
+> sync points, which still apply.
+
 How the whole of [BACKLOG.md](../BACKLOG.md) gets built: order, the
 dependencies between items, the shared infrastructure they fight over, and
 which example page each lands on. Cell editing has its own plan
