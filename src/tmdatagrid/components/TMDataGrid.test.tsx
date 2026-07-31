@@ -2,6 +2,7 @@ import { Menu } from "@mantine/core";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
   erased,
   makeRows,
@@ -1873,6 +1874,177 @@ describe("onReachEnd", () => {
     const calls: number[] = [];
     renderWithMantine(<ReachGrid rows={[]} onReachEnd={() => calls.push(1)} />);
     expect(calls.length).toBe(0);
+  });
+});
+
+describe("cell editing", () => {
+  type Employee = { id: number; name: string; age: number; note: string };
+
+  const editRows: Employee[] = [
+    { id: 1, name: "Anna", age: 34, note: "a" },
+    { id: 2, name: "Erik", age: 41, note: "b" },
+  ];
+
+  const editColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Employee>();
+    return helper.columns([
+      helper.accessor("name", {
+        header: "Name",
+        meta: { validate: z.string().min(2, "Too short") },
+      }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+      helper.accessor("note", {
+        header: "Note",
+        meta: { editable: false },
+      }),
+    ]);
+  })();
+
+  function EditGrid(options: Partial<UseTMDataGridOptions<Employee>> = {}) {
+    const grid = useTMDataGrid<Employee>({
+      data: editRows,
+      columns: editColumns,
+      getRowId: (row) => String(row.id),
+      editMode: "cell",
+      selectionMode: "highlight",
+      ...options,
+    } as UseTMDataGridOptions<Employee>);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Table<Employee> />
+      </TMDataGrid>
+    );
+  }
+
+  const cellAt = (rowIndex: number, columnIndex: number) =>
+    within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
+
+  const editorInput = () =>
+    screen.getByRole("textbox", { name: "Edit Name" });
+
+  it("opens on double-click, commits on Enter with the diff", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "Annika");
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    const commit = commits[0] as { rowId: string; changes: unknown[] };
+    expect(commit.rowId).toBe("1");
+    expect(commit.changes).toEqual([
+      { columnId: "name", field: "name", previous: "Anna", next: "Annika" },
+    ]);
+    // The editor is gone; the cell shows content again (still the old data —
+    // the grid never mutates `data`).
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens on F2 from the focused cell and reverts on Escape", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
+
+    await user.click(cellAt(0, 0));
+    await user.keyboard("{F2}");
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "Wrong");
+    await user.keyboard("{Escape}");
+
+    expect(commits.length).toBe(0);
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+    // Focus is back on the cell, ready for the next key.
+    expect(document.activeElement).toBe(cellAt(0, 0));
+  });
+
+  it("opens seeded when a character is typed on the cell", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<EditGrid />);
+
+    await user.click(cellAt(0, 0));
+    await user.keyboard("Z");
+
+    // The seed replaced the value — the Sheets gesture.
+    expect(editorInput()).toHaveValue("Z");
+  });
+
+  it("blocks the commit on a field error and shows the message", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "A");
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByText("Too short")).toBeInTheDocument();
+    expect(commits.length).toBe(0);
+    // Still editing — the invalid cell holds the edit.
+    expect(editorInput()).toBeInTheDocument();
+  });
+
+  it("commits on Tab and moves to the next editable cell", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    await user.clear(editorInput());
+    await user.type(editorInput(), "Annika");
+    await user.keyboard("{Tab}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    // Age is next; Note is `editable: false` and would be skipped from Age.
+    await waitFor(() =>
+      expect(document.activeElement).toBe(cellAt(0, 1)),
+    );
+  });
+
+  it("never opens on a column that opted out", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<EditGrid />);
+
+    await user.dblClick(cellAt(0, 2));
+
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Note" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears the cell on Delete and commits the empty value", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
+
+    await user.click(cellAt(1, 0));
+    await user.keyboard("{Delete}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    const commit = commits[0] as { changes: unknown[] };
+    expect(commit.changes).toEqual([
+      { columnId: "name", field: "name", previous: "Erik", next: "" },
+    ]);
   });
 });
 

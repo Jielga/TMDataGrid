@@ -61,6 +61,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
 function TMDataGridRoot<TData extends RowData>({
   table,
   ui,
+  edit,
   features,
   labels,
   renderDetails,
@@ -77,6 +78,7 @@ function TMDataGridRoot<TData extends RowData>({
     () => ({
       table,
       ui,
+      edit,
       features,
       labels,
       renderDetails,
@@ -89,6 +91,7 @@ function TMDataGridRoot<TData extends RowData>({
     [
       table,
       ui,
+      edit,
       features,
       labels,
       renderDetails,

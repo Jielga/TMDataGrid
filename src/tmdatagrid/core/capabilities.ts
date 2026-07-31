@@ -1,6 +1,7 @@
 import type { Column, RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import { isColumnReorderable } from "./columnUtils";
+import type { TMDataGridEditMode } from "./editEngine";
 import type {
   TMDataGridFeatures,
   TMDataGridTable,
@@ -117,6 +118,10 @@ export type TMDataGridFeatureFlags = {
    * its own grouping can still say `enableGrouping: true` to override.
    */
   grouping: boolean;
+  /** Whether cells can be edited at all — `editMode` was set. */
+  editing: boolean;
+  /** The commit policy, or `null` while editing is off. */
+  editMode: TMDataGridEditMode | null;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -137,10 +142,15 @@ export function readFeatureFlags<TData extends RowData>(
     | "enablePagination"
     | "manualPagination"
     | "enableGrouping"
+    | "editMode"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
-  const cellSelectionMode = options.cellSelection ?? "none";
+  // Editing brings the cell cursor with it: Enter, F2 and type-to-edit all
+  // address "the focused cell", which only exists under cell selection. An
+  // explicit `cellSelection` still wins, `"range"` included.
+  const cellSelectionMode =
+    options.cellSelection ?? (options.editMode !== undefined ? "single" : "none");
   // `"highlight"` is the master-detail mode: no selection to speak of, so the
   // checkbox column and the click-to-select behaviour both fall away. Otherwise
   // `enableRowSelection` still has the final say, including its predicate form.
@@ -174,6 +184,8 @@ export function readFeatureFlags<TData extends RowData>(
     pagination:
       options.enablePagination === true || options.manualPagination === true,
     grouping: options.enableGrouping ?? options.manualPagination !== true,
+    editing: options.editMode !== undefined,
+    editMode: options.editMode ?? null,
   };
 }
 

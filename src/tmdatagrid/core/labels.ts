@@ -79,6 +79,10 @@ export type TMDataGridLabels = {
   noResults: string;
   loading: string;
 
+  // Cell editing
+  /** `aria-label` of an open cell editor's input. */
+  editCell: (column: string) => string;
+
   // Cell selection menu
   cellCount: (count: number) => string;
   copy: string;
@@ -172,6 +176,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
 
   noResults: "No rows match your filters",
   loading: "Loading",
+
+  editCell: (column) => `Edit ${column}`,
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",

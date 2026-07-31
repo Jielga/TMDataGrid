@@ -22,8 +22,14 @@ import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell";
-import { getColumnAlign, isControlColumn } from "../core/columnUtils";
 import {
+  TMDataGridCellEditor,
+  type TMDataGridCellEditorClose,
+} from "./TMDataGridCellEditor";
+import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import { getEditFieldName } from "../core/editEngine";
+import {
+  getNextEditableCell,
   resolveCellMove,
   type TMDataGridCellPosition,
 } from "../core/cellNavigation";
@@ -192,20 +198,41 @@ function TMDataGridBodyCell({
   rowHeight,
   layout,
   nav,
+  editor,
   onFocus,
   onMouseDown,
   onMouseEnter,
+  onDoubleClick,
   onContextMenu,
 }: {
   cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>;
   rowHeight: number;
   layout: TMDataGridColumnLayout;
   nav?: TMDataGridCellNav;
+  /** The mounted editor, when this is the cell being edited. */
+  editor?: ReactNode;
   onFocus?: () => void;
   onMouseDown?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;
+  onDoubleClick?: () => void;
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
+  // The edit markers subscribe here, per cell, all to the one projection
+  // store — so typing in an editor repaints the edited row's cells and
+  // nothing else. Constant `false` everywhere while editing is off.
+  const { edit } = useTMDataGridContext();
+  const fieldName = getEditFieldName(cell.column);
+  const cellRowId = cell.row.id;
+  const isDirty = useSelector(edit.store, (state) => {
+    if (fieldName === null) return false;
+    const projection = state.rows[cellRowId];
+    return projection !== undefined && projection.dirtyFields.includes(fieldName);
+  });
+  const isInvalid = useSelector(edit.store, (state) => {
+    if (fieldName === null) return false;
+    const projection = state.rows[cellRowId];
+    return projection !== undefined && projection.errorFields.includes(fieldName);
+  });
   return (
     <div
       // `gridcell` rather than `cell` is the whole promise of cell selection:
@@ -239,6 +266,10 @@ function TMDataGridBodyCell({
       onFocus={onFocus}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
+      onDoubleClick={onDoubleClick}
+      data-editing={editor !== undefined || undefined}
+      data-dirty={isDirty || undefined}
+      data-invalid={isInvalid || undefined}
       data-align={getColumnAlign(cell.column)}
       // A control lane is a fixed track, so it cannot take the cell padding the
       // scale grows for text. See isControlColumn.
@@ -274,7 +305,9 @@ function TMDataGridBodyCell({
             : undefined,
       }}
     >
-      <span className={classes.cellContent}>{renderCellContent(cell)}</span>
+      {editor ?? (
+        <span className={classes.cellContent}>{renderCellContent(cell)}</span>
+      )}
     </div>
   );
 }
@@ -447,6 +480,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const {
     table,
     ui,
+    edit,
     features,
     labels,
     rowHeight,
@@ -465,6 +499,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // with cell selection off never re-renders for it.
   const focusedCell = useSelector(ui, (state) => state.focusedCell);
   const cellRange = useSelector(ui, (state) => state.cellRange);
+  // Which cell has an editor open. The projection (dirty/error markers) is
+  // subscribed per cell instead — see TMDataGridBodyCell.
+  const editActive = useSelector(edit.store, (state) => state.active);
 
   const { loading, noResultsLabel = labels.noResults } =
     table.options.meta ?? {};
@@ -956,6 +993,77 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     setRangeTo(cell, { extend });
   };
 
+  // ---------------------------------------------------------------------------
+  // Cell editing — the gestures. The engine owns the forms; this component
+  // owns where the editor opens from (keys, double-click) and where the
+  // focus lands when it closes.
+  // ---------------------------------------------------------------------------
+
+  /** The pending type-to-edit seed, consumed by the editor host on mount. */
+  const editSeedRef = useRef<string | undefined>(undefined);
+  const takeEditSeed = () => {
+    const seed = editSeedRef.current;
+    editSeedRef.current = undefined;
+    return seed;
+  };
+
+  /** DOM focus back onto a cell — after Escape, or a commit with nowhere to go. */
+  const refocusCell = (position: TMDataGridCellPosition) => {
+    const container = scrollContainerRef.current;
+    if (container === null) return;
+    wantsCellFocusRef.current = true;
+    findCellElement(container, position)?.focus();
+  };
+
+  const openEditor = (position: TMDataGridCellPosition) => {
+    if (cellSelection) ui.actions.setFocusedCell(position);
+    edit.begin({ rowId: position.rowId, columnId: position.columnId });
+  };
+
+  const handleEditorClose = (
+    position: TMDataGridCellPosition,
+    close: TMDataGridCellEditorClose,
+  ) => {
+    if (!close.committed || close.via === "pick") {
+      refocusCell(position);
+      return;
+    }
+    const rowIndex = rows.findIndex((row) => row.id === position.rowId);
+    const columnIndex = orderedColumns.findIndex(
+      (column) => column.id === position.columnId,
+    );
+    if (rowIndex < 0 || columnIndex < 0) {
+      refocusCell(position);
+      return;
+    }
+    // Enter moves down, Tab to the next editable cell — the spreadsheet pair.
+    if (close.via === "enter") {
+      if (rowIndex + 1 < rows.length) {
+        moveFocusedCell({ rowIndex: rowIndex + 1, columnIndex });
+      } else {
+        refocusCell(position);
+      }
+      return;
+    }
+    const next = getNextEditableCell({
+      from: { rowIndex, columnIndex },
+      direction: close.via === "tab" ? 1 : -1,
+      rowCount: rows.length,
+      columnCount: orderedColumns.length,
+      isEditable: (coords) => {
+        const row = rows[coords.rowIndex];
+        const column = orderedColumns[coords.columnIndex];
+        return (
+          row !== undefined &&
+          column !== undefined &&
+          edit.canEditCell(row, column)
+        );
+      },
+    });
+    if (next !== null) moveFocusedCell(next);
+    else refocusCell(position);
+  };
+
   /**
    * Space, from a cell. Checkbox semantics rather than click semantics: it adds
    * to the selection instead of replacing it, so a keyboard user builds one the
@@ -1029,6 +1137,44 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       event.preventDefault();
       void copySelection();
       return;
+    }
+
+    // Editing keys, ahead of the step-into pair — an editable cell's Enter
+    // opens its editor, and only a non-editable cell's falls through to the
+    // control it holds.
+    const keyRow = rows[rowIndex];
+    const keyColumn = orderedColumns[columnIndex];
+    if (
+      features.editing &&
+      keyRow !== undefined &&
+      keyColumn !== undefined &&
+      edit.canEditCell(keyRow, keyColumn)
+    ) {
+      if (event.key === "Enter" || event.key === "F2") {
+        event.preventDefault();
+        openEditor({ rowId, columnId });
+        return;
+      }
+      // Clear-and-commit, without opening anything — the spreadsheet Delete.
+      if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        void edit.clearCell(rowId, columnId).then(() => refocusCell({ rowId, columnId }));
+        return;
+      }
+      // Type-to-edit: a printable character opens the editor seeded with
+      // itself. Space stays the row-selection key, modifiers stay shortcuts.
+      if (
+        event.key.length === 1 &&
+        event.key !== " " &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        editSeedRef.current = event.key;
+        openEditor({ rowId, columnId });
+        return;
+      }
     }
 
     // Step into the cell. The pair Excel and AG Grid both use, and the pair the
@@ -1484,12 +1630,43 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     ...row.getLeftVisibleCells(),
                     ...row.getCenterVisibleCells(),
                     ...row.getRightVisibleCells(),
-                  ].map((cell, cellIndex) => (
+                  ].map((cell, cellIndex) => {
+                    const isEditingCell =
+                      editActive !== null &&
+                      editActive.rowId === row.id &&
+                      editActive.columnId === cell.column.id;
+                    return (
                     <TMDataGridBodyCell
                       key={cell.id}
                       cell={cell}
                       rowHeight={rowHeight}
                       layout={layoutFor(cell.column.id)}
+                      editor={
+                        isEditingCell ? (
+                          <TMDataGridCellEditor
+                            cell={cell}
+                            row={row}
+                            takeSeedText={takeEditSeed}
+                            onClose={(close) =>
+                              handleEditorClose(
+                                { rowId: row.id, columnId: cell.column.id },
+                                close,
+                              )
+                            }
+                          />
+                        ) : undefined
+                      }
+                      onDoubleClick={
+                        features.editing && !isGroupRow
+                          ? () => {
+                              if (!edit.canEditCell(row, cell.column)) return;
+                              openEditor({
+                                rowId: row.id,
+                                columnId: cell.column.id,
+                              });
+                            }
+                          : undefined
+                      }
                       // The cells come out in the same left → centre → right
                       // order as `orderedColumns`, which is what lets the index
                       // here stand for the column index everywhere else.
@@ -1574,7 +1751,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                           : undefined
                       }
                     />
-                  ))}
+                    );
+                  })}
 
                   {/* A second grid row inside the row element, on the same
                       subgrid tracks — which is what lets one measurement cover

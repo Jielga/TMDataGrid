@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isSameCell, resolveCellMove } from "./cellNavigation";
+import {
+  getNextEditableCell,
+  isSameCell,
+  resolveCellMove,
+} from "./cellNavigation";
 
 /** A 10×4 grid with the focus in the middle of it. */
 const move = (
@@ -75,6 +79,55 @@ describe("resolveCellMove", () => {
   it("has nowhere to go in an empty grid", () => {
     expect(move("ArrowDown", { rowCount: 0 })).toBeNull();
     expect(move("ArrowRight", { columnCount: 0 })).toBeNull();
+  });
+});
+
+describe("getNextEditableCell", () => {
+  const grid = { rowCount: 3, columnCount: 3 };
+  const all = () => true;
+
+  it("walks reading order and wraps to the next row", () => {
+    expect(
+      getNextEditableCell({
+        from: { rowIndex: 0, columnIndex: 2 },
+        direction: 1,
+        ...grid,
+        isEditable: all,
+      }),
+    ).toEqual({ rowIndex: 1, columnIndex: 0 });
+    expect(
+      getNextEditableCell({
+        from: { rowIndex: 1, columnIndex: 0 },
+        direction: -1,
+        ...grid,
+        isEditable: all,
+      }),
+    ).toEqual({ rowIndex: 0, columnIndex: 2 });
+  });
+
+  it("skips cells that cannot edit and wraps around the grid", () => {
+    // Only column 1 is editable.
+    const onlyMiddle = (coords: { columnIndex: number }) =>
+      coords.columnIndex === 1;
+    expect(
+      getNextEditableCell({
+        from: { rowIndex: 2, columnIndex: 1 },
+        direction: 1,
+        ...grid,
+        isEditable: onlyMiddle,
+      }),
+    ).toEqual({ rowIndex: 0, columnIndex: 1 });
+  });
+
+  it("gives up when nothing else is editable", () => {
+    expect(
+      getNextEditableCell({
+        from: { rowIndex: 0, columnIndex: 0 },
+        direction: 1,
+        ...grid,
+        isEditable: () => false,
+      }),
+    ).toBeNull();
   });
 });
 

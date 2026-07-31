@@ -93,6 +93,47 @@ export function resolveCellMove({
   }
 }
 
+export type NextEditableCellArgs = {
+  from: TMDataGridCellCoords;
+  /** `1` is Tab, `-1` is Shift+Tab. */
+  direction: 1 | -1;
+  rowCount: number;
+  columnCount: number;
+  /** Whether the cell at these coordinates takes edits. */
+  isEditable: (coords: TMDataGridCellCoords) => boolean;
+};
+
+/**
+ * The next editable cell in reading order, wrapping to the next row — and
+ * from the last cell of the grid back to the first. `null` when no other
+ * cell is editable.
+ *
+ * Deliberately wrapping where {@link resolveCellMove} deliberately clamps:
+ * arrows are a coordinate space and clamp so the destination is predictable,
+ * but Tab mid-edit is the spreadsheet's "next field" — at the end of a row
+ * the next field is on the next row, which is a convention, not a surprise.
+ */
+export function getNextEditableCell({
+  from,
+  direction,
+  rowCount,
+  columnCount,
+  isEditable,
+}: NextEditableCellArgs): TMDataGridCellCoords | null {
+  const total = rowCount * columnCount;
+  if (total === 0) return null;
+  const start = from.rowIndex * columnCount + from.columnIndex;
+  for (let step = 1; step < total; step += 1) {
+    const index = (start + direction * step + total * step) % total;
+    const coords = {
+      rowIndex: Math.floor(index / columnCount),
+      columnIndex: index % columnCount,
+    };
+    if (isEditable(coords)) return coords;
+  }
+  return null;
+}
+
 /** Whether two positions address the same cell. `null` equals only `null`. */
 export function isSameCell(
   a: TMDataGridCellPosition | null,

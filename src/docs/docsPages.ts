@@ -1,5 +1,6 @@
 import columnsDoc from "./columns.md?raw";
 import componentsDoc from "./components.md?raw";
+import editingDoc from "./editing.md?raw";
 import featuresDoc from "./features.md?raw";
 import gettingStartedDoc from "./getting-started.md?raw";
 import serverSideDoc from "./server-side.md?raw";
@@ -43,6 +44,12 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Features",
     description: "Enabling and disabling behaviour",
     source: featuresDoc,
+  },
+  {
+    id: "editing",
+    label: "Editing",
+    description: "Modes, editors and validation",
+    source: editingDoc,
   },
   {
     id: "server-side",

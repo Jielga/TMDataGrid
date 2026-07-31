@@ -56,6 +56,29 @@ export {
   type TMDataGridOptionsSource,
 } from "./core/columnOptions";
 export {
+  clearedValueForType,
+  getEditFieldName,
+  normalizeFieldValidate,
+  type TMDataGridEditApi,
+  type TMDataGridEditChange,
+  type TMDataGridEditCommitArgs,
+  type TMDataGridEditField,
+  type TMDataGridEditMode,
+  type TMDataGridEditorArgs,
+  type TMDataGridEditorRenderer,
+  type TMDataGridEditRowProjection,
+  type TMDataGridEditState,
+  type TMDataGridFieldValidate,
+  type TMDataGridRowEditForm,
+  type TMDataGridRowValidators,
+} from "./core/editEngine";
+export { TMDataGridStringEditor } from "./components/editors/TMDataGridStringEditor";
+export { TMDataGridNumberEditor } from "./components/editors/TMDataGridNumberEditor";
+export { TMDataGridBooleanEditor } from "./components/editors/TMDataGridBooleanEditor";
+export { TMDataGridDateEditor } from "./components/editors/TMDataGridDateEditor";
+export { TMDataGridSelectEditor } from "./components/editors/TMDataGridSelectEditor";
+export { TMDataGridMultiSelectEditor } from "./components/editors/TMDataGridMultiSelectEditor";
+export {
   mergeLabels,
   TMDATAGRID_LABELS_EN,
   type TMDataGridLabels,

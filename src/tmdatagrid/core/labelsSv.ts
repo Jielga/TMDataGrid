@@ -85,6 +85,8 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   noResults: "Inga rader matchar dina filter",
   loading: "Laddar",
 
+  editCell: (column) => `Redigera ${column}`,
+
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",
   exportCsv: "Exportera som CSV för Excel",

@@ -30,7 +30,21 @@ describe("readFeatureFlags", () => {
       cellRangeSelection: false,
       pagination: false,
       grouping: true,
+      editing: false,
+      editMode: null,
     });
+  });
+
+  it("brings the cell cursor along with editing, unless told otherwise", () => {
+    expect(readFeatureFlags({ editMode: "cell" })).toMatchObject({
+      editing: true,
+      editMode: "cell",
+      cellSelectionMode: "single",
+    });
+    expect(
+      readFeatureFlags({ editMode: "cell", cellSelection: "range" }),
+    ).toMatchObject({ cellSelectionMode: "range" });
+    expect(readFeatureFlags({})).toMatchObject({ cellSelectionMode: "none" });
   });
 
   it("reads the cell selection mode", () => {

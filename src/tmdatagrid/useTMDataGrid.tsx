@@ -37,7 +37,18 @@ import {
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import type { TMDataGridRowData } from "./TMDataGridContext";
 import type { TMDataGridOptionsSource } from "./core/columnOptions";
+import {
+  createEditEngine,
+  type TMDataGridEditApi,
+  type TMDataGridEditCommitArgs,
+  type TMDataGridEditEngineContext,
+  type TMDataGridEditMode,
+  type TMDataGridEditorRenderer,
+  type TMDataGridFieldValidate,
+  type TMDataGridRowValidators,
+} from "./core/editEngine";
 import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
@@ -117,6 +128,37 @@ export type TMDataGridColumnMeta = {
    * so its switch lives here rather than on the column definition.
    */
   enableOrdering?: boolean;
+  /**
+   * Whether this column's cells take edits, once `editMode` is on. `false`
+   * switches the column off outright; a predicate decides per row. Defaults
+   * to editable for any column that maps to a field — see {@link editField}.
+   */
+  editable?:
+    | boolean
+    | ((row: Row<TMDataGridFeatures, TMDataGridRowData>) => boolean);
+  /**
+   * The data path this column edits, when it is not the `accessorKey` — the
+   * only way a column built on `accessorFn` becomes editable. Dot paths reach
+   * into nested records: `"address.city"`.
+   */
+  editField?: string;
+  /**
+   * Field-level validators, in TanStack Form's own vocabulary. A bare Zod
+   * schema (or any Standard Schema, or a plain function) means
+   * `{ onChange: it }`; the object form takes every trigger Form defines.
+   *
+   * ```tsx
+   * meta: { validate: z.string().min(2, "Too short") }
+   * meta: { validate: { onBlur: z.string().email() } }
+   * ```
+   */
+  validate?: TMDataGridFieldValidate;
+  /**
+   * Replaces the built-in editor for this column. Receives the live TanStack
+   * Form `field` API plus the table context — the same contract the
+   * built-ins fill. See {@link TMDataGridEditorArgs}.
+   */
+  renderEditor?: TMDataGridEditorRenderer;
 };
 
 /** Grid-wide configuration passed through `options.meta`. */
@@ -289,6 +331,13 @@ export type TMDataGridUiStore = Store<TMDataGridUiState, TMDataGridUiActions>;
 export type TMDataGridApi<TData extends RowData> = {
   table: TMDataGridTable<TData>;
   ui: TMDataGridUiStore;
+  /**
+   * The edit engine — open forms, dirty/error projections, and the verbs
+   * (`begin`, `commit`, `cancel`, `submitAll`). `edit.getForm(rowId)` hands
+   * out the same TanStack Form the inline editors write through, so a drawer
+   * or detail panel can share a row's draft. Inert until `editMode` is set.
+   */
+  edit: TMDataGridEditApi;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
@@ -469,6 +518,57 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   onFocusedCellChange?: (cell: TMDataGridCellPosition | null) => void;
   /**
+   * Turns cell editing on, and picks how commits happen. Off by default.
+   *
+   * | Mode | Commit | Cancel |
+   * | ---- | ------ | ------ |
+   * | `"cell"` | Enter, Tab, blur — Sheets | Escape |
+   * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
+   * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
+   * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
+   *
+   * One TanStack Form per editing row; drafts survive scrolling because the
+   * forms live outside the DOM, keyed by row id — which is also why
+   * `getRowId` is required. Which columns edit, and with what, is declared
+   * per column: `meta.type` picks the built-in editor, `meta.validate` its
+   * validators, `meta.editable` / `meta.renderEditor` the overrides.
+   *
+   * Requires `getRowId` — the index fallback points at a different record
+   * after any sort.
+   */
+  editMode?: TMDataGridEditMode;
+  /**
+   * Form-level validators for the whole editing row — where cross-field
+   * rules live. TanStack Form's own vocabulary, Standard Schema included:
+   *
+   * ```tsx
+   * rowValidators: {
+   *   onSubmit: z.object({ salary: z.number().positive() })
+   *     .refine((r) => r.status !== "Terminated" || r.salary === 0, {
+   *       message: "A terminated employee has no salary",
+   *     }),
+   * }
+   * ```
+   *
+   * Pathed issues land on the matching columns; pathless ones on the row.
+   */
+  rowValidators?: TMDataGridRowValidators;
+  /** Rows the pencil skips — `false` keeps a row read-only in every mode. */
+  isRowEditable?: (row: Row<TMDataGridFeatures, TData>) => boolean;
+  /**
+   * Called when an edit commits. The grid never mutates `data`: apply the
+   * change and let the new data arrive back through `data` as always. The
+   * engine drops the draft only when this resolves — a slow save keeps the
+   * draft visible with a busy marker — and a rejection keeps the form open
+   * with the error on the row.
+   *
+   * `changes` is the per-field diff (one entry in cell mode) for consumers
+   * who PATCH; `value` is the whole edited row for those who save records.
+   */
+  onEditCommit?: (
+    args: TMDataGridEditCommitArgs<TData>,
+  ) => void | Promise<void>;
+  /**
    * Renders a panel underneath an expanded row, spanning every column. Setting
    * it is what turns row details on.
    *
@@ -579,6 +679,10 @@ export function useTMDataGrid<TData extends RowData>({
   onHighlightedRowChange,
   cellSelection,
   onFocusedCellChange,
+  editMode,
+  rowValidators,
+  isRowEditable,
+  onEditCommit,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
@@ -597,6 +701,7 @@ export function useTMDataGrid<TData extends RowData>({
     selectionMode,
     showSelectedBackground,
     cellSelection,
+    editMode,
   });
 
   // Resolved on the override's identity, so a module-scope dictionary costs one
@@ -724,6 +829,35 @@ export function useTMDataGrid<TData extends RowData>({
       },
     },
   });
+
+  // The edit engine. Built once per mount; everything it needs later — the
+  // table, the mode, the consumer's callbacks — is read through a ref updated
+  // every render, so forms created at `begin()` always call the latest
+  // `onEditCommit` (the onHighlightedRowChangeRef pattern, applied wholesale).
+  const editContextRef = useRef<TMDataGridEditEngineContext>(null as never);
+  editContextRef.current = {
+    table: table as unknown as TMDataGridTable<TMDataGridRowData>,
+    editMode: editMode ?? "cell",
+    rowValidators,
+    isRowEditable: isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
+    onEditCommit:
+      onEditCommit as TMDataGridEditEngineContext["onEditCommit"],
+  };
+  const [edit] = useState(() =>
+    createEditEngine(() => editContextRef.current),
+  );
+
+  // Editing without stable ids points every draft at whatever record slides
+  // into that index after a sort. Loud, once, in development.
+  useEffect(() => {
+    if (editMode !== undefined && options.getRowId === undefined) {
+      console.error(
+        "TMDataGrid: editMode requires getRowId — drafts are keyed by row id, and the index fallback names a different record after any sort or filter.",
+      );
+    }
+    // The check is a mount-time contract, not something to re-run per render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Two things have to happen whenever `grouping` changes.
   //
@@ -919,6 +1053,7 @@ export function useTMDataGrid<TData extends RowData>({
   return {
     table,
     ui,
+    edit,
     features,
     labels,
     renderDetails,

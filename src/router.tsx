@@ -8,6 +8,7 @@ import {
 import { AppLayout } from "./AppLayout";
 import { DocsRoutePage } from "./docs/DocsRoutePage";
 import { DataGridExample } from "./examples/DataGridExample";
+import { EditableGridExample } from "./examples/EditableGridExample";
 import { InfiniteScrollExample } from "./examples/InfiniteScrollExample";
 
 const rootRoute = createRootRoute({ component: AppLayout });
@@ -32,6 +33,12 @@ export const dataGridRoute = createRoute({
   component: DataGridExample,
 });
 
+export const editableGridRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/editable-grid",
+  component: EditableGridExample,
+});
+
 export const infiniteScrollRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/infinite-scroll",
@@ -42,6 +49,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   docsRoute,
   dataGridRoute,
+  editableGridRoute,
   infiniteScrollRoute,
 ]);
 

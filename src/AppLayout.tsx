@@ -24,6 +24,11 @@ const EXAMPLE_LINKS: NavItem[] = [
     description: "Compound API · virtual, resize, sort, filter, pin",
   },
   {
+    to: "/editable-grid",
+    label: "Editable grid",
+    description: "Cell editing · typed editors, Zod validation",
+  },
+  {
     to: "/infinite-scroll",
     label: "Infinite scroll",
     description: "onReachEnd · pages fetched as you scroll",

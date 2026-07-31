@@ -182,6 +182,45 @@
   text-overflow: ellipsis;
 }
 
+/* The editing cell hands its box to the editor: the text padding comes off so
+   the input can fill the track, and the input's own chrome takes over. */
+.bodyCell[data-editing] {
+  padding: 0 calc(var(--dg-padding) / 2);
+}
+
+.cellEditor {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Corner triangles for a cell's edit state, drawn like a spreadsheet's: a
+   draft not yet saved is blue, a value failing validation is red. The cell
+   needs a positioning context; pinned and focused cells set their own inline
+   `position`, which wins over this. */
+.bodyCell[data-dirty],
+.bodyCell[data-invalid] {
+  position: relative;
+}
+
+.bodyCell[data-dirty]::after,
+.bodyCell[data-invalid]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 5px solid transparent;
+  border-top-color: var(--mantine-primary-color-filled);
+  border-right-color: var(--mantine-primary-color-filled);
+}
+
+/* Invalid wins over dirty — a cell is usually both. */
+.bodyCell[data-invalid]::after {
+  border-top-color: var(--mantine-color-error);
+  border-right-color: var(--mantine-color-error);
+}
+
 .bodyCell[data-align="right"] {
   justify-content: flex-end;
 }
