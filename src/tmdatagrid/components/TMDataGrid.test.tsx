@@ -1635,3 +1635,70 @@ describe("LoadingIndicator", () => {
     expect(screen.queryByLabelText("Loading")).not.toBeInTheDocument();
   });
 });
+
+describe("Search", () => {
+  function SearchGrid(options: Partial<UseTMDataGridOptions<TestRow>> = {}) {
+    const grid = useTMDataGrid<TestRow>({
+      data: testRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      ...options,
+    } as UseTMDataGridOptions<TestRow>);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.Search debounce={0} />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  it("narrows the rows across every column as it is typed", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SearchGrid />);
+    expect(gridRowCount()).toBe(testRows.length);
+
+    await user.type(screen.getByRole("textbox", { name: "Search rows" }), "Anna");
+
+    const matches = testRows.filter((row) => row.name === "Anna").length;
+    expect(gridRowCount()).toBe(matches);
+  });
+
+  it("clears through the clear button and restores every row", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SearchGrid />);
+
+    await user.type(screen.getByRole("textbox", { name: "Search rows" }), "Anna");
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+
+    expect(gridRowCount()).toBe(testRows.length);
+    expect(screen.getByRole("textbox", { name: "Search rows" })).toHaveValue("");
+  });
+
+  it("mirrors an external globalFilter write into the input", async () => {
+    const { result } = renderGrid();
+    renderWithMantine(
+      <TMDataGrid {...erased(result.current)}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.Search />
+        </TMDataGrid.Toolbar>
+      </TMDataGrid>,
+    );
+
+    result.current.table.setGlobalFilter("Erik");
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "Search rows" }),
+      ).toHaveValue("Erik"),
+    );
+  });
+
+  it("renders nothing under enableGlobalFilter: false", () => {
+    renderWithMantine(<SearchGrid enableGlobalFilter={false} />);
+    expect(
+      screen.queryByRole("textbox", { name: "Search rows" }),
+    ).not.toBeInTheDocument();
+  });
+});

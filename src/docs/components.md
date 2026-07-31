@@ -264,6 +264,23 @@ Displays visible rows out of total rows.
 The default total is `meta.totalRowCount` when provided, otherwise the
 pre-filtered row count.
 
+## TMDataGrid.Search
+
+Quick search over every column — a debounced input writing the table's
+`globalFilter` state.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string` | `labels.searchPlaceholder` | Input placeholder. |
+| `debounce` | `number` | `250` | Pause before the filter applies, in ms. `0` filters per keystroke. |
+| `w` | `number \| string` | `220` | Input width. |
+
+Renders nothing under `enableGlobalFilter: false`. Columns opt out with their
+own `enableGlobalFilter: false`; the generated lanes already do. The state is
+TanStack's `globalFilter` — `manualFiltering` grids forward it to the server,
+and it is one of the persisted `data` slices. A custom search input skips this
+component and calls `table.setGlobalFilter` itself.
+
 ## TMDataGrid.FilterButton
 
 Toggles the filter panel and adds a filter row for the first filterable column.

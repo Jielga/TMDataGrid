@@ -27,6 +27,9 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
 
   manageColumns: "Hantera kolumner",
   filters: "Filter",
+  searchPlaceholder: "Sök",
+  searchLabel: "Sök rader",
+  clearSearch: "Rensa sökningen",
 
   columnsSearchPlaceholder: "Sök",
   columnsNoMatch: (search) => `Inga kolumner matchar ”${search}”`,

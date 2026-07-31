@@ -33,6 +33,10 @@ export {
   type TMDataGridFilterPillsProps,
 } from "./components/TMDataGridFilterPills";
 export {
+  TMDataGridSearch,
+  type TMDataGridSearchProps,
+} from "./components/TMDataGridSearch";
+export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,

@@ -17,6 +17,7 @@ see [Pagination](#pagination).
 | `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort |
 | `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel |
 | `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
+| `enableGlobalFilter: false` | Table, column | `Search` — the whole input at table level, one column's participation at column level |
 | `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton` |
 | `enableColumnPinning: false` | Table | Pin and unpin menu items |
 | `enablePinning: false` | Column | That column's pin menu items |
@@ -170,6 +171,7 @@ function ExportButton() {
 | `canGroupAny` | At least one leaf column can be grouped on. |
 | `canSelectRows` | `enableRowSelection` is not `false`. The mode is in `features.rowSelectionMode`. |
 | `canPaginate` | `enablePagination` or `manualPagination` is `true`. Configuration, not live state — use `isPagingActive(table, features)` for whether the pager is currently slicing anything, which grouping suspends. |
+| `canSearch` | At least one leaf column takes part in the global quick search. |
 
 `getColumnCapabilities(column, features)` returns the same information for a
 single column as `canSort`, `canFilter`, `canHide`, `canPin`, `canResize`,

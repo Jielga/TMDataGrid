@@ -57,6 +57,8 @@ export type TMDataGridCellSelectionMode =
 export type TMDataGridFeatureFlags = {
   sorting: boolean;
   filtering: boolean;
+  /** Whether the quick search may filter — `enableGlobalFilter`. */
+  globalFiltering: boolean;
   hiding: boolean;
   pinning: boolean;
   resizing: boolean;
@@ -122,6 +124,7 @@ export function readFeatureFlags<TData extends RowData>(
     UseTMDataGridOptions<TData>,
     | "enableSorting"
     | "enableColumnFilters"
+    | "enableGlobalFilter"
     | "enableHiding"
     | "enableColumnPinning"
     | "enableColumnResizing"
@@ -147,6 +150,7 @@ export function readFeatureFlags<TData extends RowData>(
   return {
     sorting: options.enableSorting !== false,
     filtering: options.enableColumnFilters !== false,
+    globalFiltering: options.enableGlobalFilter !== false,
     hiding: options.enableHiding !== false,
     pinning: options.enableColumnPinning !== false,
     resizing: options.enableColumnResizing !== false,
@@ -224,6 +228,8 @@ export type TMDataGridCapabilities = {
   canGroupAny: boolean;
   canSelectRows: boolean;
   canPaginate: boolean;
+  /** At least one leaf column takes part in the global quick search. */
+  canSearch: boolean;
 };
 
 export function getGridCapabilities(
@@ -243,5 +249,8 @@ export function getGridCapabilities(
     canGroupAny: any((c) => c.canGroup),
     canSelectRows: features.rowSelection,
     canPaginate: features.pagination,
+    canSearch:
+      features.globalFiltering &&
+      columns.some((column) => column.getCanGlobalFilter()),
   };
 }

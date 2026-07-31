@@ -21,6 +21,9 @@ export type TMDataGridLabels = {
   manageColumns: string;
   /** "Filters" — the funnel button and the filter panel's title. */
   filters: string;
+  searchPlaceholder: string;
+  searchLabel: string;
+  clearSearch: string;
 
   // Columns panel
   columnsSearchPlaceholder: string;
@@ -114,6 +117,9 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
 
   manageColumns: "Manage columns",
   filters: "Filters",
+  searchPlaceholder: "Search",
+  searchLabel: "Search rows",
+  clearSearch: "Clear search",
 
   columnsSearchPlaceholder: "Search",
   columnsNoMatch: (search) => `No columns match “${search}”`,
