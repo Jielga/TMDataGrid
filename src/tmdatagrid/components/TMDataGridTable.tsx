@@ -256,13 +256,18 @@ function TMDataGridBodyCell({
         // The focus ring is drawn inside the cell's own box, so the cell has to
         // be able to stack above its neighbours — a plain one to lift the ring
         // over the pinned lane it sits beside, a pinned one to keep the ring
-        // whole while the rest of the row slides under it.
+        // whole while the rest of the row slides under it. Values from the
+        // stacking ladder in TMDataGrid.module.css.
         position: layout.pinnedAt
           ? "sticky"
           : nav?.focused
             ? "relative"
             : undefined,
-        zIndex: nav?.focused ? 3 : layout.pinnedAt ? 2 : undefined,
+        zIndex: nav?.focused
+          ? "var(--dg-z-focused-cell, 3)"
+          : layout.pinnedAt
+            ? "var(--dg-z-pinned-cell, 2)"
+            : undefined,
       }}
     >
       <span className={classes.cellContent}>{renderCellContent(cell)}</span>
@@ -604,6 +609,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     columnLayout.get(columnId) ?? UNPINNED_LAYOUT;
 
   const isEmpty = rows.length === 0;
+
+  /**
+   * The summary row exists by declaration, not by flag: it renders exactly
+   * when at least one visible leaf column defines a `footer`. Its cells come
+   * from the leaf header group, whose headers sit in the same left → centre →
+   * right order as `orderedColumns` — so `layoutFor` and the grid tracks
+   * apply unchanged.
+   */
+  const leafHeaders = headerGroups.at(-1)?.headers ?? [];
+  const hasSummaryRow = orderedColumns.some(
+    (column) => column.columnDef.footer !== undefined,
+  );
 
   // "row" mode: the row itself is the selection control, with the modifier
   // conventions of any desktop list — see resolveRowSelectionClick.
@@ -1215,7 +1232,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           // Virtualization means most rows are not in the DOM, so the counts
           // have to be stated rather than inferred from what is rendered. Every
           // row carries its aria-rowindex for the same reason.
-          aria-rowcount={rows.length + headerGroups.length}
+          aria-rowcount={
+            rows.length + headerGroups.length + (hasSummaryRow ? 1 : 0)
+          }
           aria-colcount={orderedColumns.length}
           style={{ gridTemplateColumns, minWidth: gridMinWidth }}
         >
@@ -1535,6 +1554,61 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               aria-hidden
               style={{ gridColumn: "1/-1", height: paddingBottom }}
             />
+          )}
+
+          {/* Sticky along the bottom edge, the way the header is along the
+              top. `flexRender` with the header context, which is what a
+              TanStack `footer` renderer is written against. */}
+          {hasSummaryRow && (
+            <div
+              role="row"
+              aria-rowindex={rows.length + headerGroups.length + 1}
+              data-testid="dg-summary-row"
+              className={classes.summaryRow}
+            >
+              {leafHeaders.map((header) => {
+                const layout = layoutFor(header.column.id);
+                return (
+                  <div
+                    key={header.id}
+                    role="cell"
+                    data-align={getColumnAlign(header.column)}
+                    data-control-column={isControlColumn(header.column.id)}
+                    className={[
+                      classes.summaryCell,
+                      layout.isBoundary && layout.pinnedAt === "left"
+                        ? sticky.stickyLeft
+                        : "",
+                      layout.isBoundary && layout.pinnedAt === "right"
+                        ? sticky.stickyRight
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    style={{
+                      minHeight: rowHeight,
+                      left:
+                        layout.pinnedAt === "left" ? layout.offset : undefined,
+                      right:
+                        layout.pinnedAt === "right" ? layout.offset : undefined,
+                      position: layout.pinnedAt ? "sticky" : undefined,
+                      zIndex: layout.pinnedAt
+                        ? "var(--dg-z-summary-pinned-cell, 5)"
+                        : undefined,
+                    }}
+                  >
+                    <span className={classes.cellContent}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.footer,
+                            header.getContext(),
+                          )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

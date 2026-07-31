@@ -12,6 +12,7 @@ import {
   type TestRow,
 } from "../../test/gridHarness";
 import { getColumnCapabilities } from "../core/capabilities";
+import { aggregateColumn } from "../core/summary";
 import { TMDATAGRID_LABELS_SV } from "../core/labelsSv";
 import { DETAILS_COLUMN_ID } from "./TMDataGridDetailsColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
@@ -20,6 +21,7 @@ import { TMDataGrid } from "./TMDataGrid";
 import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import type { TMDataGridTableProps } from "./TMDataGridTable";
 import {
+  createTMDataGridColumnHelper,
   useTMDataGrid,
   type TMDataGridDetailsArgs,
   type UseTMDataGridOptions,
@@ -1749,5 +1751,75 @@ describe("multi-column sorting", () => {
       "none",
     );
     expect(screen.queryByTestId("dg-sort-index")).not.toBeInTheDocument();
+  });
+});
+
+describe("summary row", () => {
+  const summaryColumns = (() => {
+    const helper = createTMDataGridColumnHelper<TestRow>();
+    return helper.columns([
+      helper.accessor("name", { header: "Name" }),
+      helper.accessor("age", {
+        header: "Age",
+        footer: ({ table }) =>
+          `Sum ${String(aggregateColumn({ table, columnId: "age" }))}`,
+      }),
+    ]);
+  })();
+
+  function SummaryGrid(options: Partial<UseTMDataGridOptions<TestRow>> = {}) {
+    const grid = useTMDataGrid<TestRow>({
+      data: testRows,
+      columns: summaryColumns,
+      getRowId: (row) => String(row.id),
+      ...options,
+    } as UseTMDataGridOptions<TestRow>);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  it("renders one sticky row of footers when a column defines one", () => {
+    renderWithMantine(<SummaryGrid />);
+
+    const total = testRows.reduce((sum, row) => sum + row.age, 0);
+    const summary = screen.getByTestId("dg-summary-row");
+    expect(within(summary).getByText(`Sum ${total}`)).toBeInTheDocument();
+    // Included in the stated row count: header + rows + summary.
+    expect(screen.getByRole("table")).toHaveAttribute(
+      "aria-rowcount",
+      String(testRows.length + 2),
+    );
+  });
+
+  it("renders no summary row when no column defines a footer", () => {
+    renderGridUi();
+    expect(screen.queryByTestId("dg-summary-row")).not.toBeInTheDocument();
+  });
+
+  it("follows the filters through aggregateColumn", async () => {
+    const user = userEvent.setup();
+    const { result } = renderGrid();
+    const filtered = aggregateColumn({
+      table: result.current.table,
+      columnId: "age",
+    });
+    expect(filtered).toBe(testRows.reduce((sum, row) => sum + row.age, 0));
+
+    await waitFor(() => {
+      result.current.table.setColumnFilters([
+        { id: "name", value: { operator: "equals", value: "Anna" } },
+      ]);
+    });
+
+    const expected = testRows
+      .filter((row) => row.name === "Anna")
+      .reduce((sum, row) => sum + row.age, 0);
+    expect(
+      aggregateColumn({ table: result.current.table, columnId: "age" }),
+    ).toBe(expected);
+    void user;
   });
 });

@@ -453,7 +453,8 @@ export function TMDataGridHeaderCell({
         left: pinnedAt === "left" ? layout.offset : undefined,
         right: pinnedAt === "right" ? layout.offset : undefined,
         position: pinnedAt ? "sticky" : undefined,
-        zIndex: pinnedAt ? 4 : undefined,
+        // From the stacking ladder in TMDataGrid.module.css.
+        zIndex: pinnedAt ? "var(--dg-z-header-pinned-cell, 7)" : undefined,
       }}
       // Shift+click is "add to sort", and the browser would smear a text
       // selection across the headers it passes. Stopped at the one gesture,

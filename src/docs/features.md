@@ -608,6 +608,31 @@ What gets written is the cell's *value*, not what it renders: a cell renders
 React, and often a badge or a link rather than the value. Dates come out in the
 `sv-SE` form (`2026-07-31`), which Excel reads as a date.
 
+## Summary row
+
+Give a column a `footer` and the grid grows a sticky row along its bottom edge
+— TanStack's own column option, rendered by the grid the way the header is.
+No flag: the row exists exactly when at least one visible column defines a
+`footer`, and each cell renders that column's renderer with the header
+context.
+
+```tsx
+columnHelper.accessor("salary", {
+  header: "Salary",
+  footer: ({ table }) =>
+    sek(Number(aggregateColumn({ table, columnId: "salary" }))),
+});
+```
+
+`aggregateColumn({ table, columnId, fn })` computes over every *filtered* row
+— all pages, following the filters live — through the registered aggregation
+functions (`fn` defaults to `"sum"`). A `footer` can equally render anything:
+a static label, a count, its own calculation.
+
+Pinned columns keep their lanes in the summary row, and the row sits under
+the pinned-lane gradients on the stacking ladder. The generated lanes define
+no `footer`, so their summary cells stay blank.
+
 ## Pinned column edges
 
 A pinned lane casts a soft band over the data beside it, and only while it is

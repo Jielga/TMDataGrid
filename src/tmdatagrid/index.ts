@@ -59,6 +59,10 @@ export {
 } from "./core/columnUtils";
 export { getGroupDataRows } from "./core/grouping";
 export {
+  aggregateColumn,
+  type TMDataGridAggregationName,
+} from "./core/summary";
+export {
   isSameCell,
   resolveCellMove,
   type ResolveCellMoveArgs,

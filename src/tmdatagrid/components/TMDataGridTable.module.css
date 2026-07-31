@@ -27,7 +27,7 @@
   grid-template-columns: subgrid;
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: var(--dg-z-header, 6);
 }
 
 .bodyRow {
@@ -220,4 +220,39 @@
   justify-content: center;
   gap: var(--mantine-spacing-xs);
   padding: var(--mantine-spacing-xl);
+}
+
+/* The summary row — one sticky row of column footers along the bottom edge,
+   rendered only while at least one column defines `footer`. Same subgrid
+   placement as the header, so its cells sit exactly on the body's tracks. */
+.summaryRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  position: sticky;
+  bottom: 0;
+  z-index: var(--dg-z-summary-row, 4);
+}
+
+.summaryCell {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--dg-padding);
+  border-top: 1px solid var(--mantine-color-default-border);
+  /* Opaque: the body scrolls underneath it. */
+  background-color: var(--mantine-color-body);
+  font-size: var(--dg-font-size);
+  font-weight: 600;
+}
+
+.summaryCell[data-control-column="true"] {
+  padding: 0;
+}
+
+.summaryCell[data-align="right"] {
+  justify-content: flex-end;
+}
+
+.summaryCell[data-align="center"] {
+  justify-content: center;
 }
