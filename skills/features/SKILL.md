@@ -5,17 +5,16 @@ description: >
   table and column options, and reuse the same checks in your own components.
   Covers the enableSorting/enableColumnFilters/enableHiding/enableColumnPinning/
   enableColumnResizing/enableColumnOrdering/enableRowSelection matrix, the
-  checkbox and row selection modes behind rowSelectionMode, the
-  highlightSelectedRows flag and the --dg-row-selected-bg colour, the
-  default-off enablePagination switch and its three modes (none, client,
-  manual), getGridCapabilities and getColumnCapabilities, why the features
-  argument is required for reactivity under the React Compiler, column pinning,
-  column ordering with moveColumn and moveColumnByStep, cell selection with
-  arrow-key navigation, drag-selected ranges, Ctrl+C to the clipboard and
-  Excel-compatible CSV export, and always-on virtualization. Load when building
-  a read-only grid, hiding grid chrome, enabling pagination, reordering columns
-  from code, adding keyboard cell navigation or copy/export, or writing a custom
-  toolbar button.
+  selection modes behind rowSelectionMode, the highlightSelectedRows flag and
+  the --dg-row-selected-bg colour, the default-off enablePagination switch and
+  its three modes (none, client, manual), getGridCapabilities and
+  getColumnCapabilities, why the features argument is required for reactivity
+  under the React Compiler, column ordering with moveColumn and
+  moveColumnByStep, cell selection with arrow-key navigation, drag-selected
+  ranges, Ctrl+C copy and Excel-compatible CSV export, and always-on
+  virtualization. Load when building a read-only grid, hiding grid chrome,
+  enabling pagination, reordering columns from code, adding cell navigation or
+  copy/export, or writing a custom toolbar button.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
