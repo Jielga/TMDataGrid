@@ -13,12 +13,36 @@ const HEADER_ACTIONS_ALLOWANCE = 30;
 const CONTENT_ALLOWANCE = 2;
 
 /**
+ * What the content inside one cell actually spans, in px.
+ *
+ * A Range over the children rather than the span's `scrollWidth`, because the
+ * two disagree in opposite directions: a left-aligned cell stretches its
+ * content span to fill the cell (`flex: 1 1 auto`), so `scrollWidth` reports
+ * the stretched box and autosize could never *shrink* a column — while for
+ * clipped content both see past the `overflow: hidden`. The Range measures
+ * the laid-out text and elements themselves, whatever box they sit in.
+ *
+ * `scrollWidth` stays as the fallback for environments whose Ranges do not
+ * measure (jsdom reports 0 there).
+ */
+function contentSpanWidth(content: HTMLElement): number {
+  const range = document.createRange();
+  range.selectNodeContents(content);
+  // jsdom's Range has no getBoundingClientRect at all, hence the guard
+  // rather than a zero-check alone.
+  const width =
+    typeof range.getBoundingClientRect === "function"
+      ? range.getBoundingClientRect().width
+      : 0;
+  return width > 0 ? width : content.scrollWidth;
+}
+
+/**
  * Widest rendered content of one column, in px, measured from the DOM.
  *
  * Mounted cells only: under virtualization the unmounted rows do not exist to
  * be measured, so this reads the visible window plus overscan — the same
- * trade AG Grid's autosize makes by default. `scrollWidth` sees through the
- * `overflow: hidden` the cell content clips with.
+ * trade AG Grid's autosize makes by default.
  */
 export function measureColumnContentWidth({
   container,
@@ -41,7 +65,10 @@ export function measureColumnContentWidth({
     const padding =
       (Number.parseFloat(styles.paddingLeft) || 0) +
       (Number.parseFloat(styles.paddingRight) || 0);
-    widest = Math.max(widest, content.scrollWidth + padding + CONTENT_ALLOWANCE);
+    widest = Math.max(
+      widest,
+      contentSpanWidth(content) + padding + CONTENT_ALLOWANCE,
+    );
   }
 
   const title = container.querySelector<HTMLElement>(
@@ -56,7 +83,7 @@ export function measureColumnContentWidth({
       : 0;
     widest = Math.max(
       widest,
-      title.scrollWidth + padding + HEADER_ACTIONS_ALLOWANCE,
+      contentSpanWidth(title) + padding + HEADER_ACTIONS_ALLOWANCE,
     );
   }
 
