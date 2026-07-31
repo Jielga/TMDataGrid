@@ -1,5 +1,5 @@
 import { Badge, Flex, Group, Text } from "@mantine/core";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createTMDataGridColumnHelper,
   TMDataGrid,
@@ -109,6 +109,12 @@ export function InfiniteScrollExample() {
     setOrders((previous) => [...previous, ...page]);
     setLoading(false);
   }, []);
+
+  // Page zero is asked for here, not by the grid: `onReachEnd` stays quiet on
+  // an empty grid, since "the end" of nothing is not a scroll position.
+  useEffect(() => {
+    if (nextPageRef.current === 0) void loadNextPage();
+  }, [loadNextPage]);
 
   const meta = useMemo(
     () => ({ loading, totalRowCount: TOTAL_ROWS }),

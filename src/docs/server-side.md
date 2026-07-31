@@ -117,6 +117,9 @@ const grid = useTMDataGrid({
 <TMDataGrid.Table onReachEnd={() => void fetchNextPage()} />
 ```
 
+Fetch page zero yourself on mount — `onReachEnd` stays quiet on an empty
+grid, since "the end" of nothing is not a scroll position.
+
 `onReachEnd` fires once per row count, so a pending fetch is not asked again
 until its rows land; `reachEndThreshold` (default 10) sets how many rows
 before the end it fires. `TMDataGrid.LoadingIndicator` in the toolbar is the
