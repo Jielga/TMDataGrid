@@ -1,7 +1,10 @@
 import { Checkbox } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
-import { useTMDataGridContext } from "../TMDataGridContext";
+import {
+  useCellControlTabIndex,
+  useTMDataGridContext,
+} from "../TMDataGridContext";
 import {
   getDisplayedRows,
   getSelectableRowIds,
@@ -76,6 +79,10 @@ function SelectRowCheckbox<TData extends RowData>({
   // chrome store — it needs the shift-click pivot, and the feature flags to know
   // which row model a range is measured over.
   const { ui, features } = useTMDataGridContext();
+  // Out of the tab order once the grid has a cell cursor — see
+  // useCellControlTabIndex. Enter on the lane still steps in, and Space on any
+  // cell of the row ticks it.
+  const tabIndex = useCellControlTabIndex();
   const isGroupRow = row.subRows.length > 0;
 
   // A group row is never selected by id: `rowSelection` only ever holds the
@@ -101,6 +108,7 @@ function SelectRowCheckbox<TData extends RowData>({
   return (
     <Checkbox
       size="xs"
+      tabIndex={tabIndex}
       aria-label={isGroupRow ? "Select group" : "Select row"}
       checked={selected}
       disabled={selectableIds.length === 0}

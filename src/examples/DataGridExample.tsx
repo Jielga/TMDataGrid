@@ -25,6 +25,7 @@ import {
   TMDataGrid,
   type TMDataGridFilterValue,
   type TMDataGridPersistence,
+  type TMDataGridCellSelectionMode,
   type TMDataGridSelectionMode,
   type TMDataGridSize,
   useTMDataGrid,
@@ -258,6 +259,15 @@ const SELECTION_MODES = [
   label: string;
 }>;
 
+const CELL_SELECTION_MODES = [
+  { value: "none", label: "No cells" },
+  { value: "single", label: "Cell" },
+  { value: "range", label: "Cell range" },
+] as const satisfies ReadonlyArray<{
+  value: TMDataGridCellSelectionMode;
+  label: string;
+}>;
+
 /** One switch per option, wired straight to the option name in `key`. */
 function FeatureSwitches({
   toggles,
@@ -320,6 +330,8 @@ export function DataGridExample() {
   const [rowDetails, setRowDetails] = useState(true);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
+  const [cellSelection, setCellSelection] =
+    useState<TMDataGridCellSelectionMode>("range");
   // Undefined follows the mode: off with checkboxes, on when rows select.
   const [showSelectedBackground, setShowSelectedBackground] = useState<
     boolean | undefined
@@ -335,6 +347,7 @@ export function DataGridExample() {
     persist,
     selectionMode,
     showSelectedBackground,
+    cellSelection,
     // Setting the render prop is what turns row details on; the grid measures
     // whatever it returns, so the estimate only has to be in the right region.
     renderDetails: rowDetails
@@ -395,6 +408,7 @@ export function DataGridExample() {
           showSelectedBackground,
           rowContextMenu,
           rowDetails,
+          cellSelection,
         }}
       />
 
@@ -427,6 +441,24 @@ export function DataGridExample() {
                 }
               />
             </Group>
+            <Tooltip
+              label="Cell cursor: arrows move it, drag or Shift+arrows select a block, Ctrl+C copies it for Excel"
+              withArrow
+              multiline
+              w={260}
+            >
+              <SegmentedControl
+                size="xs"
+                value={cellSelection}
+                onChange={(value) =>
+                  setCellSelection(value as TMDataGridCellSelectionMode)
+                }
+                data={CELL_SELECTION_MODES as unknown as Array<{
+                  value: string;
+                  label: string;
+                }>}
+              />
+            </Tooltip>
           </Stack>
         </Fieldset>
 

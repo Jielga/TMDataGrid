@@ -1,4 +1,8 @@
-import type { TMDataGridSelectionMode, TMDataGridSize } from "../tmdatagrid";
+import type {
+  TMDataGridCellSelectionMode,
+  TMDataGridSelectionMode,
+  TMDataGridSize,
+} from "../tmdatagrid";
 
 /**
  * Builds the smallest file that reproduces what the example page is currently
@@ -48,6 +52,7 @@ export type StarterSnippetConfig = {
   showSelectedBackground: boolean | undefined;
   rowContextMenu: boolean;
   rowDetails: boolean;
+  cellSelection: TMDataGridCellSelectionMode;
 };
 
 const DEFAULT_SIZE: TMDataGridSize = "md";
@@ -70,6 +75,7 @@ export function buildStarterSnippet({
   showSelectedBackground,
   rowContextMenu,
   rowDetails,
+  cellSelection,
 }: StarterSnippetConfig): string {
   const highlight = hasHighlight(selectionMode);
   const paginated = options.enablePagination;
@@ -109,6 +115,15 @@ export function buildStarterSnippet({
   ) {
     gridOptions.push(
       `    showSelectedBackground: ${String(showSelectedBackground)},`,
+    );
+  }
+
+  if (cellSelection !== "none") {
+    gridOptions.push(
+      cellSelection === "range"
+        ? "    // Arrow keys move a cell cursor; drag or Shift+arrows select a block,\n    //     Ctrl+C copies it, right-click exports it."
+        : "    // Arrow keys move a cell cursor through the body.",
+      `    cellSelection: "${cellSelection}",`,
     );
   }
 

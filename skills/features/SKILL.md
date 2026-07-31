@@ -10,10 +10,12 @@ description: >
   default-off enablePagination switch and its three modes (none, client,
   manual), getGridCapabilities and getColumnCapabilities, why the features
   argument is required for reactivity under the React Compiler, column pinning,
-  column ordering with moveColumn and moveColumnByStep, and always-on
-  virtualization. Load when building a read-only grid, hiding grid chrome,
-  enabling pagination, reordering columns from code, or writing a custom toolbar
-  button.
+  column ordering with moveColumn and moveColumnByStep, cell selection with
+  arrow-key navigation, drag-selected ranges, Ctrl+C to the clipboard and
+  Excel-compatible CSV export, and always-on virtualization. Load when building
+  a read-only grid, hiding grid chrome, enabling pagination, reordering columns
+  from code, adding keyboard cell navigation or copy/export, or writing a custom
+  toolbar button.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -241,6 +243,52 @@ const next = getStepTargetColumn({ table, columnId: "salary", direction: 1 });
 
 Both movers are no-ops for a move that is not allowed, including one across
 regions.
+
+## Cell selection
+
+Off by default. `cellSelection: "single"` gives one focused cell moved with the
+arrow keys; `"range"` adds a selectable rectangle, Ctrl+C and CSV export.
+
+```tsx
+const grid = useTMDataGrid({ data, columns, cellSelection: "range" });
+```
+
+On, the body's tab stop moves from the row to a cell (the whole grid is one Tab
+stop), the container reports `role="grid"` with `gridcell` children, and cells
+carry `data-focused` / `data-selected` / `data-edge-*`.
+
+| Key | Does |
+| --- | --- |
+| Arrows | one cell, clamped at the edges |
+| Shift+arrows | extends the rectangle from its anchor |
+| PageUp / PageDown | one viewport of rows |
+| Home / End, Ctrl+Home / Ctrl+End | ends of the row, corners of the grid |
+| Enter or F2 | steps into the cell's control; Escape steps back out |
+| Space | selects the row |
+| Ctrl+C | copies the block as tab-separated text |
+
+The body is one tab stop: controls inside body cells take `tabindex="-1"` while
+cell selection is on, so Tab leaves the grid instead of walking one control per
+mounted row. Enter/F2 steps in, Escape steps out, Space ticks the row from any
+cell. Custom cell controls should do the same —
+`tabIndex={useCellControlTabIndex()}`. Header controls are untouched.
+
+The generated lanes (checkbox, tree, details) are selectable and navigable —
+they take the tint and the outline — but never exported; a block covering only
+those disables Copy and Export.
+
+Drag across cells to select a rectangle; Shift+click extends one. The state is
+`ui.state.focusedCell` and `ui.state.cellRange`, both held as `{ rowId,
+columnId }` pairs so sorting and filtering carry the selection with the cells.
+Move them with `ui.actions.setFocusedCell` / `setCellRange`, follow them with
+`onFocusedCellChange`. One rectangle at a time.
+
+Right-clicking inside the selection offers Copy, "Export as CSV for Excel" and
+an Include headers toggle; a consumer's `rowContextMenu` items follow a divider.
+The CSV is Nordic-Excel shaped — `sep=;` line, UTF-8 BOM, CRLF, semicolons,
+decimal comma — and `cellExport` on `TMDataGrid.Table` changes any of that.
+Generated lanes (checkbox, tree, details) are never exported, and what is
+written is the cell's value rather than what it renders.
 
 ## Virtualization
 

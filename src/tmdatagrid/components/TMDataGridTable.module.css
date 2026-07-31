@@ -107,6 +107,74 @@
   padding: 0;
 }
 
+/* A drag is laying down a range. Text selection would otherwise follow the
+   pointer across every cell it passes. */
+.grid[data-range-dragging] {
+  user-select: none;
+}
+
+/* The selected block, under `cellSelection: "range"`.
+
+   A tint over the row's own background rather than instead of it, so a
+   selected cell on a highlighted row still reads as both. `color-mix` keeps
+   one declaration for light and dark: it thins the theme's primary colour into
+   whatever `--row-bg` the row resolved to. */
+.bodyCell[data-selected="true"] {
+  background-color: color-mix(
+    in srgb,
+    var(--mantine-primary-color-filled) 14%,
+    var(--row-bg)
+  );
+}
+
+/* The outline around the block, drawn edge by edge: only the cells on a side
+   of the rectangle draw that side, so they add up to one border around the
+   whole thing however it is shaped. A single overlay box would have to be
+   positioned against a scrolling grid with sticky lanes in it.
+
+   Four shadows are always laid down and each is transparent until its edge
+   says otherwise. `box-shadow` does not accumulate across rules — a second
+   declaration replaces the first — so the alternative is one rule per corner
+   combination, and a cell can be on any of fifteen of them. */
+.bodyCell[data-selected="true"] {
+  --dg-edge-top: transparent;
+  --dg-edge-bottom: transparent;
+  --dg-edge-left: transparent;
+  --dg-edge-right: transparent;
+  box-shadow:
+    inset 0 1px 0 0 var(--dg-edge-top),
+    inset 0 -1px 0 0 var(--dg-edge-bottom),
+    inset 1px 0 0 0 var(--dg-edge-left),
+    inset -1px 0 0 0 var(--dg-edge-right);
+}
+
+.bodyCell[data-edge-top="true"] {
+  --dg-edge-top: var(--mantine-primary-color-filled);
+}
+
+.bodyCell[data-edge-bottom="true"] {
+  --dg-edge-bottom: var(--mantine-primary-color-filled);
+}
+
+.bodyCell[data-edge-left="true"] {
+  --dg-edge-left: var(--mantine-primary-color-filled);
+}
+
+.bodyCell[data-edge-right="true"] {
+  --dg-edge-right: var(--mantine-primary-color-filled);
+}
+
+/* The cell the keyboard is on, under `cellSelection`.
+
+   Painted from `data-focused` rather than `:focus-visible`, because the ring
+   has to stay while the focus steps into a control inside the cell — that is
+   still where the arrow keys resume from. The offset keeps it inside the
+   cell's own box, so a pinned neighbour cannot clip it. */
+.bodyCell[data-focused="true"] {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
 .cellContent {
   min-width: 0;
   overflow: hidden;

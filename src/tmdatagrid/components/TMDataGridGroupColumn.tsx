@@ -1,4 +1,5 @@
 import { UnstyledButton } from "@mantine/core";
+import { useCellControlTabIndex } from "../TMDataGridContext";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
@@ -45,6 +46,8 @@ function GroupCell<TData extends RowData>({
   row: Row<TMDataGridFeatures, TData>;
 }) {
   const expanded = useSelector(row.table.store, () => row.getIsExpanded());
+  // See useCellControlTabIndex: reached by stepping into the cell, not by Tab.
+  const tabIndex = useCellControlTabIndex();
 
   // Leaf rows keep the lane empty: their values are in the data columns, and
   // the indent alone is what places them under their group.
@@ -57,6 +60,7 @@ function GroupCell<TData extends RowData>({
       className={classes.groupToggle}
       // Padding rather than margin, so the whole indented width stays clickable.
       style={{ paddingInlineStart: row.depth * INDENT_STEP }}
+      tabIndex={tabIndex}
       aria-expanded={expanded}
       aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
       // The row underneath may select or highlight on click; expanding is its

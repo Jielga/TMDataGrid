@@ -1,4 +1,5 @@
 import { UnstyledButton } from "@mantine/core";
+import { useCellControlTabIndex } from "../TMDataGridContext";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGridDetailsColumn.module.css";
@@ -22,6 +23,9 @@ function DetailsCell<TData extends RowData>({
   row: Row<TMDataGridFeatures, TData>;
 }) {
   const expanded = useSelector(row.table.store, () => row.getIsExpanded());
+  // See useCellControlTabIndex: a body control is reached by stepping into its
+  // cell, not by Tab, or the grid would have one tab stop per mounted row.
+  const tabIndex = useCellControlTabIndex();
 
   // Group rows open into their children, not into a panel — see the body's
   // `showsDetails`. Their cells are aggregated, so this lane is already blank
@@ -31,6 +35,7 @@ function DetailsCell<TData extends RowData>({
   return (
     <UnstyledButton
       className={classes.detailsToggle}
+      tabIndex={tabIndex}
       aria-expanded={expanded}
       aria-label={expanded ? "Hide details" : "Show details"}
       // The row underneath may select or highlight on click; opening a panel is

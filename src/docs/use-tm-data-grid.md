@@ -17,9 +17,9 @@ including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
 cannot be overridden.
 
 `persist`, `enableColumnOrdering`, `enablePagination`, `rowSelectionMode`,
-`highlightSelectedRows`, `renderDetails`, `renderDetailsEstHeight` and
-`overscan` are the grid's own options and are consumed here rather than
-forwarded to TanStack.
+`highlightSelectedRows`, `renderDetails`, `renderDetailsEstHeight`, `overscan`,
+`cellSelection` and `onFocusedCellChange` are the grid's own options and are
+consumed here rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -38,6 +38,8 @@ forwarded to TanStack.
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Features](#features). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Features](#features). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
+| `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Features](#features). |
+| `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
@@ -183,6 +185,15 @@ re-render when the value changes.
 | `toggleColumnsPanel` | `() => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
+| `setHighlightedRow` | `(rowId: string \| null) => void` |
+| `setSelectionAnchor` | `(rowId: string \| null) => void` |
+| `setFocusedCell` | `(cell: TMDataGridCellPosition \| null) => void` |
+| `setCellRange` | `(range: TMDataGridCellRange \| null) => void` |
+
+The last two move the cell cursor and the selected rectangle under
+`cellSelection` — see [Cell selection](#cell-selection). DOM focus follows
+`focusedCell` while the grid holds it, scrolling the row into view when it is
+off screen.
 
 The last two are called by the header cells while a column is being dragged.
 `ui.draggedColumnId` holds the column being moved, because browsers keep

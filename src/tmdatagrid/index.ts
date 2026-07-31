@@ -1,5 +1,6 @@
 export { TMDataGrid, type TMDataGridProps } from "./components/TMDataGrid";
 export {
+  useCellControlTabIndex,
   useTMDataGridContext,
   type TMDataGridContextValue,
   type TMDataGridRowData,
@@ -47,6 +48,34 @@ export {
 } from "./core/columnUtils";
 export { getGroupDataRows } from "./core/grouping";
 export {
+  isSameCell,
+  resolveCellMove,
+  type ResolveCellMoveArgs,
+  type TMDataGridCellCoords,
+  type TMDataGridCellPosition,
+} from "./core/cellNavigation";
+export {
+  boundsCellCount,
+  boundsEdges,
+  isWithinBounds,
+  resolveRangeBounds,
+  type ResolveRangeBoundsArgs,
+  type TMDataGridCellRange,
+  type TMDataGridRangeBounds,
+} from "./core/cellRange";
+export {
+  buildCellMatrix,
+  DEFAULT_CELL_EXPORT_OPTIONS,
+  downloadTextFile,
+  formatExportValue,
+  toClipboardText,
+  toExcelCsv,
+  writeClipboardText,
+  type BuildCellMatrixArgs,
+  type TMDataGridCellExportOptions,
+  type TMDataGridCellMatrix,
+} from "./core/cellExport";
+export {
   areAllRowsExpanded,
   resolveExpandAll,
   type TMDataGridExpandAllArgs,
@@ -66,6 +95,7 @@ export {
   getColumnCapabilities,
   getGridCapabilities,
   readFeatureFlags,
+  type TMDataGridCellSelectionMode,
   type TMDataGridCapabilities,
   type TMDataGridColumnCapabilities,
   type TMDataGridFeatureFlags,
@@ -96,6 +126,7 @@ export {
   type TMDataGridStorageMode,
 } from "./core/persistence";
 export type {
+  TMDataGridCellNav,
   TMDataGridColumnLayout,
   TMDataGridRowContextMenu,
   TMDataGridRowContextMenuArgs,

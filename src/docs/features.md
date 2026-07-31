@@ -471,6 +471,129 @@ put while the grid scrolls. A grid can do both.
 > TanStack resets `expanded` when the row structure changes, so replacing `data`
 > closes open panels. Pass `autoResetExpanded: false` to keep them.
 
+## Cell selection
+
+Off by default. `cellSelection` turns it on, in one of two modes:
+
+```tsx
+const grid = useTMDataGrid({ data, columns, cellSelection: "range" });
+```
+
+| Mode | What it gives |
+| ---- | ------------- |
+| `"none"` | nothing — the default |
+| `"single"` | one focused cell, moved with the arrow keys |
+| `"range"` | as `"single"`, plus a rectangle of cells, Ctrl+C and the export menu |
+
+Turning it on changes three things about the body. The tab stop moves from the
+row to a cell, so the whole grid is one Tab stop and the arrow keys walk it.
+The grid reports itself as a `grid` of `gridcell`s rather than a `table` of
+`cell`s — which is what tells a screen reader those keys are live. And the
+focused cell takes `data-focused`, the selected ones `data-selected` and
+`data-edge-*`, which is what the stylesheet paints.
+
+### Keys
+
+| Key | Does |
+| --- | --- |
+| Arrows | moves one cell, clamped at the edges — no wrapping |
+| Shift+arrows | extends the rectangle from its anchor (`"range"`) |
+| PageUp / PageDown | moves one viewport of rows |
+| Home / End | first / last cell of the row |
+| Ctrl+Home / Ctrl+End | first / last cell of the grid |
+| Enter or F2 | steps into the cell — its checkbox, link or button |
+| Escape | steps back out, or drops the rectangle to the focused cell |
+| Space | selects the row, as a row click does under `selectionMode: "row"` |
+| Ctrl+C | copies the selection as tab-separated text |
+
+Enter and F2 are the pair a cell editor will take over. Until then they focus
+the first control in the cell, and the arrow keys go quiet while the focus is
+in there — a cell's contents own their own keys.
+
+### One tab stop
+
+The body is a single tab stop: Tab from a cell leaves the grid, and Shift+Tab
+leaves it backwards. What makes that true is that the controls inside body cells
+— the checkbox, the tree chevron, the details chevron — take `tabindex="-1"`
+while cell selection is on. Left tabbable, Tab would walk through one per
+mounted row, and how many that is would depend on the scroll position.
+
+They stay reachable: Enter or F2 steps into the cell, Escape steps back out, and
+Space ticks the row from any of its cells without stepping in at all. Header
+controls are untouched — the header row is not part of cell navigation, so Tab
+is the only way to its sort buttons and menus.
+
+A custom cell with a control in it wants the same treatment:
+
+```tsx
+import { useCellControlTabIndex } from "@jielga/tmdatagrid";
+
+const OpenButton = ({ row }) => (
+  <Button tabIndex={useCellControlTabIndex()} onClick={() => open(row.id)}>
+    Open
+  </Button>
+);
+```
+
+The hook returns `-1` while cell selection is on and `0` otherwise, so the same
+cell works either way.
+
+### System lanes
+
+The generated lanes — checkbox, tree, details — are part of the selection: they
+take the tint and the outline, so the block stays a rectangle and the arrow keys
+still reach the checkbox. They are never exported, since they hold controls
+rather than values. A block covering nothing else has nothing to copy, and the
+Copy and Export items say so by being disabled.
+
+### Where the selection lives
+
+`ui.state.focusedCell` is a `{ rowId, columnId }` pair and `ui.state.cellRange`
+is two of them, the anchor and the moving corner. Ids rather than indices, so
+sorting, filtering and column reordering carry the selection with the cells
+instead of leaving it over whatever slid into those positions. A range whose
+corner is filtered away paints nothing and comes back when the filter lifts.
+
+Move either with `ui.actions.setFocusedCell` / `setCellRange`, follow them with
+`onFocusedCellChange`, or read them with `useSelector`:
+
+```tsx
+const focusedCell = useSelector(grid.ui, (state) => state.focusedCell);
+```
+
+One rectangle at a time. Ctrl+drag for a second, disjoint block is not
+supported.
+
+### Copy and export
+
+Ctrl+C puts the selected block on the clipboard as tab-separated text with CRLF
+between rows — the format Excel, Sheets and Numbers all put there themselves, so
+a paste lands in cells rather than in one column. Values only: Excel's own copy
+carries no header row either.
+
+Right-clicking inside the selection opens a menu with **Copy**, **Export as CSV
+for Excel** and an **Include headers** toggle. A right-click outside it moves the
+selection there first, the way a spreadsheet does. A consumer's `rowContextMenu`
+items are appended below a divider, so nothing is lost by turning cell selection
+on.
+
+The CSV is written for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF
+endings, semicolons between fields and a comma as the decimal mark. That
+combination is what makes the file open straight into columns with å ä ö intact.
+`cellExport` on `TMDataGrid.Table` changes any of it:
+
+```tsx
+<TMDataGrid.Table cellExport={{ separator: ",", decimalComma: false, fileName: "employees" }} />
+```
+
+The generated lanes — the checkbox, the tree chevron, the details chevron — are
+left out of both the clipboard and the file even when the rectangle covers them.
+They hold controls, not data.
+
+What gets written is the cell's *value*, not what it renders: a cell renders
+React, and often a badge or a link rather than the value. Dates come out in the
+`sv-SE` form (`2026-07-31`), which Excel reads as a date.
+
 ## Pinned column edges
 
 A pinned lane casts a soft band over the data beside it, and only while it is

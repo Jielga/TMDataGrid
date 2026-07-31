@@ -50,9 +50,15 @@ import {
 } from "./core/persistence";
 import {
   readFeatureFlags,
+  type TMDataGridCellSelectionMode,
   type TMDataGridFeatureFlags,
   type TMDataGridSelectionMode,
 } from "./core/capabilities";
+import {
+  isSameCell,
+  type TMDataGridCellPosition,
+} from "./core/cellNavigation";
+import type { TMDataGridCellRange } from "./core/cellRange";
 import {
   createSelectColumn,
   SELECT_COLUMN_ID,
@@ -205,6 +211,25 @@ export type TMDataGridUiState = {
   highlightedRowId: string | null;
   /** The pivot a shift-click extends from. See resolveRowSelectionClick. */
   selectionAnchorRowId: string | null;
+  /**
+   * The cell the keyboard is on, under `enableCellSelection`. `null` until the
+   * grid is first entered — and again whenever a consumer clears it.
+   *
+   * The state is the source of truth and DOM focus follows it, not the other
+   * way around: under virtualization the cell it names is often not mounted,
+   * which is exactly what a coordinate has to survive. Held as ids for the
+   * same reason — see {@link TMDataGridCellPosition}.
+   */
+  focusedCell: TMDataGridCellPosition | null;
+  /**
+   * The selected rectangle, under `cellSelection: "range"`. Held as the two
+   * cells that span it — see {@link TMDataGridCellRange}.
+   *
+   * Always covers the focused cell: every gesture that moves the focus either
+   * extends the rectangle or collapses it onto the new cell, so the two never
+   * describe different places.
+   */
+  cellRange: TMDataGridCellRange | null;
 };
 
 export type TMDataGridUiActions = {
@@ -220,6 +245,19 @@ export type TMDataGridUiActions = {
    */
   setHighlightedRow: (rowId: string | null) => void;
   setSelectionAnchor: (rowId: string | null) => void;
+  /**
+   * Moves the focused cell, or clears it with `null`. DOM focus follows while
+   * the grid holds it — so this both moves the keyboard and, when the row is
+   * off screen, scrolls it into view. Called for every arrow key, and available
+   * for a consumer putting the keyboard somewhere itself.
+   */
+  setFocusedCell: (cell: TMDataGridCellPosition | null) => void;
+  /**
+   * Sets the selected rectangle, or clears it with `null`. Does not move the
+   * focused cell — the two are set together by the gestures that change both,
+   * which is what keeps "extend the selection" and "move the cursor" separable.
+   */
+  setCellRange: (range: TMDataGridCellRange | null) => void;
 };
 
 export type TMDataGridUiStore = Store<TMDataGridUiState, TMDataGridUiActions>;
@@ -333,6 +371,65 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   onHighlightedRowChange?: (rowId: string | null) => void;
   /**
+   * How cells are selected. Defaults to `"none"`.
+   *
+   * | Mode | What it gives |
+   * | ---- | ------------- |
+   * | `"none"` | nothing; the body's tab stop stays on the row |
+   * | `"single"` | one focused cell, moved with the arrow keys |
+   * | `"range"` | as `"single"`, plus a rectangle of cells |
+   *
+   * Under either live mode:
+   *
+   * | Key | Moves to |
+   * | --- | --- |
+   * | Arrows | the neighbouring cell, clamped at the edges |
+   * | PageUp / PageDown | one viewport of rows |
+   * | Home / End | first / last cell of the row |
+   * | Ctrl+Home / Ctrl+End | first / last cell of the grid |
+   * | Enter or F2 | into the cell — the checkbox, link or button it holds |
+   * | Escape | back out to the cell |
+   * | Space | selects the row, as it does in row-selection mode |
+   *
+   * And under `"range"`, additionally:
+   *
+   * | Gesture | Does |
+   * | ------- | ---- |
+   * | Drag across cells | selects the rectangle they span |
+   * | Shift+click, Shift+arrows | extends the rectangle from its anchor |
+   * | Ctrl+C | copies it as tab-separated text — paste lands in Excel's cells |
+   * | Right-click inside it | offers the CSV export, headers optional |
+   *
+   * Off, nothing about the body changes. On, three things do: the body's tab
+   * stop moves from the row to a cell, so the whole grid is one Tab stop; the
+   * grid reports itself as a `grid` of `gridcell`s rather than a `table` of
+   * `cell`s, which is what tells a screen reader the arrow keys are live; and
+   * the cells take `data-focused` / `data-selected` for the ring and the tint.
+   *
+   * The state is `ui.state.focusedCell` and `ui.state.cellRange`, and moving it
+   * is `ui.actions.setFocusedCell` / `setCellRange` — so a consumer can put the
+   * keyboard on a cell, or follow it:
+   *
+   * ```tsx
+   * const grid = useTMDataGrid({
+   *   data,
+   *   columns,
+   *   cellSelection: "range",
+   *   onFocusedCellChange: (cell) => setStatus(cell?.columnId ?? ""),
+   * });
+   * ```
+   *
+   * Ids rather than a row/column index pair, so sorting, filtering and column
+   * reordering move the selection with the cells instead of leaving it over
+   * whatever slid into those positions.
+   */
+  cellSelection?: TMDataGridCellSelectionMode;
+  /**
+   * Called with the newly focused cell, or `null` when it is cleared. Fires for
+   * `ui.actions.setFocusedCell` too, not only for keys and clicks.
+   */
+  onFocusedCellChange?: (cell: TMDataGridCellPosition | null) => void;
+  /**
    * Renders a panel underneath an expanded row, spanning every column. Setting
    * it is what turns row details on.
    *
@@ -440,6 +537,8 @@ export function useTMDataGrid<TData extends RowData>({
   showSelectedBackground,
   defaultHighlightedRowId,
   onHighlightedRowChange,
+  cellSelection,
+  onFocusedCellChange,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
@@ -457,6 +556,7 @@ export function useTMDataGrid<TData extends RowData>({
     enablePagination,
     selectionMode,
     showSelectedBackground,
+    cellSelection,
   });
 
   const pinningEnabled = options.enableColumnPinning !== false;
@@ -667,6 +767,8 @@ export function useTMDataGrid<TData extends RowData>({
       // default rather than a value that would fight later clicks.
       highlightedRowId: defaultHighlightedRowId ?? null,
       selectionAnchorRowId: null,
+      focusedCell: null,
+      cellRange: null,
     },
     ({ setState }) => ({
       openFilterPanel: (columnId = null) =>
@@ -693,6 +795,25 @@ export function useTMDataGrid<TData extends RowData>({
         setState((prev) => ({ ...prev, highlightedRowId: rowId })),
       setSelectionAnchor: (rowId) =>
         setState((prev) => ({ ...prev, selectionAnchorRowId: rowId })),
+      setFocusedCell: (cell) =>
+        setState((prev) =>
+          // Same cell, same object: the body re-renders on every scroll frame
+          // and mouse events land on the cell that already has the focus, so a
+          // fresh identity here would republish the store for nothing.
+          isSameCell(prev.focusedCell, cell)
+            ? prev
+            : { ...prev, focusedCell: cell },
+        ),
+      setCellRange: (range) =>
+        setState((prev) =>
+          // Same guard as above, and it earns more here: a drag publishes a new
+          // corner on every mouse move, and most of those land on the cell the
+          // range already ends at.
+          isSameCell(prev.cellRange?.anchor ?? null, range?.anchor ?? null) &&
+          isSameCell(prev.cellRange?.focus ?? null, range?.focus ?? null)
+            ? prev
+            : { ...prev, cellRange: range },
+        ),
     }),
   );
 
@@ -714,6 +835,25 @@ export function useTMDataGrid<TData extends RowData>({
       if (state.highlightedRowId === previous) return;
       previous = state.highlightedRowId;
       onHighlightedRowChangeRef.current?.(state.highlightedRowId);
+    });
+    return () => subscription.unsubscribe();
+  }, [ui]);
+
+  // Same shape for the focused cell, and for the same reason: arrow keys, a
+  // click and `setFocusedCell` all have to report through one place.
+  const onFocusedCellChangeRef = useRef(onFocusedCellChange);
+  useEffect(() => {
+    onFocusedCellChangeRef.current = onFocusedCellChange;
+  }, [onFocusedCellChange]);
+
+  useEffect(() => {
+    let previous = ui.state.focusedCell;
+    const subscription = ui.subscribe((state) => {
+      // Identity is enough: `setFocusedCell` keeps the previous object when the
+      // cell has not changed, so a new one always means a new cell.
+      if (state.focusedCell === previous) return;
+      previous = state.focusedCell;
+      onFocusedCellChangeRef.current?.(state.focusedCell);
     });
     return () => subscription.unsubscribe();
   }, [ui]);

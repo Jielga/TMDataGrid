@@ -57,6 +57,8 @@ rather than forwarded to TanStack.
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid. |
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid. |
+| `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor; `"range"` adds a drag-selectable rectangle, Ctrl+C and CSV export. Defined by the grid. |
+| `onFocusedCellChange` | `(cell \| null) => void` | – | Fires whenever the focused cell moves. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
@@ -169,8 +171,15 @@ const filterPanelOpen = useSelector(grid.ui, (state) => state.filterPanelOpen);
 | `toggleColumnsPanel` | `() => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
+| `setHighlightedRow` | `(rowId: string \| null) => void` |
+| `setSelectionAnchor` | `(rowId: string \| null) => void` |
+| `setFocusedCell` | `(cell: TMDataGridCellPosition \| null) => void` |
+| `setCellRange` | `(range: TMDataGridCellRange \| null) => void` |
 
-The last two are called by the header cells while a column is being dragged, and
+The last two move the cell cursor and the selected rectangle under
+`cellSelection`; DOM focus follows `focusedCell` and scrolls its row into view.
+
+`startColumnDrag` / `endColumnDrag` are called by the header cells while a column is being dragged, and
 `ui.draggedColumnId` holds the column being moved — browsers keep `dataTransfer`
 unreadable until the drop.
 

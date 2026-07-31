@@ -38,6 +38,22 @@ export type TMDataGridSelectionMode =
   /** No selection at all — a row click only highlights. Master-detail. */
   | "highlight";
 
+/**
+ * How cells are selected — see `cellSelection` on {@link UseTMDataGridOptions}.
+ *
+ * A mode rather than a pair of booleans, for the reason
+ * {@link TMDataGridSelectionMode} is one: "cells can be selected" and "more
+ * than one at a time" are not independent, and a range that cannot be anchored
+ * anywhere is not a state worth being able to write down.
+ */
+export type TMDataGridCellSelectionMode =
+  /** No cell cursor at all. The body's tab stop stays on the row. */
+  | "none"
+  /** One cell takes the focus and the arrow keys move it. */
+  | "single"
+  /** As `"single"`, plus a rectangle: drag, Shift+click, Shift+arrows, Ctrl+C. */
+  | "range";
+
 export type TMDataGridFeatureFlags = {
   sorting: boolean;
   filtering: boolean;
@@ -71,6 +87,17 @@ export type TMDataGridFeatureFlags = {
    */
   highlightRow: boolean;
   /**
+   * Whether cells can be selected at all. Off unless `cellSelection` asks for
+   * it — it takes the body's tab stop off the row and puts it on a cell, and
+   * reports the grid to assistive technology as a `grid` rather than a `table`,
+   * which is a different promise about what the keyboard does.
+   */
+  cellSelection: boolean;
+  /** Defaults to `"none"`. */
+  cellSelectionMode: TMDataGridCellSelectionMode;
+  /** Whether a rectangle of cells can be selected. Only under `"range"`. */
+  cellRangeSelection: boolean;
+  /**
    * The one default-off flag: pagination must be asked for, either with the
    * grid's `enablePagination` or implicitly by declaring `manualPagination`.
    * Off, the grid renders every filtered row and relies on virtualization.
@@ -103,12 +130,14 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableMultiRowSelection"
     | "selectionMode"
     | "showSelectedBackground"
+    | "cellSelection"
     | "enablePagination"
     | "manualPagination"
     | "enableGrouping"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
+  const cellSelectionMode = options.cellSelection ?? "none";
   // `"highlight"` is the master-detail mode: no selection to speak of, so the
   // checkbox column and the click-to-select behaviour both fall away. Otherwise
   // `enableRowSelection` still has the final say, including its predicate form.
@@ -135,6 +164,9 @@ export function readFeatureFlags<TData extends RowData>(
       options.showSelectedBackground ?? selectionMode === "row",
     highlightRow:
       selectionMode === "checkboxAndHighlight" || selectionMode === "highlight",
+    cellSelection: cellSelectionMode !== "none",
+    cellSelectionMode,
+    cellRangeSelection: cellSelectionMode === "range",
     pagination:
       options.enablePagination === true || options.manualPagination === true,
     grouping: options.enableGrouping ?? options.manualPagination !== true,

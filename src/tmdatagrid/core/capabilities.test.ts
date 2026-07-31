@@ -24,9 +24,29 @@ describe("readFeatureFlags", () => {
       multiRowSelection: true,
       showSelectedBackground: false,
       highlightRow: false,
+      cellSelection: false,
+      cellSelectionMode: "none",
+      cellRangeSelection: false,
       pagination: false,
       grouping: true,
     });
+  });
+
+  it("reads the cell selection mode", () => {
+    expect(readFeatureFlags({ cellSelection: "single" })).toMatchObject({
+      cellSelection: true,
+      cellSelectionMode: "single",
+      // A rectangle needs somewhere to anchor and a second corner to move; a
+      // grid with one focused cell has neither.
+      cellRangeSelection: false,
+    });
+    expect(readFeatureFlags({ cellSelection: "range" })).toMatchObject({
+      cellSelection: true,
+      cellRangeSelection: true,
+    });
+    expect(readFeatureFlags({ cellSelection: "none" }).cellSelection).toBe(
+      false,
+    );
   });
 
   it("only turns a flag off for an explicit false", () => {

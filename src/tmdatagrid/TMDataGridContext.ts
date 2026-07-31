@@ -30,3 +30,29 @@ export function useTMDataGridContext(): TMDataGridContextValue {
   }
   return api as TMDataGridContextValue;
 }
+
+/**
+ * What a control inside a *body* cell should put in its `tabIndex`.
+ *
+ * `-1` once cell selection is on, and this is what makes the promise of one tab
+ * stop true. Without it the browser walks Tab into the checkbox of every
+ * mounted row — a grid showing twenty rows would be twenty tab stops, and
+ * scrolling would change how many. Enter or F2 steps into the cell instead,
+ * which reaches a `-1` control perfectly well.
+ *
+ * Header controls are not covered: the header row is not part of cell
+ * navigation, so its sort buttons and menus stay in the tab order, where they
+ * are the only way to reach them.
+ *
+ * A custom cell renderer with a control in it wants the same:
+ *
+ * ```tsx
+ * cell: ({ row }) => (
+ *   <Button tabIndex={useCellControlTabIndex()} onClick={...}>Open</Button>
+ * )
+ * ```
+ */
+export function useCellControlTabIndex(): 0 | -1 {
+  const { features } = useTMDataGridContext();
+  return features.cellSelection ? -1 : 0;
+}
