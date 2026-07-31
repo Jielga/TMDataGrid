@@ -6,6 +6,7 @@
  * `sideEffects: false`, so only the icons re-exported here reach the bundle.
  */
 export {
+  IconArrowAutofitWidth as AutosizeIcon,
   IconArrowDown as ArrowDownIcon,
   IconArrowLeft as MoveLeftIcon,
   IconArrowRight as MoveRightIcon,

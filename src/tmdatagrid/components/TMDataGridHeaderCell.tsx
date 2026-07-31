@@ -11,6 +11,7 @@ import {
 } from "../TMDataGridContext";
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import { getColumnCapabilities, getGridCapabilities } from "../core/capabilities";
+import { autosizeColumn } from "../core/autosize";
 import {
   getColumnRegion,
   getStepTargetColumn,
@@ -28,6 +29,7 @@ import { isFilterActive } from "../core/filterOperators";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  AutosizeIcon,
   CollapseAllIcon,
   ColumnsIcon,
   DotsVerticalIcon,
@@ -178,6 +180,18 @@ export function TMDataGridHeaderCell({
   function handleDragEnd() {
     setDropSide(null);
     api.ui.actions.endColumnDrag();
+  }
+
+  /**
+   * Sizes the column to its widest mounted content. The container is found
+   * from the cell rather than passed down — the header always renders inside
+   * the grid's scroll container, and that is the subtree autosize measures.
+   */
+  function autosize() {
+    const container = cellRef.current?.closest<HTMLElement>(
+      "[data-dg-scroll-container]",
+    );
+    if (container) autosizeColumn({ table, columnId: column.id, container });
   }
 
   /**
@@ -373,6 +387,18 @@ export function TMDataGridHeaderCell({
       );
     }
   }
+  if (canResize && isLeaf) {
+    menuItems.push(
+      <Menu.Item
+        key="autosize"
+        leftSection={<AutosizeIcon size={16} stroke={1.6} />}
+        onClick={autosize}
+      >
+        {labels.autosizeColumn}
+      </Menu.Item>,
+      <Menu.Divider key="autosize-divider" />,
+    );
+  }
   if (canHide) {
     menuItems.push(
       <Menu.Item
@@ -482,7 +508,8 @@ export function TMDataGridHeaderCell({
     >
       {header.isPlaceholder ? null : (
         <Tooltip label={label} openDelay={600} withinPortal disabled={!isLeaf}>
-          <span className={classes.headerTitle}>
+          {/* `data-dg-header-title` is how autosize measures the title text. */}
+          <span className={classes.headerTitle} data-dg-header-title>
             {flexRender(column.columnDef.header, header.getContext())}
           </span>
         </Tooltip>
@@ -595,6 +622,16 @@ export function TMDataGridHeaderCell({
           }
           onTouchStart={canResize ? header.getResizeHandler() : undefined}
           onClick={(event) => event.stopPropagation()}
+          // The spreadsheet gesture: double-click the divider, the column
+          // fits its content. Same measurement as the menu item.
+          onDoubleClick={
+            canResize
+              ? (event) => {
+                  event.stopPropagation();
+                  autosize();
+                }
+              : undefined
+          }
         />
       )}
     </div>

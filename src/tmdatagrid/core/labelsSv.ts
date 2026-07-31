@@ -60,6 +60,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   unpin: "Lossa",
   moveLeft: "Flytta åt vänster",
   moveRight: "Flytta åt höger",
+  autosizeColumn: "Anpassa kolumnbredd",
   hideColumn: "Dölj kolumn",
   filterOn: (column) => `Filtrera på ${column}`,
   sortColumn: (column) => `Sortera ${column}`,

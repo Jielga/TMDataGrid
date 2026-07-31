@@ -21,8 +21,8 @@ see [Pagination](#pagination).
 | `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton` |
 | `enableColumnPinning: false` | Table | Pin and unpin menu items |
 | `enablePinning: false` | Column | That column's pin menu items |
-| `enableColumnResizing: false` | Table | Resize dragging. The divider remains as a separator |
-| `enableResizing: false` | Column | That column's resize dragging |
+| `enableColumnResizing: false` | Table | Resize dragging, double-click autosize, the Autosize menu item. The divider remains as a separator |
+| `enableResizing: false` | Column | That column's resize dragging and autosize |
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
@@ -607,6 +607,24 @@ They hold controls, not data.
 What gets written is the cell's *value*, not what it renders: a cell renders
 React, and often a badge or a link rather than the value. Dates come out in the
 `sv-SE` form (`2026-07-31`), which Excel reads as a date.
+
+## Column autosizing
+
+Double-click a column's resize divider and it sizes itself to its widest
+mounted content — the spreadsheet gesture. "Autosize column" in the column
+menu does the same without a pointer, and `meta.autoSize: true` runs it once
+after the first rows render, unless a persisted or user-set width already
+covers the column.
+
+Mounted content only: under virtualization the unmounted rows do not exist to
+be measured, so the width fits the visible window plus overscan — the same
+trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize`
+and written into `columnSizing`, so it persists with the other widths and a
+later drag takes over from it.
+
+`autosizeColumn({ table, columnId, container })` is exported for menus and
+consumer code; `container` is the grid's scroll container (any ancestor of the
+column's cells works).
 
 ## Summary row
 

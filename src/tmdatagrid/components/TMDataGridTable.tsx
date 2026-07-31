@@ -42,6 +42,7 @@ import {
   writeClipboardText,
   type TMDataGridCellExportOptions,
 } from "../core/cellExport";
+import { autosizeColumn } from "../core/autosize";
 import {
   getDisplayedRows,
   getSelectableRowIds,
@@ -218,7 +219,10 @@ function TMDataGridBodyCell({
       // the focus in there.
       data-cell={nav ? true : undefined}
       data-row-id={nav?.rowId}
-      data-column-id={nav ? cell.column.id : undefined}
+      // Always present, not only under cell selection: autosize finds a
+      // column's mounted cells by it. The cell-navigation selectors also
+      // require `data-cell`, so they are unaffected.
+      data-column-id={cell.column.id}
       data-focused={nav?.focused}
       aria-selected={nav?.selected}
       data-selected={nav?.selected}
@@ -459,6 +463,26 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    */
   const showsDetails = (row: Row<TMDataGridFeatures, TMDataGridRowData>) =>
     renderDetails !== undefined && !row.getIsGrouped() && row.getIsExpanded();
+
+  /**
+   * `meta.autoSize` columns, sized once after the first rows are in the DOM.
+   * A ref rather than an effect dependency: this must run exactly once per
+   * mount, and only for columns no persisted or user width already covers —
+   * autosizing again on data changes would fight a width the user has since
+   * dragged.
+   */
+  const autoSizedRef = useRef(false);
+  useEffect(() => {
+    if (autoSizedRef.current) return;
+    autoSizedRef.current = true;
+    const container = scrollContainerRef.current;
+    if (container === null) return;
+    for (const column of orderedColumns) {
+      if (column.columnDef.meta?.autoSize !== true) continue;
+      if (column.id in table.store.state.columnSizing) continue;
+      autosizeColumn({ table, columnId: column.id, container });
+    }
+  });
 
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
@@ -1210,6 +1234,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       <div
         ref={scrollContainerRef}
         className={classes.scrollContainer}
+        // How autosize finds the measurable subtree from a header cell.
+        data-dg-scroll-container
         onScroll={handleScroll}
       >
         <div
@@ -1572,6 +1598,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   <div
                     key={header.id}
                     role="cell"
+                    data-column-id={header.column.id}
                     data-align={getColumnAlign(header.column)}
                     data-control-column={isControlColumn(header.column.id)}
                     className={[

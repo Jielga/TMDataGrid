@@ -62,6 +62,7 @@ export {
   aggregateColumn,
   type TMDataGridAggregationName,
 } from "./core/summary";
+export { autosizeColumn, measureColumnContentWidth } from "./core/autosize";
 export {
   isSameCell,
   resolveCellMove,

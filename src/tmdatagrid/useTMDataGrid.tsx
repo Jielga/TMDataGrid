@@ -94,6 +94,12 @@ export type TMDataGridColumnMeta = {
   flex?: number;
   align?: "left" | "right" | "center";
   /**
+   * Size the column to its widest mounted content once, after the first rows
+   * render — unless a persisted or user-set width already covers it. The same
+   * measurement as double-clicking the resize divider; see `autosizeColumn`.
+   */
+  autoSize?: boolean;
+  /**
    * `false` keeps the column where it is: no header dragging, no move items.
    * Column ordering is the one feature TanStack defines no column option for,
    * so its switch lives here rather than on the column definition.

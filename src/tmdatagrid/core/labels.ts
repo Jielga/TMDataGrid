@@ -58,6 +58,7 @@ export type TMDataGridLabels = {
   unpin: string;
   moveLeft: string;
   moveRight: string;
+  autosizeColumn: string;
   hideColumn: string;
   filterOn: (column: string) => string;
   sortColumn: (column: string) => string;
@@ -150,6 +151,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   unpin: "Unpin",
   moveLeft: "Move left",
   moveRight: "Move right",
+  autosizeColumn: "Autosize column",
   hideColumn: "Hide column",
   filterOn: (column) => `Filter on ${column}`,
   sortColumn: (column) => `Sort ${column}`,
