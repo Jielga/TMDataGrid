@@ -157,9 +157,12 @@ export function createSelectColumn<TData extends RowData>(): ColumnDef<
       // no other column can be moved in front of it.
       enableOrdering: false,
     },
-    size: 48,
-    minSize: 48,
-    maxSize: 48,
+    // A system lane: as wide as the control it holds and no wider. Fixed at
+    // every scale — the control does not grow with the font size, so neither
+    // should its track.
+    size: 36,
+    minSize: 36,
+    maxSize: 36,
     enableResizing: false,
     enableSorting: false,
     enableColumnFilter: false,

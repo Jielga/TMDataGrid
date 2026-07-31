@@ -1,4 +1,6 @@
 import type { TMDataGridColumnType } from "./filterOperators";
+import { DETAILS_COLUMN_ID } from "../components/TMDataGridDetailsColumn";
+import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import type { TMDataGridColumnMeta } from "../useTMDataGrid";
 
 /**
@@ -27,6 +29,22 @@ export function getColumnType(column: ColumnLike): TMDataGridColumnType {
 
 export function getColumnAlign(column: ColumnLike): "left" | "right" | "center" {
   return column.columnDef.meta?.align ?? "left";
+}
+
+/**
+ * A generated lane holding one control at a fixed width — the checkbox and the
+ * details chevron.
+ *
+ * They are laid out differently from every other column: cell padding is sized
+ * for text and grows with the scale, which at `xl` squeezed a 16px checkbox out
+ * of its track, so these lanes centre their control in an unpadded cell.
+ * Their headers are controls too, and carry no column menu.
+ *
+ * The tree column is deliberately not one of them: it holds a label as well as a
+ * chevron, and wants the padding.
+ */
+export function isControlColumn(columnId: string): boolean {
+  return columnId === SELECT_COLUMN_ID || columnId === DETAILS_COLUMN_ID;
 }
 
 /**

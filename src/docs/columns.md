@@ -80,11 +80,22 @@ header spanning columns that no longer belong to it.
 Unless `enableRowSelection` is `false` or `rowSelectionMode` is `"row"`, a column
 with the id `SELECT_COLUMN_ID` is added as the first column and pinned to the
 left. It is listed as "Checkbox selection" in the column manager and can be
-hidden like any other column. It has no column menu and cannot be sorted,
-filtered, resized, re-pinned or moved.
+hidden like any other column. It is a system lane: as wide as the box it holds
+(36px at every size scale), with no column menu and no resize handle, and it
+cannot be sorted, filtered, resized, re-pinned or moved.
 
 Because it cannot be moved, it also anchors the left pinned region: no column
 can be placed in front of it.
+
+## Details column
+
+Setting `renderDetails` adds a column with the id `DETAILS_COLUMN_ID`, pinned to
+the left after the checkbox and tree columns. Its cells hold the chevron that
+opens a row's panel, and its header expands and collapses every panel.
+
+A system lane like the checkbox column, and laid out the same way. Unlike it,
+this one cannot be hidden either: a panel with no way to open it is worse than a
+lane taking 36px. See [Features](#features).
 
 ## Filtering
 

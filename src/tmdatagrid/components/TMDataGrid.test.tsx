@@ -3,15 +3,26 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
+  erased,
+  renderGrid,
   renderWithMantine,
   testColumns,
   testRows,
+  visibleColumnIds,
   type TestRow,
 } from "../../test/gridHarness";
+import { getColumnCapabilities } from "../core/capabilities";
+import { DETAILS_COLUMN_ID } from "./TMDataGridDetailsColumn";
+import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
+import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { TMDataGrid } from "./TMDataGrid";
 import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import type { TMDataGridTableProps } from "./TMDataGridTable";
-import { useTMDataGrid, type UseTMDataGridOptions } from "../useTMDataGrid";
+import {
+  useTMDataGrid,
+  type TMDataGridDetailsArgs,
+  type UseTMDataGridOptions,
+} from "../useTMDataGrid";
 
 type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
@@ -58,6 +69,15 @@ const bodyRows = () =>
   screen
     .getAllByRole("row")
     .filter((row) => row.getAttribute("data-testid")?.startsWith("dg-row-"));
+
+/**
+ * How many rows the grid says it has, mounted or not. Virtualization decides
+ * what is in the DOM — and under jsdom, which has no layout, it mounts a
+ * handful — so a count of rows has to come off `aria-rowcount`, minus the one
+ * header row it includes.
+ */
+const gridRowCount = () =>
+  Number(screen.getByRole("table").getAttribute("aria-rowcount")) - 1;
 
 /** Row ids in the order they are rendered. */
 const renderedRowIds = () =>
@@ -307,24 +327,24 @@ describe("row selection", () => {
     expect(firstRow).toHaveAttribute("aria-selected", "true");
   });
 
-  it("marks the checkbox column, which the stylesheet unpads", () => {
+  it("marks the control lanes, which the stylesheet unpads", () => {
     renderGridUi();
     const [firstRow] = bodyRows();
 
     // jsdom has no layout, so the clipping this guards against cannot be
     // asserted here: the cell padding grows with `size` and would squeeze the
-    // box out of its fixed 48px track at `xl`. The attribute is what the CSS
+    // box out of its fixed 36px track at `xl`. The attribute is what the CSS
     // hangs off, so it is what the test pins down.
     expect(screen.getByTestId("dg-header-__select__")).toHaveAttribute(
-      "data-select-column",
+      "data-control-column",
       "true",
     );
     expect(within(firstRow).getAllByRole("cell")[0]).toHaveAttribute(
-      "data-select-column",
+      "data-control-column",
       "true",
     );
     expect(within(firstRow).getAllByRole("cell")[1]).toHaveAttribute(
-      "data-select-column",
+      "data-control-column",
       "false",
     );
   });
@@ -719,5 +739,225 @@ describe("grouping and the row context menu", () => {
     expect(
       await screen.findByRole("menuitem", { name: "Open" }),
     ).toBeInTheDocument();
+  });
+});
+
+
+describe("row details", () => {
+  const renderDetails = ({ row }: TMDataGridDetailsArgs<TestRow>) => (
+    <div>Details for {row.original.name}</div>
+  );
+
+  /** The generated lane's chevron, on one row or in the header. */
+  const detailsToggle = (rowId?: string) =>
+    rowId === undefined
+      ? screen.getByRole("button", { name: /(Expand|Collapse) all details/ })
+      : within(screen.getByTestId(`dg-row-${rowId}`)).getByRole("button", {
+          name: /(Show|Hide) details/,
+        });
+
+  it("renders no panel until a row is expanded", () => {
+    renderGridUi({ renderDetails });
+
+    expect(detailsToggle("1")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("dg-details-1")).not.toBeInTheDocument();
+  });
+
+  it("lets a data row expand, which it cannot do on its own", () => {
+    // TanStack's fallback is `subRows.length > 0`, so without `renderDetails`
+    // nothing but a group row can expand.
+    expect(renderGrid().result.current.table.getRow("1").getCanExpand()).toBe(
+      false,
+    );
+    expect(
+      renderGrid({ renderDetails }).result.current.table
+        .getRow("1")
+        .getCanExpand(),
+    ).toBe(true);
+  });
+
+  it("pins the lane last of the generated ones, and lets no one move it", () => {
+    const api = renderGrid({ renderDetails }).result.current;
+
+    // The tree lane is pinned between them, and hidden until something is
+    // grouped — so it holds its place without taking a track.
+    expect(api.table.store.state.columnPinning.left).toEqual([
+      SELECT_COLUMN_ID,
+      GROUP_COLUMN_ID,
+      DETAILS_COLUMN_ID,
+    ]);
+    expect(visibleColumnIds(api).slice(0, 2)).toEqual([
+      SELECT_COLUMN_ID,
+      DETAILS_COLUMN_ID,
+    ]);
+
+    // A toggle that could be hidden, unpinned or dragged to the far right would
+    // leave rows with panels no one can open.
+    const column = erased(api).table.getColumn(DETAILS_COLUMN_ID);
+    expect(getColumnCapabilities(column!, api.features)).toMatchObject({
+      canHide: false,
+      canPin: false,
+      canReorder: false,
+      canResize: false,
+      canSort: false,
+    });
+  });
+
+  it("opens the panel inside the expanded row, and only that one", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(detailsToggle("3"));
+
+    const panel = screen.getByTestId("dg-details-3");
+    expect(panel).toHaveTextContent("Details for Maria");
+    // Inside the row element: one measurement covers the row and its panel.
+    expect(screen.getByTestId("dg-row-3")).toContainElement(panel);
+    expect(screen.queryByTestId("dg-details-2")).not.toBeInTheDocument();
+  });
+
+  it("closes it again on the second click", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(detailsToggle("3"));
+    await user.click(detailsToggle("3"));
+
+    expect(screen.queryByTestId("dg-details-3")).not.toBeInTheDocument();
+  });
+
+  it("spans every column without adding a row to the count", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+    const grid = screen.getByRole("table");
+    const rowCount = grid.getAttribute("aria-rowcount");
+
+    await user.click(detailsToggle("3"));
+
+    // A cell spanning the row rather than a row of its own, so the count still
+    // counts records.
+    expect(screen.getByTestId("dg-details-3")).toHaveAttribute(
+      "aria-colspan",
+      grid.getAttribute("aria-colcount"),
+    );
+    expect(grid).toHaveAttribute("aria-rowcount", rowCount);
+  });
+
+  it("opens and closes every row from the header", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(detailsToggle());
+
+    expect(detailsToggle()).toHaveAttribute("aria-expanded", "true");
+    expect(
+      bodyRows().every(
+        (row) => within(row).queryByText(/^Details for/) !== null,
+      ),
+    ).toBe(true);
+
+    await user.click(detailsToggle());
+
+    expect(detailsToggle()).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/^Details for/)).not.toBeInTheDocument();
+  });
+
+  it("keeps a click inside the panel out of the row's gestures", async () => {
+    const user = userEvent.setup();
+    // Opened from restored state rather than by clicking the row, so the click
+    // under test is the only one the row could have reacted to.
+    renderGridUi({
+      selectionMode: "row",
+      initialState: { expanded: { "3": true } },
+      renderDetails: ({ row }) => (
+        <button type="button">Act on {row.original.name}</button>
+      ),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Act on Maria" }));
+
+    expect(screen.getByTestId("dg-details-3")).toBeInTheDocument();
+    expect(screen.getByTestId("dg-row-3")).toHaveAttribute(
+      "data-selected",
+      "false",
+    );
+  });
+
+  it("sits after the tree lane once something is grouped", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+
+    // The lane the user grouped into comes first: the tree says which rows
+    // there are, and only then is there one to open.
+    const headers = screen
+      .getAllByRole("columnheader")
+      .map((header) => header.getAttribute("data-testid"));
+    expect(headers.slice(0, 3)).toEqual([
+      `dg-header-${SELECT_COLUMN_ID}`,
+      `dg-header-${GROUP_COLUMN_ID}`,
+      `dg-header-${DETAILS_COLUMN_ID}`,
+    ]);
+  });
+
+  it("expands every detail from the header without unfolding the tree", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await user.click(detailsToggle());
+
+    // One `expanded` state holds both, so the whole-table form TanStack's
+    // `toggleAllRowsExpanded` writes would have opened all three groups too —
+    // and the grid would be showing fifteen rows rather than three.
+    expect(gridRowCount()).toBe(3);
+    expect(bodyRows().every((row) => row.dataset.grouped === "true")).toBe(true);
+
+    // The panels are there all the same, under the rows inside the group.
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+    const dataRows = bodyRows().filter((row) => row.dataset.grouped !== "true");
+    expect(dataRows).toHaveLength(4);
+    expect(
+      dataRows.every((row) => within(row).queryByText(/^Details for/) !== null),
+    ).toBe(true);
+  });
+
+  it("expands every group from the menu without opening the panels", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await user.click(screen.getByRole("button", { name: "Group column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Expand all groups" }));
+
+    // The mirror of the case above: an item that says "groups" must not open
+    // every panel in the grid.
+    expect(gridRowCount()).toBe(3 + testRows.length);
+    expect(screen.queryByText(/^Details for/)).not.toBeInTheDocument();
+  });
+
+  it("leaves group rows to their children", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ renderDetails });
+
+    await user.click(screen.getByRole("button", { name: "City column menu" }));
+    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+
+    // A group row is built on its first child's record, so a panel there would
+    // be about an arbitrary one of them. It opens into its rows instead, from
+    // the tree lane rather than this one.
+    const groupRow = bodyRows()[0]!;
+    expect(
+      within(groupRow).queryByRole("button", { name: /details/ }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Expand Stockholm" }));
+
+    expect(gridRowCount()).toBe(3 + 4);
+    expect(screen.queryByText(/^Details for/)).not.toBeInTheDocument();
   });
 });

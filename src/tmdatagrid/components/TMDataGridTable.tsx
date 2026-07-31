@@ -21,13 +21,12 @@ import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridHeaderCell } from "./TMDataGridHeaderCell";
-import { getColumnAlign } from "../core/columnUtils";
+import { getColumnAlign, isControlColumn } from "../core/columnUtils";
 import {
   getDisplayedRows,
   resolveRowSelectionClick,
 } from "../core/rowSelection";
 import { SearchIcon } from "./icons";
-import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 
 /** Where a column sits relative to the pinned regions, resolved once per render. */
@@ -96,9 +95,9 @@ function TMDataGridBodyCell({
     <div
       role="cell"
       data-align={getColumnAlign(cell.column)}
-      // The checkbox lane is a fixed track, so it cannot take the cell padding
-      // the scale grows for text. See TMDataGridTable.module.css.
-      data-select-column={cell.column.id === SELECT_COLUMN_ID}
+      // A control lane is a fixed track, so it cannot take the cell padding the
+      // scale grows for text. See isControlColumn.
+      data-control-column={isControlColumn(cell.column.id)}
       onContextMenu={onContextMenu}
       className={[
         classes.bodyCell,
@@ -259,8 +258,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   rowContextMenu,
   rowContextMenuProps,
 }: TMDataGridTableProps<TData>) {
-  const { table, ui, features, rowHeight, controlSize } =
-    useTMDataGridContext();
+  const {
+    table,
+    ui,
+    features,
+    rowHeight,
+    controlSize,
+    renderDetails,
+    renderDetailsEstHeight,
+  } = useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
   // visibility, selection), so it subscribes to the whole table store.
@@ -277,6 +283,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // the rows as delivered, so the same branch serves server paging.
   const rows = getDisplayedRows(table, features);
 
+  /**
+   * Whether this row opens a detail panel underneath it.
+   *
+   * Group rows are out: expanding one opens its children, and they share the
+   * `expanded` state with details — so a grouped grid with `renderDetails` set
+   * would otherwise render a panel about the group's first record.
+   */
+  const showsDetails = (row: Row<TMDataGridFeatures, TMDataGridRowData>) =>
+    renderDetails !== undefined && !row.getIsGrouped() && row.getIsExpanded();
+
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
   // guard makes the dependency-free effect idempotent.
@@ -291,7 +307,33 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: useCallback(() => rowHeight, [rowHeight]),
+    /**
+     * Exact for a plain row, which is fixed at `rowHeight`, and a guess for a
+     * row showing a detail panel — the panel is as tall as whatever the
+     * consumer renders. Rows are measured whenever details are on (see
+     * `measureElement` below), so this only has to hold until the row has been
+     * on screen once.
+     *
+     * Not a `useCallback`, unlike `getItemKey` below it: the virtualizer's
+     * measurement cache lists `getItemKey` among its dependencies and not this,
+     * so a stable identity here would buy nothing — and the closure has to see
+     * the current expansion to answer at all.
+     */
+    estimateSize: (index: number) => {
+      const row = rows[index];
+      if (row === undefined) return rowHeight;
+      return rowHeight + (showsDetails(row) ? renderDetailsEstHeight : 0);
+    },
+    /**
+     * Zero is never a row: every one carries `minHeight: rowHeight`. An element
+     * reports it before layout has run — and always under jsdom, which has no
+     * layout at all — and a row cached at zero height stays that way until
+     * something resizes it. The estimate stands in until there is a real
+     * measurement.
+     */
+    measureElement: (element, _entry, instance) =>
+      element.getBoundingClientRect().height ||
+      instance.options.estimateSize(instance.indexFromElement(element)),
     getItemKey: useCallback((index: number) => rows[index]?.id ?? index, [rows]),
     overscan: 6,
     initialRect: { height: 600, width: 1200 },
@@ -561,6 +603,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   role="row"
                   aria-rowindex={virtualItem.index + headerGroups.length + 1}
                   data-testid={`dg-row-${row.id}`}
+                  // Only measured when details are on: without them every row
+                  // is exactly `rowHeight`, and the estimate above is already
+                  // the answer — so a plain grid keeps its ResizeObserver-free
+                  // body. `measureElement` is a stable instance method and
+                  // returns nothing, so it can be the ref itself.
+                  //
+                  // `data-index` is how the virtualizer maps the observed
+                  // element back to its item. The panel is inside this element,
+                  // so what gets measured is the row *and* its detail — which
+                  // is the whole reason no second virtual item is needed.
+                  data-index={renderDetails ? virtualItem.index : undefined}
+                  ref={renderDetails ? virtualizer.measureElement : undefined}
                   // The tree's own rows. `data-grouped` rather than a class, to
                   // match how the rest of the row's state is published — and so
                   // a consumer can restyle them without reaching into modules.
@@ -685,6 +739,33 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       }
                     />
                   ))}
+
+                  {/* A second grid row inside the row element, on the same
+                      subgrid tracks — which is what lets one measurement cover
+                      both. A cell spanning every column rather than a row of
+                      its own, so the row keeps holding exactly one row's worth
+                      of content and `aria-rowcount` still counts records. */}
+                  {showsDetails(row) && (
+                    <div
+                      role="cell"
+                      aria-colspan={orderedColumns.length}
+                      data-testid={`dg-details-${row.id}`}
+                      className={classes.detailsCell}
+                      // The row underneath may select, highlight or open a
+                      // context menu. A panel is content, not part of that
+                      // gesture surface — and stopping the right-click here is
+                      // what leaves the browser's own menu working for a link
+                      // or an input inside it.
+                      onClick={(event) => event.stopPropagation()}
+                      onContextMenu={(event) => event.stopPropagation()}
+                    >
+                      {/* No cast back to `TData`: the context erased the row
+                          type, and the renderer reaching this point was typed
+                          against the consumer's own at the `useTMDataGrid`
+                          call. */}
+                      {renderDetails?.({ table, row })}
+                    </div>
+                  )}
                 </div>
               );
             })}

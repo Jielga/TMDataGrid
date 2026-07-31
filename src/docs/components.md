@@ -38,7 +38,7 @@ themed. They can equally be set from a stylesheet through `className`.
 | `--dg-row-height` | From `size` | Row height. `meta.rowHeight` is the supported way to change it, since the virtualizer needs the number |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-font-size` | From `size` | Cell and header font size |
-| `--dg-padding` | From `size` | Horizontal cell padding. The generated checkbox column is exempt — it is a fixed 48px track, so it centres its box instead |
+| `--dg-padding` | From `size` | Horizontal cell padding. The generated system lanes — checkbox, details — are exempt: they are fixed 36px tracks that centre their control instead |
 
 ```tsx
 <TMDataGrid
@@ -320,3 +320,7 @@ Search field, column checkboxes, show/hide all and reset. Rendered by
 | `getStepTargetColumn({ table, columnId, direction })` | The column a step would swap with, or `null`. |
 | `getColumnRegion(columnPinning, columnId)` | `"left"`, `"center"` or `"right"`. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |
+| `DETAILS_COLUMN_ID` | Id of the generated details column. See [Features](#features). |
+| `isControlColumn(columnId)` | Whether an id is a generated control lane — the checkbox or the details chevron. |
+| `resolveExpandAll({ rows, expanded, target, expand })` | Next `expanded` state after expanding or collapsing every group, or every detail, leaving the other kind alone. |
+| `areAllRowsExpanded({ rows, expanded, target })` | Whether every group, or every detail, is open. |

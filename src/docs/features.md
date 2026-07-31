@@ -29,6 +29,7 @@ see [Pagination](#pagination).
 | `highlightSelectedRows: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
+| `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 
 A column whose menu has no remaining items renders no menu button. Dividers are
 never left at the end of a menu.
@@ -370,10 +371,126 @@ To keep a grouped column in the grid instead of removing it, pass
 `groupedColumnMode: "reorder"` — TanStack's own default, which moves grouped
 columns to the front rather than taking them out.
 
+## Row details
+
+Set `renderDetails` and the grid grows a chevron lane; expanding a row opens a
+panel underneath it, spanning every column:
+
+```tsx
+const grid = useTMDataGrid({
+  data,
+  columns,
+  renderDetails: ({ row }) => <EmployeeCard employee={row.original} />,
+});
+```
+
+The panel is as tall as whatever it renders — the grid measures each one, so
+nothing has to be uniform. `renderDetailsEstHeight` (default `160`) is only what
+the virtualizer assumes for a panel it has not seen yet, which keeps the
+scrollbar honest for rows that open off screen.
+
+### The details lane
+
+Setting `renderDetails` prepends a generated chevron column, `DETAILS_COLUMN_ID`
+(`"__details__"`), pinned to the left after the checkbox and tree columns —
+`[checkbox, tree, details, …]`. It comes last of the three because it acts on
+one record: the checkbox picks rows out and the tree says which group they are
+in, and only then is there a row to open.
+
+Like the other two it is structural: fixed width, and it cannot be hidden,
+moved, resized or unpinned — a toggle that wandered to the far right, or hid
+itself, would leave rows with panels no one can open.
+
+It is a system lane: as wide as the chevron it holds, with no resize handle and
+no column menu — its header is a control rather than a title. The chevron there
+expands and collapses every panel, the way the checkbox column's header selects
+and clears every row.
+
+Group rows get no chevron: they expand into their children from the tree lane.
+
+### The two kinds of expanding
+
+TanStack keeps one `expanded` state, and the grid opens two unrelated things out
+of it — a group row into its children, a data row into its panel. The controls
+are kept apart all the same: the details header only opens and closes panels,
+and "Expand all groups" in the tree menu only unfolds the tree. Neither disturbs
+what the other was showing.
+
+`table.toggleAllRowsExpanded()` is the one that does not distinguish them: it
+writes the state's whole-table form, which is every group and every panel at
+once. `resolveExpandAll` and `areAllRowsExpanded` are exported for anything
+building its own control:
+
+```tsx
+table.setExpanded(
+  resolveExpandAll({
+    rows: table.getPrePaginatedRowModel().flatRows,
+    expanded: table.store.state.expanded,
+    target: "details",
+    expand: true,
+  }),
+);
+```
+
+### Opening a row from elsewhere
+
+Which rows are open is TanStack's own `expanded` state, so anything can open one
+— a context menu item, a double-click, a button in your own cell:
+
+```tsx
+<Menu.Item onClick={() => row.toggleExpanded()}>Show details</Menu.Item>
+```
+
+Anything that *reads* `row.getIsExpanded()` inside a cell has to subscribe to the
+store (`useSelector(row.table.store, () => row.getIsExpanded())`), or the React
+Compiler will cache the call along with the `row` identity and the control will
+never update.
+
+Because it is the standard state, everything around it comes free:
+`table.toggleAllRowsExpanded()`, `initialState.expanded`, and persistence — it is
+one of the `data` slices, so open panels survive a reload where the grid is
+persisted.
+
+### What the panel is and is not
+
+The panel is a cell spanning the row, inside the row element. So it takes the
+row's background, moves with it, and is measured with it — but it is not a row:
+`aria-rowcount` still counts records, and a click or right-click inside it stops
+there rather than selecting or highlighting the row underneath. It carries
+`data-testid="dg-details-<rowId>"`.
+
+Group rows have no panel. Expanding one opens its children, and the record a
+group row is built from is an arbitrary one of them — the same reason group rows
+sit out `onRowClick`.
+
+Details and `selectionMode: "highlight"` answer the same question differently.
+A panel keeps the record in place and in context, which suits a handful of
+fields or an action strip; a highlight-driven side panel has more room and stays
+put while the grid scrolls. A grid can do both.
+
+> TanStack resets `expanded` when the row structure changes, so replacing `data`
+> closes open panels. Pass `autoResetExpanded: false` to keep them.
+
+## Pinned column edges
+
+A pinned lane casts a soft band over the data beside it, and only while it is
+actually covering something: the band fades in over the first 20px of horizontal
+scroll and fades back out as the far end arrives. A grid with nothing to scroll
+shows none at all.
+
+It is a scroll-driven animation (`animation-timeline: scroll(nearest inline)`),
+so the band tracks the scroll on the compositor with no listener, no state and no
+render. Where that is unsupported the band is simply always on, which is what it
+was before.
+
 ## Virtualization
 
 Always enabled and not configurable. Only rows within the viewport, plus a small
 overscan, are mounted, so page size does not affect how much is rendered.
 
 Row height is taken from `meta.rowHeight`, or from the `size` prop when it is not
-set. Rows are fixed height; an accurate value keeps scrolling precise.
+set. Rows are fixed height, so the estimate is exact and scrolling is precise.
+
+`renderDetails` is the exception: a row showing a panel is as tall as the panel,
+so those rows are measured after they mount. Nothing else changes — a grid
+without `renderDetails` mounts no observers at all.

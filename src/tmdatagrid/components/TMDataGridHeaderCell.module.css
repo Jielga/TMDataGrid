@@ -21,9 +21,10 @@
   justify-content: center;
 }
 
-/* Same as the body cells: the select-all box sits in a fixed 48px track, which
-   the text padding would squeeze it out of at the larger sizes. */
-.headerCell[data-select-column="true"] {
+/* Same as the body cells: a control lane's header — the select-all box, the
+   expand-all chevron — sits in a fixed 36px track, which the text padding would
+   squeeze it out of at the larger sizes. */
+.headerCell[data-control-column="true"] {
   padding: 0;
 }
 

@@ -47,6 +47,7 @@ export type StarterSnippetConfig = {
   /** `undefined` follows the mode, which needs no line in the snippet. */
   showSelectedBackground: boolean | undefined;
   rowContextMenu: boolean;
+  rowDetails: boolean;
 };
 
 const DEFAULT_SIZE: TMDataGridSize = "md";
@@ -68,6 +69,7 @@ export function buildStarterSnippet({
   customPager,
   showSelectedBackground,
   rowContextMenu,
+  rowDetails,
 }: StarterSnippetConfig): string {
   const highlight = hasHighlight(selectionMode);
   const paginated = options.enablePagination;
@@ -107,6 +109,16 @@ export function buildStarterSnippet({
   ) {
     gridOptions.push(
       `    showSelectedBackground: ${String(showSelectedBackground)},`,
+    );
+  }
+
+  if (rowDetails) {
+    gridOptions.push(
+      "    // Setting this adds the pinned chevron lane and renders what it opens.",
+      "    //     The panel is measured, so it can be any height.",
+      "    renderDetails: ({ row }) => (",
+      "      <pre>{JSON.stringify(row.original, null, 2)}</pre>",
+      "    ),",
     );
   }
 

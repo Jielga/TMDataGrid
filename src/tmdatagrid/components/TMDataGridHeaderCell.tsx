@@ -18,7 +18,12 @@ import {
   moveColumnByStep,
   type TMDataGridDropSide,
 } from "../core/columnOrdering";
-import { getColumnAlign, getColumnLabel } from "../core/columnUtils";
+import {
+  getColumnAlign,
+  getColumnLabel,
+  isControlColumn,
+} from "../core/columnUtils";
+import { resolveExpandAll } from "../core/expanding";
 import { isFilterActive } from "../core/filterOperators";
 import {
   ArrowDownIcon,
@@ -38,7 +43,6 @@ import {
   UngroupIcon,
 } from "./icons";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
-import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { type TMDataGridFeatures, openColumnFilter } from "../useTMDataGrid";
 
 export type TMDataGridHeader = Header<
@@ -258,18 +262,31 @@ export function TMDataGridHeaderCell({
         );
       }
     }
+    // Groups only, though `expanded` also holds which rows have their detail
+    // panel open — `toggleAllRowsExpanded` would open every one of them from an
+    // item that says "groups". See resolveExpandAll.
+    const expandAllGroups = (expand: boolean) =>
+      table.setExpanded(
+        resolveExpandAll({
+          rows: table.getPrePaginatedRowModel().flatRows,
+          expanded: table.store.state.expanded,
+          target: "groups",
+          expand,
+        }),
+      );
+
     menuItems.push(
       <Menu.Item
         key="expand-all"
         leftSection={<ExpandAllIcon size={16} stroke={1.6} />}
-        onClick={() => table.toggleAllRowsExpanded(true)}
+        onClick={() => expandAllGroups(true)}
       >
         Expand all groups
       </Menu.Item>,
       <Menu.Item
         key="collapse-all"
         leftSection={<CollapseAllIcon size={16} stroke={1.6} />}
-        onClick={() => table.toggleAllRowsExpanded(false)}
+        onClick={() => expandAllGroups(false)}
       >
         Collapse all groups
       </Menu.Item>,
@@ -395,9 +412,9 @@ export function TMDataGridHeaderCell({
       data-testid={`dg-header-${column.id}`}
       data-active={isSorted || isFiltered}
       data-align={align}
-      // The checkbox lane is a fixed track, so it cannot take the cell padding
-      // the scale grows for text. See TMDataGridHeaderCell.module.css.
-      data-select-column={column.id === SELECT_COLUMN_ID}
+      // A control lane is a fixed track, so it cannot take the cell padding the
+      // scale grows for text. See isControlColumn.
+      data-control-column={isControlColumn(column.id)}
       // Only meaningful on a sortable column: "none" advertises that this
       // header sorts, which is a lie on one that doesn't.
       aria-sort={
@@ -482,7 +499,9 @@ export function TMDataGridHeaderCell({
             </ActionIcon>
           )}
 
-          {menuItems.length > 0 && column.id !== SELECT_COLUMN_ID && (
+          {/* A control lane's header is itself a control — select-all,
+              expand-all — so it carries no column menu. */}
+          {menuItems.length > 0 && !isControlColumn(column.id) && (
             <Menu
               opened={menuOpened}
               onChange={setMenuOpened}
@@ -515,28 +534,33 @@ export function TMDataGridHeaderCell({
         </div>
       )}
 
-      <div
-        className={[
-          classes.columnSeparator,
-          canResize ? classes.columnSeparatorResizable : "",
-          isResizing ? classes.columnSeparatorActive : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        // Keeps a drag that starts on the separator from being picked up by the
-        // draggable header around it.
-        draggable={false}
-        onMouseDown={
-          canResize
-            ? (event) => {
-                suppressSortRef.current = true;
-                header.getResizeHandler()(event);
-              }
-            : undefined
-        }
-        onTouchStart={canResize ? header.getResizeHandler() : undefined}
-        onClick={(event) => event.stopPropagation()}
-      />
+      {/* A system lane has no separator at all: it cannot be resized, and the
+          hover line reads as a handle that does nothing — the one place the
+          separator stops being a divider and starts being a lie. */}
+      {!isControlColumn(column.id) && (
+        <div
+          className={[
+            classes.columnSeparator,
+            canResize ? classes.columnSeparatorResizable : "",
+            isResizing ? classes.columnSeparatorActive : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          // Keeps a drag that starts on the separator from being picked up by
+          // the draggable header around it.
+          draggable={false}
+          onMouseDown={
+            canResize
+              ? (event) => {
+                  suppressSortRef.current = true;
+                  header.getResizeHandler()(event);
+                }
+              : undefined
+          }
+          onTouchStart={canResize ? header.getResizeHandler() : undefined}
+          onClick={(event) => event.stopPropagation()}
+        />
+      )}
     </div>
   );
 }

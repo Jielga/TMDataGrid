@@ -87,6 +87,56 @@ const truncate = (value: string, max = 20) =>
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
+/** Filler so the panels differ in height — the grid measures each one. */
+const NOTES = [
+  "Joined through the Stockholm office and has been with the team since.",
+  "Currently on a rotation with Product; reviews land in the shared queue.",
+  "Owns the on-call handover doc and the quarterly capacity forecast.",
+];
+
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <Stack gap={0}>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
+      <Text size="sm">{value}</Text>
+    </Stack>
+  );
+}
+
+/**
+ * What `renderDetails` returns. Nothing here is the grid's: it renders whatever
+ * comes back, at whatever height it comes back at.
+ */
+function EmployeeDetails({ employee }: { employee: Employee }) {
+  return (
+    <Stack gap="sm">
+      <Group gap="xl" wrap="wrap">
+        <DetailField
+          label="Employee"
+          value={`${employee.firstName} ${employee.lastName}`}
+        />
+        <DetailField label="Department" value={employee.department} />
+        <DetailField label="Location" value={employee.location} />
+        <DetailField label="Salary" value={sek(employee.salary)} />
+        <DetailField label="Age" value={String(employee.age)} />
+      </Group>
+      <Text size="sm" c="dimmed" maw={640}>
+        {NOTES.slice(0, 1 + (employee.id % NOTES.length)).join(" ")}
+      </Text>
+      <Group gap="xs">
+        <Button size="xs" variant="light">
+          Open profile
+        </Button>
+        <Button size="xs" variant="subtle">
+          Message
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 const columns = columnHelper.columns([
   columnHelper.accessor("id", {
     header: "ID",
@@ -267,6 +317,7 @@ export function DataGridExample() {
   });
   const [customPager, setCustomPager] = useState(false);
   const [rowContextMenu, setRowContextMenu] = useState(true);
+  const [rowDetails, setRowDetails] = useState(true);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   // Undefined follows the mode: off with checkboxes, on when rows select.
@@ -284,6 +335,12 @@ export function DataGridExample() {
     persist,
     selectionMode,
     showSelectedBackground,
+    // Setting the render prop is what turns row details on; the grid measures
+    // whatever it returns, so the estimate only has to be in the right region.
+    renderDetails: rowDetails
+      ? ({ row }) => <EmployeeDetails employee={row.original} />
+      : undefined,
+    renderDetailsEstHeight: 120,
     ...features,
     initialState: {
       sorting: [{ id: "id", desc: false }],
@@ -337,6 +394,7 @@ export function DataGridExample() {
           customPager,
           showSelectedBackground,
           rowContextMenu,
+          rowDetails,
         }}
       />
 
@@ -420,6 +478,19 @@ export function DataGridExample() {
                   onChange={(event) =>
                     setRowContextMenu(event.currentTarget.checked)
                   }
+                />
+              </Tooltip>
+              <Tooltip
+                label="Chevron in the first column opens a panel under the row — panels vary in height and are measured"
+                withArrow
+                multiline
+                w={240}
+              >
+                <Switch
+                  size="xs"
+                  label="Row details"
+                  checked={rowDetails}
+                  onChange={(event) => setRowDetails(event.currentTarget.checked)}
                 />
               </Tooltip>
             </Group>

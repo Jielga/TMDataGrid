@@ -5,6 +5,7 @@ export {
   type TMDataGridRowData,
 } from "./TMDataGridContext";
 export { SELECT_COLUMN_ID } from "./components/TMDataGridSelectColumn";
+export { DETAILS_COLUMN_ID } from "./components/TMDataGridDetailsColumn";
 export {
   formatGroupValue,
   GROUP_COLUMN_ID,
@@ -15,6 +16,8 @@ export {
   tmDataGridFeatures,
   type TMDataGridApi,
   type TMDataGridColumnMeta,
+  type TMDataGridDetailsArgs,
+  type TMDataGridDetailsRenderer,
   type TMDataGridFeatures,
   type TMDataGridTable,
   type TMDataGridTableMeta,
@@ -40,8 +43,15 @@ export {
   getColumnLabel,
   getColumnType,
   isColumnReorderable,
+  isControlColumn,
 } from "./core/columnUtils";
 export { getGroupDataRows } from "./core/grouping";
+export {
+  areAllRowsExpanded,
+  resolveExpandAll,
+  type TMDataGridExpandAllArgs,
+  type TMDataGridExpandTarget,
+} from "./core/expanding";
 export {
   getColumnRegion,
   getStepTargetColumn,

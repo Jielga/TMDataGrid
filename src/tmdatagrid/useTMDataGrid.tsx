@@ -22,6 +22,7 @@ import {
   filterFns,
   globalFilteringFeature,
   metaHelper,
+  type Row,
   type RowData,
   rowExpandingFeature,
   rowPaginationFeature,
@@ -35,7 +36,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
@@ -60,6 +61,10 @@ import {
   createGroupColumn,
   GROUP_COLUMN_ID,
 } from "./components/TMDataGridGroupColumn";
+import {
+  createDetailsColumn,
+  DETAILS_COLUMN_ID,
+} from "./components/TMDataGridDetailsColumn";
 
 /**
  * How long the grid waits after the last state change before writing to
@@ -151,6 +156,23 @@ export function createTMDataGridColumnHelper<TData extends RowData>() {
   return createColumnHelper<TMDataGridFeatures, TData>();
 }
 
+/** What the `renderDetails` render prop is handed for an expanded row. */
+export type TMDataGridDetailsArgs<TData extends RowData> = {
+  row: Row<TMDataGridFeatures, TData>;
+  table: TMDataGridTable<TData>;
+};
+
+/** Builds the panel shown underneath an expanded row. See `renderDetails`. */
+export type TMDataGridDetailsRenderer<TData extends RowData> = (
+  args: TMDataGridDetailsArgs<TData>,
+) => ReactNode;
+
+/**
+ * What the virtualizer assumes a detail panel it has not measured yet is worth.
+ * Only a seed — every mounted row is measured, so the real height replaces it.
+ */
+const DEFAULT_DETAILS_EST_HEIGHT = 160;
+
 /**
  * Chrome state that is *not* table state: which panels are open, and which
  * column opened the filter panel. Kept in a TanStack Store so consumers can
@@ -205,6 +227,10 @@ export type TMDataGridApi<TData extends RowData> = {
   ui: TMDataGridUiStore;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
+  /** The detail renderer, when row details are on. See `renderDetails`. */
+  renderDetails?: TMDataGridDetailsRenderer<TData>;
+  /** Detail estimate in px: the option, or {@link DEFAULT_DETAILS_EST_HEIGHT}. */
+  renderDetailsEstHeight: number;
 };
 
 export type UseTMDataGridOptions<TData extends RowData> = Omit<
@@ -301,6 +327,45 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * Fires for `ui.actions.setHighlightedRow` too, not only for clicks.
    */
   onHighlightedRowChange?: (rowId: string | null) => void;
+  /**
+   * Renders a panel underneath an expanded row, spanning every column. Setting
+   * it is what turns row details on.
+   *
+   * Which rows are open is TanStack's own `expanded` state, so opening one is
+   * `row.toggleExpanded()` from wherever suits — a chevron in a cell, a button
+   * in the context menu, a double-click:
+   *
+   * ```tsx
+   * const grid = useTMDataGrid({
+   *   data,
+   *   columns,
+   *   renderDetails: ({ row }) => <EmployeeCard employee={row.original} />,
+   * });
+   * ```
+   *
+   * The panel is as tall as what it renders — see {@link renderDetailsEstHeight}
+   * for what the virtualizer assumes before it has measured one.
+   *
+   * Group rows are left out: expanding one opens its children, and a panel there
+   * would be about an arbitrary one of them. The same reason they sit out
+   * `onRowClick`.
+   *
+   * Row details and `selectionMode: "highlight"` are two answers to the same
+   * question. Details keep the record in place and in context, which suits a few
+   * fields or an action strip; a highlight-driven side panel has room for more
+   * and survives scrolling. Nothing stops a grid from doing both.
+   */
+  renderDetails?: TMDataGridDetailsRenderer<TData>;
+  /**
+   * What the virtualizer assumes an unmeasured detail panel is worth, in px.
+   * Defaults to 160.
+   *
+   * An estimate, not a height: every mounted row is measured, so the real one
+   * takes over as soon as the panel is on screen. It keeps the scrollbar honest
+   * for panels that open off screen — restored `expanded` state, say — and being
+   * roughly right is enough.
+   */
+  renderDetailsEstHeight?: number;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -361,6 +426,8 @@ export function useTMDataGrid<TData extends RowData>({
   showSelectedBackground,
   defaultHighlightedRowId,
   onHighlightedRowChange,
+  renderDetails,
+  renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   // Derived up here, rather than just before the return, because the rest of the
@@ -380,22 +447,36 @@ export function useTMDataGrid<TData extends RowData>({
   const pinningEnabled = options.enableColumnPinning !== false;
   const selectColumnEnabled = features.selectColumn;
   const groupColumnEnabled = features.grouping;
+  // The lane that opens the panels. Nothing to switch on: a grid with no
+  // `renderDetails` has nothing for it to open.
+  const detailsColumnEnabled = renderDetails !== undefined;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
       options.columns as ReadonlyArray<TMDataGridColumnDef<TData>>,
     );
-    // Both generated columns are always present when their feature is on, and
-    // the tree column hides itself while nothing is grouped. Adding it to the
-    // array only once a column is grouped would make the column list depend on
-    // table state, which is the one thing that cannot be a `useMemo` dependency
-    // here — the table is built from these columns.
+    // Every generated column is present whenever its feature is on, and the
+    // tree column hides itself while nothing is grouped. Adding it to the array
+    // only once a column is grouped would make the column list depend on table
+    // state, which is the one thing that cannot be a `useMemo` dependency here
+    // — the table is built from these columns.
+    //
+    // The order is the order they are pinned in, and it follows what each one
+    // is about: tick a row, find it in the tree the user grouped it into, then
+    // open it. The details chevron sits last because it acts on the record the
+    // lanes to its left have narrowed down to.
     return [
       ...(selectColumnEnabled ? [createSelectColumn<TData>()] : []),
       ...(groupColumnEnabled ? [createGroupColumn<TData>()] : []),
+      ...(detailsColumnEnabled ? [createDetailsColumn<TData>()] : []),
       ...base,
     ];
-  }, [options.columns, selectColumnEnabled, groupColumnEnabled]);
+  }, [
+    options.columns,
+    selectColumnEnabled,
+    detailsColumnEnabled,
+    groupColumnEnabled,
+  ]);
 
   // Read once on mount: `initialState` is only consumed on the first render,
   // and re-reading later would fight the user's live edits.
@@ -417,6 +498,14 @@ export function useTMDataGrid<TData extends RowData>({
     // `"reorder"` to keep the column and have it moved to the front instead.
     groupedColumnMode: "remove",
     ...options,
+    // Row details ride on `expanded`, the same state the tree uses — but a data
+    // row answers `getCanExpand()` false, since TanStack's fallback is
+    // `subRows.length > 0`. `() => true` is the right answer for a group row
+    // too, so nothing here has to tell the two apart, and a consumer passing
+    // their own predicate still wins.
+    ...(renderDetails !== undefined
+      ? { getRowCanExpand: options.getRowCanExpand ?? (() => true) }
+      : {}),
     features: tmDataGridFeatures,
     columns: columns as TableOptions<TMDataGridFeatures, TData>["columns"],
     initialState: {
@@ -437,11 +526,17 @@ export function useTMDataGrid<TData extends RowData>({
         left: [
           ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
           ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
+          ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
           ...(
             persistedState.columnPinning?.left ??
             options.initialState?.columnPinning?.left ??
             []
-          ).filter((id) => id !== SELECT_COLUMN_ID && id !== GROUP_COLUMN_ID),
+          ).filter(
+            (id) =>
+              id !== SELECT_COLUMN_ID &&
+              id !== DETAILS_COLUMN_ID &&
+              id !== GROUP_COLUMN_ID,
+          ),
         ],
         right:
           persistedState.columnPinning?.right ??
@@ -608,7 +703,7 @@ export function useTMDataGrid<TData extends RowData>({
     return () => subscription.unsubscribe();
   }, [ui]);
 
-  return { table, ui, features };
+  return { table, ui, features, renderDetails, renderDetailsEstHeight };
 }
 
 /**
