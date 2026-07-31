@@ -100,6 +100,14 @@ export type TMDataGridLabels = {
   saveAllEdits: (rows: number) => string;
   /** `EditActions`' Discard. */
   discardAllEdits: string;
+  /** The entry row's ✓ — commit the add. */
+  confirmNewRow: string;
+  /** The entry row's ✕ — drop the entry. */
+  discardNewRow: string;
+  /** The lane's trash can. */
+  deleteRow: string;
+  /** The lane's undo on a row marked deleted (batch). */
+  restoreRow: string;
 
   // Cell selection menu
   cellCount: (count: number) => string;
@@ -205,6 +213,10 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   editRowErrors: "Fix the marked cells",
   saveAllEdits: (rows) => (rows === 1 ? "Save 1 row" : `Save ${rows} rows`),
   discardAllEdits: "Discard",
+  confirmNewRow: "Add row",
+  discardNewRow: "Discard new row",
+  deleteRow: "Delete row",
+  restoreRow: "Restore row",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",

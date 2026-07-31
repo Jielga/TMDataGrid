@@ -2231,6 +2231,105 @@ describe("cell editing", () => {
     expect(cellAt(0, 0)).not.toHaveAttribute("data-dirty");
   });
 
+  it("adds rows through the entry block and reports them with edits and deletions in one batch", async () => {
+    const user = userEvent.setup();
+    const batches: unknown[] = [];
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "batch",
+        selectionMode: "highlight",
+        onEditCommitBatch: (args) => void batches.push(args),
+        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              add
+            </button>
+            <TMDataGrid.EditActions />
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    // The entry block appears with open editors; type a name.
+    await user.click(screen.getByRole("button", { name: "add" }));
+    const entryRow = screen.getByTestId("dg-entry-__new__1");
+    const entryName = within(entryRow).getByRole("textbox", {
+      name: "Edit Name",
+    });
+    await user.type(entryName, "Ny Person");
+
+    // Mark row 2 deleted through the lane; it renders struck through.
+    await user.click(
+      within(bodyRows()[1]!).getByRole("button", { name: "Delete row" }),
+    );
+    expect(bodyRows()[1]).toHaveAttribute("data-deleted", "true");
+    expect(
+      within(bodyRows()[1]!).getByRole("button", { name: "Restore row" }),
+    ).toBeInTheDocument();
+
+    // Save: the batch carries the add and the deletion together.
+    await user.click(screen.getByRole("button", { name: "Save 2 rows" }));
+    await waitFor(() => expect(batches.length).toBe(1));
+    const batch = batches[0] as {
+      rows: unknown[];
+      added: Array<{ value: { name: string } }>;
+      deleted: string[];
+    };
+    expect(batch.rows).toEqual([]);
+    expect(batch.added.map((add) => add.value.name)).toEqual(["Ny Person"]);
+    expect(batch.deleted).toEqual(["2"]);
+    // The entry block is gone and the mark is cleared.
+    expect(screen.queryByTestId("dg-entry-__new__1")).not.toBeInTheDocument();
+    expect(bodyRows()[1]).not.toHaveAttribute("data-deleted", "true");
+  });
+
+  it("adds immediately from the entry row's check outside batch", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "cell",
+        selectionMode: "highlight",
+        onRowAdd: (args) => void adds.push(args),
+        // The lane needs a reason to exist outside row mode.
+        onRowDelete: () => {},
+        newRowDefaults: () => ({ id: 0, name: "Ny", age: 20, note: "" }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              add
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+    const entryRow = screen.getByTestId("dg-entry-__new__1");
+    await user.click(
+      within(entryRow).getByRole("button", { name: "Add row" }),
+    );
+
+    await waitFor(() => expect(adds.length).toBe(1));
+    expect(adds[0]).toMatchObject({ value: { name: "Ny" } });
+    expect(screen.queryByTestId("dg-entry-__new__1")).not.toBeInTheDocument();
+  });
+
   it("clears the cell on Delete and commits the empty value", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

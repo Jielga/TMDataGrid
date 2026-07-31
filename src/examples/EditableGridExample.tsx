@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Code,
   Flex,
   Group,
@@ -13,6 +14,7 @@ import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
+  type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditMode,
 } from "../tmdatagrid";
 
@@ -162,6 +164,38 @@ const rowValidators = {
     ),
 };
 
+/** Grid C — batch: drafts, adds and deletes all land in one submit. */
+const batchColumns = columnHelper.columns([
+  columnHelper.accessor("firstName", {
+    header: "First name",
+    minSize: 120,
+    meta: { validate: z.string().min(2, "At least two characters") },
+  }),
+  columnHelper.accessor("lastName", { header: "Last name", minSize: 120 }),
+  columnHelper.accessor("salary", {
+    header: "Salary",
+    minSize: 130,
+    meta: { type: "number", align: "right" },
+    cell: (info) => sek(info.getValue()),
+  }),
+  columnHelper.accessor("department", {
+    header: "Department",
+    minSize: 140,
+    meta: { type: "select", options: DEPARTMENTS },
+  }),
+]);
+
+const newEmployee = (): Employee => ({
+  id: 0,
+  firstName: "",
+  lastName: "",
+  salary: 32_000,
+  active: true,
+  hired: "2026-01-01",
+  department: "Engineering",
+  skills: [],
+});
+
 export function EditableGridExample() {
   const [employees, setEmployees] = useState(() => makeEmployees(200));
   const [teamRows, setTeamRows] = useState(() => makeEmployees(30, 1000));
@@ -221,6 +255,41 @@ export function EditableGridExample() {
     enableGrouping: false,
   });
 
+  const [batchRows, setBatchRows] = useState(() => makeEmployees(25, 2000));
+
+  // Everything pending — edits, adds, deletions — lands here in one call.
+  const onBatchCommit = useCallback(
+    ({ rows, added, deleted }: TMDataGridEditCommitBatchArgs<Employee>) => {
+      setBatchRows((previous) => {
+        const edited = previous.map(
+          (employee) =>
+            rows.find((row) => row.rowId === String(employee.id))?.value ??
+            employee,
+        );
+        const kept = edited.filter(
+          (employee) => !deleted.includes(String(employee.id)),
+        );
+        const maxId = Math.max(2999, ...kept.map((employee) => employee.id));
+        return [
+          ...kept,
+          ...added.map((add, index) => ({ ...add.value, id: maxId + index + 1 })),
+        ];
+      });
+    },
+    [],
+  );
+
+  const batchGrid = useTMDataGrid({
+    data: batchRows,
+    columns: batchColumns,
+    getRowId: (row) => String(row.id),
+    editMode: "batch",
+    onEditCommitBatch: onBatchCommit,
+    newRowDefaults: newEmployee,
+    selectionMode: "highlight",
+    enableGrouping: false,
+  });
+
   return (
     <Flex direction="column" gap="md" p={{ base: "sm", md: "lg" }} h="100%">
       <Group gap="sm">
@@ -266,6 +335,30 @@ export function EditableGridExample() {
       </Text>
 
       <TMDataGrid {...rowGrid} size="md" style={{ flex: 2, minHeight: 0 }}>
+        <TMDataGrid.Table<Employee> />
+      </TMDataGrid>
+
+      <Text fw={600} size="lg" mt="xs">
+        Batch editing{" "}
+        <Text component="span" size="sm" c="dimmed" fw={400}>
+          — nothing commits until Save: edit cells, add rows in the entry
+          block, mark deletions with the trash; one call carries the lot
+        </Text>
+      </Text>
+
+      <TMDataGrid {...batchGrid} size="md" style={{ flex: 2, minHeight: 0 }}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.SummaryCount />
+          <TMDataGrid.Spacer />
+          <Button
+            variant="light"
+            size="compact-sm"
+            onClick={() => batchGrid.edit.addRow()}
+          >
+            Add row
+          </Button>
+          <TMDataGrid.EditActions />
+        </TMDataGrid.Toolbar>
         <TMDataGrid.Table<Employee> />
       </TMDataGrid>
     </Flex>

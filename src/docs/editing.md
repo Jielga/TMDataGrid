@@ -135,6 +135,39 @@ unmounts the editor; the form keeps its values, dirty state and errors, and
 the editor remounts over the same form when the row returns. Cell corners
 mark the state meanwhile: blue for a dirty draft, red for a validation error.
 
+## Adding and deleting rows
+
+`edit.addRow()` opens an **entry row** in a sticky block under the header —
+the one place stickiness is genuinely required, since a row being typed into
+exists nowhere else to scroll back to. Entry cells are real editors over a
+form seeded from `newRowDefaults`; Enter (or the lane's ✓) commits the add
+through `onRowAdd` under the immediate modes, while batch parks it for
+`submitAll`. Escape (or ✕) discards the entry.
+
+```tsx
+useTMDataGrid({
+  editMode: "batch",
+  newRowDefaults: () => ({ id: 0, name: "", hired: today() }),
+  onEditCommitBatch: async ({ rows, added, deleted }) => {
+    await api.saveBatch({ rows, added, deleted });
+  },
+});
+
+<Button onClick={() => grid.edit.addRow()}>Add row</Button>
+```
+
+`edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` straight away
+under the immediate modes — confirmation, if wanted, belongs in that
+callback. Under batch it toggles a mark instead: the row renders struck
+through and inert (`data-deleted`), the lane's trash becomes a restore, and
+`submitAll` reports the ids in `deleted`. Setting `onRowDelete` puts the
+trash can in the edit lane, which appears in any mode that has a use for it.
+
+The grid still never mutates `data`: adds and deletes are applied by the
+consumer, and the new rows arrive back through `data`. The engine's `tempId`
+(`__new__1`, …) never needs to become a real id — mint one when creating the
+record.
+
 ## The engine — `api.edit`
 
 Everything the chrome does goes through `edit`, which is public:
@@ -145,8 +178,9 @@ Everything the chrome does goes through `edit`, which is public:
 | `edit.commit(rowId)` | commits — resolves `false` if blocked |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | drops drafts |
 | `edit.submitAll()` | commits every open row (batch) |
+| `edit.addRow()` / `edit.deleteRow(rowId)` | rows in and out |
 | `edit.getForm(rowId)` | the row's live `FormApi` |
-| `edit.store` | open rows, active cell, dirty/error projections |
+| `edit.store` | open rows, active cell, dirty/error projections, entry rows, deletion marks |
 
 `getForm` is the "one row, one form" promise made public: render the same
 form in a drawer or side panel and it shares values, dirty state and errors

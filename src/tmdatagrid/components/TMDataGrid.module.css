@@ -65,6 +65,10 @@
      column takes the row's slot plus one. */
   --dg-z-pinned-cell: 2;
   --dg-z-focused-cell: 3;
+  /* The pinned-row slot serves both sticky rows: the summary along the
+     bottom and the entry block under the header. */
+  --dg-z-pinned-row: 4;
+  --dg-z-pinned-row-pinned-cell: 5;
   --dg-z-summary-row: 4;
   --dg-z-summary-pinned-cell: 5;
   --dg-z-header: 6;

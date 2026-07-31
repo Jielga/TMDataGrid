@@ -95,6 +95,10 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   editRowErrors: "Åtgärda de markerade cellerna",
   saveAllEdits: (rows) => (rows === 1 ? "Spara 1 rad" : `Spara ${rows} rader`),
   discardAllEdits: "Förkasta",
+  confirmNewRow: "Lägg till rad",
+  discardNewRow: "Släng ny rad",
+  deleteRow: "Ta bort rad",
+  restoreRow: "Återställ rad",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",

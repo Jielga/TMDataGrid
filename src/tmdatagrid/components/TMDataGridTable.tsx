@@ -26,6 +26,7 @@ import {
   TMDataGridCellEditor,
   type TMDataGridCellEditorClose,
 } from "./TMDataGridCellEditor";
+import { TMDataGridEntryRows } from "./TMDataGridPinnedRows";
 import { getColumnAlign, isControlColumn } from "../core/columnUtils";
 import { getEditFieldName } from "../core/editEngine";
 import {
@@ -502,6 +503,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Which cell has an editor open. The projection (dirty/error markers) is
   // subscribed per cell instead — see TMDataGridBodyCell.
   const editActive = useSelector(edit.store, (state) => state.active);
+  const newRowCount = useSelector(edit.store, (state) => state.newRows.length);
+  const deletedRowIds = useSelector(edit.store, (state) => state.deletedRowIds);
 
   const { loading, noResultsLabel = labels.noResults } =
     table.options.meta ?? {};
@@ -541,6 +544,31 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       autosizeColumn({ table, columnId: column.id, container });
     }
   });
+
+  /**
+   * The header's height, published as `--dg-header-height` for the entry
+   * block to stick under — never measured otherwise (`top: 0` needs no
+   * number). A ResizeObserver, mounted only while the block is in use: the
+   * same discipline `renderDetails` applies to `measureElement`.
+   */
+  const gridElementRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (newRowCount === 0) return;
+    const grid = gridElementRef.current;
+    if (grid === null) return;
+    const headerRows = grid.querySelectorAll<HTMLElement>(
+      "[data-dg-header-row]",
+    );
+    const measure = () => {
+      let total = 0;
+      for (const headerRow of headerRows) total += headerRow.offsetHeight;
+      grid.style.setProperty("--dg-header-height", `${total}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    for (const headerRow of headerRows) observer.observe(headerRow);
+    return () => observer.disconnect();
+  }, [newRowCount]);
 
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
@@ -1454,6 +1482,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
         onScroll={handleScroll}
       >
         <div
+          ref={gridElementRef}
           // A `table` is content; a `grid` is a widget with a keyboard cursor
           // in it. Which one this is depends on whether cell selection is on,
           // and saying `grid` without one would promise arrow keys that do
@@ -1485,6 +1514,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 key={headerGroup.id}
                 role="row"
                 aria-rowindex={groupIndex + 1}
+                data-dg-header-row
                 className={classes.headerRow}
               >
                 {headerGroup.headers.map((header) => (
@@ -1497,6 +1527,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               </div>
             ))}
           </div>
+
+          {/* The entry block — new rows being typed, stuck under the header.
+              Present only while `edit.addRow()` has open entries. */}
+          {features.editing && newRowCount > 0 && (
+            <TMDataGridEntryRows
+              orderedColumns={orderedColumns}
+              layoutFor={layoutFor}
+              rowHeight={rowHeight}
+            />
+          )}
 
           {paddingTop > 0 && (
             <div aria-hidden style={{ gridColumn: "1/-1", height: paddingTop }} />
@@ -1587,6 +1627,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // wider than they meant to.
                   data-highlighted={
                     features.highlightRow && row.id === highlightedRowId
+                  }
+                  // Marked deleted under batch: struck through and inert
+                  // until submitAll reports it, or the mark is toggled back.
+                  data-deleted={
+                    deletedRowIds.length > 0 && deletedRowIds.includes(row.id)
                   }
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is

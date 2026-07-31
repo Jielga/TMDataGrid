@@ -72,6 +72,8 @@ export {
   type TMDataGridEditRowProjection,
   type TMDataGridEditState,
   type TMDataGridFieldValidate,
+  type TMDataGridRowAddArgs,
+  type TMDataGridRowDeleteArgs,
   type TMDataGridRowEditForm,
   type TMDataGridRowValidators,
 } from "./core/editEngine";

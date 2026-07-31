@@ -48,6 +48,8 @@ import {
   type TMDataGridEditMode,
   type TMDataGridEditorRenderer,
   type TMDataGridFieldValidate,
+  type TMDataGridRowAddArgs,
+  type TMDataGridRowDeleteArgs,
   type TMDataGridRowValidators,
 } from "./core/editEngine";
 import {
@@ -583,6 +585,24 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
     args: TMDataGridEditCommitBatchArgs<TData>,
   ) => void | Promise<void>;
   /**
+   * Seed values for `edit.addRow()` — the entry row's starting point. A
+   * function is called per added row (fresh timestamps, empty arrays).
+   */
+  newRowDefaults?: TData | (() => TData);
+  /**
+   * Called when an entry row commits: `Enter` or the lane's ✓ under the
+   * immediate modes, `submitAll` under batch. Create the record and let it
+   * arrive back through `data`; the engine's `tempId` never leaves the grid.
+   */
+  onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
+  /**
+   * Called by `edit.deleteRow` under the immediate modes — confirmation, if
+   * any, belongs in here. Under batch, deletions accumulate in
+   * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
+   * Setting this also puts the trash can in the edit lane.
+   */
+  onRowDelete?: (args: TMDataGridRowDeleteArgs<TData>) => void | Promise<void>;
+  /**
    * Renders a panel underneath an expanded row, spanning every column. Setting
    * it is what turns row details on.
    *
@@ -698,6 +718,9 @@ export function useTMDataGrid<TData extends RowData>({
   isRowEditable,
   onEditCommit,
   onEditCommitBatch,
+  newRowDefaults,
+  onRowAdd,
+  onRowDelete,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
@@ -729,8 +752,13 @@ export function useTMDataGrid<TData extends RowData>({
   // The lane that opens the panels. Nothing to switch on: a grid with no
   // `renderDetails` has nothing for it to open.
   const detailsColumnEnabled = renderDetails !== undefined;
-  // Row mode's Save sits at the end of the row — the lane is its chrome.
-  const editColumnEnabled = editMode === "row";
+  // Row mode's Save sits at the end of the row — the lane is its chrome. It
+  // also appears wherever the trash can has somewhere to report to.
+  const editColumnEnabled =
+    editMode !== undefined &&
+    (editMode === "row" ||
+      onRowDelete !== undefined ||
+      (editMode === "batch" && onEditCommitBatch !== undefined));
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
   // depends on the strings rather than on the labels object — a fresh
@@ -872,6 +900,10 @@ export function useTMDataGrid<TData extends RowData>({
       onEditCommit as TMDataGridEditEngineContext["onEditCommit"],
     onEditCommitBatch:
       onEditCommitBatch as TMDataGridEditEngineContext["onEditCommitBatch"],
+    newRowDefaults:
+      newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
+    onRowAdd: onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
+    onRowDelete: onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
   };
   const [edit] = useState(() =>
     createEditEngine(() => editContextRef.current),

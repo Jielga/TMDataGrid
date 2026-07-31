@@ -19,12 +19,16 @@ import { useTMDataGridContext } from "../TMDataGridContext";
  */
 export function TMDataGridEditActions() {
   const { edit, features, labels } = useTMDataGridContext();
+  // Everything pending counts: dirty edits, entry rows (an add is pending
+  // whether or not it was touched), and deletion marks.
   const dirtyCount = useSelector(
     edit.store,
     (state) =>
       state.openRowIds.filter(
-        (rowId) => (state.rows[rowId]?.dirtyFields.length ?? 0) > 0,
-      ).length,
+        (rowId) =>
+          state.newRows.some((newRow) => newRow.tempId === rowId) ||
+          (state.rows[rowId]?.dirtyFields.length ?? 0) > 0,
+      ).length + state.deletedRowIds.length,
   );
   const isSubmitting = useSelector(edit.store, (state) =>
     state.openRowIds.some((rowId) => state.rows[rowId]?.isSubmitting === true),

@@ -182,9 +182,27 @@ export type TMDataGridEditorRenderer = (
   args: TMDataGridEditorArgs,
 ) => ReactNode;
 
-/** What `submitAll` hands `onEditCommitBatch` — every valid dirty row. */
+/** A new row being committed — `onRowAdd`, and `submitAll`'s `added`. */
+export type TMDataGridRowAddArgs<TData extends RowData> = {
+  /** The engine's placeholder id; the real id is the consumer's to mint. */
+  tempId: string;
+  value: TData;
+};
+
+/** A deletion — `onRowDelete`. */
+export type TMDataGridRowDeleteArgs<TData extends RowData> = {
+  rowId: string;
+  row: Row<TMDataGridFeatures, TData>;
+};
+
+/** What `submitAll` hands `onEditCommitBatch` — everything pending at once. */
 export type TMDataGridEditCommitBatchArgs<TData extends RowData> = {
+  /** Every valid dirty existing row. */
   rows: Array<TMDataGridEditCommitArgs<TData>>;
+  /** Every valid new row from the entry block. */
+  added: Array<TMDataGridRowAddArgs<TData>>;
+  /** Ids marked deleted while the batch accumulated. */
+  deleted: Array<string>;
 };
 
 /** What the engine reads fresh on every call — see `createEditEngine`. */
@@ -198,6 +216,14 @@ export type TMDataGridEditEngineContext = {
   ) => void | Promise<void>;
   onEditCommitBatch?: (
     args: TMDataGridEditCommitBatchArgs<TMDataGridRowData>,
+  ) => void | Promise<void>;
+  /** Seed values for `addRow`. A function is called per added row. */
+  newRowDefaults?: TMDataGridRowData | (() => TMDataGridRowData);
+  onRowAdd?: (
+    args: TMDataGridRowAddArgs<TMDataGridRowData>,
+  ) => void | Promise<void>;
+  onRowDelete?: (
+    args: TMDataGridRowDeleteArgs<TMDataGridRowData>,
   ) => void | Promise<void>;
 };
 
@@ -278,6 +304,22 @@ export type TMDataGridEditApi = {
   submitAll: () => Promise<boolean>;
   /** Writes the type's empty value into a cell and commits it — Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
+  /**
+   * Opens a new entry row (the sticky block under the header) seeded from
+   * `newRowDefaults`. Returns its temporary id — a form with no backing row
+   * yet. Committing it calls `onRowAdd` (immediate modes) or joins
+   * `submitAll`'s `added` (batch).
+   */
+  addRow: () => string;
+  /**
+   * Deletes a row: `onRowDelete` straight away under the immediate modes;
+   * under batch it toggles the id in `deletedRowIds` — the row renders
+   * struck through until `submitAll` reports it. On an uncommitted entry
+   * row it just discards the entry.
+   */
+  deleteRow: (rowId: string) => void;
+  /** Whether delete chrome makes sense — the lane's trash gate. */
+  canDeleteRows: () => boolean;
 };
 
 function clearFormSourcedFieldErrors(form: TMDataGridRowEditForm): void {
@@ -334,6 +376,8 @@ export function createEditEngine(
   type FormEntry = {
     form: TMDataGridRowEditForm;
     original: TMDataGridRowData;
+    /** An entry-block row — a form with no backing row yet. */
+    isNew: boolean;
     /** Set by the wrapped onSubmit when the consumer's commit resolved. */
     lastSubmitOk: boolean;
     /** A commit already running — Enter and blur race on the same edit. */
@@ -342,6 +386,7 @@ export function createEditEngine(
     unmount: () => void;
   };
   const forms = new Map<string, FormEntry>();
+  let newRowCounter = 0;
 
   /**
    * While `submitAll` runs with an `onEditCommitBatch`, each row's wrapped
@@ -349,6 +394,8 @@ export function createEditEngine(
    * validation stays per row (Form's), the consumer call becomes one.
    */
   let batchCollector: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> | null =
+    null;
+  let batchAddCollector: Array<TMDataGridRowAddArgs<TMDataGridRowData>> | null =
     null;
 
   const editableColumns = (): Array<ErasedColumn> =>
@@ -426,16 +473,23 @@ export function createEditEngine(
         ...prev,
         rows,
         openRowIds: [...forms.keys()],
+        newRows: entry.isNew
+          ? prev.newRows.filter((newRow) => newRow.tempId !== rowId)
+          : prev.newRows,
         active: prev.active?.rowId === rowId ? null : prev.active,
       };
     });
   };
 
-  const createForm = (rowId: string, row: ErasedRow): FormEntry => {
+  const createForm = (
+    rowId: string,
+    original: TMDataGridRowData,
+    isNew: boolean,
+  ): FormEntry => {
     const context = getContext();
-    const original = row.original;
     const entry: FormEntry = {
       original,
+      isNew,
       lastSubmitOk: false,
       pendingCommit: null,
       unsubscribe: () => {},
@@ -446,6 +500,29 @@ export function createEditEngine(
         // validator generics the same way the row type is erased.
         validators: context.rowValidators as never,
         onSubmit: async ({ value }) => {
+          // A new row commits whole: it is an add, not a diff against
+          // anything that exists.
+          if (entry.isNew) {
+            const addArgs: TMDataGridRowAddArgs<TMDataGridRowData> = {
+              tempId: rowId,
+              value: value as TMDataGridRowData,
+            };
+            if (batchAddCollector !== null) {
+              batchAddCollector.push(addArgs);
+              entry.lastSubmitOk = true;
+              return;
+            }
+            try {
+              await getContext().onRowAdd?.(addArgs);
+              entry.lastSubmitOk = true;
+            } catch (error) {
+              entry.form.setErrorMap({
+                onSubmit:
+                  error instanceof Error ? error.message : String(error),
+              } as never);
+            }
+            return;
+          }
           const changes = diff(entry, value as TMDataGridRowData);
           const args: TMDataGridEditCommitArgs<TMDataGridRowData> = {
             rowId,
@@ -515,7 +592,11 @@ export function createEditEngine(
     // first's commit instead of submitting the row twice.
     if (entry.pendingCommit !== null) return entry.pendingCommit;
     // A pristine form has nothing to say — drop it without a consumer call.
-    if (diff(entry, entry.form.state.values as TMDataGridRowData).length === 0) {
+    // Not for a new row: adding an untouched entry is still an add.
+    if (
+      !entry.isNew &&
+      diff(entry, entry.form.state.values as TMDataGridRowData).length === 0
+    ) {
       drop(rowId);
       return true;
     }
@@ -547,7 +628,7 @@ export function createEditEngine(
     } else if (getContext().isRowEditable?.(row) === false) {
       return;
     }
-    if (!forms.has(rowId)) createForm(rowId, row);
+    if (!forms.has(rowId)) createForm(rowId, row.original, false);
     setActive({ rowId, columnId });
   };
 
@@ -591,30 +672,100 @@ export function createEditEngine(
 
   const cancelAll = () => {
     for (const rowId of [...forms.keys()]) drop(rowId);
-    setActive(null);
+    store.setState((prev) => ({ ...prev, active: null, deletedRowIds: [] }));
+  };
+
+  const addRow = (): string => {
+    const context = getContext();
+    newRowCounter += 1;
+    const tempId = `__new__${newRowCounter}`;
+    const defaults =
+      typeof context.newRowDefaults === "function"
+        ? context.newRowDefaults()
+        : (context.newRowDefaults ?? {});
+    createForm(tempId, defaults, true);
+    store.setState((prev) => ({
+      ...prev,
+      newRows: [...prev.newRows, { tempId }],
+    }));
+    return tempId;
+  };
+
+  const deleteRow = (rowId: string) => {
+    const entry = forms.get(rowId);
+    // Deleting an unsaved entry row is just discarding the entry.
+    if (entry?.isNew === true) {
+      drop(rowId);
+      return;
+    }
+    const context = getContext();
+    if (context.editMode === "batch") {
+      // A toggle: the second press unmarks — the mark is a draft too.
+      store.setState((prev) => ({
+        ...prev,
+        deletedRowIds: prev.deletedRowIds.includes(rowId)
+          ? prev.deletedRowIds.filter((id) => id !== rowId)
+          : [...prev.deletedRowIds, rowId],
+      }));
+      return;
+    }
+    const row = getRow(rowId);
+    if (row === undefined) return;
+    // Confirmation is the consumer's business, in their onRowDelete.
+    void context.onRowDelete?.({ rowId, row });
+  };
+
+  const canDeleteRows = (): boolean => {
+    const context = getContext();
+    if (context.editMode === "batch") {
+      return (
+        context.onRowDelete !== undefined ||
+        context.onEditCommitBatch !== undefined
+      );
+    }
+    return context.onRowDelete !== undefined;
+  };
+
+  /** The pending deletions, reported and cleared by submitAll. */
+  const takeDeletedRowIds = (): Array<string> => {
+    const deleted = [...store.state.deletedRowIds];
+    if (deleted.length > 0) {
+      store.setState((prev) => ({ ...prev, deletedRowIds: [] }));
+    }
+    return deleted;
   };
 
   const submitAll = async (): Promise<boolean> => {
     if (getContext().onEditCommitBatch === undefined) {
-      // The default: the per-row loop, each row through `onEditCommit`.
+      // The default: the per-row loop — edits through `onEditCommit`, entry
+      // rows through `onRowAdd`, marked deletions through `onRowDelete`.
       const results = await Promise.all(
         [...forms.keys()].map((rowId) => commit(rowId)),
       );
+      for (const rowId of takeDeletedRowIds()) {
+        const row = getRow(rowId);
+        if (row !== undefined) {
+          await getContext().onRowDelete?.({ rowId, row });
+        }
+      }
       return results.every(Boolean);
     }
 
     // One consumer call for the lot. Validation stays Form's, per row: rows
-    // that fail keep their forms and markers; the valid dirty rows travel
+    // that fail keep their forms and markers; the valid ones travel
     // together, and only a resolved batch drops them — a rejected save keeps
-    // every draft.
+    // every draft, deletions included.
     const collected: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> = [];
+    const added: Array<TMDataGridRowAddArgs<TMDataGridRowData>> = [];
     batchCollector = collected;
+    batchAddCollector = added;
     let allValid = true;
     try {
       for (const rowId of [...forms.keys()]) {
         const entry = forms.get(rowId);
         if (entry === undefined) continue;
         if (
+          !entry.isNew &&
           diff(entry, entry.form.state.values as TMDataGridRowData).length === 0
         ) {
           drop(rowId);
@@ -626,14 +777,25 @@ export function createEditEngine(
       }
     } finally {
       batchCollector = null;
+      batchAddCollector = null;
     }
-    if (collected.length > 0) {
+    const deleted = [...store.state.deletedRowIds];
+    if (collected.length > 0 || added.length > 0 || deleted.length > 0) {
       try {
-        await getContext().onEditCommitBatch?.({ rows: collected });
+        await getContext().onEditCommitBatch?.({ rows: collected, added, deleted });
       } catch {
         return false;
       }
       for (const args of collected) drop(args.rowId);
+      for (const args of added) drop(args.tempId);
+      if (deleted.length > 0) {
+        store.setState((prev) => ({
+          ...prev,
+          deletedRowIds: prev.deletedRowIds.filter(
+            (id) => !deleted.includes(id),
+          ),
+        }));
+      }
     }
     return allValid;
   };
@@ -649,7 +811,7 @@ export function createEditEngine(
     if (!canEditCell(row, column)) return false;
     const field = getEditFieldName(column);
     if (field === null) return false;
-    const entry = forms.get(rowId) ?? createForm(rowId, row);
+    const entry = forms.get(rowId) ?? createForm(rowId, row.original, false);
     entry.form.setFieldValue(
       field as never,
       clearedValueForType(column.columnDef.meta?.type ?? "string") as never,
@@ -672,6 +834,9 @@ export function createEditEngine(
     cancelAll,
     submitAll,
     clearCell,
+    addRow,
+    deleteRow,
+    canDeleteRows,
   };
 }
 

@@ -269,6 +269,50 @@
   padding: var(--mantine-spacing-xl);
 }
 
+/* Marked deleted under batch: struck through and inert until submitAll
+   reports it. Interaction off wholesale — a row about to go away must not
+   keep taking edits. */
+.bodyRow[data-deleted="true"] {
+  text-decoration: line-through;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* The entry block — one sticky row per edit.addRow(), under the header on
+   the same subgrid tracks as everything else. `--dg-header-height` is
+   measured only while the block exists. */
+.entryRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  position: sticky;
+  top: var(--dg-header-height, 0px);
+  z-index: var(--dg-z-pinned-row, 4);
+}
+
+.entryCell {
+  display: flex;
+  align-items: center;
+  padding: 0 calc(var(--dg-padding) / 2);
+  border-bottom: 2px solid var(--mantine-primary-color-filled);
+  /* Opaque: the body scrolls underneath it. */
+  background-color: var(--mantine-color-body);
+  font-size: var(--dg-font-size);
+}
+
+.entryCell[data-control-column="true"] {
+  padding: 0;
+  justify-content: center;
+}
+
+.entryCell[data-align="right"] {
+  justify-content: flex-end;
+}
+
+.entryCell[data-align="center"] {
+  justify-content: center;
+}
+
 /* The summary row — one sticky row of column footers along the bottom edge,
    rendered only while at least one column defines `footer`. Same subgrid
    placement as the header, so its cells sit exactly on the body's tracks. */

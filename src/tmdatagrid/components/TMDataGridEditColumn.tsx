@@ -7,7 +7,13 @@ import {
 } from "../TMDataGridContext";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 import { firstErrorText } from "./editors/editorShared";
-import { CheckIcon, CloseIcon, PencilIcon } from "./icons";
+import {
+  CheckIcon,
+  CloseIcon,
+  PencilIcon,
+  RestoreIcon,
+  TrashIcon,
+} from "./icons";
 
 export const EDIT_COLUMN_ID = "__edit__";
 
@@ -22,34 +28,109 @@ function EditLaneCell<TData extends RowData>({
 }: {
   row: Row<TMDataGridFeatures, TData>;
 }) {
-  const { edit, labels } = useTMDataGridContext();
+  const { edit, features, labels } = useTMDataGridContext();
   const tabIndex = useCellControlTabIndex();
   const rowId = row.id;
   const isOpen = useSelector(edit.store, (state) =>
     state.openRowIds.includes(rowId),
   );
   const projection = useSelector(edit.store, (state) => state.rows[rowId]);
+  const isNew = useSelector(edit.store, (state) =>
+    state.newRows.some((newRow) => newRow.tempId === rowId),
+  );
+  const isMarkedDeleted = useSelector(edit.store, (state) =>
+    state.deletedRowIds.includes(rowId),
+  );
 
   if (row.getIsGrouped()) return null;
 
-  // The pencil means "this row edits"; a row that does not gets nothing.
-  if (!edit.canEditRow(row as never)) return null;
+  // An entry row: ✓ adds it (not under batch, where submitAll does), ✕
+  // discards the entry.
+  if (isNew) {
+    return (
+      <Group gap={0} wrap="nowrap">
+        {features.editMode !== "batch" && (
+          <ActionIcon
+            variant="subtle"
+            color="green"
+            size="sm"
+            tabIndex={tabIndex}
+            aria-label={labels.confirmNewRow}
+            onClick={() => void edit.commit(rowId)}
+          >
+            <CheckIcon size={16} stroke={2} />
+          </ActionIcon>
+        )}
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          tabIndex={tabIndex}
+          aria-label={labels.discardNewRow}
+          onClick={() => edit.cancel(rowId)}
+        >
+          <CloseIcon size={16} stroke={1.6} />
+        </ActionIcon>
+      </Group>
+    );
+  }
 
-  if (!isOpen) {
+  // A batch deletion mark is a draft like any other — restorable in place.
+  if (isMarkedDeleted) {
     return (
       <ActionIcon
         variant="subtle"
         color="gray"
         size="sm"
         tabIndex={tabIndex}
-        aria-label={labels.editRow}
+        aria-label={labels.restoreRow}
         onClick={(event) => {
           event.stopPropagation();
-          edit.begin({ rowId, columnId: null });
+          edit.deleteRow(rowId);
         }}
       >
-        <PencilIcon size={16} stroke={1.6} />
+        <RestoreIcon size={16} stroke={1.6} />
       </ActionIcon>
+    );
+  }
+
+  // The pencil means "this row edits"; a row that does not gets nothing.
+  if (!edit.canEditRow(row as never)) return null;
+
+  if (!isOpen) {
+    return (
+      <Group gap={0} wrap="nowrap">
+        {features.editMode === "row" && (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            tabIndex={tabIndex}
+            aria-label={labels.editRow}
+            onClick={(event) => {
+              event.stopPropagation();
+              edit.begin({ rowId, columnId: null });
+            }}
+          >
+            <PencilIcon size={16} stroke={1.6} />
+          </ActionIcon>
+        )}
+        {edit.canDeleteRows() && (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            tabIndex={tabIndex}
+            aria-label={labels.deleteRow}
+            onClick={(event) => {
+              event.stopPropagation();
+              edit.deleteRow(rowId);
+            }}
+          >
+            <TrashIcon size={16} stroke={1.6} />
+          </ActionIcon>
+        )}
+      </Group>
     );
   }
 

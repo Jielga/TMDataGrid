@@ -328,6 +328,98 @@ describe("edit engine", () => {
     expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
   });
 
+  it("addRow opens an entry form and commit adds it through onRowAdd", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({
+      onRowAdd,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "",
+        age: 18,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+
+    const tempId = edit.addRow();
+    expect(edit.state.newRows).toEqual([{ tempId }]);
+    expect(edit.getForm(tempId)?.state.values["age"]).toBe(18);
+
+    edit.getForm(tempId)?.setFieldValue("name", "Ny Person");
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    expect(onRowAdd).toHaveBeenCalledTimes(1);
+    const args = onRowAdd.mock.calls[0]?.[0] as {
+      tempId: string;
+      value: Person;
+    };
+    expect(args.tempId).toBe(tempId);
+    expect(args.value.name).toBe("Ny Person");
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("deleteRow reports immediately outside batch, toggles the mark under it", () => {
+    const onRowDelete = vi.fn();
+    const immediate = renderEditGrid({ onRowDelete });
+    immediate.current.edit.deleteRow("1");
+    expect(onRowDelete).toHaveBeenCalledTimes(1);
+    expect(onRowDelete.mock.calls[0]?.[0]).toMatchObject({ rowId: "1" });
+
+    const batch = renderEditGrid({ editMode: "batch", onRowDelete: vi.fn() });
+    batch.current.edit.deleteRow("1");
+    expect(batch.current.edit.state.deletedRowIds).toEqual(["1"]);
+    batch.current.edit.deleteRow("1");
+    expect(batch.current.edit.state.deletedRowIds).toEqual([]);
+  });
+
+  it("deleteRow on an uncommitted entry row just discards the entry", () => {
+    const onRowDelete = vi.fn();
+    const grid = renderEditGrid({ editMode: "batch", onRowDelete });
+    const { edit } = grid.current;
+    const tempId = edit.addRow();
+
+    edit.deleteRow(tempId);
+
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+    expect(onRowDelete).not.toHaveBeenCalled();
+  });
+
+  it("submitAll's batch payload carries rows, added and deleted together", async () => {
+    const onEditCommitBatch = vi.fn();
+    const grid = renderEditGrid({
+      editMode: "batch",
+      onEditCommitBatch,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny",
+        age: 20,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    const tempId = edit.addRow();
+    edit.deleteRow("2");
+
+    await expect(edit.submitAll()).resolves.toBe(true);
+
+    expect(onEditCommitBatch).toHaveBeenCalledTimes(1);
+    const args = onEditCommitBatch.mock.calls[0]?.[0] as {
+      rows: Array<{ rowId: string }>;
+      added: Array<{ tempId: string; value: Person }>;
+      deleted: Array<string>;
+    };
+    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+    expect(args.added.map((add) => add.tempId)).toEqual([tempId]);
+    expect(args.deleted).toEqual(["2"]);
+    expect(edit.state.openRowIds).toEqual([]);
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+  });
+
   it("cancel drops the draft without a consumer call", () => {
     const onEditCommit = vi.fn();
     const grid = renderEditGrid({ onEditCommit });
