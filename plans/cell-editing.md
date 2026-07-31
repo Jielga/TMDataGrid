@@ -1,5 +1,12 @@
 # Cell editing — implementation plan
 
+> **Status: executed 2026-07-31.** Phases 0–4 all shipped, one commit per
+> phase (`9a47802`…, see git log). Kept for the rationale. Deviations worth
+> noting: date's `is`/`isNot` became `equals`/`notEquals` comparing by
+> calendar day (same semantics, no duplicate operators); the edit lane also
+> appears outside row mode when `onRowDelete` (or a batch save) gives its
+> trash somewhere to report; batch deletion marks are toggleable in place.
+
 One editing row = one TanStack Form. The grid decides *where* and *when*;
 the form decides *what*. Covers backlog items "Cell editing" and
 "Column types: date, boolean, select" (that item is phase 0 here).

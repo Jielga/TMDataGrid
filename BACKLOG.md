@@ -7,47 +7,22 @@ cell editing has its own plan in [plans/cell-editing.md](plans/cell-editing.md).
 
 ## Planned
 
-### 0. Cell editing (plan complete)
-
-**Decision:** planned in full — see [plans/cell-editing.md](plans/cell-editing.md).
-
-One TanStack Form per editing row ("one row, one form"); the grid decides
-where and when, the form decides what. `editMode: "cell" | "cellConfirm" |
-"row" | "batch"` as one axis; Zod via Standard Schema straight into
-`validators`; drafts survive virtualization because forms live in a store
-keyed by rowId, not in the DOM. Adds `@tanstack/react-form` as a peer.
-Five phases — column types/options first (item 1 below), then cell mode,
-confirm+row, batch, and finally add/delete rows with a sticky entry block.
-Ships with its own example page, `/editable-grid`.
-
-Sync points with the shipped work: new operator labels go into the labels
-dictionary (EN **and** SV in the same commit), `formatExportValue` needs an
-array case for `multiSelect`, editing chrome strings come from `labels`, and
-the phase-4 entry block adopts the z-index ladder now stated in
-`TMDataGrid.module.css`.
-
-### 1. Column types: date, boolean, select
-
-**Decision:** absorbed into the cell-editing plan as phase 0 — see
-[plans/cell-editing.md](plans/cell-editing.md) §4. Resolved choices, for the
-record:
-
-- `TMDataGridColumnType` widens to `"boolean"`, `"date"`, `"select"` and
-  `"multiSelect"`, each with its own operator set (date: is/isNot/before/
-  after/onOrBefore/onOrAfter; boolean: equals/notEquals; select: isAnyOf/
-  isNoneOf).
-- Filter values stay plain serialisable JSON: dates travel as ISO strings,
-  is-any-of as a string array (`TMDataGridFilterValue.value` widens to
-  `string | ReadonlyArray<string>` — breaking type change, minor version).
-- Native `<input type="date">` styled by Mantine — no `@mantine/dates` peer
-  dependency; a consumer wanting a real picker uses `renderEditor`.
-- One shared `meta.options` source (static array, function, or `"faceted"`
-  via `getFacetedUniqueValues()`) feeds the filter panel and the cell
-  editors alike — the coordination this item asked for.
+Nothing — everything decided has shipped.
 
 ## Done
 
 Shipped 2026-07-31, one commit per step (see git log):
+
+- **Cell editing** — the full plan in
+  [plans/cell-editing.md](plans/cell-editing.md), phases 0–4: column types
+  boolean/date/select/multiSelect with typed filter operators and one shared
+  `meta.options` source; the edit engine (one TanStack Form per editing row,
+  drafts surviving virtualization); `editMode: "cell" | "cellConfirm" |
+  "row" | "batch"`; built-in editors per type plus `meta.renderEditor`;
+  `meta.validate` / `rowValidators` via Standard Schema (Zod); the generated
+  edit lane pinned right; `TMDataGrid.EditActions`; `edit.addRow`/`deleteRow`
+  with the sticky entry block. `@tanstack/react-form` joined the peer family;
+  `/editable-grid` demos all of it; docs in `editing.md`.
 
 - **Localization** — `labels` option merged over `TMDATAGRID_LABELS_EN`;
   every string and `aria-label` localizable; complete Swedish preset
