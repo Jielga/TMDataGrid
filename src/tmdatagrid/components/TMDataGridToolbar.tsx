@@ -1,4 +1,4 @@
-import { ActionIcon, Popover, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Loader, Popover, Text, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGridToolbar.module.css";
@@ -17,6 +17,29 @@ export function TMDataGridToolbar({ children }: { children?: ReactNode }) {
 /** Pushes the following toolbar items to the right. */
 export function TMDataGridToolbarSpacer() {
   return <div className={classes.toolbarSpacer} />;
+}
+
+/**
+ * A small spinner shown while `meta.loading` is true, and nothing otherwise.
+ *
+ * The body only shows its loading state while the grid is *empty* — a
+ * server-driven grid refetching with rows on screen keeps showing them, which
+ * is right, but leaves nothing saying a fetch is running. This is that signal,
+ * and the consumer decides where it sits by placing it in the toolbar:
+ *
+ * ```tsx
+ * <TMDataGrid.Toolbar>
+ *   <TMDataGrid.SummaryCount />
+ *   <TMDataGrid.Spacer />
+ *   <TMDataGrid.LoadingIndicator />
+ *   <TMDataGrid.FilterButton />
+ * </TMDataGrid.Toolbar>
+ * ```
+ */
+export function TMDataGridLoadingIndicator() {
+  const { table, labels } = useTMDataGridContext();
+  if (table.options.meta?.loading !== true) return null;
+  return <Loader size="xs" aria-label={labels.loading} />;
 }
 
 /**

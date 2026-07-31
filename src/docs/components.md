@@ -222,9 +222,36 @@ Flex row rendered above the grid.
 | --- | --- | --- |
 | `children` | `ReactNode` | Toolbar content. |
 
+The toolbar is plain composition: anything can sit between the built-in parts,
+and `Spacer` pushes what follows to the right. Your own buttons in the top-right
+corner are just children after it:
+
+```tsx
+<TMDataGrid.Toolbar>
+  <TMDataGrid.SummaryCount />
+  <TMDataGrid.Spacer />
+  <TMDataGrid.LoadingIndicator />
+  <Button size="xs" variant="light" onClick={exportAll}>
+    Export
+  </Button>
+  <TMDataGrid.FilterButton />
+  <TMDataGrid.ColumnsButton />
+</TMDataGrid.Toolbar>
+```
+
 ## TMDataGrid.Spacer
 
 Pushes subsequent toolbar items to the right. Accepts no props.
+
+## TMDataGrid.LoadingIndicator
+
+A small spinner shown while `meta.loading` is true, and nothing otherwise.
+Accepts no props.
+
+The body shows its own loading state only while the grid is empty; a
+server-driven grid refetching with rows on screen keeps showing them. This is
+the signal for that case — place it wherever it should sit, typically after
+`Spacer`.
 
 ## TMDataGrid.SummaryCount
 

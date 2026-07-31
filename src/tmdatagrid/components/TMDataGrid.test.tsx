@@ -1605,3 +1605,33 @@ describe("labels", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("LoadingIndicator", () => {
+  function ToolbarGrid({ loading }: { loading?: boolean }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: testRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      meta: { loading },
+    });
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.LoadingIndicator />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  it("spins while meta.loading is true, with rows still on screen", () => {
+    renderWithMantine(<ToolbarGrid loading />);
+    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
+    expect(bodyRows().length).toBeGreaterThan(0);
+  });
+
+  it("renders nothing otherwise", () => {
+    renderWithMantine(<ToolbarGrid />);
+    expect(screen.queryByLabelText("Loading")).not.toBeInTheDocument();
+  });
+});

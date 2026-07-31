@@ -10,6 +10,7 @@ import { TMDataGridTable } from "./TMDataGridTable";
 import {
   TMDataGridColumnsButton,
   TMDataGridFilterButton,
+  TMDataGridLoadingIndicator,
   TMDataGridSummaryCount,
   TMDataGridToolbar,
   TMDataGridToolbarSpacer,
@@ -114,6 +115,7 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
   Toolbar: TMDataGridToolbar,
   Spacer: TMDataGridToolbarSpacer,
   SummaryCount: TMDataGridSummaryCount,
+  LoadingIndicator: TMDataGridLoadingIndicator,
   ColumnsButton: TMDataGridColumnsButton,
   FilterButton: TMDataGridFilterButton,
   Table: TMDataGridTable,
