@@ -1,38 +1,43 @@
 # Backlog
 
 Feature gaps identified 2026-07-31, with the decision taken for each and notes
-on how to build it. Ordered by intended implementation order, not priority of
-discovery.
-
-## In progress
-
-### Cell editing
-
-Being built in a separate session. The keyboard model already reserves the
-keys: Enter/F2 step into a cell today and are documented as "the pair a cell
-editor will take over" — the editor replaces that step-in behaviour on
-editable columns.
+on how to build it. The implementation order, cross-item dependencies and
+example-page assignments live in [plans/backlog-plan.md](plans/backlog-plan.md);
+cell editing has its own plan in [plans/cell-editing.md](plans/cell-editing.md).
 
 ## Planned
 
+### 0. Cell editing (plan complete)
+
+**Decision:** planned in full — see [plans/cell-editing.md](plans/cell-editing.md).
+
+One TanStack Form per editing row ("one row, one form"); the grid decides
+where and when, the form decides what. `editMode: "cell" | "cellConfirm" |
+"row" | "batch"` as one axis; Zod via Standard Schema straight into
+`validators`; drafts survive virtualization because forms live in a store
+keyed by rowId, not in the DOM. Adds `@tanstack/react-form` as a peer.
+Five phases — column types/options first (item 1 below), then cell mode,
+confirm+row, batch, and finally add/delete rows with a sticky entry block.
+Ships with its own example page, `/editable-grid`.
+
 ### 1. Column types: date, boolean, select
 
-**Decision:** backlogged.
+**Decision:** absorbed into the cell-editing plan as phase 0 — see
+[plans/cell-editing.md](plans/cell-editing.md) §4. Resolved choices, for the
+record:
 
-- Extend `TMDataGridColumnType` in `core/filterOperators.ts` with `"date"`,
-  `"boolean"` and `"select"`, each with its own operator set: date gets
-  on/before/after (+ optionally between), boolean gets is-true/is-false,
-  select gets is/is-not/is-any-of.
-- The filter value must stay plain serialisable JSON (the documented contract
-  for server-side `manualFiltering`), so dates travel as ISO strings and
-  is-any-of as a string array.
-- The filter panel needs per-type value inputs. A date picker means the
-  `@mantine/dates` peer dependency — decide whether to take it or use the
-  native `<input type="date">` styled by Mantine.
-- Select options: `meta.filterOptions` explicitly, falling back to TanStack's
-  `getFacetedUniqueValues()` to derive them from the data.
-- Coordinate with cell editing (in progress elsewhere): editors and filters
-  should share the same column type system.
+- `TMDataGridColumnType` widens to `"boolean"`, `"date"`, `"select"` and
+  `"multiSelect"`, each with its own operator set (date: is/isNot/before/
+  after/onOrBefore/onOrAfter; boolean: equals/notEquals; select: isAnyOf/
+  isNoneOf).
+- Filter values stay plain serialisable JSON: dates travel as ISO strings,
+  is-any-of as a string array (`TMDataGridFilterValue.value` widens to
+  `string | ReadonlyArray<string>` — breaking type change, minor version).
+- Native `<input type="date">` styled by Mantine — no `@mantine/dates` peer
+  dependency; a consumer wanting a real picker uses `renderEditor`.
+- One shared `meta.options` source (static array, function, or `"faceted"`
+  via `getFacetedUniqueValues()`) feeds the filter panel and the cell
+  editors alike — the coordination this item asked for.
 
 ### 2. Global quick search
 
