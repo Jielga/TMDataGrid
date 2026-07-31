@@ -1,6 +1,6 @@
-import type { Column, Row } from "@tanstack/react-table";
+import type { Column, Row, RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
-import type { TMDataGridFeatures } from "../useTMDataGrid";
+import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 import type { TMDataGridRangeBounds } from "./cellRange";
 import { getColumnLabel, isControlColumn } from "./columnUtils";
 
@@ -125,6 +125,97 @@ export function buildCellMatrix({
     );
   }
   return matrix;
+}
+
+/**
+ * The whole grid as rows of text: every filtered and sorted data row — all
+ * pages, not the one on screen — by every visible non-control column, in
+ * render order.
+ *
+ * The values are the same ones a cell-range export writes; only the bounds
+ * differ. Group rows are left out (their records are the rows themselves),
+ * and hidden columns are not exported — what you see is what you get, minus
+ * paging.
+ */
+export function buildGridCellMatrix<TData extends RowData>({
+  table,
+  includeHeaders = DEFAULT_CELL_EXPORT_OPTIONS.includeHeaders,
+  decimalComma = DEFAULT_CELL_EXPORT_OPTIONS.decimalComma,
+}: {
+  table: TMDataGridTable<TData>;
+  includeHeaders?: boolean;
+  decimalComma?: boolean;
+}): TMDataGridCellMatrix {
+  // The same erasure the context provider performs: the matrix only ever reads
+  // generic row and column APIs.
+  const erased = table as unknown as TMDataGridTable<TMDataGridRowData>;
+  const columns = [
+    ...erased.getLeftVisibleLeafColumns(),
+    ...erased.getCenterVisibleLeafColumns(),
+    ...erased.getRightVisibleLeafColumns(),
+  ];
+  // The sorted model: after filtering, grouping and sorting, before expansion
+  // and paging — so a paged grid exports the whole filtered set, and a grouped
+  // grid exports the records under every group whether or not it is open.
+  //
+  // Walked by hand rather than taken from `flatRows`: in table-core
+  // 9.0.0-beta.21 the grouped model lists every leaf twice there (once as a
+  // leaf row, once re-parented under its group), and its order puts the
+  // groups last. Depth-first over `rows` is exactly render order, once each.
+  const rows: Array<Row<TMDataGridFeatures, TMDataGridRowData>> = [];
+  const walk = (
+    list: ReadonlyArray<Row<TMDataGridFeatures, TMDataGridRowData>>,
+  ) => {
+    for (const row of list) {
+      if (row.getIsGrouped()) walk(row.subRows);
+      else rows.push(row);
+    }
+  };
+  walk(erased.getSortedRowModel().rows);
+
+  return buildCellMatrix({
+    rows,
+    columns,
+    bounds: {
+      top: 0,
+      bottom: rows.length - 1,
+      left: 0,
+      right: columns.length - 1,
+    },
+    includeHeaders,
+    decimalComma,
+  });
+}
+
+/**
+ * Downloads the whole grid as a CSV for Excel — {@link buildGridCellMatrix}
+ * through {@link toExcelCsv}, with the same Nordic defaults and overrides as
+ * the cell-range export.
+ *
+ * No built-in button: wire it to your own toolbar.
+ *
+ * ```tsx
+ * <Button onClick={() => exportGridToCsv({ table: grid.table })}>Export</Button>
+ * ```
+ */
+export function exportGridToCsv<TData extends RowData>({
+  table,
+  options,
+}: {
+  table: TMDataGridTable<TData>;
+  options?: TMDataGridCellExportOptions;
+}): void {
+  const resolved = { ...DEFAULT_CELL_EXPORT_OPTIONS, ...options };
+  const matrix = buildGridCellMatrix({
+    table,
+    includeHeaders: resolved.includeHeaders,
+    decimalComma: resolved.decimalComma,
+  });
+  if (matrix.length === 0) return;
+  downloadTextFile({
+    fileName: `${resolved.fileName}.csv`,
+    text: toExcelCsv(matrix, { separator: resolved.separator }),
+  });
 }
 
 /**

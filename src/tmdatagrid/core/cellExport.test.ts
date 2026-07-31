@@ -1,5 +1,8 @@
+import { act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderGrid, testRows } from "../../test/gridHarness";
 import {
+  buildGridCellMatrix,
   formatExportValue,
   toClipboardText,
   toExcelCsv,
@@ -82,5 +85,63 @@ describe("toExcelCsv", () => {
     expect(toExcelCsv([["a", "b"]], { separator: "," })).toBe(
       "﻿sep=,\r\na,b\r\n",
     );
+  });
+});
+
+describe("buildGridCellMatrix", () => {
+  it("exports every filtered row across every visible data column", () => {
+    const { result } = renderGrid();
+    const matrix = buildGridCellMatrix({ table: result.current.table });
+
+    // Header row plus every data row; the checkbox lane is dropped.
+    expect(matrix.length).toBe(testRows.length + 1);
+    expect(matrix[0]).toEqual(["ID", "Name", "Age", "City"]);
+    expect(matrix[1]).toEqual(["1", "Anna", "20", "Stockholm"]);
+  });
+
+  it("exports all pages of a paginated grid, not the one on screen", () => {
+    const { result } = renderGrid({
+      enablePagination: true,
+      initialState: { pagination: { pageIndex: 0, pageSize: 5 } },
+    });
+
+    const matrix = buildGridCellMatrix({
+      table: result.current.table,
+      includeHeaders: false,
+    });
+
+    expect(matrix.length).toBe(testRows.length);
+  });
+
+  it("leaves out hidden columns and follows the filters", () => {
+    const { result } = renderGrid();
+    act(() => {
+      result.current.table.getColumn("city")?.toggleVisibility(false);
+      result.current.table.setColumnFilters([
+        { id: "name", value: { operator: "equals", value: "Anna" } },
+      ]);
+    });
+
+    const matrix = buildGridCellMatrix({ table: result.current.table });
+
+    expect(matrix[0]).toEqual(["ID", "Name", "Age"]);
+    const names = matrix.slice(1).map((row) => row[1]);
+    expect(names.every((name) => name === "Anna")).toBe(true);
+    expect(names.length).toBeGreaterThan(0);
+  });
+
+  it("exports the records of a grouped grid, never its group rows", () => {
+    const { result } = renderGrid();
+    act(() => {
+      result.current.table.setGrouping(["city"]);
+    });
+
+    const matrix = buildGridCellMatrix({
+      table: result.current.table,
+      includeHeaders: false,
+    });
+
+    // Every record, collapsed groups included — and only records.
+    expect(matrix.length).toBe(testRows.length);
   });
 });

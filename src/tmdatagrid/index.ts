@@ -76,8 +76,10 @@ export {
 } from "./core/cellRange";
 export {
   buildCellMatrix,
+  buildGridCellMatrix,
   DEFAULT_CELL_EXPORT_OPTIONS,
   downloadTextFile,
+  exportGridToCsv,
   formatExportValue,
   toClipboardText,
   toExcelCsv,

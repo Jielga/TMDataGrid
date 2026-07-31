@@ -369,3 +369,5 @@ Search field, column checkboxes, show/hide all and reset. Rendered by
 | `isControlColumn(columnId)` | Whether an id is a generated control lane — the checkbox or the details chevron. |
 | `resolveExpandAll({ rows, expanded, target, expand })` | Next `expanded` state after expanding or collapsing every group, or every detail, leaving the other kind alone. |
 | `areAllRowsExpanded({ rows, expanded, target })` | Whether every group, or every detail, is open. |
+| `buildGridCellMatrix({ table, includeHeaders?, decimalComma? })` | The whole grid — every filtered and sorted row, all pages, every visible non-control column — as rows of text. |
+| `exportGridToCsv({ table, options? })` | Downloads the whole grid as a CSV for Excel, same options and Nordic defaults as the cell-range export. No built-in button — wire it to your own toolbar (see [TMDataGrid.Toolbar](#components)). |
