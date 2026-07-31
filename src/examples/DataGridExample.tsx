@@ -2,6 +2,7 @@ import {
   Badge,
   Button,
   Card,
+  Collapse,
   Fieldset,
   Flex,
   Group,
@@ -17,6 +18,7 @@ import { useSelector } from "@tanstack/react-store";
 import {
   type Dispatch,
   type SetStateAction,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -259,6 +261,34 @@ const SELECTION_MODES = [
   label: string;
 }>;
 
+/**
+ * Enough room for three rows of switches *and* a grid worth looking at. Below
+ * it the switches start eating the thing they configure, so they fold away —
+ * which is what makes the page usable in a side-by-side editor pane.
+ */
+const ROOMY_VIEWPORT = "(min-width: 1100px) and (min-height: 820px)";
+
+/** The smallest grid worth showing: header, a few rows, footer. */
+const MIN_GRID_HEIGHT = 340;
+
+function useRoomyViewport(): boolean {
+  // `matchMedia` rather than a resize listener: the browser only calls back
+  // when the answer changes, not on every pixel of a drag.
+  const [roomy, setRoomy] = useState(
+    () => window.matchMedia(ROOMY_VIEWPORT).matches,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia(ROOMY_VIEWPORT);
+    const update = () => setRoomy(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return roomy;
+}
+
 const CELL_SELECTION_MODES = [
   { value: "none", label: "No cells" },
   { value: "single", label: "Cell" },
@@ -337,6 +367,12 @@ export function DataGridExample() {
     boolean | undefined
   >(undefined);
   const [snippetOpen, setSnippetOpen] = useState(false);
+  // `null` until the user says otherwise, and then it is theirs: the viewport
+  // picks the opening state, a click overrides it for good. Following the
+  // viewport after a click would reopen a panel somebody just shut.
+  const [optionsOpen, setOptionsOpen] = useState<boolean | null>(null);
+  const roomy = useRoomyViewport();
+  const showOptions = optionsOpen ?? roomy;
 
   const grid = useTMDataGrid({
     data,
@@ -378,8 +414,18 @@ export function DataGridExample() {
   );
 
   return (
-    <Flex direction="column" gap="md" p="lg" h="100%">
-      <Group justify="space-between" wrap="nowrap">
+    // The app shell hands out exactly one viewport and clips the rest, so the
+    // page scrolls itself once its own minimum heights stop fitting — which is
+    // what keeps the grid a grid in a narrow editor pane rather than a header
+    // with a scrollbar under it.
+    <Flex
+      direction="column"
+      gap="md"
+      p={{ base: "sm", md: "lg" }}
+      h="100%"
+      style={{ overflowY: "auto" }}
+    >
+      <Group justify="space-between" gap="sm" wrap="wrap">
         <Group gap="sm" wrap="wrap">
           <Text fw={600} size="lg">
             Employees{" "}
@@ -391,10 +437,20 @@ export function DataGridExample() {
               read the same filter state the panel writes. */}
           <TMDataGrid.FilterPills api={grid} />
         </Group>
-        {/* Set the switches below to what you want, then take the code. */}
-        <Button size="xs" variant="light" onClick={() => setSnippetOpen(true)}>
-          Get the code
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            size="xs"
+            variant="subtle"
+            aria-expanded={showOptions}
+            onClick={() => setOptionsOpen(!showOptions)}
+          >
+            {showOptions ? "Hide options" : "Options"}
+          </Button>
+          {/* Set the switches below to what you want, then take the code. */}
+          <Button size="xs" variant="light" onClick={() => setSnippetOpen(true)}>
+            Get the code
+          </Button>
+        </Group>
       </Group>
 
       <StarterSnippetModal
@@ -412,125 +468,129 @@ export function DataGridExample() {
         }}
       />
 
-      <Flex gap="sm" wrap="wrap" align="stretch">
-        <Fieldset legend="Selection" p="xs" pt={4}>
-          <Stack gap={6}>
-            <SegmentedControl
-              size="xs"
-              value={selectionMode}
-              onChange={(value) =>
-                setSelectionMode(value as TMDataGridSelectionMode)
-              }
-              data={SELECTION_MODES as unknown as Array<{
-                value: string;
-                label: string;
-              }>}
-            />
-            <Group gap="md">
-              <FeatureSwitches
-                toggles={SELECTION_TOGGLES}
-                features={features}
-                setFeatures={setFeatures}
-              />
-              <Switch
-                size="xs"
-                label="Selected background"
-                checked={grid.features.showSelectedBackground}
-                onChange={(event) =>
-                  setShowSelectedBackground(event.currentTarget.checked)
-                }
-              />
-            </Group>
-            <Tooltip
-              label="Cell cursor: arrows move it, drag or Shift+arrows select a block, Ctrl+C copies it for Excel"
-              withArrow
-              multiline
-              w={260}
-            >
+      {/* `Collapse` animates the height, so the grid below grows back into the
+          space rather than jumping into it. */}
+      <Collapse expanded={showOptions}>
+        <Flex gap="sm" wrap="wrap" align="stretch">
+          <Fieldset legend="Selection" p="xs" pt={4}>
+            <Stack gap={6}>
               <SegmentedControl
                 size="xs"
-                value={cellSelection}
+                value={selectionMode}
                 onChange={(value) =>
-                  setCellSelection(value as TMDataGridCellSelectionMode)
+                  setSelectionMode(value as TMDataGridSelectionMode)
                 }
-                data={CELL_SELECTION_MODES as unknown as Array<{
+                data={SELECTION_MODES as unknown as Array<{
                   value: string;
                   label: string;
                 }>}
               />
-            </Tooltip>
-          </Stack>
-        </Fieldset>
+              <Group gap="md">
+                <FeatureSwitches
+                  toggles={SELECTION_TOGGLES}
+                  features={features}
+                  setFeatures={setFeatures}
+                />
+                <Switch
+                  size="xs"
+                  label="Selected background"
+                  checked={grid.features.showSelectedBackground}
+                  onChange={(event) =>
+                    setShowSelectedBackground(event.currentTarget.checked)
+                  }
+                />
+              </Group>
+              <Tooltip
+                label="Cell cursor: arrows move it, drag or Shift+arrows select a block, Ctrl+C copies it for Excel"
+                withArrow
+                multiline
+                w={260}
+              >
+                <SegmentedControl
+                  size="xs"
+                  value={cellSelection}
+                  onChange={(value) =>
+                    setCellSelection(value as TMDataGridCellSelectionMode)
+                  }
+                  data={CELL_SELECTION_MODES as unknown as Array<{
+                    value: string;
+                    label: string;
+                  }>}
+                />
+              </Tooltip>
+            </Stack>
+          </Fieldset>
 
-        <Fieldset legend="Columns" p="xs" pt={4}>
-          {/* Capped so six switches wrap to 3 × 2 rather than one long line —
-              which is what pushes the other groups off the row. */}
-          <Group gap="md" maw={260}>
-            <FeatureSwitches
-              toggles={COLUMN_TOGGLES}
-              features={features}
-              setFeatures={setFeatures}
-            />
-          </Group>
-        </Fieldset>
-
-        {/* Size lives here because it drives row height and font size — it is
-            row density, not a category of its own. */}
-        <Fieldset legend="Rows" p="xs" pt={4}>
-          <Stack gap={6}>
-            <SegmentedControl
-              size="xs"
-              value={size}
-              onChange={(value) => setSize(value as TMDataGridSize)}
-              data={["xs", "sm", "md", "lg", "xl"]}
-            />
-            <Group gap="md">
+          <Fieldset legend="Columns" p="xs" pt={4}>
+            {/* Capped so six switches wrap to 3 × 2 rather than one long line —
+                which is what pushes the other groups off the row. */}
+            <Group gap="md" maw={260}>
               <FeatureSwitches
-                toggles={ROW_TOGGLES}
+                toggles={COLUMN_TOGGLES}
                 features={features}
                 setFeatures={setFeatures}
               />
-              <Switch
-                size="xs"
-                label="Custom pager"
-                disabled={!features.enablePagination}
-                checked={customPager}
-                onChange={(event) => setCustomPager(event.currentTarget.checked)}
-              />
-              <Tooltip
-                label="Right-click any row — the grid owns the Menu, you fill the dropdown"
-                withArrow
-                multiline
-                w={240}
-              >
-                <Switch
-                  size="xs"
-                  label="Context menu"
-                  checked={rowContextMenu}
-                  onChange={(event) =>
-                    setRowContextMenu(event.currentTarget.checked)
-                  }
-                />
-              </Tooltip>
-              <Tooltip
-                label="Chevron in the first column opens a panel under the row — panels vary in height and are measured"
-                withArrow
-                multiline
-                w={240}
-              >
-                <Switch
-                  size="xs"
-                  label="Row details"
-                  checked={rowDetails}
-                  onChange={(event) => setRowDetails(event.currentTarget.checked)}
-                />
-              </Tooltip>
             </Group>
-          </Stack>
-        </Fieldset>
-      </Flex>
+          </Fieldset>
 
-      <Flex gap="md" flex={1} mih={0}>
+          {/* Size lives here because it drives row height and font size — it is
+              row density, not a category of its own. */}
+          <Fieldset legend="Rows" p="xs" pt={4}>
+            <Stack gap={6}>
+              <SegmentedControl
+                size="xs"
+                value={size}
+                onChange={(value) => setSize(value as TMDataGridSize)}
+                data={["xs", "sm", "md", "lg", "xl"]}
+              />
+              <Group gap="md">
+                <FeatureSwitches
+                  toggles={ROW_TOGGLES}
+                  features={features}
+                  setFeatures={setFeatures}
+                />
+                <Switch
+                  size="xs"
+                  label="Custom pager"
+                  disabled={!features.enablePagination}
+                  checked={customPager}
+                  onChange={(event) => setCustomPager(event.currentTarget.checked)}
+                />
+                <Tooltip
+                  label="Right-click any row — the grid owns the Menu, you fill the dropdown"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Context menu"
+                    checked={rowContextMenu}
+                    onChange={(event) =>
+                      setRowContextMenu(event.currentTarget.checked)
+                    }
+                  />
+                </Tooltip>
+                <Tooltip
+                  label="Chevron in the first column opens a panel under the row — panels vary in height and are measured"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Row details"
+                    checked={rowDetails}
+                    onChange={(event) => setRowDetails(event.currentTarget.checked)}
+                  />
+                </Tooltip>
+              </Group>
+            </Stack>
+          </Fieldset>
+        </Flex>
+      </Collapse>
+
+      <Flex gap="md" flex={1} mih={MIN_GRID_HEIGHT}>
         <TMDataGrid
           {...grid}
           size={size}
