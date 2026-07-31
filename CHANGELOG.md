@@ -1,5 +1,28 @@
 # @jielga/tmdatagrid
 
+## 0.4.0
+
+### Minor Changes
+
+- [`e6d35bf`](https://github.com/Jielga/TMDataGrid/commit/e6d35bf988e39d09887ff7b5b4e96372cb9fc583) Thanks [@Psvensso](https://github.com/Psvensso)! - `overscan` on `useTMDataGrid` sets how many rows the virtualizer keeps mounted
+  above and below the viewport. Defaults to 6, the value that was hard-coded.
+
+- [#8](https://github.com/Jielga/TMDataGrid/pull/8) [`da5da07`](https://github.com/Jielga/TMDataGrid/commit/da5da07db6d682f1e48dc44c5c36791249ea88f6) Thanks [@Psvensso](https://github.com/Psvensso)! - Row details: set `renderDetails` and an expanded row opens a panel underneath
+  it, spanning every column. Panels are measured, so they can be any height —
+  `renderDetailsEstHeight` is only what the virtualizer assumes before it has seen
+  one. The option also adds a generated chevron lane (`DETAILS_COLUMN_ID`), pinned
+  left after the checkbox and tree columns, whose header expands and collapses
+  every panel.
+
+  `resolveExpandAll` and `areAllRowsExpanded` are exported for building your own
+  expand-all: TanStack keeps one `expanded` state for both group rows and detail
+  panels, and these keep a control for one from disturbing the other.
+
+  The checkbox and details lanes are now 36px and render no resize handle, and
+  their cells carry `data-control-column` in place of `data-select-column`. Pinned
+  column edges only show while they are covering something, and no longer draw a
+  hard border.
+
 ## 0.3.0
 
 ### Minor Changes
