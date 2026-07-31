@@ -182,6 +182,11 @@ export type TMDataGridEditorRenderer = (
   args: TMDataGridEditorArgs,
 ) => ReactNode;
 
+/** What `submitAll` hands `onEditCommitBatch` — every valid dirty row. */
+export type TMDataGridEditCommitBatchArgs<TData extends RowData> = {
+  rows: Array<TMDataGridEditCommitArgs<TData>>;
+};
+
 /** What the engine reads fresh on every call — see `createEditEngine`. */
 export type TMDataGridEditEngineContext = {
   table: TMDataGridTable<TMDataGridRowData>;
@@ -190,6 +195,9 @@ export type TMDataGridEditEngineContext = {
   isRowEditable?: (row: ErasedRow) => boolean;
   onEditCommit?: (
     args: TMDataGridEditCommitArgs<TMDataGridRowData>,
+  ) => void | Promise<void>;
+  onEditCommitBatch?: (
+    args: TMDataGridEditCommitBatchArgs<TMDataGridRowData>,
   ) => void | Promise<void>;
 };
 
@@ -335,6 +343,14 @@ export function createEditEngine(
   };
   const forms = new Map<string, FormEntry>();
 
+  /**
+   * While `submitAll` runs with an `onEditCommitBatch`, each row's wrapped
+   * onSubmit contributes its args here instead of calling `onEditCommit` —
+   * validation stays per row (Form's), the consumer call becomes one.
+   */
+  let batchCollector: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> | null =
+    null;
+
   const editableColumns = (): Array<ErasedColumn> =>
     getContext()
       .table.getAllLeafColumns()
@@ -431,14 +447,20 @@ export function createEditEngine(
         validators: context.rowValidators as never,
         onSubmit: async ({ value }) => {
           const changes = diff(entry, value as TMDataGridRowData);
+          const args: TMDataGridEditCommitArgs<TMDataGridRowData> = {
+            rowId,
+            value: value as TMDataGridRowData,
+            original,
+            changes,
+            source: getContext().editMode,
+          };
+          if (batchCollector !== null) {
+            batchCollector.push(args);
+            entry.lastSubmitOk = true;
+            return;
+          }
           try {
-            await getContext().onEditCommit?.({
-              rowId,
-              value: value as TMDataGridRowData,
-              original,
-              changes,
-              source: getContext().editMode,
-            });
+            await getContext().onEditCommit?.(args);
             entry.lastSubmitOk = true;
           } catch (error) {
             // A rejected save keeps the form open, the message on the row.
@@ -573,10 +595,47 @@ export function createEditEngine(
   };
 
   const submitAll = async (): Promise<boolean> => {
-    const results = await Promise.all(
-      [...forms.keys()].map((rowId) => commit(rowId)),
-    );
-    return results.every(Boolean);
+    if (getContext().onEditCommitBatch === undefined) {
+      // The default: the per-row loop, each row through `onEditCommit`.
+      const results = await Promise.all(
+        [...forms.keys()].map((rowId) => commit(rowId)),
+      );
+      return results.every(Boolean);
+    }
+
+    // One consumer call for the lot. Validation stays Form's, per row: rows
+    // that fail keep their forms and markers; the valid dirty rows travel
+    // together, and only a resolved batch drops them — a rejected save keeps
+    // every draft.
+    const collected: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> = [];
+    batchCollector = collected;
+    let allValid = true;
+    try {
+      for (const rowId of [...forms.keys()]) {
+        const entry = forms.get(rowId);
+        if (entry === undefined) continue;
+        if (
+          diff(entry, entry.form.state.values as TMDataGridRowData).length === 0
+        ) {
+          drop(rowId);
+          continue;
+        }
+        entry.lastSubmitOk = false;
+        await entry.form.handleSubmit();
+        if (!entry.lastSubmitOk) allValid = false;
+      }
+    } finally {
+      batchCollector = null;
+    }
+    if (collected.length > 0) {
+      try {
+        await getContext().onEditCommitBatch?.({ rows: collected });
+      } catch {
+        return false;
+      }
+      for (const args of collected) drop(args.rowId);
+    }
+    return allValid;
   };
 
   const clearCell = async (

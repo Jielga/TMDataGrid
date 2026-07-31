@@ -271,6 +271,63 @@ describe("edit engine", () => {
     expect(edit.state.active).toEqual({ rowId: "2", columnId: null });
   });
 
+  it("submitAll commits every dirty row through the per-row loop", async () => {
+    const onEditCommit = vi.fn();
+    const grid = renderEditGrid({ editMode: "batch", onEditCommit });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+
+    await expect(edit.submitAll()).resolves.toBe(true);
+
+    expect(onEditCommit).toHaveBeenCalledTimes(2);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("submitAll with onEditCommitBatch makes one consumer call for the lot", async () => {
+    const onEditCommit = vi.fn();
+    const onEditCommitBatch = vi.fn();
+    const grid = renderEditGrid({
+      editMode: "batch",
+      onEditCommit,
+      onEditCommitBatch,
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: "age" });
+    edit.getForm("2")?.setFieldValue("age", 42);
+
+    await expect(edit.submitAll()).resolves.toBe(true);
+
+    expect(onEditCommit).not.toHaveBeenCalled();
+    expect(onEditCommitBatch).toHaveBeenCalledTimes(1);
+    const { rows: batchRows } = onEditCommitBatch.mock.calls[0]?.[0] as {
+      rows: Array<TMDataGridEditCommitArgs<Person>>;
+    };
+    expect(batchRows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("a rejected batch keeps every draft", async () => {
+    const grid = renderEditGrid({
+      editMode: "batch",
+      onEditCommitBatch: () => Promise.reject(new Error("no")),
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+
+    await expect(edit.submitAll()).resolves.toBe(false);
+
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+  });
+
   it("cancel drops the draft without a consumer call", () => {
     const onEditCommit = vi.fn();
     const grid = renderEditGrid({ onEditCommit });

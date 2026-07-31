@@ -96,6 +96,10 @@ export type TMDataGridLabels = {
   cancelRowEdit: string;
   /** Save tooltip when field errors block the row, with no row message. */
   editRowErrors: string;
+  /** `EditActions`' Save, with the dirty-row count. */
+  saveAllEdits: (rows: number) => string;
+  /** `EditActions`' Discard. */
+  discardAllEdits: string;
 
   // Cell selection menu
   cellCount: (count: number) => string;
@@ -199,6 +203,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   saveRow: "Save row",
   cancelRowEdit: "Cancel edit",
   editRowErrors: "Fix the marked cells",
+  saveAllEdits: (rows) => (rows === 1 ? "Save 1 row" : `Save ${rows} rows`),
+  discardAllEdits: "Discard",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",

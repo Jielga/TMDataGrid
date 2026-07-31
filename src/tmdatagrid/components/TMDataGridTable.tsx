@@ -1029,9 +1029,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     position: TMDataGridCellPosition,
     close: TMDataGridCellEditorClose,
   ) => {
-    // A saved row has no "next cell" story — the keyboard goes back to
-    // where the edit was.
-    if (!close.committed || close.via === "pick" || features.editMode === "row") {
+    // Where the keyboard goes: Enter moves down, Tab to the next editable
+    // cell (the deferring batch variants move the same way, draft in tow) —
+    // everything else, and a saved row, goes back to where the edit was.
+    const move =
+      close.via === "enter"
+        ? "down"
+        : close.via === "tab" || close.via === "defer-tab"
+          ? 1
+          : close.via === "shift-tab" || close.via === "defer-shift-tab"
+            ? -1
+            : null;
+    if (move === null || features.editMode === "row") {
       refocusCell(position);
       return;
     }
@@ -1043,8 +1052,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       refocusCell(position);
       return;
     }
-    // Enter moves down, Tab to the next editable cell — the spreadsheet pair.
-    if (close.via === "enter") {
+    if (move === "down") {
       if (rowIndex + 1 < rows.length) {
         moveFocusedCell({ rowIndex: rowIndex + 1, columnIndex });
       } else {
@@ -1054,7 +1062,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     }
     const next = getNextEditableCell({
       from: { rowIndex, columnIndex },
-      direction: close.via === "tab" ? 1 : -1,
+      direction: move,
       rowCount: rows.length,
       columnCount: orderedColumns.length,
       isEditable: (coords) => {

@@ -41,7 +41,9 @@ const BUILT_IN_EDITORS: Record<
 /** How an editor closed, for the table to decide where the focus goes. */
 export type TMDataGridCellEditorClose =
   | { committed: true; via: "enter" | "tab" | "shift-tab" | "pick" }
-  | { committed: false; via: "escape" };
+  | { committed: false; via: "escape" }
+  /** Batch: the editor closed, the draft stays — Enter parks, Tab moves on. */
+  | { committed: false; via: "defer" | "defer-tab" | "defer-shift-tab" };
 
 /**
  * The host an editing cell mounts — it owns the field, the keys and the blur
@@ -128,12 +130,24 @@ export function TMDataGridCellEditor({
     onClose({ committed: false, via: "escape" });
   };
 
+  /** Batch: the key closes the editor and leaves the draft for submitAll. */
+  const deferAndClose = (via: "defer" | "defer-tab" | "defer-shift-tab") => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    edit.deactivate();
+    onClose({ committed: false, via });
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const isBatch = features.editMode === "batch";
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
-      // In row mode Enter (and Ctrl+Enter, the documented pair) saves the row.
-      void commitAndClose("enter");
+      // In row mode Enter (and Ctrl+Enter, the documented pair) saves the
+      // row; in batch nothing commits until submitAll, so Enter just parks
+      // the draft.
+      if (isBatch) deferAndClose("defer");
+      else void commitAndClose("enter");
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
@@ -141,7 +155,11 @@ export function TMDataGridCellEditor({
     } else if (event.key === "Tab" && !isRowMode) {
       event.preventDefault();
       event.stopPropagation();
-      void commitAndClose(event.shiftKey ? "shift-tab" : "tab");
+      if (isBatch) {
+        deferAndClose(event.shiftKey ? "defer-shift-tab" : "defer-tab");
+      } else {
+        void commitAndClose(event.shiftKey ? "shift-tab" : "tab");
+      }
     }
   };
 

@@ -43,6 +43,7 @@ import {
   createEditEngine,
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
+  type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditEngineContext,
   type TMDataGridEditMode,
   type TMDataGridEditorRenderer,
@@ -573,6 +574,15 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
     args: TMDataGridEditCommitArgs<TData>,
   ) => void | Promise<void>;
   /**
+   * Batch mode's save, called once by `edit.submitAll()` with every valid
+   * dirty row. Without it, `submitAll` falls back to the per-row
+   * {@link onEditCommit} loop. Rows failing validation stay open either way;
+   * a rejection keeps every draft.
+   */
+  onEditCommitBatch?: (
+    args: TMDataGridEditCommitBatchArgs<TData>,
+  ) => void | Promise<void>;
+  /**
    * Renders a panel underneath an expanded row, spanning every column. Setting
    * it is what turns row details on.
    *
@@ -687,6 +697,7 @@ export function useTMDataGrid<TData extends RowData>({
   rowValidators,
   isRowEditable,
   onEditCommit,
+  onEditCommitBatch,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
@@ -859,6 +870,8 @@ export function useTMDataGrid<TData extends RowData>({
     isRowEditable: isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:
       onEditCommit as TMDataGridEditEngineContext["onEditCommit"],
+    onEditCommitBatch:
+      onEditCommitBatch as TMDataGridEditEngineContext["onEditCommitBatch"],
   };
   const [edit] = useState(() =>
     createEditEngine(() => editContextRef.current),

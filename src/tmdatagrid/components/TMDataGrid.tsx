@@ -3,6 +3,7 @@ import { type CSSProperties, type ReactNode, useMemo } from "react";
 import classes from "./TMDataGrid.module.css";
 import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
 import { TMDataGridContextProvider } from "../TMDataGridContext";
+import { TMDataGridEditActions } from "./TMDataGridEditActions";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import { TMDataGridFooter } from "./TMDataGridFooter";
@@ -121,6 +122,7 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
   SummaryCount: TMDataGridSummaryCount,
   LoadingIndicator: TMDataGridLoadingIndicator,
   Search: TMDataGridSearch,
+  EditActions: TMDataGridEditActions,
   ColumnsButton: TMDataGridColumnsButton,
   FilterButton: TMDataGridFilterButton,
   Table: TMDataGridTable,

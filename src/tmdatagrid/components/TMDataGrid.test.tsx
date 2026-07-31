@@ -2150,6 +2150,87 @@ describe("cell editing", () => {
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
 
+  it("batch mode parks drafts on Enter and saves them through EditActions", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    function BatchGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "batch",
+        selectionMode: "highlight",
+        onEditCommit: (args) => void commits.push(args),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <TMDataGrid.EditActions />
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<BatchGrid />);
+
+    // Two rows edited; Enter parks each draft instead of committing.
+    await user.dblClick(cellAt(0, 1));
+    const nameInput = () => screen.getByRole("textbox", { name: "Edit Name" });
+    const ageInput = () => screen.getByRole("textbox", { name: "Edit Age" });
+    await user.clear(ageInput());
+    await user.type(ageInput(), "35");
+    await user.keyboard("{Enter}");
+    await user.dblClick(cellAt(1, 0));
+    await user.clear(nameInput());
+    await user.type(nameInput(), "Erik B");
+    await user.keyboard("{Enter}");
+
+    expect(commits.length).toBe(0);
+    expect(cellAt(0, 1)).toHaveAttribute("data-dirty", "true");
+    expect(cellAt(1, 0)).toHaveAttribute("data-dirty", "true");
+
+    await user.click(screen.getByRole("button", { name: "Save 2 rows" }));
+
+    await waitFor(() => expect(commits.length).toBe(2));
+    expect(screen.getByRole("button", { name: "Save 0 rows" })).toBeDisabled();
+  });
+
+  it("EditActions' Discard drops every draft", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    function BatchGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "batch",
+        selectionMode: "highlight",
+        onEditCommit: (args) => void commits.push(args),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <TMDataGrid.EditActions />
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<BatchGrid />);
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "Draft");
+    await user.keyboard("{Enter}");
+    expect(cellAt(0, 0)).toHaveAttribute("data-dirty", "true");
+
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+
+    expect(commits.length).toBe(0);
+    expect(cellAt(0, 0)).not.toHaveAttribute("data-dirty");
+  });
+
   it("clears the cell on Delete and commits the empty value", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

@@ -56,6 +56,7 @@ export {
   type TMDataGridOptionsArgs,
   type TMDataGridOptionsSource,
 } from "./core/columnOptions";
+export { TMDataGridEditActions } from "./components/TMDataGridEditActions";
 export {
   clearedValueForType,
   getEditFieldName,
@@ -63,6 +64,7 @@ export {
   type TMDataGridEditApi,
   type TMDataGridEditChange,
   type TMDataGridEditCommitArgs,
+  type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditField,
   type TMDataGridEditMode,
   type TMDataGridEditorArgs,

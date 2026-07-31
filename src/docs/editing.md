@@ -32,6 +32,19 @@ is a peer dependency once editing is used.
 | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape | generated edit lane |
 | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` | `TMDataGrid.EditActions` |
 
+### Batch
+
+Under `"batch"` nothing commits until you say so: Enter and Tab park the
+draft (dirty-marked, Tab moving on to the next editable cell), Escape drops
+the one draft, and drafts accumulate across rows — surviving filters, sorts
+and scrolling, since they live outside the DOM. `TMDataGrid.EditActions` in
+the toolbar is the chrome: Save with the dirty-row count, and Discard.
+
+`edit.submitAll()` commits every open row — through the per-row
+`onEditCommit` loop by default, or through one `onEditCommitBatch({ rows })`
+call when that is set. Rows failing validation stay open either way, and a
+rejected batch keeps every draft.
+
 ## Which cells edit
 
 A column is editable when it maps to a data path: its `accessorKey`, or
