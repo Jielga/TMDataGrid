@@ -88,6 +88,10 @@ import {
   createDetailsColumn,
   DETAILS_COLUMN_ID,
 } from "./components/TMDataGridDetailsColumn";
+import {
+  createEditColumn,
+  EDIT_COLUMN_ID,
+} from "./components/TMDataGridEditColumn";
 
 /**
  * How long the grid waits after the last state change before writing to
@@ -714,13 +718,16 @@ export function useTMDataGrid<TData extends RowData>({
   // The lane that opens the panels. Nothing to switch on: a grid with no
   // `renderDetails` has nothing for it to open.
   const detailsColumnEnabled = renderDetails !== undefined;
+  // Row mode's Save sits at the end of the row — the lane is its chrome.
+  const editColumnEnabled = editMode === "row";
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
-  // depends on the three strings rather than on the labels object — a fresh
+  // depends on the strings rather than on the labels object — a fresh
   // inline `labels` must not rebuild the table's columns.
   const selectColumnLabel = labels.selectColumnLabel;
   const groupColumnLabel = labels.groupColumnLabel;
   const detailsColumnLabel = labels.detailsColumnLabel;
+  const editColumnLabel = labels.editColumnLabel;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -745,15 +752,19 @@ export function useTMDataGrid<TData extends RowData>({
         ? [createDetailsColumn<TData>(detailsColumnLabel)]
         : []),
       ...base,
+      // Last and pinned right — the row's Save belongs at the end of the row.
+      ...(editColumnEnabled ? [createEditColumn<TData>(editColumnLabel)] : []),
     ];
   }, [
     options.columns,
     selectColumnEnabled,
     detailsColumnEnabled,
     groupColumnEnabled,
+    editColumnEnabled,
     selectColumnLabel,
     groupColumnLabel,
     detailsColumnLabel,
+    editColumnLabel,
   ]);
 
   // Read once on mount: `initialState` is only consumed on the first render,
@@ -816,10 +827,16 @@ export function useTMDataGrid<TData extends RowData>({
               id !== GROUP_COLUMN_ID,
           ),
         ],
-        right:
-          persistedState.columnPinning?.right ??
-          options.initialState?.columnPinning?.right ??
-          [],
+        // The edit lane mirrors the generated columns on the left: structurally
+        // pinned, outermost, re-applied over anything restored.
+        right: [
+          ...(
+            persistedState.columnPinning?.right ??
+            options.initialState?.columnPinning?.right ??
+            []
+          ).filter((id) => id !== EDIT_COLUMN_ID),
+          ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),
+        ],
       },
       pagination: {
         pageIndex: 0,
@@ -846,6 +863,16 @@ export function useTMDataGrid<TData extends RowData>({
   const [edit] = useState(() =>
     createEditEngine(() => editContextRef.current),
   );
+
+  // Switching modes mid-flight drops every draft: the policies disagree about
+  // what an open form means, and carrying one across is how a "batch" draft
+  // silently commits under "cell".
+  const previousEditModeRef = useRef(editMode);
+  useEffect(() => {
+    if (previousEditModeRef.current === editMode) return;
+    previousEditModeRef.current = editMode;
+    edit.cancelAll();
+  }, [editMode, edit]);
 
   // Editing without stable ids points every draft at whatever record slides
   // into that index after a sort. Loud, once, in development.

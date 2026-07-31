@@ -15,6 +15,7 @@ import { useFieldError, useFieldValue } from "./editorShared";
  */
 export function TMDataGridSelectEditor({
   field,
+  autoFocus,
   column,
   row,
   table,
@@ -28,7 +29,7 @@ export function TMDataGridSelectEditor({
     <Select
       size={size}
       w="100%"
-      autoFocus
+      autoFocus={autoFocus}
       searchable
       // Inside the cell, so picking an option is not a click-away — the same
       // reason the filter panel keeps its dropdowns unportalled.

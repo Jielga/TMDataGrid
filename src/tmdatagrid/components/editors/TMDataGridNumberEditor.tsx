@@ -7,6 +7,7 @@ import { selectAllOnFocus, useFieldError, useFieldValue } from "./editorShared";
 /** The built-in editor for `meta.type: "number"`. */
 export function TMDataGridNumberEditor({
   field,
+  autoFocus,
   column,
   size,
 }: TMDataGridEditorArgs) {
@@ -17,7 +18,7 @@ export function TMDataGridNumberEditor({
     <NumberInput
       size={size}
       w="100%"
-      autoFocus
+      autoFocus={autoFocus}
       onFocus={selectAllOnFocus}
       hideControls
       aria-label={labels.editCell(getColumnLabel(column))}

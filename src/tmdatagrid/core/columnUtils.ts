@@ -1,5 +1,6 @@
 import type { TMDataGridColumnType } from "./filterOperators";
 import { DETAILS_COLUMN_ID } from "../components/TMDataGridDetailsColumn";
+import { EDIT_COLUMN_ID } from "../components/TMDataGridEditColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import type { TMDataGridColumnMeta } from "../useTMDataGrid";
 
@@ -44,7 +45,11 @@ export function getColumnAlign(column: ColumnLike): "left" | "right" | "center" 
  * chevron, and wants the padding.
  */
 export function isControlColumn(columnId: string): boolean {
-  return columnId === SELECT_COLUMN_ID || columnId === DETAILS_COLUMN_ID;
+  return (
+    columnId === SELECT_COLUMN_ID ||
+    columnId === DETAILS_COLUMN_ID ||
+    columnId === EDIT_COLUMN_ID
+  );
 }
 
 /**

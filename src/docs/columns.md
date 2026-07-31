@@ -135,6 +135,13 @@ cannot be sorted, filtered, resized, re-pinned or moved.
 Because it cannot be moved, it also anchors the left pinned region: no column
 can be placed in front of it.
 
+## Edit column
+
+Under `editMode: "row"` a column with the id `EDIT_COLUMN_ID` is appended and
+pinned to the right — the row's pencil, and its Save/Cancel while the edit is
+open. A system lane like the checkbox column, mirrored to the other edge: not
+sortable, filterable, resizable or movable. See [Editing](#editing).
+
 ## Details column
 
 Setting `renderDetails` adds a column with the id `DETAILS_COLUMN_ID`, pinned to

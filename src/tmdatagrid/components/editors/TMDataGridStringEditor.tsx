@@ -7,6 +7,7 @@ import { selectAllOnFocus, useFieldError, useFieldValue } from "./editorShared";
 /** The built-in editor for `meta.type: "string"` (and the default). */
 export function TMDataGridStringEditor({
   field,
+  autoFocus,
   column,
   size,
 }: TMDataGridEditorArgs) {
@@ -17,7 +18,7 @@ export function TMDataGridStringEditor({
     <TextInput
       size={size}
       w="100%"
-      autoFocus
+      autoFocus={autoFocus}
       onFocus={selectAllOnFocus}
       aria-label={labels.editCell(getColumnLabel(column))}
       value={typeof value === "string" ? value : ""}

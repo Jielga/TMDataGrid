@@ -15,6 +15,7 @@ import { useFieldError, useFieldValue } from "./editorShared";
  */
 export function TMDataGridMultiSelectEditor({
   field,
+  autoFocus,
   column,
   row,
   table,
@@ -27,7 +28,7 @@ export function TMDataGridMultiSelectEditor({
     <MultiSelect
       size={size}
       w="100%"
-      autoFocus
+      autoFocus={autoFocus}
       searchable
       comboboxProps={{ withinPortal: false }}
       aria-label={labels.editCell(getColumnLabel(column))}

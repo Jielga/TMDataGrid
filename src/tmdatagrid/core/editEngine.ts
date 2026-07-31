@@ -166,6 +166,11 @@ export type TMDataGridEditorArgs = {
   cancel: () => void;
   size: TMDataGridSize;
   /**
+   * Whether this editor should take the focus on mount. True for a single
+   * opened cell; in row mode only the row's first editable cell gets it.
+   */
+  autoFocus: boolean;
+  /**
    * Set when typing opened the editor (the Sheets gesture) — the built-ins
    * replace the value with it and keep typing. A custom editor may ignore it.
    */
@@ -242,6 +247,8 @@ export type TMDataGridEditApi = {
    * switched it off, and the row takes edits at all.
    */
   canEditCell: (row: ErasedRow, column: ErasedColumn) => boolean;
+  /** Whether the row takes edits at all — the edit lane's pencil gate. */
+  canEditRow: (row: ErasedRow) => boolean;
   /** Opens an editor. `columnId: null` opens the whole row (row mode). */
   begin: (target: { rowId: string; columnId: string | null }) => void;
   /**
@@ -358,8 +365,12 @@ export function createEditEngine(
   const project = (entry: FormEntry): TMDataGridEditRowProjection => {
     const state = entry.form.state;
     const errorFields = Object.entries(state.fieldMeta)
-      .filter(([, meta]) =>
-        hasAnyError((meta as { errors: ReadonlyArray<unknown> }).errors),
+      .filter(
+        ([name, meta]) =>
+          // The empty path is a pathless (row-level) issue's landing spot —
+          // it belongs to `hasRowError`, not to any cell's marker.
+          name !== "" &&
+          hasAnyError((meta as { errors: ReadonlyArray<unknown> }).errors),
       )
       .map(([name]) => name);
     return {
@@ -447,6 +458,11 @@ export function createEditEngine(
     return entry;
   };
 
+  const canEditRow = (row: ErasedRow): boolean => {
+    if (row.getIsGrouped()) return false;
+    return getContext().isRowEditable?.(row) !== false;
+  };
+
   const canEditCell = (row: ErasedRow, column: ErasedColumn): boolean => {
     const context = getContext();
     if (row.getIsGrouped()) return false;
@@ -515,15 +531,30 @@ export function createEditEngine(
 
   const begin: TMDataGridEditApi["begin"] = ({ rowId, columnId }) => {
     const { editMode } = getContext();
-    // Sheets semantics: in cell mode, moving to another row's cell commits
-    // the row being left. A failed commit keeps it — the invalid cell holds
-    // the edit until it is fixed or Escaped.
     const openElsewhere = [...forms.keys()].find((id) => id !== rowId);
-    if (editMode === "cell" && openElsewhere !== undefined) {
-      void commit(openElsewhere).then((ok) => {
-        if (ok) beginOn(rowId, columnId);
-      });
-      return;
+    // Each mode's policy about the row being left:
+    //
+    // | Mode | Another row open |
+    // | ---- | ---------------- |
+    // | cell | committed — Sheets; a failed commit keeps holding the edit |
+    // | row  | dropped if pristine, otherwise the pencil is refused — a
+    //          row edit saves explicitly, so leaving must not save quietly |
+    // | cellConfirm, batch | accumulates; every draft waits for its ✓ |
+    if (openElsewhere !== undefined) {
+      if (editMode === "cell") {
+        void commit(openElsewhere).then((ok) => {
+          if (ok) beginOn(rowId, columnId);
+        });
+        return;
+      }
+      if (editMode === "row") {
+        const entry = forms.get(openElsewhere);
+        const pristine =
+          entry !== undefined &&
+          diff(entry, entry.form.state.values as TMDataGridRowData).length === 0;
+        if (!pristine) return;
+        drop(openElsewhere);
+      }
     }
     beginOn(rowId, columnId);
   };
@@ -574,6 +605,7 @@ export function createEditEngine(
     },
     getForm: (rowId) => forms.get(rowId)?.form,
     canEditCell,
+    canEditRow,
     begin,
     commit,
     cancel,

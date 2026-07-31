@@ -82,6 +82,20 @@ export type TMDataGridLabels = {
   // Cell editing
   /** `aria-label` of an open cell editor's input. */
   editCell: (column: string) => string;
+  /** cellConfirm's ✓ beside the input. */
+  confirmEdit: string;
+  /** cellConfirm's ✕ beside the input. */
+  cancelEdit: string;
+  /** The generated edit lane's name in the column manager. */
+  editColumnLabel: string;
+  /** The lane's pencil. */
+  editRow: string;
+  /** The lane's ✓ while a row edit is open. */
+  saveRow: string;
+  /** The lane's ✕ while a row edit is open. */
+  cancelRowEdit: string;
+  /** Save tooltip when field errors block the row, with no row message. */
+  editRowErrors: string;
 
   // Cell selection menu
   cellCount: (count: number) => string;
@@ -178,6 +192,13 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   loading: "Loading",
 
   editCell: (column) => `Edit ${column}`,
+  confirmEdit: "Save",
+  cancelEdit: "Cancel",
+  editColumnLabel: "Edit",
+  editRow: "Edit row",
+  saveRow: "Save row",
+  cancelRowEdit: "Cancel edit",
+  editRowErrors: "Fix the marked cells",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",

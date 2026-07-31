@@ -2030,6 +2030,126 @@ describe("cell editing", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps the draft on blur under cellConfirm, saving only through the check", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="cellConfirm"
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "Annika");
+    // Click away: the editor closes but the draft stays, dirty-marked.
+    await user.click(cellAt(1, 1));
+    expect(commits.length).toBe(0);
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+    expect(cellAt(0, 0)).toHaveAttribute("data-dirty", "true");
+
+    // Reopen and confirm through the ✓.
+    await user.dblClick(cellAt(0, 0));
+    expect(editorInput()).toHaveValue("Annika");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(commits.length).toBe(1));
+  });
+
+  it("row mode opens every editable cell from the pencil and saves them as one commit", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="row"
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.click(
+      within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }),
+    );
+
+    // Name and Age both open; Note (editable: false) does not.
+    const name = screen.getByRole("textbox", { name: "Edit Name" });
+    expect(screen.getByRole("textbox", { name: "Edit Age" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Note" }),
+    ).not.toBeInTheDocument();
+
+    await user.clear(name);
+    await user.type(name, "Annika");
+    const age = screen.getByRole("textbox", { name: "Edit Age" });
+    await user.clear(age);
+    await user.type(age, "35");
+
+    await user.click(screen.getByRole("button", { name: "Save row" }));
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    const commit = commits[0] as { changes: Array<{ field: string }> };
+    expect(commit.changes.map((change) => change.field).sort()).toEqual([
+      "age",
+      "name",
+    ]);
+  });
+
+  it("row mode cancels the whole row from the lane", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="row"
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.click(
+      within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }),
+    );
+    const name = screen.getByRole("textbox", { name: "Edit Name" });
+    await user.clear(name);
+    await user.type(name, "Thrown away");
+    await user.click(screen.getByRole("button", { name: "Cancel edit" }));
+
+    expect(commits.length).toBe(0);
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("blocks a row save on a cross-field refine, message on the Save", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="row"
+        rowValidators={{
+          onSubmit: z
+            .object({ name: z.string(), age: z.number() })
+            .refine((row) => row.age < 100, { message: "Nobody is that old" }),
+        }}
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.click(
+      within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }),
+    );
+    const age = screen.getByRole("textbox", { name: "Edit Age" });
+    await user.clear(age);
+    await user.type(age, "120");
+    await user.click(screen.getByRole("button", { name: "Save row" }));
+
+    expect(commits.length).toBe(0);
+    // Still editing, and the pathless message rides the Save's tooltip.
+    expect(screen.getByRole("textbox", { name: "Edit Age" })).toBeInTheDocument();
+    await user.hover(screen.getByRole("button", { name: "Save row" }));
+    expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
+  });
+
   it("clears the cell on Delete and commits the empty value", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

@@ -86,6 +86,13 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   loading: "Laddar",
 
   editCell: (column) => `Redigera ${column}`,
+  confirmEdit: "Spara",
+  cancelEdit: "Avbryt",
+  editColumnLabel: "Redigera",
+  editRow: "Redigera rad",
+  saveRow: "Spara rad",
+  cancelRowEdit: "Avbryt redigering",
+  editRowErrors: "Åtgärda de markerade cellerna",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",

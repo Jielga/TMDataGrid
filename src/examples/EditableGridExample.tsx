@@ -1,10 +1,19 @@
-import { Badge, Code, Flex, Group, Text } from "@mantine/core";
+import {
+  Badge,
+  Code,
+  Flex,
+  Group,
+  SegmentedControl,
+  Slider,
+  Text,
+} from "@mantine/core";
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
+  type TMDataGridEditMode,
 } from "../tmdatagrid";
 
 type Employee = {
@@ -23,9 +32,9 @@ const FIRST = ["Anna", "Erik", "Maria", "Lars", "Sofia", "Johan", "Elin", "Oskar
 const LAST = ["Lindberg", "Åkesson", "Nyström", "Ek", "Holm", "Sandell"];
 const SKILLS = ["React", "TypeScript", ".NET", "SQL", "Figma", "Excel"];
 
-function makeEmployees(count: number): Array<Employee> {
+function makeEmployees(count: number, idOffset = 0): Array<Employee> {
   return Array.from({ length: count }, (_, index) => ({
-    id: index + 1,
+    id: idOffset + index + 1,
     firstName: FIRST[index % FIRST.length],
     lastName: LAST[(index * 3 + 1) % LAST.length],
     salary: 32_000 + ((index * 977) % 300) * 100,
@@ -45,7 +54,8 @@ const sek = (value: number) =>
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
-const columns = columnHelper.columns([
+/** Grid A — every built-in editor across the typed columns. */
+const inlineColumns = columnHelper.columns([
   columnHelper.accessor("firstName", {
     header: "First name",
     minSize: 120,
@@ -100,17 +110,74 @@ const columns = columnHelper.columns([
 ]);
 
 /**
- * Inline cell editing over every built-in editor: double-click a cell, or
- * put the cursor on it and press Enter, F2 or just start typing. Enter and
- * Tab commit, Escape cancels; the grid never mutates `data` — the commit
- * callback applies the change and the new rows flow back in.
+ * Grid B — row mode: the pencil opens every cell of the row, the ✓ saves
+ * them as one commit. Salary demos a custom editor over the live Form field
+ * API; the row schema's `.refine()` is a cross-field rule that lands on the
+ * row (the Save's tooltip), not on any one cell.
  */
+const rowColumns = columnHelper.columns([
+  columnHelper.accessor("firstName", {
+    header: "First name",
+    minSize: 120,
+    meta: { validate: z.string().min(2, "At least two characters") },
+  }),
+  columnHelper.accessor("lastName", { header: "Last name", minSize: 120 }),
+  columnHelper.accessor("salary", {
+    header: "Salary",
+    minSize: 200,
+    meta: {
+      type: "number",
+      align: "right",
+      renderEditor: ({ field }) => (
+        <Slider
+          w="100%"
+          min={20_000}
+          max={90_000}
+          step={500}
+          label={(value) => sek(value)}
+          value={typeof field.state.value === "number" ? field.state.value : 0}
+          onChange={(value) => field.handleChange(value)}
+        />
+      ),
+    },
+    cell: (info) => sek(info.getValue()),
+  }),
+  columnHelper.accessor("department", {
+    header: "Department",
+    minSize: 140,
+    meta: { type: "select", options: DEPARTMENTS },
+  }),
+]);
+
+const rowValidators = {
+  onSubmit: z
+    .object({
+      firstName: z.string().min(2, "At least two characters"),
+      salary: z.number().positive(),
+      department: z.string(),
+    })
+    .refine(
+      (row) => !(row.department === "Support" && row.salary > 60_000),
+      { message: "Support salaries cap at 60 000 kr" },
+    ),
+};
+
 export function EditableGridExample() {
   const [employees, setEmployees] = useState(() => makeEmployees(200));
+  const [teamRows, setTeamRows] = useState(() => makeEmployees(30, 1000));
+  const [mode, setMode] = useState<TMDataGridEditMode>("cell");
   const [lastCommit, setLastCommit] = useState<string | null>(null);
 
   const onEditCommit = useCallback(
-    ({ rowId, value, changes }: { rowId: string; value: Employee; changes: ReadonlyArray<{ field: string }> }) => {
+    ({
+      rowId,
+      value,
+      changes,
+    }: {
+      rowId: string;
+      value: Employee;
+      changes: ReadonlyArray<{ field: string }>;
+    }) => {
       setEmployees((previous) =>
         previous.map((employee) =>
           String(employee.id) === rowId ? value : employee,
@@ -123,41 +190,82 @@ export function EditableGridExample() {
     [],
   );
 
-  const grid = useTMDataGrid({
+  const inlineGrid = useTMDataGrid({
     data: employees,
-    columns,
+    columns: inlineColumns,
     getRowId: (row) => String(row.id),
-    editMode: "cell",
+    editMode: mode,
     onEditCommit,
     selectionMode: "highlight",
+  });
+
+  const onRowCommit = useCallback(
+    ({ rowId, value }: { rowId: string; value: Employee }) => {
+      setTeamRows((previous) =>
+        previous.map((employee) =>
+          String(employee.id) === rowId ? value : employee,
+        ),
+      );
+    },
+    [],
+  );
+
+  const rowGrid = useTMDataGrid({
+    data: teamRows,
+    columns: rowColumns,
+    getRowId: (row) => String(row.id),
+    editMode: "row",
+    rowValidators,
+    onEditCommit: onRowCommit,
+    selectionMode: "highlight",
+    enableGrouping: false,
   });
 
   return (
     <Flex direction="column" gap="md" p={{ base: "sm", md: "lg" }} h="100%">
       <Group gap="sm">
         <Text fw={600} size="lg">
-          Editable grid{" "}
+          Inline editing{" "}
           <Text component="span" size="sm" c="dimmed" fw={400}>
-            — double-click a cell, or press Enter / F2 / type on it. Enter and
-            Tab save, Escape cancels.
+            — double-click a cell, or press Enter / F2 / type on it
           </Text>
         </Text>
+        <SegmentedControl
+          size="xs"
+          data={[
+            { value: "cell", label: "cell" },
+            { value: "cellConfirm", label: "cellConfirm" },
+          ]}
+          value={mode}
+          onChange={(next) => setMode(next as TMDataGridEditMode)}
+        />
+        {lastCommit !== null && (
+          <Text size="sm" c="dimmed">
+            Last save — <Code>{lastCommit}</Code>
+          </Text>
+        )}
       </Group>
 
-      <TMDataGrid {...grid} size="md" style={{ flex: 1, minHeight: 0 }}>
+      <TMDataGrid {...inlineGrid} size="md" style={{ flex: 3, minHeight: 0 }}>
         <TMDataGrid.Toolbar>
           <TMDataGrid.SummaryCount />
-          {lastCommit !== null && (
-            <Text size="sm" c="dimmed">
-              Last save — <Code>{lastCommit}</Code>
-            </Text>
-          )}
           <TMDataGrid.Spacer />
           <TMDataGrid.Search />
           <TMDataGrid.FilterButton />
           <TMDataGrid.ColumnsButton />
         </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<Employee> />
+      </TMDataGrid>
 
+      <Text fw={600} size="lg" mt="xs">
+        Row editing{" "}
+        <Text component="span" size="sm" c="dimmed" fw={400}>
+          — the pencil opens the row, ✓ saves it as one commit; try a Support
+          salary over 60 000 kr
+        </Text>
+      </Text>
+
+      <TMDataGrid {...rowGrid} size="md" style={{ flex: 2, minHeight: 0 }}>
         <TMDataGrid.Table<Employee> />
       </TMDataGrid>
     </Flex>

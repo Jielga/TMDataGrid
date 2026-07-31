@@ -1017,14 +1017,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   const openEditor = (position: TMDataGridCellPosition) => {
     if (cellSelection) ui.actions.setFocusedCell(position);
-    edit.begin({ rowId: position.rowId, columnId: position.columnId });
+    // Row mode edits whole rows: any editable cell's open gesture opens the
+    // row, exactly as the lane's pencil does.
+    edit.begin({
+      rowId: position.rowId,
+      columnId: features.editMode === "row" ? null : position.columnId,
+    });
   };
 
   const handleEditorClose = (
     position: TMDataGridCellPosition,
     close: TMDataGridCellEditorClose,
   ) => {
-    if (!close.committed || close.via === "pick") {
+    // A saved row has no "next cell" story — the keyboard goes back to
+    // where the edit was.
+    if (!close.committed || close.via === "pick" || features.editMode === "row") {
       refocusCell(position);
       return;
     }
@@ -1155,25 +1162,32 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
         openEditor({ rowId, columnId });
         return;
       }
-      // Clear-and-commit, without opening anything — the spreadsheet Delete.
-      if (event.key === "Delete" || event.key === "Backspace") {
-        event.preventDefault();
-        void edit.clearCell(rowId, columnId).then(() => refocusCell({ rowId, columnId }));
-        return;
-      }
-      // Type-to-edit: a printable character opens the editor seeded with
-      // itself. Space stays the row-selection key, modifiers stay shortcuts.
-      if (
-        event.key.length === 1 &&
-        event.key !== " " &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey
-      ) {
-        event.preventDefault();
-        editSeedRef.current = event.key;
-        openEditor({ rowId, columnId });
-        return;
+      // The quick single-cell gestures — Delete-to-clear and type-to-edit —
+      // sit out row mode, whose whole point is that nothing commits until
+      // the row's explicit save.
+      if (features.editMode !== "row") {
+        // Clear-and-commit, without opening anything — the spreadsheet Delete.
+        if (event.key === "Delete" || event.key === "Backspace") {
+          event.preventDefault();
+          void edit
+            .clearCell(rowId, columnId)
+            .then(() => refocusCell({ rowId, columnId }));
+          return;
+        }
+        // Type-to-edit: a printable character opens the editor seeded with
+        // itself. Space stays the row-selection key, modifiers stay shortcuts.
+        if (
+          event.key.length === 1 &&
+          event.key !== " " &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey
+        ) {
+          event.preventDefault();
+          editSeedRef.current = event.key;
+          openEditor({ rowId, columnId });
+          return;
+        }
       }
     }
 
@@ -1494,6 +1508,22 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               if (!row) return null;
               const isGroupRow = row.getIsGrouped();
               const isInteractive = rowGesturesFor(row);
+              const rowCells = [
+                ...row.getLeftVisibleCells(),
+                ...row.getCenterVisibleCells(),
+                ...row.getRightVisibleCells(),
+              ];
+              // Row mode opens every editable cell of the row at once;
+              // exactly one of them may take the focus.
+              const rowEditing =
+                editActive !== null &&
+                editActive.rowId === row.id &&
+                editActive.columnId === null;
+              const firstEditableColumnId = rowEditing
+                ? (rowCells.find((cell) =>
+                    edit.canEditCell(row, cell.column),
+                  )?.column.id ?? null)
+                : null;
               // Cell selection takes the body's tab stop off the row and puts
               // it on a cell — two stops per row would make Tab a way of
               // walking the grid, which is what the arrow keys are for. Space
@@ -1626,15 +1656,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       : undefined
                   }
                 >
-                  {[
-                    ...row.getLeftVisibleCells(),
-                    ...row.getCenterVisibleCells(),
-                    ...row.getRightVisibleCells(),
-                  ].map((cell, cellIndex) => {
+                  {rowCells.map((cell, cellIndex) => {
                     const isEditingCell =
-                      editActive !== null &&
-                      editActive.rowId === row.id &&
-                      editActive.columnId === cell.column.id;
+                      (editActive !== null &&
+                        editActive.rowId === row.id &&
+                        editActive.columnId === cell.column.id) ||
+                      (rowEditing && edit.canEditCell(row, cell.column));
                     return (
                     <TMDataGridBodyCell
                       key={cell.id}
@@ -1647,6 +1674,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                             cell={cell}
                             row={row}
                             takeSeedText={takeEditSeed}
+                            autoFocus={
+                              !rowEditing ||
+                              cell.column.id === firstEditableColumnId
+                            }
                             onClose={(close) =>
                               handleEditorClose(
                                 { rowId: row.id, columnId: cell.column.id },

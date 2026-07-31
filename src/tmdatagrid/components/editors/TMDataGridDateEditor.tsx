@@ -12,6 +12,7 @@ import { useFieldError, useFieldValue } from "./editorShared";
  */
 export function TMDataGridDateEditor({
   field,
+  autoFocus,
   column,
   size,
 }: TMDataGridEditorArgs) {
@@ -34,7 +35,7 @@ export function TMDataGridDateEditor({
     <TextInput
       size={size}
       w="100%"
-      autoFocus
+      autoFocus={autoFocus}
       type="date"
       aria-label={labels.editCell(getColumnLabel(column))}
       value={text}

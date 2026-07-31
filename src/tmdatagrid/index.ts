@@ -7,6 +7,7 @@ export {
 } from "./TMDataGridContext";
 export { SELECT_COLUMN_ID } from "./components/TMDataGridSelectColumn";
 export { DETAILS_COLUMN_ID } from "./components/TMDataGridDetailsColumn";
+export { EDIT_COLUMN_ID } from "./components/TMDataGridEditColumn";
 export {
   formatGroupValue,
   GROUP_COLUMN_ID,

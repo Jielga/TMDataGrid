@@ -193,6 +193,14 @@
   align-items: center;
   width: 100%;
   min-width: 0;
+  gap: 2px;
+}
+
+/* cellConfirm's ✓ / ✕ pair, beside the input. */
+.cellEditorActions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 /* Corner triangles for a cell's edit state, drawn like a spreadsheet's: a

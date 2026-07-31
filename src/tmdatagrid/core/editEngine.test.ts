@@ -241,6 +241,36 @@ describe("edit engine", () => {
     });
   });
 
+  it("accumulates drafts across rows under cellConfirm", () => {
+    const grid = renderEditGrid({ editMode: "cellConfirm" });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: "name" });
+
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+  });
+
+  it("row mode refuses the pencil while another row is dirty, swaps a pristine one", () => {
+    const grid = renderEditGrid({ editMode: "row" });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: null });
+    expect(edit.state.active).toEqual({ rowId: "1", columnId: null });
+
+    // Pristine — leaving drops it and opens the next row.
+    edit.begin({ rowId: "2", columnId: null });
+    expect(edit.state.openRowIds).toEqual(["2"]);
+
+    // Dirty — the open row keeps the edit until saved or cancelled.
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+    edit.begin({ rowId: "1", columnId: null });
+    expect(edit.state.openRowIds).toEqual(["2"]);
+    expect(edit.state.active).toEqual({ rowId: "2", columnId: null });
+  });
+
   it("cancel drops the draft without a consumer call", () => {
     const onEditCommit = vi.fn();
     const grid = renderEditGrid({ onEditCommit });
