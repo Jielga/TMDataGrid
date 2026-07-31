@@ -266,6 +266,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     controlSize,
     renderDetails,
     renderDetailsEstHeight,
+    overscan,
   } = useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
@@ -335,7 +336,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       element.getBoundingClientRect().height ||
       instance.options.estimateSize(instance.indexFromElement(element)),
     getItemKey: useCallback((index: number) => rows[index]?.id ?? index, [rows]),
-    overscan: 6,
+    overscan,
     initialRect: { height: 600, width: 1200 },
   });
 

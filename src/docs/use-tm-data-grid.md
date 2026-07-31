@@ -17,8 +17,9 @@ including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
 cannot be overridden.
 
 `persist`, `enableColumnOrdering`, `enablePagination`, `rowSelectionMode`,
-`highlightSelectedRows`, `renderDetails` and `renderDetailsEstHeight` are the
-grid's own options and are consumed here rather than forwarded to TanStack.
+`highlightSelectedRows`, `renderDetails`, `renderDetailsEstHeight` and
+`overscan` are the grid's own options and are consumed here rather than
+forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -37,6 +38,7 @@ grid's own options and are consumed here rather than forwarded to TanStack.
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Features](#features). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Features](#features). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
+| `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
@@ -151,6 +153,7 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Features](#features). |
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
+| `overscan` | `number` | The overscan, resolved to its default when the option was not set. |
 
 Both stores are subscribable, which is how a parent component reacts to grid
 state without owning it:

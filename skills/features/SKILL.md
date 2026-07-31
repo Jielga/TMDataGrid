@@ -244,8 +244,11 @@ regions.
 
 ## Virtualization
 
-Always enabled and not configurable. Only rows within the viewport, plus a small
-overscan, are mounted, so page size does not affect how much is rendered.
+Always enabled. Only rows within the viewport, plus a small overscan, are
+mounted, so page size does not affect how much is rendered.
+
+`overscan` on `useTMDataGrid` (default `6`) sets how many rows are kept mounted
+on each side of the viewport — the one configurable part.
 
 Row height comes from `meta.rowHeight`, or from the `size` prop when unset. Rows
 are fixed height; an accurate value keeps scrolling precise.

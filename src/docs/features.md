@@ -485,8 +485,12 @@ was before.
 
 ## Virtualization
 
-Always enabled and not configurable. Only rows within the viewport, plus a small
-overscan, are mounted, so page size does not affect how much is rendered.
+Always enabled. Only rows within the viewport, plus a small overscan, are
+mounted, so page size does not affect how much is rendered.
+
+The overscan — how many rows are kept mounted on each side of the viewport — is
+the one knob: `overscan` on `useTMDataGrid`, `6` by default. Raise it if a fast
+scroll flashes blank rows, lower it when rows are expensive to render.
 
 Row height is taken from `meta.rowHeight`, or from the `size` prop when it is not
 set. Rows are fixed height, so the estimate is exact and scrolling is precise.

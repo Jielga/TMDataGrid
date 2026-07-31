@@ -62,6 +62,7 @@ function TMDataGridRoot<TData extends RowData>({
   features,
   renderDetails,
   renderDetailsEstHeight,
+  overscan,
   size = DEFAULT_TMDATAGRID_SIZE,
   children,
   className,
@@ -76,11 +77,21 @@ function TMDataGridRoot<TData extends RowData>({
       features,
       renderDetails,
       renderDetailsEstHeight,
+      overscan,
       size,
       rowHeight,
       controlSize: SIZE_CONTROL_SIZE[size],
     }),
-    [table, ui, features, renderDetails, renderDetailsEstHeight, size, rowHeight],
+    [
+      table,
+      ui,
+      features,
+      renderDetails,
+      renderDetailsEstHeight,
+      overscan,
+      size,
+      rowHeight,
+    ],
   );
 
   return (

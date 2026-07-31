@@ -57,6 +57,7 @@ rather than forwarded to TanStack.
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid. |
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid. |
+| `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |

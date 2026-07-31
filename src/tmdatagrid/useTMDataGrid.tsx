@@ -173,6 +173,9 @@ export type TMDataGridDetailsRenderer<TData extends RowData> = (
  */
 const DEFAULT_DETAILS_EST_HEIGHT = 160;
 
+/** Rows kept mounted on each side of the viewport. See `overscan`. */
+const DEFAULT_OVERSCAN = 6;
+
 /**
  * Chrome state that is *not* table state: which panels are open, and which
  * column opened the filter panel. Kept in a TanStack Store so consumers can
@@ -231,6 +234,8 @@ export type TMDataGridApi<TData extends RowData> = {
   renderDetails?: TMDataGridDetailsRenderer<TData>;
   /** Detail estimate in px: the option, or {@link DEFAULT_DETAILS_EST_HEIGHT}. */
   renderDetailsEstHeight: number;
+  /** Virtualizer overscan: the option, or {@link DEFAULT_OVERSCAN}. */
+  overscan: number;
 };
 
 export type UseTMDataGridOptions<TData extends RowData> = Omit<
@@ -366,6 +371,15 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * roughly right is enough.
    */
   renderDetailsEstHeight?: number;
+  /**
+   * Rows the virtualizer keeps mounted above and below the viewport. Defaults
+   * to 6.
+   *
+   * Raise it to trade memory for a scroll that stays painted — fast wheel or
+   * touch flings can outrun the virtualizer and flash blank rows, and a larger
+   * buffer covers the gap. Lower it when rows are expensive to render.
+   */
+  overscan?: number;
 };
 
 type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
@@ -428,6 +442,7 @@ export function useTMDataGrid<TData extends RowData>({
   onHighlightedRowChange,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
+  overscan = DEFAULT_OVERSCAN,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   // Derived up here, rather than just before the return, because the rest of the
@@ -703,7 +718,14 @@ export function useTMDataGrid<TData extends RowData>({
     return () => subscription.unsubscribe();
   }, [ui]);
 
-  return { table, ui, features, renderDetails, renderDetailsEstHeight };
+  return {
+    table,
+    ui,
+    features,
+    renderDetails,
+    renderDetailsEstHeight,
+    overscan,
+  };
 }
 
 /**
