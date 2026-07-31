@@ -85,6 +85,17 @@
   cursor: pointer;
 }
 
+/* Sort priority under multi-sort — "1", "2", … beside the arrow. Only rendered
+   while more than one column sorts, so a single sort stays as it always was. */
+.sortIndex {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--mantine-color-dimmed);
+  min-width: 10px;
+  text-align: center;
+}
+
 /* Column reordering. The dragged header stays in place and dims — the browser
    already carries a snapshot of it under the pointer — while the header being
    dragged over draws a bar on the edge the column will land against. */

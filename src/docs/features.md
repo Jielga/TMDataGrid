@@ -32,6 +32,15 @@ see [Pagination](#pagination).
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 
+### Multi-column sorting
+
+Shift+click a second header to add it to the sort instead of replacing it —
+TanStack's own `isMultiSortEvent`, so `enableMultiSort`, `maxMultiSortColCount`
+and a custom `isMultiSortEvent` all pass straight through. While more than one
+column sorts, each sorted header shows its priority (1, 2, …) beside the
+arrow. A plain click still replaces the whole sort, and the menu's Sort items
+do the same.
+
 The menu opens from the ⋮ button on the header or from a right-click anywhere on
 it — the same items either way, at the pointer for the right-click. A column
 whose menu has no remaining items renders no menu button and takes no

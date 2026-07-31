@@ -1702,3 +1702,52 @@ describe("Search", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("multi-column sorting", () => {
+  it("adds a second column with Shift+click and shows priorities", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByTestId("dg-header-city"));
+    await user.keyboard("{Shift>}");
+    await user.click(screen.getByTestId("dg-header-age"));
+    await user.keyboard("{/Shift}");
+
+    // Both columns sort at once: city first, age appended by the Shift.
+    expect(screen.getByTestId("dg-header-city")).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+    expect(screen.getByTestId("dg-header-age")).toHaveAttribute(
+      "aria-sort",
+      "descending",
+    );
+    expect(
+      within(screen.getByTestId("dg-header-city")).getByTestId("dg-sort-index"),
+    ).toHaveTextContent("1");
+    expect(
+      within(screen.getByTestId("dg-header-age")).getByTestId("dg-sort-index"),
+    ).toHaveTextContent("2");
+  });
+
+  it("collapses back to one sort on a plain click, hiding the priorities", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByTestId("dg-header-city"));
+    await user.keyboard("{Shift>}");
+    await user.click(screen.getByTestId("dg-header-age"));
+    await user.keyboard("{/Shift}");
+    await user.click(screen.getByTestId("dg-header-name"));
+
+    expect(screen.getByTestId("dg-header-name")).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+    expect(screen.getByTestId("dg-header-city")).toHaveAttribute(
+      "aria-sort",
+      "none",
+    );
+    expect(screen.queryByTestId("dg-sort-index")).not.toBeInTheDocument();
+  });
+});

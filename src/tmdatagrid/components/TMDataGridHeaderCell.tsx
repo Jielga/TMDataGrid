@@ -93,6 +93,12 @@ export function TMDataGridHeaderCell({
   const align = getColumnAlign(column);
   const sortDirection = sorting.find((sort) => sort.id === column.id)?.desc;
   const isSorted = sortDirection !== undefined;
+  // 1-based position in a multi-sort, shown only while more than one column
+  // sorts — under a single sort the arrow already says everything.
+  const sortIndex =
+    isSorted && sorting.length > 1
+      ? sorting.findIndex((sort) => sort.id === column.id) + 1
+      : null;
   const isFiltered = columnFilters.some(
     (filter) => filter.id === column.id && isFilterActive(filter.value),
   );
@@ -449,6 +455,16 @@ export function TMDataGridHeaderCell({
         position: pinnedAt ? "sticky" : undefined,
         zIndex: pinnedAt ? 4 : undefined,
       }}
+      // Shift+click is "add to sort", and the browser would smear a text
+      // selection across the headers it passes. Stopped at the one gesture,
+      // same as the body rows do for shift-select.
+      onMouseDown={
+        canSort
+          ? (event) => {
+              if (event.shiftKey) event.preventDefault();
+            }
+          : undefined
+      }
       onClick={
         canSort
           ? (event) => {
@@ -456,6 +472,8 @@ export function TMDataGridHeaderCell({
                 suppressSortRef.current = false;
                 return;
               }
+              // TanStack's handler reads the modifier itself: a plain click
+              // replaces the sort, Shift+click appends (`isMultiSortEvent`).
               column.getToggleSortingHandler()?.(event);
             }
           : undefined
@@ -504,6 +522,15 @@ export function TMDataGridHeaderCell({
                 <ArrowUpIcon size={14} stroke={1.6} />
               )}
             </ActionIcon>
+          )}
+
+          {/* Shift+click adds a column to the sort (TanStack's own
+              `isMultiSortEvent`); the number is its priority. Outside the
+              hover-revealed action so an active multi-sort stays readable. */}
+          {sortIndex !== null && (
+            <span className={classes.sortIndex} data-testid="dg-sort-index">
+              {sortIndex}
+            </span>
           )}
 
           {hasMenu && (
