@@ -117,18 +117,21 @@ export function formatFilterLabel({
   label,
   type,
   filter,
+  operatorLabels = FILTER_OPERATOR_LABELS,
 }: {
   label: string;
   type: TMDataGridColumnType;
   filter: TMDataGridFilterValue;
+  /** Localized operator names — `labels.operators`. Defaults to English. */
+  operatorLabels?: Record<TMDataGridFilterOperator, string>;
 }): string {
   const { operator, value } = filter;
   if (!operatorNeedsValue(operator)) {
-    return `${label} ${FILTER_OPERATOR_LABELS[operator]}`;
+    return `${label} ${operatorLabels[operator]}`;
   }
   const text = value.trim();
   if (operator === getDefaultOperator(type)) return `${label}: ${text}`;
-  return `${label} ${FILTER_OPERATOR_LABELS[operator]} ${text}`;
+  return `${label} ${operatorLabels[operator]} ${text}`;
 }
 
 export function matchesFilter(

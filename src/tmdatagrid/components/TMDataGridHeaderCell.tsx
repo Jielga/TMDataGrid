@@ -59,7 +59,7 @@ export function TMDataGridHeaderCell({
   layout: TMDataGridColumnLayout;
 }) {
   const api = useTMDataGridContext();
-  const { table, features } = api;
+  const { table, features, labels } = api;
   const column = header.column;
   const [menuOpened, setMenuOpened] = useState(false);
   const [contextMenuOpened, setContextMenuOpened] = useState(false);
@@ -201,14 +201,14 @@ export function TMDataGridHeaderCell({
         leftSection={<ArrowUpIcon size={16} stroke={1.6} />}
         onClick={() => column.toggleSorting(false)}
       >
-        Sort by ASC
+        {labels.sortAsc}
       </Menu.Item>,
       <Menu.Item
         key="sort-desc"
         leftSection={<ArrowDownIcon size={16} stroke={1.6} />}
         onClick={() => column.toggleSorting(true)}
       >
-        Sort by DESC
+        {labels.sortDesc}
       </Menu.Item>,
       <Menu.Divider key="sort-divider" />,
     );
@@ -220,7 +220,7 @@ export function TMDataGridHeaderCell({
         leftSection={<FilterIcon size={16} stroke={1.6} />}
         onClick={() => openColumnFilter(api, column.id)}
       >
-        Filter
+        {labels.filterMenuItem}
       </Menu.Item>,
       <Menu.Divider key="filter-divider" />,
     );
@@ -239,7 +239,7 @@ export function TMDataGridHeaderCell({
         }
         onClick={column.getToggleGroupingHandler()}
       >
-        {isGrouped ? `Ungroup ${label}` : `Group by ${label}`}
+        {isGrouped ? labels.ungroup(label) : labels.groupBy(label)}
       </Menu.Item>,
     );
   }
@@ -258,7 +258,7 @@ export function TMDataGridHeaderCell({
             leftSection={<UngroupIcon size={16} stroke={1.6} />}
             onClick={() => groupedColumn.toggleGrouping()}
           >
-            {`Ungroup ${getColumnLabel(groupedColumn)}`}
+            {labels.ungroup(getColumnLabel(groupedColumn))}
           </Menu.Item>,
         );
       }
@@ -282,14 +282,14 @@ export function TMDataGridHeaderCell({
         leftSection={<ExpandAllIcon size={16} stroke={1.6} />}
         onClick={() => expandAllGroups(true)}
       >
-        Expand all groups
+        {labels.expandAllGroups}
       </Menu.Item>,
       <Menu.Item
         key="collapse-all"
         leftSection={<CollapseAllIcon size={16} stroke={1.6} />}
         onClick={() => expandAllGroups(false)}
       >
-        Collapse all groups
+        {labels.collapseAllGroups}
       </Menu.Item>,
     );
   }
@@ -304,7 +304,7 @@ export function TMDataGridHeaderCell({
         leftSection={<PinLeftIcon size={16} stroke={1.6} />}
         onClick={() => setPinned(pinnedAt === "left" ? false : "left")}
       >
-        Pin to left
+        {labels.pinLeft}
       </Menu.Item>,
       <Menu.Item
         key="pin-right"
@@ -312,7 +312,7 @@ export function TMDataGridHeaderCell({
         leftSection={<PinRightIcon size={16} stroke={1.6} />}
         onClick={() => setPinned(pinnedAt === "right" ? false : "right")}
       >
-        Pin to right
+        {labels.pinRight}
       </Menu.Item>,
     );
     if (pinnedAt) {
@@ -322,7 +322,7 @@ export function TMDataGridHeaderCell({
           leftSection={<PinOffIcon size={16} stroke={1.6} />}
           onClick={() => setPinned(false)}
         >
-          Unpin
+          {labels.unpin}
         </Menu.Item>,
       );
     }
@@ -351,7 +351,7 @@ export function TMDataGridHeaderCell({
             moveColumnByStep({ table, columnId: column.id, direction: -1 })
           }
         >
-          Move left
+          {labels.moveLeft}
         </Menu.Item>,
         <Menu.Item
           key="move-right"
@@ -361,7 +361,7 @@ export function TMDataGridHeaderCell({
             moveColumnByStep({ table, columnId: column.id, direction: 1 })
           }
         >
-          Move right
+          {labels.moveRight}
         </Menu.Item>,
         <Menu.Divider key="move-divider" />,
       );
@@ -374,7 +374,7 @@ export function TMDataGridHeaderCell({
         leftSection={<EyeOffIcon size={16} stroke={1.6} />}
         onClick={() => column.toggleVisibility(false)}
       >
-        Hide column
+        {labels.hideColumn}
       </Menu.Item>,
     );
   }
@@ -385,7 +385,7 @@ export function TMDataGridHeaderCell({
         leftSection={<ColumnsIcon size={16} stroke={1.6} />}
         onClick={() => api.ui.actions.setColumnsPanelOpen(true)}
       >
-        Manage columns
+        {labels.manageColumns}
       </Menu.Item>,
     );
   }
@@ -478,7 +478,7 @@ export function TMDataGridHeaderCell({
               variant="subtle"
               color="gray"
               size="xs"
-              aria-label={`Filter on ${label}`}
+              aria-label={labels.filterOn(label)}
               onClick={(event) => {
                 event.stopPropagation();
                 openColumnFilter(api, column.id);
@@ -495,7 +495,7 @@ export function TMDataGridHeaderCell({
               variant="subtle"
               color="gray"
               size="xs"
-              aria-label={`Sort ${label}`}
+              aria-label={labels.sortColumn(label)}
               onClick={column.getToggleSortingHandler()}
             >
               {sortDirection ? (
@@ -525,7 +525,7 @@ export function TMDataGridHeaderCell({
                   variant="subtle"
                   color="gray"
                   size="xs"
-                  aria-label={`${label} column menu`}
+                  aria-label={labels.columnMenu(label)}
                   onClick={(event) => {
                     event.stopPropagation();
                     setMenuOpened((opened) => !opened);

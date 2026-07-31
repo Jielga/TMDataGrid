@@ -53,7 +53,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
   onPillClick,
   className,
 }: TMDataGridFilterPillsProps<TData>) {
-  const { table } = api;
+  const { table, labels } = api;
   const columnFilters = useSelector(
     table.store,
     (state) => state.columnFilters,
@@ -67,7 +67,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
   return (
     <div
       role="group"
-      aria-label="Active filters"
+      aria-label={labels.activeFilters}
       className={[classes.filterPills, className].filter(Boolean).join(" ")}
     >
       <Pill.Group size={size}>
@@ -94,7 +94,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
               // way out. These pills stand on their own, so the ✕ has to be a
               // real button.
               removeButtonProps={{
-                "aria-label": `Clear ${label} filter`,
+                "aria-label": labels.clearFilter(label),
                 "aria-hidden": false,
                 tabIndex: 0,
               }}
@@ -111,6 +111,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
                   label,
                   type: column ? getColumnType(column) : "string",
                   filter: value,
+                  operatorLabels: labels.operators,
                 })}
               </UnstyledButton>
             </Pill>
@@ -127,7 +128,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
           size="compact-xs"
           onClick={() => table.setColumnFilters([])}
         >
-          Clear all
+          {labels.clearAllFilters}
         </Button>
       )}
     </div>

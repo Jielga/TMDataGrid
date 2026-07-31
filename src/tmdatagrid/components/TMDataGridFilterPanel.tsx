@@ -7,7 +7,6 @@ import { getColumnLabel, getColumnType } from "../core/columnUtils";
 import {
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
-  FILTER_OPERATOR_LABELS,
   getDefaultOperator,
   getOperatorsForType,
   isTMDataGridFilterValue,
@@ -28,7 +27,7 @@ function asFilterValue(value: unknown): TMDataGridFilterValue {
  * free — the state is forwarded to the server instead of a row model.
  */
 export function TMDataGridFilterPanel() {
-  const { table, ui, controlSize } = useTMDataGridContext();
+  const { table, ui, labels, controlSize } = useTMDataGridContext();
   const opened = useSelector(ui, (state) => state.filterPanelOpen);
   const columnFilters = useSelector(
     table.store,
@@ -141,7 +140,7 @@ export function TMDataGridFilterPanel() {
     <div
       ref={panelRef}
       role="group"
-      aria-label="Filters"
+      aria-label={labels.filters}
       className={classes.filterPanel}
       // Escape is what closes a floating surface, and every control that can
       // hold focus in here sits inside this element.
@@ -153,13 +152,13 @@ export function TMDataGridFilterPanel() {
     >
       <div className={classes.filterPanelHeader}>
         <Text size={controlSize} fw={600}>
-          Filters
+          {labels.filters}
         </Text>
         <ActionIcon
           variant="subtle"
           color="gray"
           size="sm"
-          aria-label="Close filters"
+          aria-label={labels.closeFilters}
           onClick={ui.actions.closeFilterPanel}
         >
           <CloseIcon size={16} stroke={1.6} />
@@ -179,14 +178,14 @@ export function TMDataGridFilterPanel() {
                 variant="subtle"
                 color="gray"
                 size="lg"
-                aria-label="Remove filter"
+                aria-label={labels.removeFilter}
                 onClick={() => removeFilter(filter.id)}
               >
                 <CloseIcon size={18} stroke={1.6} />
               </ActionIcon>
 
               <Select
-                label="Column"
+                label={labels.filterColumn}
                 size={controlSize}
                 w={160}
                 allowDeselect={false}
@@ -200,14 +199,14 @@ export function TMDataGridFilterPanel() {
               />
 
               <Select
-                label="Operator"
+                label={labels.filterOperator}
                 size={controlSize}
                 w={170}
                 allowDeselect={false}
                 comboboxProps={{ withinPortal: false }}
                 data={getOperatorsForType(type).map((operator) => ({
                   value: operator,
-                  label: FILTER_OPERATOR_LABELS[operator],
+                  label: labels.operators[operator],
                 }))}
                 value={value.operator}
                 onChange={(next) =>
@@ -219,12 +218,12 @@ export function TMDataGridFilterPanel() {
               />
 
               <TextInput
-                label="Value"
+                label={labels.filterValue}
                 size={controlSize}
                 w={180}
                 type={type === "number" && needsValue ? "number" : "text"}
                 disabled={!needsValue}
-                placeholder={needsValue ? "Filter value" : ""}
+                placeholder={needsValue ? labels.filterValuePlaceholder : ""}
                 value={needsValue ? value.value : ""}
                 onChange={(event) =>
                   patchFilter(filter.id, { value: event.currentTarget.value })
@@ -241,7 +240,7 @@ export function TMDataGridFilterPanel() {
             disabled={!canAddFilter}
             onClick={addFilter}
           >
-            Add filter
+            {labels.addFilter}
           </Button>
           <Button
             variant="subtle"
@@ -250,7 +249,7 @@ export function TMDataGridFilterPanel() {
             disabled={columnFilters.length === 0}
             onClick={clearAllFilters}
           >
-            Clear all
+            {labels.clearAllFilters}
           </Button>
         </div>
       </Stack>

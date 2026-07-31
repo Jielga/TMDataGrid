@@ -52,7 +52,7 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
  * Renders nothing when no column can be hidden (`enableHiding: false`).
  */
 export function TMDataGridColumnsButton() {
-  const { table, ui, features, controlSize } = useTMDataGridContext();
+  const { table, ui, features, labels, controlSize } = useTMDataGridContext();
   const opened = useSelector(ui, (state) => state.columnsPanelOpen);
 
   if (!getGridCapabilities(table, features).canHideAny) return null;
@@ -68,12 +68,12 @@ export function TMDataGridColumnsButton() {
       trapFocus
     >
       <Popover.Target>
-        <Tooltip label="Manage columns" openDelay={400}>
+        <Tooltip label={labels.manageColumns} openDelay={400}>
           <ActionIcon
             variant="subtle"
             color="gray"
             size={controlSize}
-            aria-label="Manage columns"
+            aria-label={labels.manageColumns}
             onClick={ui.actions.toggleColumnsPanel}
           >
             <BurgerIcon size={18} stroke={1.6} />
@@ -93,7 +93,7 @@ export function TMDataGridColumnsButton() {
  */
 export function TMDataGridFilterButton() {
   const api = useTMDataGridContext();
-  const { table, ui, features, controlSize } = api;
+  const { table, ui, features, labels, controlSize } = api;
   const opened = useSelector(ui, (state) => state.filterPanelOpen);
   const columnFilters = useSelector(
     table.store,
@@ -106,12 +106,12 @@ export function TMDataGridFilterButton() {
   if (!getGridCapabilities(table, features).canFilterAny) return null;
 
   return (
-    <Tooltip label="Filters" openDelay={400}>
+    <Tooltip label={labels.filters} openDelay={400}>
       <ActionIcon
         variant={opened || activeCount > 0 ? "light" : "subtle"}
         color={activeCount > 0 ? undefined : "gray"}
         size={controlSize}
-        aria-label="Filters"
+        aria-label={labels.filters}
         // Marks this as the panel's own toggle, so the panel's click-away
         // handler leaves it alone and the button stays a toggle.
         data-dg-filter-toggle

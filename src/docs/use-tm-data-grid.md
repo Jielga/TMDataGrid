@@ -45,6 +45,7 @@ consumed here rather than forwarded to TanStack.
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
+| `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
 
 ### Default initial state
 
@@ -64,6 +65,40 @@ Grid configuration passed through the `meta` option.
 | `noResultsLabel` | `string` | `"No rows match your filters"` | Empty state text. |
 | `rowHeight` | `number` | From `size` | Row height in px. Overrides the size scale. |
 | `totalRowCount` | `number` | – | Unfiltered total used by `SummaryCount`. Required for server-side data. |
+
+## Localization
+
+Every string the grid renders — menu items, panels, tooltips, the pager and the
+`aria-label`s — comes from one labels object, English by default. The `labels`
+option takes any subset and merges it over the defaults:
+
+```tsx
+const grid = useTMDataGrid({
+  data,
+  columns,
+  labels: { noResults: "Inga rader matchar dina filter" },
+});
+```
+
+Labels that carry a value are functions, so a language can put the value where
+its grammar wants it:
+
+```tsx
+labels: {
+  groupBy: (column) => `Gruppera på ${column}`,
+  pageRange: ({ from, to, total }) => `${from}–${to} av ${total}`,
+}
+```
+
+Keep the object referentially stable (module scope or `useMemo`) — the chrome
+re-renders when its identity changes.
+
+The full dictionary type is `TMDataGridLabels`; the English defaults are
+exported as `TMDATAGRID_LABELS_EN`. `meta.noResultsLabel` still works as a
+per-instance override of `labels.noResults`.
+
+The resolved dictionary is returned from the hook as `grid.labels`, so custom
+toolbar components can read the same strings the built-in chrome does.
 
 ## persist
 

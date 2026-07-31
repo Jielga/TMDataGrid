@@ -41,6 +41,12 @@ export {
   isFilterActive,
 } from "./core/filterOperators";
 export {
+  mergeLabels,
+  TMDATAGRID_LABELS_EN,
+  type TMDataGridLabels,
+  type TMDataGridLabelsOverride,
+} from "./core/labels";
+export {
   getColumnLabel,
   getColumnType,
   isColumnReorderable,

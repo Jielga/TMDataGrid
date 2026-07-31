@@ -418,6 +418,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     table,
     ui,
     features,
+    labels,
     rowHeight,
     controlSize,
     renderDetails,
@@ -435,7 +436,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const focusedCell = useSelector(ui, (state) => state.focusedCell);
   const cellRange = useSelector(ui, (state) => state.cellRange);
 
-  const { loading, noResultsLabel = "No rows match your filters" } =
+  const { loading, noResultsLabel = labels.noResults } =
     table.options.meta ?? {};
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -1134,20 +1135,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const cellMenuContent =
     cellRangeSelection && contextMenuTarget !== null && selectionBounds !== null ? (
       <>
-        <Menu.Label>
-          {selectedCellCount === 1 ? "1 cell" : `${selectedCellCount} cells`}
-        </Menu.Label>
+        <Menu.Label>{labels.cellCount(selectedCellCount)}</Menu.Label>
         <Menu.Item
           disabled={selectedDataColumnCount === 0}
           onClick={() => void copySelection()}
         >
-          Copy
+          {labels.copy}
         </Menu.Item>
         <Menu.Item
           disabled={selectedDataColumnCount === 0}
           onClick={() => exportSelectionCsv(exportIncludesHeaders)}
         >
-          Export as CSV for Excel
+          {labels.exportCsv}
         </Menu.Item>
         {/* Stays open on click: it is the setting the item above reads, and
             reopening the menu to change your mind about headers is a worse
@@ -1159,7 +1158,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           <Checkbox
             size="xs"
             checked={exportIncludesHeaders}
-            label="Include headers"
+            label={labels.includeHeaders}
             // The item owns the click; the box only shows what it did.
             readOnly
             styles={{ input: { cursor: "pointer" } }}
@@ -1518,7 +1517,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
           {isEmpty && loading === true && (
             <div role="row" className={classes.messageRow}>
-              <Loader size="lg" />
+              <Loader size="lg" aria-label={labels.loading} />
             </div>
           )}
 

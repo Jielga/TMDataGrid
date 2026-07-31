@@ -13,7 +13,7 @@ import { SearchIcon } from "./icons";
  * `TMDataGrid.ColumnsButton`.
  */
 export function TMDataGridColumnsPanel() {
-  const { table, controlSize } = useTMDataGridContext();
+  const { table, labels, controlSize } = useTMDataGridContext();
   const [search, setSearch] = useState("");
 
   const columnVisibility = useSelector(
@@ -45,7 +45,7 @@ export function TMDataGridColumnsPanel() {
         <TextInput
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
-          placeholder="Search"
+          placeholder={labels.columnsSearchPlaceholder}
           leftSection={<SearchIcon size={16} stroke={1.6} />}
           size={controlSize}
           data-autofocus
@@ -68,7 +68,7 @@ export function TMDataGridColumnsPanel() {
           ))}
           {visibleInPanel.length === 0 && (
             <Text size={controlSize} c="dimmed">
-              No columns match “{search}”
+              {labels.columnsNoMatch(search)}
             </Text>
           )}
         </div>
@@ -77,7 +77,7 @@ export function TMDataGridColumnsPanel() {
       <div className={classes.columnsPanelFooter}>
         <Checkbox
           size={controlSize}
-          label="Show/Hide All"
+          label={labels.columnsShowHideAll}
           checked={shownCount === hideableColumns.length}
           indeterminate={shownCount > 0 && shownCount < hideableColumns.length}
           onChange={(event) =>
@@ -89,7 +89,7 @@ export function TMDataGridColumnsPanel() {
           size="compact-sm"
           onClick={() => table.resetColumnVisibility()}
         >
-          RESET
+          {labels.columnsReset}
         </Button>
       </div>
     </div>

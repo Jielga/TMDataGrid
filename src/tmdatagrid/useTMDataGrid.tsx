@@ -43,6 +43,11 @@ import {
   getDefaultOperator,
 } from "./core/filterOperators";
 import {
+  mergeLabels,
+  type TMDataGridLabels,
+  type TMDataGridLabelsOverride,
+} from "./core/labels";
+import {
   hasPersistenceKeys,
   readPersistedState,
   type TMDataGridPersistence,
@@ -268,6 +273,8 @@ export type TMDataGridApi<TData extends RowData> = {
   ui: TMDataGridUiStore;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
+  /** Every string the chrome renders, `labels` merged over the English defaults. */
+  labels: TMDataGridLabels;
   /** The detail renderer, when row details are on. See `renderDetails`. */
   renderDetails?: TMDataGridDetailsRenderer<TData>;
   /** Detail estimate in px: the option, or {@link DEFAULT_DETAILS_EST_HEIGHT}. */
@@ -288,6 +295,20 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * dependency of the subscription that writes back.
    */
   persist?: TMDataGridPersistence;
+  /**
+   * Overrides for the grid's strings — menu items, panels, the pager, and
+   * every `aria-label`. Any subset, merged over the English defaults; a full
+   * Swedish dictionary ships as `TMDATAGRID_LABELS_SV`.
+   *
+   * ```tsx
+   * useTMDataGrid({ data, columns, labels: TMDATAGRID_LABELS_SV });
+   * useTMDataGrid({ data, columns, labels: { noResults: "Inga rader" } });
+   * ```
+   *
+   * Keep the object referentially stable (module scope or `useMemo`) — the
+   * chrome re-renders when its identity changes.
+   */
+  labels?: TMDataGridLabelsOverride;
   /**
    * Header drag-and-drop and the move items in the column menu. Defaults to
    * `true`.
@@ -531,6 +552,7 @@ function withTMDataGridDefaults<TData extends RowData>(
 export function useTMDataGrid<TData extends RowData>({
   persist,
   // Not TanStack options, so they are kept out of what `useTable` receives.
+  labels: labelsOverride,
   enableColumnOrdering,
   enablePagination,
   selectionMode,
@@ -559,12 +581,23 @@ export function useTMDataGrid<TData extends RowData>({
     cellSelection,
   });
 
+  // Resolved on the override's identity, so a module-scope dictionary costs one
+  // merge for the lifetime of the grid.
+  const labels = useMemo(() => mergeLabels(labelsOverride), [labelsOverride]);
+
   const pinningEnabled = options.enableColumnPinning !== false;
   const selectColumnEnabled = features.selectColumn;
   const groupColumnEnabled = features.grouping;
   // The lane that opens the panels. Nothing to switch on: a grid with no
   // `renderDetails` has nothing for it to open.
   const detailsColumnEnabled = renderDetails !== undefined;
+
+  // The generated lanes bake `meta.label` into their definitions, so the memo
+  // depends on the three strings rather than on the labels object — a fresh
+  // inline `labels` must not rebuild the table's columns.
+  const selectColumnLabel = labels.selectColumnLabel;
+  const groupColumnLabel = labels.groupColumnLabel;
+  const detailsColumnLabel = labels.detailsColumnLabel;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -581,9 +614,13 @@ export function useTMDataGrid<TData extends RowData>({
     // open it. The details chevron sits last because it acts on the record the
     // lanes to its left have narrowed down to.
     return [
-      ...(selectColumnEnabled ? [createSelectColumn<TData>()] : []),
-      ...(groupColumnEnabled ? [createGroupColumn<TData>()] : []),
-      ...(detailsColumnEnabled ? [createDetailsColumn<TData>()] : []),
+      ...(selectColumnEnabled
+        ? [createSelectColumn<TData>(selectColumnLabel)]
+        : []),
+      ...(groupColumnEnabled ? [createGroupColumn<TData>(groupColumnLabel)] : []),
+      ...(detailsColumnEnabled
+        ? [createDetailsColumn<TData>(detailsColumnLabel)]
+        : []),
       ...base,
     ];
   }, [
@@ -591,6 +628,9 @@ export function useTMDataGrid<TData extends RowData>({
     selectColumnEnabled,
     detailsColumnEnabled,
     groupColumnEnabled,
+    selectColumnLabel,
+    groupColumnLabel,
+    detailsColumnLabel,
   ]);
 
   // Read once on mount: `initialState` is only consumed on the first render,
@@ -862,6 +902,7 @@ export function useTMDataGrid<TData extends RowData>({
     table,
     ui,
     features,
+    labels,
     renderDetails,
     renderDetailsEstHeight,
     overscan,

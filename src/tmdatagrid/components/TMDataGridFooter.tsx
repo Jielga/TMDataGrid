@@ -9,10 +9,6 @@ import { isPagingActive } from "../core/rowSelection";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import type { TMDataGridTable } from "../useTMDataGrid";
 
-/** Shown on the greyed-out pager, and the reason it is greyed out. */
-const PAGING_SUSPENDED_HINT =
-  "Paging is off while the rows are grouped: the whole tree is rendered and virtualized. Ungroup to page again.";
-
 /** Distilled pagination state and actions for building a custom pager. */
 export type TMDataGridPaginationApi = {
   pageIndex: number;
@@ -75,7 +71,7 @@ export function TMDataGridFooter({
   pageSizeOptions = [10, 25, 50, 100],
   pagination,
 }: TMDataGridFooterProps) {
-  const { table, features, controlSize } = useTMDataGridContext();
+  const { table, features, labels, controlSize } = useTMDataGridContext();
   useSelector(table.store);
 
   if (!getGridCapabilities(table, features).canPaginate) return null;
@@ -105,7 +101,7 @@ export function TMDataGridFooter({
 
   return (
     <Tooltip
-      label={PAGING_SUSPENDED_HINT}
+      label={labels.pagingSuspendedHint}
       disabled={paging}
       withArrow
       multiline
@@ -115,7 +111,7 @@ export function TMDataGridFooter({
       <div className={classes.footer} data-paging-suspended={!paging}>
         <Group gap="xs" wrap="nowrap">
           <Text size={controlSize} c="dimmed">
-            Rows per page:
+            {labels.rowsPerPage}
           </Text>
           <Select
             size={controlSize}
@@ -133,23 +129,19 @@ export function TMDataGridFooter({
         </Group>
 
         <Text size={controlSize} c="dimmed">
-          {paging ? (
-            <>
-              {from}–{to} of {total}
-            </>
-          ) : (
-            // Not a range: nothing is being sliced, so a range would be a lie.
-            // Counted before grouping too — `getRowCount()` would be counting
-            // the tree, so a collapsed grid would claim to hold eight rows.
-            <>Grouped · all {table.getFilteredRowModel().rows.length} rows</>
-          )}
+          {paging
+            ? labels.pageRange({ from, to, total })
+            : // Not a range: nothing is being sliced, so a range would be a lie.
+              // Counted before grouping too — `getRowCount()` would be counting
+              // the tree, so a collapsed grid would claim to hold eight rows.
+              labels.groupedAllRows(table.getFilteredRowModel().rows.length)}
         </Text>
 
         <Group gap={4} wrap="nowrap">
           <ActionIcon
             variant="subtle"
             color="gray"
-            aria-label="Previous page"
+            aria-label={labels.previousPage}
             disabled={!paging || !table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
@@ -158,7 +150,7 @@ export function TMDataGridFooter({
           <ActionIcon
             variant="subtle"
             color="gray"
-            aria-label="Next page"
+            aria-label={labels.nextPage}
             disabled={!paging || !table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >

@@ -1,5 +1,8 @@
 import { UnstyledButton } from "@mantine/core";
-import { useCellControlTabIndex } from "../TMDataGridContext";
+import {
+  useCellControlTabIndex,
+  useTMDataGridContext,
+} from "../TMDataGridContext";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
@@ -24,9 +27,12 @@ const BLANK_GROUP_LABEL = "(Blank)";
  * written for a data row and is free to reach into `row.original`, which on a
  * group row is the first leaf's record rather than anything about the group.
  */
-export function formatGroupValue(value: unknown): string {
+export function formatGroupValue(
+  value: unknown,
+  blankLabel = BLANK_GROUP_LABEL,
+): string {
   if (value === null || value === undefined || value === "") {
-    return BLANK_GROUP_LABEL;
+    return blankLabel;
   }
   if (value instanceof Date) return value.toLocaleDateString();
   return String(value);
@@ -45,6 +51,7 @@ function GroupCell<TData extends RowData>({
 }: {
   row: Row<TMDataGridFeatures, TData>;
 }) {
+  const { labels } = useTMDataGridContext();
   const expanded = useSelector(row.table.store, () => row.getIsExpanded());
   // See useCellControlTabIndex: reached by stepping into the cell, not by Tab.
   const tabIndex = useCellControlTabIndex();
@@ -53,7 +60,7 @@ function GroupCell<TData extends RowData>({
   // the indent alone is what places them under their group.
   if (!row.getIsGrouped()) return null;
 
-  const label = formatGroupValue(row.groupingValue);
+  const label = formatGroupValue(row.groupingValue, labels.blankGroupValue);
 
   return (
     <UnstyledButton
@@ -62,7 +69,9 @@ function GroupCell<TData extends RowData>({
       style={{ paddingInlineStart: row.depth * INDENT_STEP }}
       tabIndex={tabIndex}
       aria-expanded={expanded}
-      aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
+      aria-label={
+        expanded ? labels.collapseGroup(label) : labels.expandGroup(label)
+      }
       // The row underneath may select or highlight on click; expanding is its
       // own gesture and must not also trigger those.
       onClick={(event) => {
@@ -92,11 +101,12 @@ function GroupHeader<TData extends RowData>({
 }: {
   table: TMDataGridTable<TData>;
 }) {
+  const { labels } = useTMDataGridContext();
   const grouping = useSelector(table.store, (state) => state.grouping, {
     compare: shallow,
   });
 
-  if (grouping.length === 0) return "Group";
+  if (grouping.length === 0) return labels.groupColumnLabel;
   return grouping
     .map((columnId) => {
       const column = table.getColumn(columnId);
@@ -118,15 +128,13 @@ function GroupHeader<TData extends RowData>({
  * `column.getCanGroup()` requires an `accessorFn`, which a display column has
  * no reason to have.
  */
-export function createGroupColumn<TData extends RowData>(): ColumnDef<
-  TMDataGridFeatures,
-  TData,
-  unknown
-> {
+export function createGroupColumn<TData extends RowData>(
+  label = "Group",
+): ColumnDef<TMDataGridFeatures, TData, unknown> {
   return {
     id: GROUP_COLUMN_ID,
     meta: {
-      label: "Group",
+      label,
       // Structurally the first column after the checkbox lane.
       enableOrdering: false,
     },

@@ -1,5 +1,8 @@
 import { UnstyledButton } from "@mantine/core";
-import { useCellControlTabIndex } from "../TMDataGridContext";
+import {
+  useCellControlTabIndex,
+  useTMDataGridContext,
+} from "../TMDataGridContext";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGridDetailsColumn.module.css";
@@ -22,6 +25,7 @@ function DetailsCell<TData extends RowData>({
 }: {
   row: Row<TMDataGridFeatures, TData>;
 }) {
+  const { labels } = useTMDataGridContext();
   const expanded = useSelector(row.table.store, () => row.getIsExpanded());
   // See useCellControlTabIndex: a body control is reached by stepping into its
   // cell, not by Tab, or the grid would have one tab stop per mounted row.
@@ -37,7 +41,7 @@ function DetailsCell<TData extends RowData>({
       className={classes.detailsToggle}
       tabIndex={tabIndex}
       aria-expanded={expanded}
-      aria-label={expanded ? "Hide details" : "Show details"}
+      aria-label={expanded ? labels.hideDetails : labels.showDetails}
       // The row underneath may select or highlight on click; opening a panel is
       // its own gesture and must not also trigger those.
       onClick={(event) => {
@@ -66,6 +70,7 @@ function DetailsHeader<TData extends RowData>({
 }: {
   table: TMDataGridTable<TData>;
 }) {
+  const { labels } = useTMDataGridContext();
   // Pre-paginated: expand-all means every row the filters left, not the page
   // that happens to be on screen. Same model `getCanSomeRowsExpand` reads.
   const detailRows = () => table.getPrePaginatedRowModel().flatRows;
@@ -82,7 +87,9 @@ function DetailsHeader<TData extends RowData>({
     <UnstyledButton
       className={classes.detailsToggle}
       aria-expanded={allExpanded}
-      aria-label={allExpanded ? "Collapse all details" : "Expand all details"}
+      aria-label={
+        allExpanded ? labels.collapseAllDetails : labels.expandAllDetails
+      }
       // Partly expanded opens the rest rather than closing what is already
       // open — the same reading as an indeterminate select-all box.
       onClick={() =>
@@ -118,15 +125,13 @@ function DetailsHeader<TData extends RowData>({
  * Nothing stops a second toggle elsewhere: `row.toggleExpanded()` is the whole
  * interface, and this lane is only the one the grid ships.
  */
-export function createDetailsColumn<TData extends RowData>(): ColumnDef<
-  TMDataGridFeatures,
-  TData,
-  unknown
-> {
+export function createDetailsColumn<TData extends RowData>(
+  label = "Details",
+): ColumnDef<TMDataGridFeatures, TData, unknown> {
   return {
     id: DETAILS_COLUMN_ID,
     meta: {
-      label: "Details",
+      label,
       align: "center",
       // Structurally the last of the generated lanes.
       enableOrdering: false,

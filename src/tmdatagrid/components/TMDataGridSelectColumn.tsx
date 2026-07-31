@@ -34,6 +34,7 @@ function SelectAllCheckbox<TData extends RowData>({
 }: {
   table: TMDataGridTable<TData>;
 }) {
+  const { labels } = useTMDataGridContext();
   const allSelected = useSelector(table.store, () =>
     table.getIsAllRowsSelected(),
   );
@@ -44,7 +45,7 @@ function SelectAllCheckbox<TData extends RowData>({
   return (
     <Checkbox
       size="xs"
-      aria-label="Select all rows"
+      aria-label={labels.selectAllRows}
       checked={allSelected}
       indeterminate={someSelected && !allSelected}
       onChange={table.getToggleAllRowsSelectedHandler()}
@@ -78,7 +79,7 @@ function SelectRowCheckbox<TData extends RowData>({
   // Cells render inside the grid's provider, so the checkbox can reach the
   // chrome store — it needs the shift-click pivot, and the feature flags to know
   // which row model a range is measured over.
-  const { ui, features } = useTMDataGridContext();
+  const { ui, features, labels } = useTMDataGridContext();
   // Out of the tab order once the grid has a cell cursor — see
   // useCellControlTabIndex. Enter on the lane still steps in, and Space on any
   // cell of the row ticks it.
@@ -109,7 +110,7 @@ function SelectRowCheckbox<TData extends RowData>({
     <Checkbox
       size="xs"
       tabIndex={tabIndex}
-      aria-label={isGroupRow ? "Select group" : "Select row"}
+      aria-label={isGroupRow ? labels.selectGroup : labels.selectRow}
       checked={selected}
       disabled={selectableIds.length === 0}
       indeterminate={someSelected && !selected}
@@ -151,15 +152,13 @@ function SelectRowCheckbox<TData extends RowData>({
  * The generated checkbox column, prepended under
  * `selectionMode: "checkbox"` (the default) or `"checkboxAndHighlight"`.
  */
-export function createSelectColumn<TData extends RowData>(): ColumnDef<
-  TMDataGridFeatures,
-  TData,
-  unknown
-> {
+export function createSelectColumn<TData extends RowData>(
+  label = "Checkbox selection",
+): ColumnDef<TMDataGridFeatures, TData, unknown> {
   return {
     id: SELECT_COLUMN_ID,
     meta: {
-      label: "Checkbox selection",
+      label,
       align: "center",
       // Structurally the first column; it also anchors the left pinned lane, so
       // no other column can be moved in front of it.
