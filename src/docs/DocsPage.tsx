@@ -24,6 +24,18 @@ export function DocsPage({ source }: { source: string }) {
                   <Table striped withTableBorder withColumnBorders {...props} />
                 </Table.ScrollContainer>
               ),
+              // Root-relative links in the markdown must respect the deploy
+              // base path (the site lives under /TMDataGrid/ on GitHub Pages).
+              a: ({ href, ...props }: ComponentPropsWithoutRef<"a">) => (
+                <a
+                  href={
+                    href?.startsWith("/")
+                      ? import.meta.env.BASE_URL + href.slice(1)
+                      : href
+                  }
+                  {...props}
+                />
+              ),
             }}
           >
             {source}
