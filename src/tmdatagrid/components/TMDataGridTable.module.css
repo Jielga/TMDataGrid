@@ -278,16 +278,25 @@
   pointer-events: none;
 }
 
-/* The entry block — one sticky row per edit.addRow(), under the header on
-   the same subgrid tracks as everything else. `--dg-header-height` is
-   measured only while the block exists. */
-.entryRow {
+/* The entry block — one row per edit.addRow(), under the header on the same
+   subgrid tracks as everything else. The *block* is the sticky element, not
+   the rows: sticky siblings would all compete for the same `top` and stack
+   onto one spot, while a single sticky wrapper lets its rows flow normally
+   inside it. Subgrid twice over keeps the cells on the outer tracks.
+   `--dg-header-height` is measured only while the block exists. */
+.entryBlock {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   position: sticky;
   top: var(--dg-header-height, 0px);
   z-index: var(--dg-z-pinned-row, 4);
+}
+
+.entryRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
 }
 
 .entryCell {

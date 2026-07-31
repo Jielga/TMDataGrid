@@ -91,7 +91,7 @@ export function TMDataGridEntryRows({
   const entryRows = entryTable.getCoreRowModel().rows;
 
   return (
-    <div role="rowgroup" style={{ display: "contents" }}>
+    <div role="rowgroup" className={classes.entryBlock}>
       {entryRows.map((entryRow) => {
         const cellsById = new Map(
           entryRow.getAllCells().map((cell) => [cell.column.id, cell]),
