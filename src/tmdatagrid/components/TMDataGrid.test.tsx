@@ -23,6 +23,7 @@ import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import type { TMDataGridTableProps } from "./TMDataGridTable";
 import {
   createTMDataGridColumnHelper,
+  openColumnFilter,
   useTMDataGrid,
   type TMDataGridDetailsArgs,
   type UseTMDataGridOptions,
@@ -1872,5 +1873,101 @@ describe("onReachEnd", () => {
     const calls: number[] = [];
     renderWithMantine(<ReachGrid rows={[]} onReachEnd={() => calls.push(1)} />);
     expect(calls.length).toBe(0);
+  });
+});
+
+describe("typed columns in the filter panel", () => {
+  type TypedRow = { id: number; status: string; active: boolean; hired: string };
+
+  const typedRows: TypedRow[] = [
+    { id: 1, status: "Paid", active: true, hired: "2026-01-15" },
+    { id: 2, status: "Pending", active: false, hired: "2026-03-01" },
+    { id: 3, status: "Overdue", active: true, hired: "2025-11-20" },
+    { id: 4, status: "Paid", active: false, hired: "2026-06-05" },
+  ];
+
+  const typedColumns = (() => {
+    const helper = createTMDataGridColumnHelper<TypedRow>();
+    return helper.columns([
+      helper.accessor("status", {
+        header: "Status",
+        meta: { type: "select", options: "faceted" },
+      }),
+      helper.accessor("active", {
+        header: "Active",
+        meta: { type: "boolean" },
+        cell: (info) => (info.getValue() ? "yes" : "no"),
+      }),
+      helper.accessor("hired", { header: "Hired", meta: { type: "date" } }),
+    ]);
+  })();
+
+  function TypedGrid({ filterColumnId }: { filterColumnId: string }) {
+    const grid = useTMDataGrid<TypedRow>({
+      data: typedRows,
+      columns: typedColumns,
+      getRowId: (row) => String(row.id),
+    });
+    return (
+      <>
+        {/* Seeds the column's default operator and opens the panel on it —
+            the same path the header menu's Filter item takes. */}
+        <button
+          type="button"
+          onClick={() => openColumnFilter(grid, filterColumnId)}
+        >
+          open filter
+        </button>
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<TypedRow> />
+        </TMDataGrid>
+      </>
+    );
+  }
+
+  const openFilter = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "open filter" }));
+  };
+
+  it("filters a select column through a multi-select of its faceted values", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<TypedGrid filterColumnId="status" />);
+    expect(gridRowCount()).toBe(typedRows.length);
+
+    await openFilter(user);
+    // The type's default operator, seeded by openColumnFilter.
+    expect(screen.getByDisplayValue("is any of")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Value" }));
+    await user.click(await screen.findByRole("option", { name: "Paid" }));
+
+    expect(gridRowCount()).toBe(2);
+  });
+
+  it("filters a boolean column through the Yes/No dropdown", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<TypedGrid filterColumnId="active" />);
+
+    await openFilter(user);
+    await user.click(screen.getByRole("combobox", { name: "Value" }));
+    await user.click(await screen.findByRole("option", { name: "Yes" }));
+
+    expect(gridRowCount()).toBe(2);
+  });
+
+  it("filters a date column by calendar day through a date input", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<TypedGrid filterColumnId="hired" />);
+
+    await openFilter(user);
+    // Switch the seeded "equals" to an ordering operator first.
+    await user.click(screen.getByRole("combobox", { name: "Operator" }));
+    await user.click(await screen.findByRole("option", { name: "is before" }));
+
+    const input = screen.getByLabelText("Value");
+    expect(input).toHaveAttribute("type", "date");
+    fireEvent.change(input, { target: { value: "2026-01-01" } });
+
+    expect(gridRowCount()).toBe(1);
   });
 });

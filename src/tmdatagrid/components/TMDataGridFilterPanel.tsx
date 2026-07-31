@@ -1,8 +1,20 @@
-import { ActionIcon, Button, Select, Stack, Text, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  MultiSelect,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
+import {
+  optionsToComboboxData,
+  resolveColumnOptions,
+} from "../core/columnOptions";
 import { getColumnLabel, getColumnType } from "../core/columnUtils";
 import {
   type TMDataGridFilterOperator,
@@ -11,6 +23,7 @@ import {
   getOperatorsForType,
   isTMDataGridFilterValue,
   operatorNeedsValue,
+  operatorTakesArrayValue,
 } from "../core/filterOperators";
 import { CloseIcon } from "./icons";
 
@@ -77,6 +90,18 @@ export function TMDataGridFilterPanel() {
       columnFilters.find((filter) => filter.id === fromColumnId)?.value,
     );
     const target = table.getColumn(toColumnId);
+    const operator = getDefaultOperator(
+      target ? getColumnType(target) : "string",
+    );
+    // The typed value only survives the move while it still fits the new
+    // operator — a text needle has no meaning to an `isAnyOf` set, or a set
+    // to a text input.
+    const value =
+      operatorTakesArrayValue(operator) === Array.isArray(current.value)
+        ? current.value
+        : operatorTakesArrayValue(operator)
+          ? []
+          : "";
     table.setColumnFilters(
       columnFilters
         .filter((filter) => filter.id !== toColumnId)
@@ -84,12 +109,7 @@ export function TMDataGridFilterPanel() {
           filter.id === fromColumnId
             ? {
                 id: toColumnId,
-                value: {
-                  operator: getDefaultOperator(
-                    target ? getColumnType(target) : "string",
-                  ),
-                  value: current.value,
-                } satisfies TMDataGridFilterValue,
+                value: { operator, value } satisfies TMDataGridFilterValue,
               }
             : filter,
         ),
@@ -105,6 +125,21 @@ export function TMDataGridFilterPanel() {
           : filter,
       ),
     );
+  }
+
+  function changeOperator(columnId: string, operator: TMDataGridFilterOperator) {
+    const current = asFilterValue(
+      columnFilters.find((filter) => filter.id === columnId)?.value,
+    );
+    // Same arity rule as changing the column: keep the value across operators
+    // of the same shape, reset it across the array/scalar boundary.
+    const value =
+      operatorTakesArrayValue(operator) === Array.isArray(current.value)
+        ? current.value
+        : operatorTakesArrayValue(operator)
+          ? []
+          : "";
+    patchFilter(columnId, { operator, value });
   }
 
   /** Clears every filter, including half-typed ones the pills never showed. */
@@ -171,6 +206,8 @@ export function TMDataGridFilterPanel() {
           const value = asFilterValue(filter.value);
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
+          const takesArray = operatorTakesArrayValue(value.operator);
+          const scalarValue = typeof value.value === "string" ? value.value : "";
 
           return (
             <div key={filter.id} className={classes.filterRow}>
@@ -211,24 +248,66 @@ export function TMDataGridFilterPanel() {
                 value={value.operator}
                 onChange={(next) =>
                   next &&
-                  patchFilter(filter.id, {
-                    operator: next as TMDataGridFilterOperator,
-                  })
+                  changeOperator(filter.id, next as TMDataGridFilterOperator)
                 }
               />
 
-              <TextInput
-                label={labels.filterValue}
-                size={controlSize}
-                w={180}
-                type={type === "number" && needsValue ? "number" : "text"}
-                disabled={!needsValue}
-                placeholder={needsValue ? labels.filterValuePlaceholder : ""}
-                value={needsValue ? value.value : ""}
-                onChange={(event) =>
-                  patchFilter(filter.id, { value: event.currentTarget.value })
-                }
-              />
+              {takesArray && column ? (
+                // The set the cell is tested against. Options come from
+                // `meta.options`; a select column that declares none still
+                // gets the values present in the data, via the faceted index.
+                <MultiSelect
+                  label={labels.filterValue}
+                  size={controlSize}
+                  w={180}
+                  comboboxProps={{ withinPortal: false }}
+                  searchable
+                  data={optionsToComboboxData(
+                    resolveColumnOptions({ table, column, fallback: "faceted" }),
+                  )}
+                  value={Array.isArray(value.value) ? [...value.value] : []}
+                  onChange={(next) => patchFilter(filter.id, { value: next })}
+                />
+              ) : type === "boolean" ? (
+                <Select
+                  label={labels.filterValue}
+                  size={controlSize}
+                  w={180}
+                  comboboxProps={{ withinPortal: false }}
+                  disabled={!needsValue}
+                  clearable
+                  placeholder={needsValue ? labels.filterValuePlaceholder : ""}
+                  data={[
+                    { value: "true", label: labels.booleanTrue },
+                    { value: "false", label: labels.booleanFalse },
+                  ]}
+                  value={needsValue && scalarValue !== "" ? scalarValue : null}
+                  onChange={(next) =>
+                    patchFilter(filter.id, { value: next ?? "" })
+                  }
+                />
+              ) : (
+                <TextInput
+                  label={labels.filterValue}
+                  size={controlSize}
+                  w={180}
+                  type={
+                    !needsValue
+                      ? "text"
+                      : type === "number"
+                        ? "number"
+                        : type === "date"
+                          ? "date"
+                          : "text"
+                  }
+                  disabled={!needsValue}
+                  placeholder={needsValue ? labels.filterValuePlaceholder : ""}
+                  value={needsValue ? scalarValue : ""}
+                  onChange={(event) =>
+                    patchFilter(filter.id, { value: event.currentTarget.value })
+                  }
+                />
+              )}
             </div>
           );
         })}

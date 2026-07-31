@@ -31,7 +31,8 @@ table's column model.
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `label` | `string` | String header, or column id | Name used in menus and the column manager. Required when `header` is a component. |
-| `type` | `"string" \| "number"` | `"string"` | Determines which filter operators are offered. |
+| `type` | `"string" \| "number" \| "boolean" \| "date" \| "select" \| "multiSelect"` | `"string"` | Determines which filter operators and value controls are offered — and, with editing on, which editor the cell opens. |
+| `options` | `TMDataGridOptionsSource` | — | The choices of a `select` / `multiSelect` column. See [Column types](#columns). |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment applied to both header and cells. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
@@ -75,6 +76,53 @@ A column inside a header group is never movable, whatever `meta.enableOrdering`
 says: `columnOrder` sequences leaf columns, so moving one would leave the group
 header spanning columns that no longer belong to it.
 
+## Column types
+
+`meta.type` declares what a column's values are, and the chrome follows: the
+filter panel offers the type's operators and renders a matching value control —
+a date input for `date`, a Yes/No dropdown for `boolean` (labels from the
+dictionary), a multi-select of the column's options for `select` and
+`multiSelect`.
+
+Dates may be `Date` instances or ISO `YYYY-MM-DD` strings in the data; the
+comparison is by calendar day either way, and filter values always travel as
+ISO strings. No `@mantine/dates` involved — the date control is the native
+`<input type="date">`.
+
+### Options
+
+`select` and `multiSelect` columns declare their choices once, in
+`meta.options`, and every consumer of them — the filter panel today, the cell
+editor once editing is on — reads the same source:
+
+```tsx
+// A fixed set, strings or full options:
+meta: {
+  type: "select",
+  options: [
+    "Pending",
+    { value: "Paid", label: "Paid in full", color: "green" },
+  ],
+}
+
+// The distinct values present in the data (low-cardinality columns):
+meta: { type: "select", options: "faceted" }
+
+// Computed — `row` is set when a cell editor asks, absent for the filter
+// panel, which is what row-dependent options key off:
+meta: {
+  type: "select",
+  options: ({ row }) => citiesFor(row?.original.country),
+}
+```
+
+`resolveColumnOptions({ table, column, row? })` normalises all three forms and
+is exported for custom chrome; `optionsToComboboxData` turns the result into
+what Mantine's `Select`/`MultiSelect` take, `group` fields included. A select
+column that declares nothing still filters: the panel falls back to the faceted
+values. Mantine's dropdowns are not virtualized, so very large sets want the
+function form rather than `"faceted"`.
+
 ## Checkbox column
 
 Unless `enableRowSelection` is `false` or `rowSelectionMode` is `"row"`, a column
@@ -105,30 +153,42 @@ value rather than selected through `filterFn`:
 ```ts
 type TMDataGridFilterValue = {
   operator: TMDataGridFilterOperator;
-  value: string;
+  value: string | ReadonlyArray<string>;
 };
 ```
 
 The filter model is therefore plain JSON, which allows it to be forwarded to a
-server without transformation. See [Server-side](#server-side).
+server without transformation — dates as ISO strings, booleans as `"true"` /
+`"false"`, and an array only under `isAnyOf` / `isNoneOf` (the set the cell is
+tested against). See [Server-side](#server-side).
 
 ### Operators
 
 | Operator | Label | Column type |
 | --- | --- | --- |
 | `contains` | contains | `string` |
-| `equals` | equals | `string`, `number` |
-| `notEquals` | does not equal | `string`, `number` |
+| `equals` | equals | `string`, `number`, `boolean`, `date` |
+| `notEquals` | does not equal | `string`, `number`, `boolean`, `date` |
 | `startsWith` | starts with | `string` |
 | `endsWith` | ends with | `string` |
 | `greaterThan` | is greater than | `number` |
 | `greaterThanOrEqual` | is greater than or equal to | `number` |
 | `lessThan` | is less than | `number` |
 | `lessThanOrEqual` | is less than or equal to | `number` |
-| `isEmpty` | is empty | `string`, `number` |
-| `isNotEmpty` | is not empty | `string`, `number` |
+| `before` | is before | `date` |
+| `after` | is after | `date` |
+| `onOrBefore` | is on or before | `date` |
+| `onOrAfter` | is on or after | `date` |
+| `isAnyOf` | is any of | `select`, `multiSelect` |
+| `isNoneOf` | is none of | `select`, `multiSelect` |
+| `isEmpty` | is empty | every type |
+| `isNotEmpty` | is not empty | every type |
 
-`meta.type` selects the list. String comparisons are case-insensitive.
+`meta.type` selects the list. String comparisons are case-insensitive; date
+comparisons are by calendar day, and `equals` on a `date` column plays the role
+of "is". On a `multiSelect` column — whose cells hold arrays — `isAnyOf` is an
+intersection test and `isNoneOf` its complement; an empty cell array counts as
+empty for `isEmpty`.
 
 A filter with an empty value remains in state so the panel continues to display
 its row while the user types. It matches all rows, does not activate the filter

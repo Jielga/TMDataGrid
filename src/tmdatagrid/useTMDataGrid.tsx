@@ -37,6 +37,7 @@ import {
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import type { TMDataGridOptionsSource } from "./core/columnOptions";
 import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
@@ -88,8 +89,19 @@ const PERSIST_DEBOUNCE_MS = 200;
 export type TMDataGridColumnMeta = {
   /** Name shown in menus and the column manager. Falls back to a string header. */
   label?: string;
-  /** Drives which filter operators are offered. Defaults to `"string"`. */
+  /**
+   * Drives which filter operators are offered and, once editing is on, which
+   * editor the cell opens. Defaults to `"string"`.
+   */
   type?: TMDataGridColumnType;
+  /**
+   * The choices of a `select` / `multiSelect` column — one declaration feeding
+   * the filter panel's value control and the cell editor alike. A static
+   * array, `"faceted"` (the distinct values present in the data), or a
+   * function of the table, column and — for editors — the row. See
+   * {@link TMDataGridOptionsSource}.
+   */
+  options?: TMDataGridOptionsSource;
   /** Share of the leftover width this column claims. Defaults to `1`. */
   flex?: number;
   align?: "left" | "right" | "center";

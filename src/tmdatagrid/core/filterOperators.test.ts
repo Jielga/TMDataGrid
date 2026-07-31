@@ -6,13 +6,14 @@ import {
   isTMDataGridFilterValue,
   matchesFilter,
   operatorNeedsValue,
+  operatorTakesArrayValue,
   type TMDataGridFilterOperator,
 } from "./filterOperators";
 
 const match = (
   cellValue: unknown,
   operator: TMDataGridFilterOperator,
-  value = "",
+  value: string | ReadonlyArray<string> = "",
 ) => matchesFilter(cellValue, { operator, value });
 
 describe("matchesFilter", () => {
@@ -66,6 +67,53 @@ describe("matchesFilter", () => {
     });
   });
 
+  describe("date operators", () => {
+    it("orders by calendar day, for Date cells and ISO-string cells alike", () => {
+      const day = new Date(2026, 6, 15); // 2026-07-15 local
+      expect(match(day, "before", "2026-07-16")).toBe(true);
+      expect(match(day, "before", "2026-07-15")).toBe(false);
+      expect(match(day, "after", "2026-07-14")).toBe(true);
+      expect(match(day, "onOrBefore", "2026-07-15")).toBe(true);
+      expect(match(day, "onOrAfter", "2026-07-15")).toBe(true);
+      expect(match("2026-07-15", "before", "2026-07-16")).toBe(true);
+      expect(match("2026-07-15T09:30:00", "onOrAfter", "2026-07-15")).toBe(true);
+    });
+
+    it("treats equals as day equality for a Date cell", () => {
+      expect(match(new Date(2026, 6, 15), "equals", "2026-07-15")).toBe(true);
+      expect(match(new Date(2026, 6, 15), "equals", "2026-07-16")).toBe(false);
+      expect(match(new Date(2026, 6, 15), "notEquals", "2026-07-16")).toBe(true);
+    });
+
+    it("never matches an ordering operator on something that has no day", () => {
+      expect(match("Stockholm", "before", "2026-07-16")).toBe(false);
+      expect(match(null, "after", "2026-07-16")).toBe(false);
+      expect(match(new Date(2026, 6, 15), "before", "not a date")).toBe(false);
+    });
+  });
+
+  describe("set operators", () => {
+    it("tests scalar cells for membership", () => {
+      expect(match("Paid", "isAnyOf", ["Paid", "Pending"])).toBe(true);
+      expect(match("Overdue", "isAnyOf", ["Paid", "Pending"])).toBe(false);
+      expect(match("Overdue", "isNoneOf", ["Paid", "Pending"])).toBe(true);
+      expect(match("Paid", "isNoneOf", ["Paid"])).toBe(false);
+    });
+
+    it("intersects array cells with the set", () => {
+      expect(match(["a", "b"], "isAnyOf", ["b", "c"])).toBe(true);
+      expect(match(["a", "b"], "isAnyOf", ["c"])).toBe(false);
+      expect(match(["a", "b"], "isNoneOf", ["c"])).toBe(true);
+      expect(match(["a", "b"], "isNoneOf", ["b"])).toBe(false);
+    });
+
+    it("compares case-insensitively and matches everything on an empty set", () => {
+      expect(match("PAID", "isAnyOf", ["paid"])).toBe(true);
+      expect(match("anything", "isAnyOf", [])).toBe(true);
+      expect(match("anything", "isNoneOf", [])).toBe(true);
+    });
+  });
+
   describe("valueless operators", () => {
     it("treats null, undefined and empty string as empty", () => {
       expect(match(null, "isEmpty")).toBe(true);
@@ -105,6 +153,11 @@ describe("isFilterActive", () => {
     expect(isFilterActive({ operator: "isEmpty", value: "" })).toBe(true);
     expect(isFilterActive({ operator: "isNotEmpty", value: "" })).toBe(true);
   });
+
+  it("follows the set's emptiness for an array value", () => {
+    expect(isFilterActive({ operator: "isAnyOf", value: [] })).toBe(false);
+    expect(isFilterActive({ operator: "isAnyOf", value: ["Paid"] })).toBe(true);
+  });
 });
 
 describe("isTMDataGridFilterValue", () => {
@@ -137,8 +190,36 @@ describe("operator sets", () => {
     expect(operatorNeedsValue("isNotEmpty")).toBe(false);
   });
 
+  it("gives each new type its own set", () => {
+    expect(getOperatorsForType("date")).toContain("before");
+    expect(getOperatorsForType("date")).not.toContain("contains");
+    expect(getOperatorsForType("boolean")).toEqual([
+      "equals",
+      "notEquals",
+      "isEmpty",
+      "isNotEmpty",
+    ]);
+    expect(getOperatorsForType("select")).toContain("isAnyOf");
+    expect(getOperatorsForType("multiSelect")).toContain("isNoneOf");
+    expect(getOperatorsForType("select")).not.toContain("equals");
+  });
+
+  it("marks exactly the set operators as array-valued", () => {
+    expect(operatorTakesArrayValue("isAnyOf")).toBe(true);
+    expect(operatorTakesArrayValue("isNoneOf")).toBe(true);
+    expect(operatorTakesArrayValue("equals")).toBe(false);
+    expect(operatorTakesArrayValue("before")).toBe(false);
+  });
+
   it("only offers operators the default is a member of", () => {
-    for (const type of ["string", "number"] as const) {
+    for (const type of [
+      "string",
+      "number",
+      "boolean",
+      "date",
+      "select",
+      "multiSelect",
+    ] as const) {
       expect(getOperatorsForType(type)).toContain(getDefaultOperator(type));
     }
   });

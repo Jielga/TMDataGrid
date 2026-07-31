@@ -36,6 +36,9 @@ export type TMDataGridLabels = {
   filterOperator: string;
   filterValue: string;
   filterValuePlaceholder: string;
+  /** What a boolean column's `true` reads as — its filter choice and cell text. */
+  booleanTrue: string;
+  booleanFalse: string;
   addFilter: string;
   clearAllFilters: string;
   closeFilters: string;
@@ -131,6 +134,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   filterOperator: "Operator",
   filterValue: "Value",
   filterValuePlaceholder: "Filter value",
+  booleanTrue: "Yes",
+  booleanFalse: "No",
   addFilter: "Add filter",
   clearAllFilters: "Clear all",
   closeFilters: "Close filters",

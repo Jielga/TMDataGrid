@@ -64,6 +64,13 @@ export function formatExportValue(
   }
   if (typeof value === "string") return value;
   if (typeof value === "boolean") return value ? "true" : "false";
+  // A multiSelect cell holds an array of values; a spreadsheet cell holds one
+  // string, so the elements are joined the way they read on screen.
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => formatExportValue(entry, { decimalComma }))
+      .join(", ");
+  }
   // `sv-SE` is ISO-shaped — 2026-07-31, 2026-07-31 14:05:00 — which is both the
   // Nordic form and the one Excel parses as a date rather than as text.
   if (value instanceof Date) {

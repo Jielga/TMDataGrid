@@ -60,7 +60,9 @@ Filter values are plain JSON:
 ```json
 [
   { "id": "lastName", "value": { "operator": "contains", "value": "holm" } },
-  { "id": "age", "value": { "operator": "greaterThan", "value": "30" } }
+  { "id": "age", "value": { "operator": "greaterThan", "value": "30" } },
+  { "id": "status", "value": { "operator": "isAnyOf", "value": ["Paid", "Pending"] } },
+  { "id": "hired", "value": { "operator": "onOrAfter", "value": "2026-01-01" } }
 ]
 ```
 

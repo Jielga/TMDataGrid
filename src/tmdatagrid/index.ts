@@ -42,8 +42,19 @@ export {
   type TMDataGridFilterValue,
   FILTER_OPERATOR_LABELS,
   formatFilterLabel,
+  getDefaultOperator,
+  getOperatorsForType,
   isFilterActive,
+  operatorNeedsValue,
+  operatorTakesArrayValue,
 } from "./core/filterOperators";
+export {
+  optionsToComboboxData,
+  resolveColumnOptions,
+  type TMDataGridOption,
+  type TMDataGridOptionsArgs,
+  type TMDataGridOptionsSource,
+} from "./core/columnOptions";
 export {
   mergeLabels,
   TMDATAGRID_LABELS_EN,

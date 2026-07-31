@@ -7,13 +7,23 @@ import type { Row, RowData, TableFeatures } from "@tanstack/react-table";
  * inside the filter *value* instead. That keeps the whole filter model plain,
  * serialisable JSON — which is what makes it portable to a server-side
  * `manualFiltering` table (just forward `columnFilters` to the API).
+ *
+ * `value` is a string array under `isAnyOf` / `isNoneOf` (the set the cell is
+ * tested against) and a single string everywhere else — dates travel as ISO
+ * `YYYY-MM-DD` strings, booleans as `"true"` / `"false"`. Still plain JSON.
  */
 export type TMDataGridFilterValue = {
   operator: TMDataGridFilterOperator;
-  value: string;
+  value: string | ReadonlyArray<string>;
 };
 
-export type TMDataGridColumnType = "string" | "number";
+export type TMDataGridColumnType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date"
+  | "select"
+  | "multiSelect";
 
 export type TMDataGridFilterOperator =
   | "contains"
@@ -25,6 +35,12 @@ export type TMDataGridFilterOperator =
   | "greaterThanOrEqual"
   | "lessThan"
   | "lessThanOrEqual"
+  | "before"
+  | "after"
+  | "onOrBefore"
+  | "onOrAfter"
+  | "isAnyOf"
+  | "isNoneOf"
   | "isEmpty"
   | "isNotEmpty";
 
@@ -38,6 +54,12 @@ export const FILTER_OPERATOR_LABELS: Record<TMDataGridFilterOperator, string> = 
   greaterThanOrEqual: "is greater than or equal to",
   lessThan: "is less than",
   lessThanOrEqual: "is less than or equal to",
+  before: "is before",
+  after: "is after",
+  onOrBefore: "is on or before",
+  onOrAfter: "is on or after",
+  isAnyOf: "is any of",
+  isNoneOf: "is none of",
   isEmpty: "is empty",
   isNotEmpty: "is not empty",
 };
@@ -63,26 +85,93 @@ const NUMBER_OPERATORS: readonly TMDataGridFilterOperator[] = [
   "isNotEmpty",
 ];
 
+// `equals` doubles as a date's "is": it compares by calendar day whenever the
+// cell holds a Date (see matchesFilter), so a separate `is` operator would be
+// the same comparison under a second name.
+const DATE_OPERATORS: readonly TMDataGridFilterOperator[] = [
+  "equals",
+  "notEquals",
+  "before",
+  "after",
+  "onOrBefore",
+  "onOrAfter",
+  "isEmpty",
+  "isNotEmpty",
+];
+
+const BOOLEAN_OPERATORS: readonly TMDataGridFilterOperator[] = [
+  "equals",
+  "notEquals",
+  "isEmpty",
+  "isNotEmpty",
+];
+
+// One set for both select types: the operators are about membership in the
+// filter's set, which reads the same whether the cell holds one value or many.
+const SELECT_OPERATORS: readonly TMDataGridFilterOperator[] = [
+  "isAnyOf",
+  "isNoneOf",
+  "isEmpty",
+  "isNotEmpty",
+];
+
 /** Operators that ignore the value input (the input is disabled for these). */
 const VALUELESS_OPERATORS: readonly TMDataGridFilterOperator[] = [
   "isEmpty",
   "isNotEmpty",
 ];
 
+/** Operators whose value is a set of strings rather than one. */
+const ARRAY_OPERATORS: readonly TMDataGridFilterOperator[] = [
+  "isAnyOf",
+  "isNoneOf",
+];
+
+const OPERATORS_BY_TYPE: Record<
+  TMDataGridColumnType,
+  readonly TMDataGridFilterOperator[]
+> = {
+  string: STRING_OPERATORS,
+  number: NUMBER_OPERATORS,
+  boolean: BOOLEAN_OPERATORS,
+  date: DATE_OPERATORS,
+  select: SELECT_OPERATORS,
+  multiSelect: SELECT_OPERATORS,
+};
+
+const DEFAULT_OPERATOR_BY_TYPE: Record<
+  TMDataGridColumnType,
+  TMDataGridFilterOperator
+> = {
+  string: "contains",
+  number: "equals",
+  boolean: "equals",
+  date: "equals",
+  select: "isAnyOf",
+  multiSelect: "isAnyOf",
+};
+
 export function getOperatorsForType(
   type: TMDataGridColumnType,
 ): readonly TMDataGridFilterOperator[] {
-  return type === "number" ? NUMBER_OPERATORS : STRING_OPERATORS;
+  return OPERATORS_BY_TYPE[type];
 }
 
 export function getDefaultOperator(
   type: TMDataGridColumnType,
 ): TMDataGridFilterOperator {
-  return type === "number" ? "equals" : "contains";
+  return DEFAULT_OPERATOR_BY_TYPE[type];
 }
 
 export function operatorNeedsValue(operator: TMDataGridFilterOperator): boolean {
   return !VALUELESS_OPERATORS.includes(operator);
+}
+
+/** Whether the operator's value is a string array — `isAnyOf` / `isNoneOf`. */
+export function operatorTakesArrayValue(
+  operator: TMDataGridFilterOperator,
+): boolean {
+  return ARRAY_OPERATORS.includes(operator);
 }
 
 export function isTMDataGridFilterValue(
@@ -103,7 +192,10 @@ export function isTMDataGridFilterValue(
  */
 export function isFilterActive(value: unknown): boolean {
   if (!isTMDataGridFilterValue(value)) return false;
-  return !operatorNeedsValue(value.operator) || value.value.trim() !== "";
+  if (!operatorNeedsValue(value.operator)) return true;
+  return Array.isArray(value.value)
+    ? value.value.length > 0
+    : typeof value.value === "string" && value.value.trim() !== "";
 }
 
 /**
@@ -129,24 +221,83 @@ export function formatFilterLabel({
   if (!operatorNeedsValue(operator)) {
     return `${label} ${operatorLabels[operator]}`;
   }
-  const text = value.trim();
+  const text = Array.isArray(value) ? value.join(", ") : String(value).trim();
   if (operator === getDefaultOperator(type)) return `${label}: ${text}`;
   return `${label} ${operatorLabels[operator]} ${text}`;
+}
+
+/**
+ * A value's calendar day as `YYYY-MM-DD`, or `null` for anything that has no
+ * day to speak of. A `Date` is read in local time — `sv-SE` formats as ISO,
+ * which is the shape `<input type="date">` produced on the other side — and a
+ * string contributes its leading ISO day, so both `2026-07-31` and a full
+ * timestamp compare by day.
+ */
+function toIsoDay(value: unknown): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : value.toLocaleDateString("sv-SE");
+  }
+  if (typeof value === "string") {
+    const match = /^(\d{4}-\d{2}-\d{2})/.exec(value.trim());
+    return match ? match[1] : null;
+  }
+  return null;
+}
+
+function isEmptyCell(cellValue: unknown): boolean {
+  return (
+    cellValue === null ||
+    cellValue === undefined ||
+    cellValue === "" ||
+    (Array.isArray(cellValue) && cellValue.length === 0)
+  );
 }
 
 export function matchesFilter(
   cellValue: unknown,
   { operator, value }: TMDataGridFilterValue,
 ): boolean {
-  if (operator === "isEmpty") {
-    return cellValue === null || cellValue === undefined || cellValue === "";
-  }
-  if (operator === "isNotEmpty") {
-    return cellValue !== null && cellValue !== undefined && cellValue !== "";
+  if (operator === "isEmpty") return isEmptyCell(cellValue);
+  if (operator === "isNotEmpty") return !isEmptyCell(cellValue);
+
+  // Set membership. The cell side is also a list — a multiSelect cell holds an
+  // array — so "any of" is an intersection test and "none of" its complement.
+  if (operator === "isAnyOf" || operator === "isNoneOf") {
+    const set = (Array.isArray(value) ? value : [value])
+      .map((entry) => String(entry).toLowerCase())
+      .filter((entry) => entry !== "");
+    if (set.length === 0) return true;
+    const cellEntries = Array.isArray(cellValue) ? cellValue : [cellValue];
+    const hit = cellEntries.some((entry) =>
+      set.includes(String(entry ?? "").toLowerCase()),
+    );
+    return operator === "isAnyOf" ? hit : !hit;
   }
 
-  const filterText = value.trim();
+  const filterText =
+    typeof value === "string" ? value.trim() : value.join(",").trim();
   if (filterText === "") return true;
+
+  // Day ordering. ISO days compare correctly as strings, which keeps this
+  // free of timezone arithmetic — the whole comparison lives in local days.
+  switch (operator) {
+    case "before":
+    case "after":
+    case "onOrBefore":
+    case "onOrAfter": {
+      const cellDay = toIsoDay(cellValue);
+      const filterDay = toIsoDay(filterText);
+      if (cellDay === null || filterDay === null) return false;
+      if (operator === "before") return cellDay < filterDay;
+      if (operator === "after") return cellDay > filterDay;
+      if (operator === "onOrBefore") return cellDay <= filterDay;
+      return cellDay >= filterDay;
+    }
+    default:
+      break;
+  }
 
   const numericCell = typeof cellValue === "number" ? cellValue : Number.NaN;
   const numericFilter = Number(filterText);
@@ -166,7 +317,14 @@ export function matchesFilter(
       break;
   }
 
-  const cellText = String(cellValue ?? "").toLowerCase();
+  // A Date compares by its calendar day, which is what makes `equals` on a
+  // date column mean "is this day" rather than a doomed string comparison
+  // against the Date's default stringification.
+  const cellText = (
+    cellValue instanceof Date
+      ? (toIsoDay(cellValue) ?? "")
+      : String(cellValue ?? "")
+  ).toLowerCase();
   const needle = filterText.toLowerCase();
 
   switch (operator) {
