@@ -65,7 +65,7 @@ table's column model.
 | Column menu | Appears on hover, or right-click the header: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
-| Row selection | Checkbox column pinned to the left, or click-to-select rows with `rowSelectionMode: "row"`. |
+| Row selection | Checkbox column pinned to the left, or `selectionMode: "row"` (click to select), `"highlight"` / `"checkboxAndHighlight"` (click highlights one row for master–detail). |
 | Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`; `TMDataGrid.Footer` renders the pager. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 

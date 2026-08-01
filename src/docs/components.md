@@ -73,7 +73,7 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. Under `rowSelectionMode: "row"` it runs in addition to the selection. |
+| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. Runs in addition to whatever the click already does under the `selectionMode` — selection or highlight, never instead of it. |
 | `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 | `cellExport` | `TMDataGridCellExportOptions` | How Ctrl+C and the export item write values, under `cellSelection: "range"`. Nordic Excel defaults — `{ separator: ";", decimalComma: true, includeHeaders: true, fileName: "export" }`. |

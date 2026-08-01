@@ -125,9 +125,9 @@ function form rather than `"faceted"`.
 
 ## Checkbox column
 
-Unless `enableRowSelection` is `false` or `rowSelectionMode` is `"row"`, a column
-with the id `SELECT_COLUMN_ID` is added as the first column and pinned to the
-left. It is listed as "Checkbox selection" in the column manager and can be
+Under `selectionMode: "checkbox"` (the default) or `"checkboxAndHighlight"`,
+and unless `enableRowSelection` is `false`, a column with the id
+`SELECT_COLUMN_ID` is added as the first column and pinned to the left. It is listed as "Checkbox selection" in the column manager and can be
 hidden like any other column. It is a system lane: as wide as the box it holds
 (36px at every size scale), with no column menu and no resize handle, and it
 cannot be sorted, filtered, resized, re-pinned or moved.

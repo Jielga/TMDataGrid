@@ -16,10 +16,12 @@ including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
 `manual*` flags and `rowCount`. The `features` option is supplied internally and
 cannot be overridden.
 
-`persist`, `enableColumnOrdering`, `enablePagination`, `rowSelectionMode`,
-`highlightSelectedRows`, `renderDetails`, `renderDetailsEstHeight`, `overscan`,
-`cellSelection` and `onFocusedCellChange` are the grid's own options and are
-consumed here rather than forwarded to TanStack.
+`persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode`,
+`showSelectedBackground`, `defaultHighlightedRowId`, `onHighlightedRowChange`,
+`renderDetails`, `renderDetailsEstHeight`, `overscan`, `cellSelection`,
+`onFocusedCellChange`, `labels` and the editing options (see
+[Editing](#editing)) are the grid's own options and are consumed here rather
+than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -27,8 +29,10 @@ consumed here rather than forwarded to TanStack.
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
-| `rowSelectionMode` | `"checkbox" \| "row"` | `"checkbox"` | `"row"` drops the checkbox column and selects on row click. Defined by the grid, see [Features](#features). |
-| `highlightSelectedRows` | `boolean` | Follows the mode | Highlight background on selected rows: off for `"checkbox"`, on for `"row"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid, see [Features](#features). |
+| `selectionMode` | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a bare row click does. Defined by the grid, see [Features](#features). |
+| `showSelectedBackground` | `boolean` | Follows the mode | Highlight background on selected rows: on for `"row"`, off for `"checkbox"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid, see [Features](#features). |
+| `defaultHighlightedRowId` | `string \| null` | – | Row highlighted on mount, under a mode with a highlight. Read once, like `initialState`. |
+| `onHighlightedRowChange` | `(rowId: string \| null) => void` | – | Follows the highlighted row — clicks and `ui.actions.setHighlightedRow` both. |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |

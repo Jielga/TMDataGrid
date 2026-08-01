@@ -26,8 +26,8 @@ see [Pagination](#pagination).
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
-| `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See [Row selection](#row-selection) |
-| `highlightSelectedRows: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
+| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](#row-selection) |
+| `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
@@ -61,40 +61,52 @@ const grid = useTMDataGrid({
 
 ## Row selection
 
-On by default, in two modes. Both write to the same `rowSelection` state, so
-everything downstream — the toolbar count, `getSelectedRowModel()`, persistence
-— is unaffected by the choice.
+`selectionMode` sets what selecting looks like and what a bare row click
+does. One option rather than two, because the pair cannot vary freely: a
+click can either toggle a multi-selection or move the highlight, never both.
+Defaults to `"checkbox"`.
 
-**Checkbox** — the default. A checkbox column is added as the first column, with
-a select-all box in its header. Clicking a row elsewhere does not select it, and
-a selected row is not highlighted: the checkbox already says so.
+| Mode | Checkbox column | Row click |
+| ---- | --------------- | --------- |
+| `"checkbox"` | yes, multi-select | nothing |
+| `"row"` | no | selects, with the usual modifiers |
+| `"checkboxAndHighlight"` | yes, multi-select | highlights one row |
+| `"highlight"` | no | highlights one row — no selection at all |
+
+The first two write to TanStack's `rowSelection`, so everything downstream —
+the toolbar count, `getSelectedRowModel()`, persistence — is unaffected by
+the choice. Under `"row"` the click follows the desktop-list conventions: a
+plain click makes the selection this row, Ctrl/Cmd toggles it and leaves the
+rest, Shift selects the range from the anchor, Ctrl+Shift adds that range.
+Rows are focusable in this mode and Space or Enter toggles the focused row.
+
+The highlight is state of its own, not a slice of `rowSelection` — which is
+what lets `"checkboxAndHighlight"` run both at once: tick rows for a bulk
+action, click one to open its detail panel. `defaultHighlightedRowId` seeds
+it and `onHighlightedRowChange` follows it, typically into a route for a
+master–detail view.
 
 ```tsx
-const grid = useTMDataGrid({ data, columns });
+const grid = useTMDataGrid({ data, columns }); // "checkbox"
+const rows = useTMDataGrid({ data, columns, selectionMode: "row" });
+const master = useTMDataGrid({ data, columns, selectionMode: "highlight" });
 ```
 
-**Row** — no checkbox column. Clicking a row toggles it, and the row takes the
-highlight background — the only feedback a click gives. Other rows keep their
-state, so a click never clears the rest of the selection. Rows are focusable in
-this mode and Space or Enter toggles the focused row.
-
-```tsx
-const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
-```
-
-`enableRowSelection: false` removes both, and `rowSelectionMode` is then
-ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode — under
-`"row"` it runs in addition to the selection, not instead of it.
+`enableRowSelection: false` removes the selection half — the checkbox column
+and row-click selection — whatever the mode; under `"highlight"` there is
+nothing for it to gate. `TMDataGrid.Table`'s `onRowClick` still fires in
+every mode, in addition to whatever the click already does.
 
 ### Highlighting selected rows
 
-`highlightSelectedRows` follows the mode: on for `"row"`, off for `"checkbox"`.
-Set it to override that — checkboxes *and* a highlight, or row selection with no
-background change.
+`showSelectedBackground` follows the mode: on for `"row"`, where the
+background is the only feedback a click gives, off for `"checkbox"`, where
+the box already says so. Set it to override that — checkboxes *and* a
+background, or row selection with no background change.
 
 ```tsx
-// Checkbox column, and selected rows are highlighted too.
-const grid = useTMDataGrid({ data, columns, highlightSelectedRows: true });
+// Checkbox column, and selected rows take the background too.
+const grid = useTMDataGrid({ data, columns, showSelectedBackground: true });
 ```
 
 The colour is the `--dg-row-selected-bg` CSS variable, which defaults to
@@ -108,8 +120,9 @@ touch the flag:
 />
 ```
 
-Rows carry `data-selected` whenever they are selected and `data-highlighted`
-only when they are also highlighted, so custom styling can key off either.
+Rows carry `data-selected` whenever they are selected, `data-selected-bg`
+when they also take the background, and `data-highlighted` on the highlighted
+row — custom styling can key off any of them.
 
 ## Pagination
 
@@ -178,7 +191,7 @@ function ExportButton() {
 | `canPinAny` | At least one leaf column can be pinned. |
 | `canReorderAny` | At least one leaf column can be moved. |
 | `canGroupAny` | At least one leaf column can be grouped on. |
-| `canSelectRows` | `enableRowSelection` is not `false`. The mode is in `features.rowSelectionMode`. |
+| `canSelectRows` | `enableRowSelection` is not `false` and `selectionMode` is not `"highlight"`. The mode is in `features.selectionMode`. |
 | `canPaginate` | `enablePagination` or `manualPagination` is `true`. Configuration, not live state — use `isPagingActive(table, features)` for whether the pager is currently slicing anything, which grouping suspends. |
 | `canSearch` | At least one leaf column takes part in the global quick search. |
 

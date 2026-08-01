@@ -48,7 +48,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | # | Item | Size | Status | Gate / depends on |
 | --- | --- | --- | --- | --- |
 | **A** | **Trivial & foundation — strict order** | | | |
-| A1 | Docs repair: stale selection options | S | `in progress` | — |
+| A1 | Docs repair: stale selection options | S | `done 2026-08-01` | — |
 | A2 | Changesets pre-mode beta + major changeset | S | `ready` | Q5 |
 | A3 | Persistence version marker → slice realignment → one-time drop | M | `ready` | Q3; after A2 (the drop is a named break) |
 | A4 | Reset layout | S | `ready` | A3 |
