@@ -365,6 +365,8 @@ export function DataGridExample() {
   const [customPager, setCustomPager] = useState(false);
   const [rowContextMenu, setRowContextMenu] = useState(true);
   const [rowDetails, setRowDetails] = useState(true);
+  const [striped, setStriped] = useState(false);
+  const [rowNumbers, setRowNumbers] = useState(false);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   const [cellSelection, setCellSelection] =
@@ -394,6 +396,7 @@ export function DataGridExample() {
     selectionMode,
     showSelectedBackground,
     cellSelection,
+    enableRowNumbers: rowNumbers,
     // Setting the render prop is what turns row details on; the grid measures
     // whatever it returns, so the estimate only has to be in the right region.
     renderDetails: rowDetails
@@ -604,6 +607,32 @@ export function DataGridExample() {
                     onChange={(event) => setRowDetails(event.currentTarget.checked)}
                   />
                 </Tooltip>
+                <Tooltip
+                  label="Stripes follow the row's position in the view, so sorting and scrolling never shift them"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Striped"
+                    checked={striped}
+                    onChange={(event) => setStriped(event.currentTarget.checked)}
+                  />
+                </Tooltip>
+                <Tooltip
+                  label="A gutter outermost left numbering the current view — continues across pages, group rows unnumbered"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Row numbers"
+                    checked={rowNumbers}
+                    onChange={(event) => setRowNumbers(event.currentTarget.checked)}
+                  />
+                </Tooltip>
               </Group>
             </Stack>
           </Fieldset>
@@ -654,6 +683,7 @@ export function DataGridExample() {
           </TMDataGrid.Toolbar>
 
           <TMDataGrid.Table<Employee>
+            striped={striped}
             // The render prop fills a Mantine dropdown the grid opens at the
             // pointer. `cell` is the one that was right-clicked, which is what
             // makes a per-cell action like "copy" possible at all.
