@@ -158,6 +158,12 @@ type TMDataGridUxRule = { key, detect(options, features), message, docsRef };
   selection"` — `detailsTrigger: "rowClick"` combined with a selection mode
   where a row click already acts (`"row"`, `"highlight"`,
   `"checkboxAndHighlight"`).
+- Candidate rule (found during C3, 2026-08-01): `"unstable-data-identity"` —
+  `data` identity changed while length and first row stayed the same, across
+  N consecutive renders. Not just wasted recompute: the v9 beta's
+  `autoResetExpanded` turns it into an infinite render loop. Detection is a
+  render-time heuristic, so it fits the dev-only framework rather than a hard
+  error.
 
 **Approval means:** the option name `acknowledgeUx`, the key style, and the
 opinions-vs-errors boundary are settled; phase 1 builds it.

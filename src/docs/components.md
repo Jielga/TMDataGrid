@@ -81,6 +81,7 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 | `rowStyle` | `CSSProperties \| (row) => CSSProperties \| undefined` | Inline style for a body row. Colour rows by setting `--row-bg`, not `background` — pinned cells, the range tint and the hover/selection ladder all read the variable. |
 | `striped` | `boolean` | Every second row takes `--dg-row-striped-bg`. Striping follows the row's position in the view, so it survives sorting, filtering and virtualization. |
 | `onScrollToTop` / `onScrollToBottom` / `onScrollToLeft` / `onScrollToRight` | `() => void` | Fire once when the scroll *arrives* at that edge — not per scroll event, and not on mount. For loading more rows, prefer `onReachEnd`: it fires rows-early and latches per row count. |
+| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | Rendered centred in the body when the view is empty, replacing both built-in empty messages. Loading and open entry rows still take precedence — see [Empty states](#empty-states). |
 | `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 | `cellExport` | `TMDataGridCellExportOptions` | How Ctrl+C and the export item write values, under `cellSelection: "range"`. Nordic Excel defaults — `{ separator: ";", decimalComma: true, includeHeaders: true, fileName: "export" }`. |
@@ -174,6 +175,43 @@ With pagination off (the default) rows come from `getPrePaginatedRowModel()`:
 every filtered and sorted row, virtualized. With pagination on they come from
 `getPaginatedRowModel()`, so a table using `manualPagination` renders exactly
 the page returned by the server.
+
+### Empty states
+
+An empty body shows exactly one thing, decided in this order:
+
+1. **Loading** — `meta.loading` is true: a centred loader. A grid that is
+   fetching never claims to be empty.
+2. **Entry rows** — an open entry row (`edit.addRow()`): only the entry block,
+   no message competing with the form.
+3. **`renderEmptyState`** — your node, centred where the message would be.
+4. **Filtered-empty** — a filter or search is active: a search icon and
+   `labels.noResults` ("No rows match your filters"), because this emptiness
+   is the user's own doing and clearing filters will fix it.
+5. **Truly-empty** — no data at all: `labels.noRows` ("No rows to show").
+
+`renderEmptyState` replaces states 4 and 5 with one render prop;
+`hasActiveFilters` tells it which of the two it is standing in for:
+
+```tsx
+<TMDataGrid.Table<Employee>
+  renderEmptyState={({ hasActiveFilters, table }) =>
+    hasActiveFilters ? (
+      <Stack align="center" gap="xs">
+        <Text c="dimmed">Nothing matches your filters</Text>
+        <Button variant="light" onClick={() => table.resetColumnFilters()}>
+          Clear filters
+        </Button>
+      </Stack>
+    ) : (
+      <Stack align="center" gap="xs">
+        <Text c="dimmed">No employees yet</Text>
+        <Button onClick={openCreateModal}>Add the first one</Button>
+      </Stack>
+    )
+  }
+/>
+```
 
 ## TMDataGrid.Footer
 

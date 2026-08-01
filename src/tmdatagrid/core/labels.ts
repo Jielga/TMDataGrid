@@ -34,6 +34,11 @@ export type TMDataGridLabels = {
   columnsResetHint: string;
   /** Menu/panel name of the generated row-number gutter. */
   rowNumberColumnLabel: string;
+  /**
+   * The truly-empty message — no data and no filters. Filtered-empty says
+   * {@link noResults} instead; only one of the two is the user's own doing.
+   */
+  noRows: string;
 
   // Filter panel
   filterColumn: string;
@@ -166,6 +171,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   columnsResetHint:
     "Resets column visibility, order, widths, pinning and grouping",
   rowNumberColumnLabel: "Row number",
+  noRows: "No rows to show",
 
   filterColumn: "Column",
   filterOperator: "Operator",

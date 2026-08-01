@@ -367,6 +367,7 @@ export function DataGridExample() {
   const [rowDetails, setRowDetails] = useState(true);
   const [striped, setStriped] = useState(false);
   const [rowNumbers, setRowNumbers] = useState(false);
+  const [customEmptyState, setCustomEmptyState] = useState(false);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   const [cellSelection, setCellSelection] =
@@ -633,6 +634,21 @@ export function DataGridExample() {
                     onChange={(event) => setRowNumbers(event.currentTarget.checked)}
                   />
                 </Tooltip>
+                <Tooltip
+                  label="renderEmptyState replaces the built-in empty messages — filter to no matches to see it"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Custom empty state"
+                    checked={customEmptyState}
+                    onChange={(event) =>
+                      setCustomEmptyState(event.currentTarget.checked)
+                    }
+                  />
+                </Tooltip>
               </Group>
             </Stack>
           </Fieldset>
@@ -684,6 +700,34 @@ export function DataGridExample() {
 
           <TMDataGrid.Table<Employee>
             striped={striped}
+            // Replaces both built-in empty messages; `hasActiveFilters` says
+            // whether clearing filters would help or the grid is truly empty.
+            renderEmptyState={
+              customEmptyState
+                ? ({ hasActiveFilters, table }) =>
+                    hasActiveFilters ? (
+                      <Stack align="center" gap="xs">
+                        <Text size="sm" c="dimmed">
+                          Nothing matches your filters
+                        </Text>
+                        <Button
+                          size="compact-sm"
+                          variant="light"
+                          onClick={() => {
+                            table.resetColumnFilters();
+                            table.resetGlobalFilter();
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        No employees yet
+                      </Text>
+                    )
+                : undefined
+            }
             // The render prop fills a Mantine dropdown the grid opens at the
             // pointer. `cell` is the one that was right-clicked, which is what
             // makes a per-cell action like "copy" possible at all.

@@ -493,6 +493,18 @@ export type TMDataGridTableProps<TData extends RowData> = {
   /** As {@link onScrollToTop}, for the right edge. */
   onScrollToRight?: () => void;
   /**
+   * Rendered centred in the body when the view is empty — the branded blank
+   * slate. It takes over states 3 and 4 of the empty matrix (see the docs):
+   * loading still shows the loader, and open entry rows still show only
+   * themselves. `hasActiveFilters` says which emptiness this is — a filter
+   * that matched nothing wants a "clear filters" invitation, a grid with no
+   * data wants a "create the first one".
+   */
+  renderEmptyState?: (args: {
+    hasActiveFilters: boolean;
+    table: Table<TMDataGridFeatures, TData>;
+  }) => ReactNode;
+  /**
    * Contents of the menu a right-click on a row opens, at the pointer. Return
    * `null` to leave a row without one — the browser's own menu stays suppressed
    * either way.
@@ -566,6 +578,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onScrollToBottom,
   onScrollToLeft,
   onScrollToRight,
+  renderEmptyState,
   rowContextMenu,
   rowContextMenuProps,
   cellExport,
@@ -856,6 +869,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     columnLayout.get(columnId) ?? UNPINNED_LAYOUT;
 
   const isEmpty = rows.length === 0;
+  // Which emptiness this is. The body already subscribes to the whole table
+  // store, so these reads are reactive.
+  const emptyGlobalFilter = table.store.state.globalFilter;
+  const hasActiveFilters =
+    table.store.state.columnFilters.length > 0 ||
+    (typeof emptyGlobalFilter === "string"
+      ? emptyGlobalFilter.trim() !== ""
+      : emptyGlobalFilter != null);
 
   /**
    * The summary row exists by declaration, not by flag: it renders exactly
@@ -2083,18 +2104,37 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             })}
           </TMDataGridBodyRowGroup>
 
+          {/* The empty matrix, one state at a time: loading wins (data is on
+              its way, "empty" would be a lie), open entry rows show only
+              themselves (a "no rows" under the row being typed reads as a
+              contradiction), then the consumer's blank slate, then the two
+              defaults — filtered-empty with its search icon, truly-empty as
+              plain text, because only one of them is the user's own doing. */}
           {isEmpty && loading === true && (
             <div role="row" className={classes.messageRow}>
               <Loader size="lg" aria-label={labels.loading} />
             </div>
           )}
 
-          {isEmpty && loading !== true && (
+          {isEmpty && loading !== true && newRowCount === 0 && (
             <div role="row" className={classes.messageRow}>
-              <SearchIcon size={40} stroke={1.4} opacity={0.4} />
-              <Text size={controlSize} c="dimmed">
-                {noResultsLabel}
-              </Text>
+              {renderEmptyState !== undefined ? (
+                renderEmptyState({
+                  hasActiveFilters,
+                  table: table as unknown as Table<TMDataGridFeatures, TData>,
+                })
+              ) : hasActiveFilters ? (
+                <>
+                  <SearchIcon size={40} stroke={1.4} opacity={0.4} />
+                  <Text size={controlSize} c="dimmed">
+                    {noResultsLabel}
+                  </Text>
+                </>
+              ) : (
+                <Text size={controlSize} c="dimmed">
+                  {labels.noRows}
+                </Text>
+              )}
             </div>
           )}
 

@@ -44,6 +44,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   columnsResetHint:
     "Återställer kolumnernas synlighet, ordning, bredder, fästning och gruppering",
   rowNumberColumnLabel: "Radnummer",
+  noRows: "Inga rader att visa",
 
   filterColumn: "Kolumn",
   filterOperator: "Operator",

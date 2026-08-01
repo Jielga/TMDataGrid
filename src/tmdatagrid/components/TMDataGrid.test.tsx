@@ -122,18 +122,85 @@ describe("rendering", () => {
     );
   });
 
-  it("shows the empty message when nothing matches", () => {
+  it("says truly-empty when there is no data and no filter", () => {
     renderGridUi({ data: [] });
+
+    expect(screen.getByText("No rows to show")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No rows match your filters"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says filtered-empty once a filter is what emptied it", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "999999");
 
     expect(
       screen.getByText("No rows match your filters"),
     ).toBeInTheDocument();
   });
 
-  it("shows a custom empty message", () => {
-    renderGridUi({ data: [], meta: { noResultsLabel: "Nothing here" } });
+  it("meta.noResultsLabel names the filtered case", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ meta: { noResultsLabel: "Nothing here" } });
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "999999");
 
     expect(screen.getByText("Nothing here")).toBeInTheDocument();
+  });
+
+  it("renderEmptyState takes over and learns which emptiness it is", () => {
+    renderGridUi({
+      data: [],
+      tableProps: {
+        renderEmptyState: ({ hasActiveFilters }) => (
+          <div>blank slate, filtered: {String(hasActiveFilters)}</div>
+        ),
+      },
+    });
+
+    expect(
+      screen.getByText("blank slate, filtered: false"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No rows to show")).not.toBeInTheDocument();
+  });
+
+  it("shows no message while an entry row is open on an empty grid", async () => {
+    const user = userEvent.setup();
+    // Referentially stable — an inline `[]` would be a new array every render,
+    // and TanStack rebuilds the row models whenever `data` identity changes.
+    const emptyRows: TestRow[] = [];
+    function EmptyEntryGrid() {
+      const grid = useTMDataGrid<TestRow>({
+        data: emptyRows,
+        columns: testColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "batch",
+        newRowDefaults: () => ({ ...testRows[0]!, id: 0 }),
+      } as UseTMDataGridOptions<TestRow>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              Add row
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EmptyEntryGrid />);
+
+    expect(screen.getByText("No rows to show")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add row" }));
+
+    // The entry row is the content now; "no rows" beside it would contradict.
+    expect(screen.queryByText("No rows to show")).not.toBeInTheDocument();
   });
 });
 
@@ -1786,7 +1853,7 @@ describe("labels", () => {
       screen.getByRole("button", { name: "Kolumner" }),
     ).toBeInTheDocument();
     // Untouched keys stay English — including the empty state.
-    expect(screen.getByText("No rows match your filters")).toBeInTheDocument();
+    expect(screen.getByText("No rows to show")).toBeInTheDocument();
   });
 
   it("puts the localized label on the generated lane's column meta", async () => {

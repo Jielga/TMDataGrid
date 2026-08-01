@@ -61,7 +61,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | **C** | **Medium, conflict-free — order free** | | | |
 | C1 | `?: never` prop unions | M | `done 2026-08-01` | Q5 |
 | C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `done 2026-08-01` | — |
-| C3 | Empty-state slot | M | `ready` | state matrix written first |
+| C3 | Empty-state slot | M | `done 2026-08-01` | state matrix written first |
 | **D** | **Big, independent — order free** | | | |
 | D1 | Row pinning | L | `ready` | — |
 | D2 | Fuzzy quick search (default) | M | `ready` | Q4 |
@@ -247,6 +247,16 @@ Reference: `[md] package/hooks/useDataTableInjectCssVariables.ts`.
 matrix first — loading with no rows vs empty data vs filters-removed-
 everything vs entry rows present — so exactly one message wins, and document
 it. Builds on the existing `.messageRow`.
+
+> Deviation: shipped `renderEmptyState({ hasActiveFilters, table })` — the
+> table came along so a blank slate can offer "clear filters". Truly-empty got
+> its own label (`labels.noRows`) instead of borrowing `noResults`.
+>
+> Found while testing: a `data` array rebuilt every render makes the v9 beta
+> loop forever, not just recompute — core model recompute → grouped model
+> `onAfterUpdate` → `autoResetExpanded` writes a fresh `expanded` identity →
+> whole-store subscription re-renders → repeat. Documented on the `data` row
+> in use-tm-data-grid.md; a dev-only unstable-data warning is a P3 candidate.
 
 ## Batch D — big, independent
 

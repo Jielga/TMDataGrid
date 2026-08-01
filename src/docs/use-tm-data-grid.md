@@ -25,7 +25,7 @@ than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
+| `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo` — an array rebuilt every render makes TanStack rebuild the row models every render, which at best wastes work and at worst loops the grid forever. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
@@ -66,8 +66,8 @@ Grid configuration passed through the `meta` option.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `loading` | `boolean` | – | Displays a loader instead of the empty state. |
-| `noResultsLabel` | `string` | `"No rows match your filters"` | Empty state text. |
+| `loading` | `boolean` | – | Displays a loader while the grid is empty — it takes precedence over every empty state. |
+| `noResultsLabel` | `string` | `"No rows match your filters"` | The filtered-empty message. A grid with no data and no filters says `labels.noRows` instead; `renderEmptyState` on the Table replaces both. |
 | `rowHeight` | `number` | From `size` | Row height in px. Overrides the size scale. |
 | `totalRowCount` | `number` | – | Unfiltered total used by `SummaryCount`. Required for server-side data. |
 
