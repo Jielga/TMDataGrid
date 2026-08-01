@@ -63,7 +63,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `done 2026-08-01` | — |
 | C3 | Empty-state slot | M | `done 2026-08-01` | state matrix written first |
 | **D** | **Big, independent — order free** | | | |
-| D1 | Row pinning | L | `ready` | — |
+| D1 | Row pinning | L | `done 2026-08-01` | — |
 | D2 | Fuzzy quick search (default) | M | `ready` | Q4 |
 | D3 | Filter match highlighting | M | `ready` | D2 |
 | **H** | **Held — waiting on approval** | | | |
@@ -269,6 +269,18 @@ the entry-block CSS mechanics (single sticky block, nested subgrid). Use
 TanStack's rowPinning state if the v9 feature exists in our beta; otherwise
 a thin slice in the edit-store style. Pin via context menu, plus a lane icon
 where the edit lane already exists. Interactions to design:
+
+> Deviations (2026-08-01): v9's `rowPinningFeature` exists and is used —
+> state, `row.pin()`, `getCanPin` are TanStack's own. No lane icon shipped:
+> there is no built-in pin gesture at all; the context-menu recipe is the
+> documented affordance (revisit if H2's slot reshapes create a natural lane).
+> TanStack's `getTopRows()` throws on a stale pinned id (`getRow` throws once
+> the data row is gone), so the body reads pins through `core/rowPinning.ts`'s
+> `readPinnedRows` — safe lookups, keepPinnedRows-true semantics. Pinned rows
+> sit out striping, the cell range and the row-number gutter (statements about
+> scrolling order), and `rowPinning` is not persisted — ids are data.
+> The body-row renderer is shared with the pinned blocks via a scoped
+> function inside the JSX; a proper extraction rides with H2.
 
 - Virtualization — pinned rows leave the virtual flow.
 - Selection, and grouping (likely pin data rows only).

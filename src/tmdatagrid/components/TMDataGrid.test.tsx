@@ -1,4 +1,5 @@
 import { Menu } from "@mantine/core";
+import { useState } from "react";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -423,6 +424,140 @@ describe("row numbers", () => {
     renderGridUi();
 
     expect(screen.queryByText("#")).not.toBeInTheDocument();
+  });
+});
+
+describe("row pinning", () => {
+  // Referentially stable — see the entry-row test's note on data identity.
+  const pinTestRows = testRows;
+
+  function PinGrid() {
+    const [data, setData] = useState(pinTestRows);
+    const grid = useTMDataGrid<TestRow>({
+      data,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      enableRowPinning: true,
+    });
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.FilterButton />
+          <button
+            type="button"
+            onClick={() => grid.table.getRow("1", true).pin("top")}
+          >
+            Pin 1 top
+          </button>
+          <button
+            type="button"
+            onClick={() => grid.table.getRow("2", true).pin("bottom")}
+          >
+            Pin 2 bottom
+          </button>
+          <button
+            type="button"
+            onClick={() => grid.table.getRow("1", true).pin(false)}
+          >
+            Unpin 1
+          </button>
+          <button
+            type="button"
+            onClick={() => setData((rows) => rows.filter((row) => row.id !== 1))}
+          >
+            Remove 1
+          </button>
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  it("pins a row into the top block and out of the scrolling order", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<PinGrid />);
+
+    await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
+
+    const topBlock = screen.getByTestId("dg-pinned-top");
+    expect(within(topBlock).getByTestId("dg-row-1")).toBeInTheDocument();
+    // Exactly once: the centre no longer renders it.
+    expect(screen.getAllByTestId("dg-row-1")).toHaveLength(1);
+  });
+
+  it("pins a row into the bottom block", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<PinGrid />);
+
+    await user.click(screen.getByRole("button", { name: "Pin 2 bottom" }));
+
+    const bottomBlock = screen.getByTestId("dg-pinned-bottom");
+    expect(within(bottomBlock).getByTestId("dg-row-2")).toBeInTheDocument();
+  });
+
+  it("unpins back into the body", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<PinGrid />);
+
+    await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
+    await user.click(screen.getByRole("button", { name: "Unpin 1" }));
+
+    expect(screen.queryByTestId("dg-pinned-top")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dg-row-1")).toBeInTheDocument();
+  });
+
+  it("survives the pinned row's data being deleted", async () => {
+    // TanStack's own getTopRows() throws over a stale pinned id; the grid's
+    // reader skips it instead — see readPinnedRows.
+    const user = userEvent.setup();
+    renderWithMantine(<PinGrid />);
+
+    await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
+    await user.click(screen.getByRole("button", { name: "Remove 1" }));
+
+    expect(screen.queryByTestId("dg-pinned-top")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dg-row-2")).toBeInTheDocument();
+  });
+
+  it("keeps a pinned row at its edge when the filters drop it", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<PinGrid />);
+
+    await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "999999");
+
+    const topBlock = screen.getByTestId("dg-pinned-top");
+    expect(within(topBlock).getByTestId("dg-row-1")).toBeInTheDocument();
+    // The pinned row is content, so the filtered-empty message stays away.
+    expect(
+      screen.queryByText("No rows match your filters"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("answers getCanPin per flag, predicate and group row", () => {
+    const off = renderGrid({});
+    expect(off.result.current.table.getRow("1", true).getCanPin()).toBe(false);
+
+    const predicate = renderGrid({
+      enableRowPinning: (row) => row.original.id !== 2,
+    });
+    expect(
+      predicate.result.current.table.getRow("1", true).getCanPin(),
+    ).toBe(true);
+    expect(
+      predicate.result.current.table.getRow("2", true).getCanPin(),
+    ).toBe(false);
+
+    const grouped = renderGrid({ enableRowPinning: true });
+    act(() => {
+      grouped.result.current.table.getColumn("city")?.toggleGrouping();
+    });
+    const groupRow = grouped.result.current.table
+      .getPrePaginatedRowModel()
+      .rows.find((row) => row.getIsGrouped());
+    expect(groupRow).toBeDefined();
+    expect(groupRow?.getCanPin()).toBe(false);
   });
 });
 

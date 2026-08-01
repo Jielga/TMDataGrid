@@ -30,6 +30,7 @@ see [Pagination](#pagination).
 | `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 | `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
+| `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](#row-pinning) |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 
@@ -228,6 +229,52 @@ source, so pinning does not change a column's position relative to its group.
 
 Pinning is stored in `columnPinning`, one of the slices covered by `settingsKey`
 in [persistence](#use-tm-data-grid).
+
+## Row pinning
+
+Opt-in with `enableRowPinning: true`, or a per-row predicate. Pinned rows leave
+the scrolling order and render in sticky blocks — top-pinned rows under the
+header (and under the entry block while one is open), bottom-pinned rows above
+the summary row. They are real body rows: selection, editing, details, the
+context menu and per-row styling all behave as in the body. What they sit out
+are the statements about scrolling order — striping and the cell range; the
+row-number gutter leaves them unnumbered.
+
+There is no built-in pin gesture. Pin from wherever suits — most naturally the
+row context menu:
+
+```tsx
+<TMDataGrid.Table<Employee>
+  rowContextMenu={({ row }) => (
+    <>
+      {row.getIsPinned() !== "top" && (
+        <Menu.Item onClick={() => row.pin("top")}>Pin to top</Menu.Item>
+      )}
+      {row.getIsPinned() !== false && (
+        <Menu.Item onClick={() => row.pin(false)}>Unpin</Menu.Item>
+      )}
+    </>
+  )}
+/>
+```
+
+`row.pin("top" | "bottom" | false)`, `row.getIsPinned()` and `row.getCanPin()`
+are TanStack's own APIs; the state is `rowPinning: { top: string[], bottom:
+string[] }`, settable wholesale with `table.setRowPinning()` or seeded through
+`initialState`.
+
+Behaviour worth knowing:
+
+- A pinned row stays at its edge even when a filter or the pager would have
+  dropped it from the body — pinning means "always in sight".
+- A pinned id whose row leaves `data` (a delete, a server-side page swap) is
+  simply not shown; it stays in state, harmless, and the row returns to its
+  edge if its data comes back.
+- Group rows never pin — a group row is built on its first child's record, so
+  pinning one would drag an arbitrary data row's identity to the edge. A leaf
+  whose group is collapsed stays hidden while pinned.
+- `rowPinning` is not persisted by `settingsKey`: row ids are data, and a
+  layout store outlives any one data set.
 
 ## Column ordering
 

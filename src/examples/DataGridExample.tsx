@@ -367,6 +367,7 @@ export function DataGridExample() {
   const [rowDetails, setRowDetails] = useState(true);
   const [striped, setStriped] = useState(false);
   const [rowNumbers, setRowNumbers] = useState(false);
+  const [rowPinning, setRowPinning] = useState(false);
   const [customEmptyState, setCustomEmptyState] = useState(false);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
@@ -398,6 +399,7 @@ export function DataGridExample() {
     showSelectedBackground,
     cellSelection,
     enableRowNumbers: rowNumbers,
+    enableRowPinning: rowPinning,
     // Setting the render prop is what turns row details on; the grid measures
     // whatever it returns, so the estimate only has to be in the right region.
     renderDetails: rowDetails
@@ -635,6 +637,21 @@ export function DataGridExample() {
                   />
                 </Tooltip>
                 <Tooltip
+                  label="Pin rows to sticky edge blocks from the context menu — the body scrolls beneath them"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Row pinning"
+                    checked={rowPinning}
+                    onChange={(event) =>
+                      setRowPinning(event.currentTarget.checked)
+                    }
+                  />
+                </Tooltip>
+                <Tooltip
                   label="renderEmptyState replaces the built-in empty messages — filter to no matches to see it"
                   withArrow
                   multiline
@@ -761,6 +778,25 @@ export function DataGridExample() {
                         >
                           Copy cell value
                         </Menu.Item>
+                        {grid.features.rowPinning && (
+                          <>
+                            {row.getIsPinned() !== "top" && (
+                              <Menu.Item onClick={() => row.pin("top")}>
+                                Pin to top
+                              </Menu.Item>
+                            )}
+                            {row.getIsPinned() !== "bottom" && (
+                              <Menu.Item onClick={() => row.pin("bottom")}>
+                                Pin to bottom
+                              </Menu.Item>
+                            )}
+                            {row.getIsPinned() !== false && (
+                              <Menu.Item onClick={() => row.pin(false)}>
+                                Unpin
+                              </Menu.Item>
+                            )}
+                          </>
+                        )}
                         <Menu.Item
                           disabled={!canFilter}
                           onClick={() => {

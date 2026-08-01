@@ -26,6 +26,7 @@ import {
   type RowData,
   rowExpandingFeature,
   rowPaginationFeature,
+  rowPinningFeature,
   rowSelectionFeature,
   rowSortingFeature,
   sortFns,
@@ -214,6 +215,7 @@ export const tmDataGridFeatures = tableFeatures({
   // model builds the parent rows, and this is what flattens the expanded ones
   // back into the flat list the body virtualizes.
   rowExpandingFeature,
+  rowPinningFeature,
 
   filteredRowModel: createFilteredRowModel(),
   groupedRowModel: createGroupedRowModel(),
@@ -913,6 +915,16 @@ export function useTMDataGrid<TData extends RowData>({
     ...(renderDetails !== undefined
       ? { getRowCanExpand: options.getRowCanExpand ?? (() => true) }
       : {}),
+    // Always a predicate, never the passthrough: TanStack defaults the option
+    // to `true` once the feature is registered, and the grid's default is off.
+    // Group rows never pin — TanStack builds one on its first child's record,
+    // so a pinned group would drag an arbitrary data row's identity to the
+    // edge. The consumer's own predicate still decides the data rows.
+    enableRowPinning: (row: Row<TMDataGridFeatures, TData>) =>
+      !row.getIsGrouped() &&
+      (typeof options.enableRowPinning === "function"
+        ? options.enableRowPinning(row)
+        : options.enableRowPinning === true),
     features: tmDataGridFeatures,
     columns: columns as TableOptions<TMDataGridFeatures, TData>["columns"],
     initialState: {

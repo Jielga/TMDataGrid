@@ -33,6 +33,7 @@ describe("readFeatureFlags", () => {
       editing: false,
       editMode: null,
       rowNumbers: false,
+      rowPinning: false,
     });
   });
 

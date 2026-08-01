@@ -348,6 +348,39 @@
   grid-template-columns: subgrid;
 }
 
+/* The pinned edge blocks — user-pinned rows held at the top or bottom of the
+   body, on the entry block's sticky mechanics: the block is the sticky
+   element, its rows flow normally inside it. The top block stacks under the
+   entry block when both exist; `--dg-entry-height` is measured only then, so
+   the offset is otherwise the header alone. The bottom block stacks above the
+   summary row the same way. Rows are opaque already (`--row-bg` paints the
+   body colour), so the blocks only add the edge borders. */
+.pinnedTopBlock {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  position: sticky;
+  top: calc(var(--dg-header-height, 0px) + var(--dg-entry-height, 0px));
+  z-index: var(--dg-z-pinned-row, 4);
+}
+
+.pinnedTopBlock > :last-child > [role="cell"] {
+  border-bottom: 2px solid var(--mantine-color-default-border);
+}
+
+.pinnedBottomBlock {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  position: sticky;
+  bottom: var(--dg-summary-height, 0px);
+  z-index: var(--dg-z-pinned-row, 4);
+}
+
+.pinnedBottomBlock > :first-child > [role="cell"] {
+  border-top: 2px solid var(--mantine-color-default-border);
+}
+
 .entryCell {
   display: flex;
   align-items: center;

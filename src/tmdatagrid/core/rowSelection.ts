@@ -14,14 +14,23 @@ import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
  * is the right list for a range: it is what the user can see, and a range that
  * swept collapsed rows would select things off screen. What a group row in the
  * range contributes is decided by {@link getSelectableRowIds}.
+ *
+ * Rows pinned to an edge leave this list — they render in their own sticky
+ * blocks, outside the scrolling order a shift-click range or the virtualizer
+ * walks. See `readPinnedRows`.
  */
 export function getDisplayedRows<TData extends RowData>(
   table: TMDataGridTable<TData>,
   features: TMDataGridFeatureFlags,
 ): Array<Row<TMDataGridFeatures, TData>> {
-  return isPagingActive(table, features)
+  const rows = isPagingActive(table, features)
     ? table.getPaginatedRowModel().rows
     : table.getPrePaginatedRowModel().rows;
+  if (!features.rowPinning) return rows;
+  const { top, bottom } = table.store.state.rowPinning;
+  if (top.length === 0 && bottom.length === 0) return rows;
+  const pinned = new Set([...top, ...bottom]);
+  return rows.filter((row) => !pinned.has(row.id));
 }
 
 /**

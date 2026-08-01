@@ -59,6 +59,7 @@ import {
   isPagingActive,
   resolveRowSelectionClick,
 } from "../core/rowSelection";
+import { readPinnedRows } from "../core/rowPinning";
 import { ROW_NUMBER_COLUMN_ID } from "./TMDataGridRowNumberColumn";
 import { SearchIcon } from "./icons";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
@@ -622,6 +623,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // the rows as delivered, so the same branch serves server paging.
   const rows = getDisplayedRows(table, features);
 
+  // The edge blocks. `getDisplayedRows` above has already taken these out of
+  // the scrolling order; stale ids resolve to nothing — see readPinnedRows.
+  const pinnedTopRows = features.rowPinning ? readPinnedRows(table, "top") : [];
+  const pinnedBottomRows = features.rowPinning
+    ? readPinnedRows(table, "bottom")
+    : [];
+  const pinnedRowCount = pinnedTopRows.length + pinnedBottomRows.length;
+
   // The row-number gutter's numbers: one pass over the view per render, only
   // while the lane exists. A cell cannot know its display position, so the
   // body hands each row its number — group rows get none (they are headings
@@ -677,7 +686,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    */
   const gridElementRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (newRowCount === 0) return;
+    if (newRowCount === 0 && pinnedTopRows.length === 0) return;
     const grid = gridElementRef.current;
     if (grid === null) return;
     const headerRows = grid.querySelectorAll<HTMLElement>(
@@ -692,7 +701,55 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     const observer = new ResizeObserver(measure);
     for (const headerRow of headerRows) observer.observe(headerRow);
     return () => observer.disconnect();
-  }, [newRowCount]);
+  }, [newRowCount, pinnedTopRows.length]);
+
+  /**
+   * The entry block's height, published as `--dg-entry-height` so the pinned
+   * top block can stack under it — measured only while both blocks exist,
+   * which is the only time the offset is anything but 0.
+   */
+  useEffect(() => {
+    if (newRowCount === 0 || pinnedTopRows.length === 0) return;
+    const grid = gridElementRef.current;
+    if (grid === null) return;
+    const entryBlock = grid.querySelector<HTMLElement>("[data-dg-entry-block]");
+    if (entryBlock === null) return;
+    const measure = () =>
+      grid.style.setProperty("--dg-entry-height", `${entryBlock.offsetHeight}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(entryBlock);
+    return () => {
+      observer.disconnect();
+      grid.style.removeProperty("--dg-entry-height");
+    };
+  }, [newRowCount, pinnedTopRows.length]);
+
+  /**
+   * The summary row's height, published as `--dg-summary-height` so the
+   * pinned bottom block sticks above it rather than underneath it.
+   */
+  useEffect(() => {
+    if (pinnedBottomRows.length === 0) return;
+    const grid = gridElementRef.current;
+    if (grid === null) return;
+    const summaryRow = grid.querySelector<HTMLElement>(
+      '[data-testid="dg-summary-row"]',
+    );
+    if (summaryRow === null) return;
+    const measure = () =>
+      grid.style.setProperty(
+        "--dg-summary-height",
+        `${summaryRow.offsetHeight}px`,
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(summaryRow);
+    return () => {
+      observer.disconnect();
+      grid.style.removeProperty("--dg-summary-height");
+    };
+  }, [pinnedBottomRows.length]);
 
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
@@ -868,7 +925,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const layoutFor = (columnId: string) =>
     columnLayout.get(columnId) ?? UNPINNED_LAYOUT;
 
-  const isEmpty = rows.length === 0;
+  // Pinned rows count as content: with every visible row pinned to an edge,
+  // an empty-state message beside them would contradict what is on screen.
+  const isEmpty = rows.length === 0 && pinnedRowCount === 0;
   // Which emptiness this is. The body already subscribes to the whole table
   // store, so these reads are reactive.
   const emptyGlobalFilter = table.store.state.globalFilter;
@@ -1704,7 +1763,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           // have to be stated rather than inferred from what is rendered. Every
           // row carries its aria-rowindex for the same reason.
           aria-rowcount={
-            rows.length + headerGroups.length + (hasSummaryRow ? 1 : 0)
+            rows.length +
+            pinnedRowCount +
+            headerGroups.length +
+            (hasSummaryRow ? 1 : 0)
           }
           aria-colcount={orderedColumns.length}
           style={{ gridTemplateColumns, minWidth: gridMinWidth }}
@@ -1745,10 +1807,6 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             />
           )}
 
-          {paddingTop > 0 && (
-            <div aria-hidden style={{ gridColumn: "1/-1", height: paddingTop }} />
-          )}
-
           <TMDataGridBodyRowGroup
             // Under `"range"` the grid has a menu of its own to offer, so the
             // wrapper goes on even without a consumer's `rowContextMenu`.
@@ -1758,9 +1816,22 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             onContextMenu={handleContextMenu}
             onClose={closeContextMenu}
           >
-            {virtualItems.map((virtualItem) => {
-              const row = rows[virtualItem.index];
-              if (!row) return null;
+            {(() => {
+              /**
+               * One renderer for every body row, wherever it sits: the
+               * virtualized centre, or a pinned edge block. `viewIndex` is the
+               * row's index in the scrolling view — `-1` for a pinned row,
+               * which takes it out of striping, row measurement and the cell
+               * range, all of which are statements about the scrolling order.
+               * Scoped here rather than a component so the row keeps closing
+               * over the body's handlers without threading them as props.
+               */
+              const renderBodyRow = (
+                row: Row<TMDataGridFeatures, TMDataGridRowData>,
+                viewIndex: number,
+                ariaRowIndex: number,
+                pinnedAt?: "top" | "bottom",
+              ) => {
               const isGroupRow = row.getIsGrouped();
               const isInteractive = rowGesturesFor(row);
               const rowCells = [
@@ -1789,9 +1860,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 (selectsOnRowClick || features.highlightRow);
               return (
                 <div
-                  key={virtualItem.key}
+                  key={row.id}
                   role="row"
-                  aria-rowindex={virtualItem.index + headerGroups.length + 1}
+                  aria-rowindex={ariaRowIndex}
                   data-testid={`dg-row-${row.id}`}
                   // Only measured when details are on: without them every row
                   // is exactly `rowHeight`, and the estimate above is already
@@ -1803,13 +1874,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // element back to its item. The panel is inside this element,
                   // so what gets measured is the row *and* its detail — which
                   // is the whole reason no second virtual item is needed.
-                  data-index={renderDetails ? virtualItem.index : undefined}
-                  ref={renderDetails ? virtualizer.measureElement : undefined}
+                  data-index={
+                    renderDetails && viewIndex >= 0 ? viewIndex : undefined
+                  }
+                  ref={
+                    renderDetails && viewIndex >= 0
+                      ? virtualizer.measureElement
+                      : undefined
+                  }
                   // The tree's own rows. `data-grouped` rather than a class, to
                   // match how the rest of the row's state is published — and so
                   // a consumer can restyle them without reaching into modules.
                   data-grouped={isGroupRow}
                   data-depth={row.depth}
+                  // Which edge block the row sits in, for styling hooks.
+                  data-pinned={pinnedAt}
                   // Gated on the flag, not just on `getIsSelected()`: under
                   // `"highlight"` there is no selection, but `rowSelection` may
                   // still hold ids from before the mode changed — TanStack never
@@ -1859,7 +1938,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // From the row's position in the whole view, so the stripes
                   // survive the virtualizer's moving window — see the prop.
                   data-striped={
-                    striped ? virtualItem.index % 2 === 1 : undefined
+                    striped && viewIndex >= 0 ? viewIndex % 2 === 1 : undefined
                   }
                   className={[classes.bodyRow, rowClassNameFor(row)]
                     .filter(Boolean)
@@ -2006,17 +2085,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                               // take" — which under `"single"` is the one cell
                               // the user is standing on.
                               selected: cellRangeSelection
-                                ? isWithinBounds(
-                                    rangeBounds,
-                                    virtualItem.index,
-                                    cellIndex,
-                                  )
+                                ? isWithinBounds(rangeBounds, viewIndex, cellIndex)
                                 : isCellAt(focusedCell, row.id, cell.column.id),
-                              edges: boundsEdges(
-                                rangeBounds,
-                                virtualItem.index,
-                                cellIndex,
-                              ),
+                              edges: boundsEdges(rangeBounds, viewIndex, cellIndex),
                             }
                           : undefined
                       }
@@ -2101,7 +2172,83 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   )}
                 </div>
               );
-            })}
+              };
+
+              return (
+                <>
+                  {/* The pinned edge blocks. Same sticky mechanics as the
+                      entry block — the *block* is the sticky element, its rows
+                      flow normally inside it. `role="presentation"` keeps the
+                      wrapper out of the accessibility tree, so the rows stay
+                      direct children of the rowgroup. Inside the rowgroup so
+                      a right-click on a pinned row still opens the menu. */}
+                  {pinnedTopRows.length > 0 && (
+                    <div
+                      role="presentation"
+                      data-testid="dg-pinned-top"
+                      className={classes.pinnedTopBlock}
+                    >
+                      {pinnedTopRows.map((row, index) =>
+                        renderBodyRow(
+                          row,
+                          -1,
+                          headerGroups.length + index + 1,
+                          "top",
+                        ),
+                      )}
+                    </div>
+                  )}
+
+                  {paddingTop > 0 && (
+                    <div
+                      aria-hidden
+                      style={{ gridColumn: "1/-1", height: paddingTop }}
+                    />
+                  )}
+
+                  {virtualItems.map((virtualItem) => {
+                    const row = rows[virtualItem.index];
+                    if (!row) return null;
+                    return renderBodyRow(
+                      row,
+                      virtualItem.index,
+                      virtualItem.index +
+                        headerGroups.length +
+                        pinnedTopRows.length +
+                        1,
+                    );
+                  })}
+
+                  {paddingBottom > 0 && (
+                    <div
+                      aria-hidden
+                      style={{ gridColumn: "1/-1", height: paddingBottom }}
+                    />
+                  )}
+
+                  {pinnedBottomRows.length > 0 && (
+                    <div
+                      role="presentation"
+                      data-testid="dg-pinned-bottom"
+                      className={classes.pinnedBottomBlock}
+                    >
+                      {pinnedBottomRows.map((row, index) =>
+                        renderBodyRow(
+                          row,
+                          -1,
+                          headerGroups.length +
+                            pinnedTopRows.length +
+                            rows.length +
+                            index +
+                            1,
+                          "bottom",
+                        ),
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </TMDataGridBodyRowGroup>
 
           {/* The empty matrix, one state at a time: loading wins (data is on
@@ -2138,20 +2285,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             </div>
           )}
 
-          {paddingBottom > 0 && (
-            <div
-              aria-hidden
-              style={{ gridColumn: "1/-1", height: paddingBottom }}
-            />
-          )}
-
           {/* Sticky along the bottom edge, the way the header is along the
               top. `flexRender` with the header context, which is what a
               TanStack `footer` renderer is written against. */}
           {hasSummaryRow && (
             <div
               role="row"
-              aria-rowindex={rows.length + headerGroups.length + 1}
+              aria-rowindex={
+                rows.length + pinnedRowCount + headerGroups.length + 1
+              }
               data-testid="dg-summary-row"
               className={classes.summaryRow}
             >

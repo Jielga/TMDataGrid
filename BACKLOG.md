@@ -33,6 +33,9 @@ As of 2026-08-01 nothing has started. Branch `feature/next`;
 
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) —
   needs hands-on play before speccing; see scan notes.
+- Showcase pass (noted 2026-08-01): docs and example pages that demonstrate
+  every feature properly — beyond the reference docs and the three demo
+  pages. Scope after the 1.0 wave lands, alongside or after F1.
 
 ## Done
 

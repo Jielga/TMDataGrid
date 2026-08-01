@@ -124,6 +124,13 @@ export type TMDataGridFeatureFlags = {
   editMode: TMDataGridEditMode | null;
   /** The generated row-number gutter — `enableRowNumbers`. Off by default. */
   rowNumbers: boolean;
+  /**
+   * Whether rows can be pinned to the top or bottom edge — `enableRowPinning`,
+   * boolean or per-row predicate. Off by default: pinning has no built-in
+   * gesture, so a grid that never calls `row.pin()` has nothing to gain from
+   * the body watching the state.
+   */
+  rowPinning: boolean;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -146,6 +153,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "enableGrouping"
     | "editMode"
     | "enableRowNumbers"
+    | "enableRowPinning"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
@@ -190,6 +198,10 @@ export function readFeatureFlags<TData extends RowData>(
     editing: options.editMode !== undefined,
     editMode: options.editMode ?? null,
     rowNumbers: options.enableRowNumbers === true,
+    // A predicate counts as on — some rows may still pin.
+    rowPinning:
+      options.enableRowPinning === true ||
+      typeof options.enableRowPinning === "function",
   };
 }
 
