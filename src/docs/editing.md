@@ -21,6 +21,13 @@ const grid = useTMDataGrid({
 would point a draft at a different record after any sort. `@tanstack/react-form`
 is a peer dependency once editing is used.
 
+The editing options travel together, and the types state it: setting any of
+them without `editMode` is a compile error (they would act on nothing), the
+moment `editMode` is set `getRowId` stops being optional, and
+`onEditCommitBatch` only exists under `editMode: "batch"` — the one mode
+whose `submitAll` calls it. Batch *without* `onEditCommitBatch` stays legal:
+`submitAll` falls back to the per-row `onEditCommit` loop.
+
 ## Modes
 
 `editMode` is one axis; each mode is a policy over the same engine.

@@ -381,10 +381,122 @@ export type TMDataGridApi<TData extends RowData> = {
   resetSettings: () => void;
 };
 
+/** The editing callbacks every mode shares. See {@link TMDataGridEditingOptions}. */
+type TMDataGridEditingCallbacks<TData extends RowData> = {
+  /**
+   * `getRowId` stops being optional once editing is on: the forms are keyed
+   * by row id and live outside the DOM, and the index fallback points at a
+   * different record after any sort.
+   */
+  getRowId: NonNullable<TableOptions<TMDataGridFeatures, TData>["getRowId"]>;
+  /**
+   * Form-level validators for the whole editing row — where cross-field
+   * rules live. TanStack Form's own vocabulary, Standard Schema included:
+   *
+   * ```tsx
+   * rowValidators: {
+   *   onSubmit: z.object({ salary: z.number().positive() })
+   *     .refine((r) => r.status !== "Terminated" || r.salary === 0, {
+   *       message: "A terminated employee has no salary",
+   *     }),
+   * }
+   * ```
+   *
+   * Pathed issues land on the matching columns; pathless ones on the row.
+   */
+  rowValidators?: TMDataGridRowValidators;
+  /** Rows the pencil skips — `false` keeps a row read-only in every mode. */
+  isRowEditable?: (row: Row<TMDataGridFeatures, TData>) => boolean;
+  /**
+   * Called when an edit commits. The grid never mutates `data`: apply the
+   * change and let the new data arrive back through `data` as always. The
+   * engine drops the draft only when this resolves — a slow save keeps the
+   * draft visible with a busy marker — and a rejection keeps the form open
+   * with the error on the row.
+   *
+   * `changes` is the per-field diff (one entry in cell mode) for consumers
+   * who PATCH; `value` is the whole edited row for those who save records.
+   */
+  onEditCommit?: (
+    args: TMDataGridEditCommitArgs<TData>,
+  ) => void | Promise<void>;
+  /**
+   * Seed values for `edit.addRow()` — the entry row's starting point. A
+   * function is called per added row (fresh timestamps, empty arrays).
+   */
+  newRowDefaults?: TData | (() => TData);
+  /**
+   * Called when an entry row commits: `Enter` or the lane's ✓ under the
+   * immediate modes, `submitAll` under batch. Create the record and let it
+   * arrive back through `data`; the engine's `tempId` never leaves the grid.
+   */
+  onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
+  /**
+   * Called by `edit.deleteRow` under the immediate modes — confirmation, if
+   * any, belongs in here. Under batch, deletions accumulate in
+   * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
+   * Setting this also puts the trash can in the edit lane.
+   */
+  onRowDelete?: (args: TMDataGridRowDeleteArgs<TData>) => void | Promise<void>;
+};
+
+/**
+ * The editing options travel together, and the type states it: without
+ * `editMode` none of them has anything to act on, so passing one is a
+ * compile error rather than a dead option; with it, `getRowId` becomes
+ * required; and `onEditCommitBatch` exists only under `"batch"` — the one
+ * mode whose `submitAll` calls it.
+ *
+ * `editMode` itself turns cell editing on and picks how commits happen. Off
+ * by default.
+ *
+ * | Mode | Commit | Cancel |
+ * | ---- | ------ | ------ |
+ * | `"cell"` | Enter, Tab, blur — Sheets | Escape |
+ * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
+ * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
+ * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
+ *
+ * One TanStack Form per editing row; drafts survive scrolling because the
+ * forms live outside the DOM, keyed by row id. Which columns edit, and with
+ * what, is declared per column: `meta.type` picks the built-in editor,
+ * `meta.validate` its validators, `meta.editable` / `meta.renderEditor` the
+ * overrides.
+ */
+export type TMDataGridEditingOptions<TData extends RowData> =
+  | (TMDataGridEditingCallbacks<TData> & {
+      editMode: "batch";
+      /**
+       * Batch mode's save, called once by `edit.submitAll()` with every
+       * valid dirty row. Without it, `submitAll` falls back to the per-row
+       * {@link TMDataGridEditingCallbacks.onEditCommit} loop. Rows failing
+       * validation stay open either way; a rejection keeps every draft.
+       */
+      onEditCommitBatch?: (
+        args: TMDataGridEditCommitBatchArgs<TData>,
+      ) => void | Promise<void>;
+    })
+  | (TMDataGridEditingCallbacks<TData> & {
+      editMode: Exclude<TMDataGridEditMode, "batch">;
+      /** Only `"batch"`'s `submitAll` ever calls it — see the other branch. */
+      onEditCommitBatch?: never;
+    })
+  | {
+      editMode?: never;
+      rowValidators?: never;
+      isRowEditable?: never;
+      onEditCommit?: never;
+      onEditCommitBatch?: never;
+      newRowDefaults?: never;
+      onRowAdd?: never;
+      onRowDelete?: never;
+    };
+
 export type UseTMDataGridOptions<TData extends RowData> = Omit<
   TableOptions<TMDataGridFeatures, TData>,
   "features"
-> & {
+> &
+  TMDataGridEditingOptions<TData> & {
   /**
    * Restore and persist table state across mounts. Two keys, because the two
    * kinds of state have different lifetimes — see {@link TMDataGridPersistence}.
@@ -554,84 +666,6 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * `ui.actions.setFocusedCell` too, not only for keys and clicks.
    */
   onFocusedCellChange?: (cell: TMDataGridCellPosition | null) => void;
-  /**
-   * Turns cell editing on, and picks how commits happen. Off by default.
-   *
-   * | Mode | Commit | Cancel |
-   * | ---- | ------ | ------ |
-   * | `"cell"` | Enter, Tab, blur — Sheets | Escape |
-   * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
-   * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
-   * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
-   *
-   * One TanStack Form per editing row; drafts survive scrolling because the
-   * forms live outside the DOM, keyed by row id — which is also why
-   * `getRowId` is required. Which columns edit, and with what, is declared
-   * per column: `meta.type` picks the built-in editor, `meta.validate` its
-   * validators, `meta.editable` / `meta.renderEditor` the overrides.
-   *
-   * Requires `getRowId` — the index fallback points at a different record
-   * after any sort.
-   */
-  editMode?: TMDataGridEditMode;
-  /**
-   * Form-level validators for the whole editing row — where cross-field
-   * rules live. TanStack Form's own vocabulary, Standard Schema included:
-   *
-   * ```tsx
-   * rowValidators: {
-   *   onSubmit: z.object({ salary: z.number().positive() })
-   *     .refine((r) => r.status !== "Terminated" || r.salary === 0, {
-   *       message: "A terminated employee has no salary",
-   *     }),
-   * }
-   * ```
-   *
-   * Pathed issues land on the matching columns; pathless ones on the row.
-   */
-  rowValidators?: TMDataGridRowValidators;
-  /** Rows the pencil skips — `false` keeps a row read-only in every mode. */
-  isRowEditable?: (row: Row<TMDataGridFeatures, TData>) => boolean;
-  /**
-   * Called when an edit commits. The grid never mutates `data`: apply the
-   * change and let the new data arrive back through `data` as always. The
-   * engine drops the draft only when this resolves — a slow save keeps the
-   * draft visible with a busy marker — and a rejection keeps the form open
-   * with the error on the row.
-   *
-   * `changes` is the per-field diff (one entry in cell mode) for consumers
-   * who PATCH; `value` is the whole edited row for those who save records.
-   */
-  onEditCommit?: (
-    args: TMDataGridEditCommitArgs<TData>,
-  ) => void | Promise<void>;
-  /**
-   * Batch mode's save, called once by `edit.submitAll()` with every valid
-   * dirty row. Without it, `submitAll` falls back to the per-row
-   * {@link onEditCommit} loop. Rows failing validation stay open either way;
-   * a rejection keeps every draft.
-   */
-  onEditCommitBatch?: (
-    args: TMDataGridEditCommitBatchArgs<TData>,
-  ) => void | Promise<void>;
-  /**
-   * Seed values for `edit.addRow()` — the entry row's starting point. A
-   * function is called per added row (fresh timestamps, empty arrays).
-   */
-  newRowDefaults?: TData | (() => TData);
-  /**
-   * Called when an entry row commits: `Enter` or the lane's ✓ under the
-   * immediate modes, `submitAll` under batch. Create the record and let it
-   * arrive back through `data`; the engine's `tempId` never leaves the grid.
-   */
-  onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
-  /**
-   * Called by `edit.deleteRow` under the immediate modes — confirmation, if
-   * any, belongs in here. Under batch, deletions accumulate in
-   * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
-   * Setting this also puts the trash can in the edit lane.
-   */
-  onRowDelete?: (args: TMDataGridRowDeleteArgs<TData>) => void | Promise<void>;
   /**
    * Renders a panel underneath an expanded row, spanning every column. Setting
    * it is what turns row details on.

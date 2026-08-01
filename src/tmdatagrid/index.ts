@@ -25,6 +25,7 @@ export {
   type TMDataGridTable,
   type TMDataGridTableMeta,
   type TMDataGridUiActions,
+  type TMDataGridEditingOptions,
   type TMDataGridUiState,
   type TMDataGridUiStore,
   useTMDataGrid,

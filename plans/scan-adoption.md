@@ -59,7 +59,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | B2 | Cell click handlers | S | `done 2026-08-01` | — |
 | B3 | Row numbers lane | S | `done 2026-08-01` | — |
 | **C** | **Medium, conflict-free — order free** | | | |
-| C1 | `?: never` prop unions | M | `ready` | Q5 |
+| C1 | `?: never` prop unions | M | `done 2026-08-01` | Q5 |
 | C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `ready` | — |
 | C3 | Empty-state slot | M | `ready` | state matrix written first |
 | **D** | **Big, independent — order free** | | | |
@@ -215,11 +215,17 @@ work.
 
 ### C1 — `?: never` prop unions
 
-One pass over existing option combos: `editMode: "batch"` requires
-`onEditCommitBatch`; `manualPagination` requires `rowCount`; others surface
-while auditing. Turns currently-compiling consumer code into type errors —
-allowed by Q5, named in the changeset. Each later item adds its own union
-rather than deferring to a second pass.
+> Shipped 2026-08-01. Deviations from the sketch, both because the audit
+> found the sketch wrong: (a) batch **without** `onEditCommitBatch` is legal
+> — `submitAll` falls back to the per-row loop — so the union forbids the
+> callback *outside* batch instead of requiring it inside; (b)
+> `manualPagination` + `rowCount` is NOT enforced — `pageCount` is a valid
+> alternative and infinite-scroll grids legitimately run `manual*` without
+> either. What shipped: editing callbacks without `editMode` are compile
+> errors, `editMode` makes `getRowId` required (upgrading the runtime
+> error), `onEditCommitBatch` exists only under `"batch"`. Contracts pinned
+> by `@ts-expect-error` lines `tsc` verifies (core/optionUnions.test.ts).
+
 Reference: `[md] package/types/DataTablePaginationProps.ts`,
 `DataTableSelectionProps.ts`.
 
