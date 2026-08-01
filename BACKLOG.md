@@ -7,24 +7,27 @@ cell editing has its own plan in [plans/cell-editing.md](plans/cell-editing.md).
 
 ## Planned
 
-Competitor-scan adoption (decisions 2026-08-01) — sequencing and design
-sketches in [plans/scan-adoption.md](plans/scan-adoption.md), raw findings in
-[plans/competitor-scan.md](plans/competitor-scan.md):
+**The 1.0 wave** — competitor-scan adoption, decisions Q1–Q7 settled
+2026-08-01. [plans/scan-adoption.md](plans/scan-adoption.md) is the tracker:
+per-item status, the running order, and what waits on whom. Proposals in
+[plans/proposals.md](plans/proposals.md), raw findings in
+[plans/competitor-scan.md](plans/competitor-scan.md). Read the tracker
+before starting anything below — this list is a pointer, not a second order.
 
-- Phase 0: proposals for approval — control/editor registration API, slot
-  shapes, bad-UX warning framework, density decision — plus seven
-  stakeholder questions from the PM review.
-- Phase 1: selection-docs repair, persistence version marker + slice
-  realignment, bad-UX warning framework, reset saved layout, per-row styling
-  hooks, cell click handlers, `keyof T` typing (feasibility-gated), CSS
-  layer packaging.
-- Phase 2: scroll-edge shadows + callbacks, empty-state slot, `?: never`
-  option unions.
-- Phase 3: container-based column visibility, row numbers lane.
-- Phase 4: fuzzy ranked quick search, filter match highlighting.
-- Phase 5: filter controls + registration (after proposal approval).
-- Phase 6: row pinning, details ergonomics.
-- Phase 7: documented styling contract (last — after the surface settles).
+As of 2026-08-01 nothing has started. Branch `feature/next`;
+`1.0.0-beta.1` is the wave's first release.
+
+- Batch A `ready` — docs repair, Changesets pre-mode, persistence version
+  marker + realignment, Reset layout, CSS layer packaging, `keyof T` check.
+- Batch B `ready` — per-row styling, cell click handlers, row numbers lane.
+- Batch C `ready` — `?: never` unions, scroll-edge shadows, empty-state slot.
+- Batch D `ready` — row pinning; fuzzy search default + filter highlighting.
+- Held on approval — control registry + filter controls (P1), API coherence
+  refactor (P2), bad-UX framework (P3) and details ergonomics after it,
+  density recipe (P4).
+- Unassigned — container-based column visibility (`meta.hideBelow`): needs a
+  batch call.
+- Final — styling contract docs page, once the surface stops moving.
 
 ## To explore later
 

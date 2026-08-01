@@ -1,265 +1,392 @@
-# Scan adoption plan
+# Scan adoption plan — the 1.0 wave
 
-Sequencing the accepted items from [competitor-scan.md](competitor-scan.md)
-(stakeholder decisions 2026-08-01, PM review same day). Reference
-implementations live in the local clones: `C:\s\temp\mantine-datatable` and
-`C:\s\temp\mantine-react-table` — cited below as `[md]` and `[mrt]`.
+> **Status: ready to start, nothing started.** Decisions Q1–Q7 settled
+> 2026-08-01. Proposals P1–P4 written 2026-08-01, all four awaiting
+> approval. Batches A–D are cleared to run and wait only on the
+> stakeholder's "go"; no implementation has begun. Work lands on branch
+> `feature/next`, merged to `main` when `1.0.0` ships.
 
-Ordering rationale: robustness and small API additions first (no design
-risk, immediate value), visual polish second, then the items that need an
-approved API proposal, the two features with real interaction design (row
-pinning, details ergonomics), and the styling contract last — published only
-once the phases before it have stopped adding surface.
+**This file is the tracker for the wave.** The [execution
+tracker](#execution-tracker) is the running order *and the only place item
+status is recorded* — the sections below it carry design notes, one per
+item, and no second ordering. Raw findings live in
+[competitor-scan.md](competitor-scan.md); the gating proposals in
+[proposals.md](proposals.md). Reference implementations are the local
+clones `C:\s\temp\mantine-datatable` and `C:\s\temp\mantine-react-table`,
+cited as `[md]` and `[mrt]`.
 
-Costs are complexity, not hours: S (contained, one commit), M (touches a few
-subsystems), L (new subsystem or real design surface).
+Costs are complexity, not hours: S (contained, one commit), M (touches a
+few subsystems), L (new subsystem or real design surface).
 
-## Stakeholder decisions (questions resolved 2026-08-01)
+## Current status — 2026-08-01
+
+| What | Where it stands |
+| --- | --- |
+| Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
+| Proposals P1–P4 | **Written, pending stakeholder approval** — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
+| Batches A–D | **Ready to start, not started.** No conflicts with the held work; awaiting the stakeholder's go. |
+| Held items | **Blocked on approval** — see [Held](#held--waiting-on-approval). |
+| Implementation | **None.** No code from this wave has landed. |
+| Branch | `feature/next`. Merged to `main` at `1.0.0`. |
+| Release | Changesets pre-mode `beta`; first release `1.0.0-beta.1` (A2 opens it). Breaks are free until `1.0.0`, each named in its changeset. |
+
+**Waiting on the stakeholder** — nothing else is waiting on anybody:
+
+1. "Go" on batch A (the rest follows without further prompting).
+2. Approve P1–P4 — [proposals.md](proposals.md). Unblocks H1–H5.
+3. Where does U1 (`meta.hideBelow`) go: batch D, or parked until after
+   1.0.0? See [Unassigned](#unassigned--needs-a-call).
+4. Confirm the full-screen park. Accepted in the scan, PM proposes parking
+   it — see [Deliberately parked](#deliberately-parked).
+
+## Execution tracker
+
+Status vocabulary: `ready` (cleared, not started) · `in progress` ·
+`done <date>` · `held <what it waits on>` · `unassigned` (no batch yet,
+needs a call) · `parked`.
+
+Batch A runs in the numbered order — each step depends on the one before
+it in the ways noted. Batches B, C and D are internally free; D's two
+tracks are freely reorderable. Run the batches in order A → B → C → D.
+
+| # | Item | Size | Status | Gate / depends on |
+| --- | --- | --- | --- | --- |
+| **A** | **Trivial & foundation — strict order** | | | |
+| A1 | Docs repair: stale selection options | S | `ready` | — |
+| A2 | Changesets pre-mode beta + major changeset | S | `ready` | Q5 |
+| A3 | Persistence version marker → slice realignment → one-time drop | M | `ready` | Q3; after A2 (the drop is a named break) |
+| A4 | Reset layout | S | `ready` | A3 |
+| A5 | CSS layer packaging | S | `ready` | — |
+| A6 | `keyof T` typing feasibility check | S | `ready` | — (likely closes void) |
+| **B** | **Small features — order free** | | | |
+| B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `ready` | — |
+| B2 | Cell click handlers | S | `ready` | — |
+| B3 | Row numbers lane | S | `ready` | — |
+| **C** | **Medium, conflict-free — order free** | | | |
+| C1 | `?: never` prop unions | M | `ready` | Q5 |
+| C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `ready` | — |
+| C3 | Empty-state slot | M | `ready` | state matrix written first |
+| **D** | **Big, independent — order free** | | | |
+| D1 | Row pinning | L | `ready` | — |
+| D2 | Fuzzy quick search (default) | M | `ready` | Q4 |
+| D3 | Filter match highlighting | M | `ready` | D2 |
+| **H** | **Held — waiting on approval** | | | |
+| H1 | Control registry + built-in filter controls | L | `held P1` | P1 approved |
+| H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
+| H3 | Bad-UX warning framework | M | `held P3` | P3 approved |
+| H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
+| H5 | Density recipe + demo toggle | S | `held P4` | P4 approved |
+| **—** | **Unassigned / final** | | | |
+| U1 | Container-based column visibility (`meta.hideBelow`) | M | `unassigned` | needs a batch call — see [Unassigned](#unassigned--needs-a-call) |
+| F1 | Styling contract docs page | S | `ready after A–D + H` | Q6; publish once the surface stops moving |
+
+**Why C before the held refactor:** C's items touch the option types and
+chrome the P2 coherence refactor also touches. Landing them first means
+the refactor rebases over finished work instead of the two colliding
+mid-flight.
+
+**When an item ships:** set its Status cell to `done <date>`, and add a
+one-line `> Shipped <date> — <commit>. <deviations>` blockquote to its
+section below, the way [cell-editing.md](cell-editing.md) records its
+deviations. Status lives in the table and nowhere else.
+
+## Stakeholder decisions — Q1–Q7, settled 2026-08-01
 
 - **Q1 Custom editors:** both doors stay. The registry (`meta.editor:
   "name"`) is the register-once reuse path; `meta.renderEditor` stays as the
   inline one-off and, being the more specific statement, wins when both are
   set on a column.
 - **Q2 Slots:** not a point fix — a whole-API coherence refactor under the
-  1.0.0-beta umbrella so the render/slot/override conventions "come
-  together". Proposal 2 reframed accordingly; the Footer `pagination` render
-  prop breaks as part of it.
-- **Q3 Persisted state:** version field ships first; unversioned ≤0.4.0
-  payloads are dropped once (stakeholder accepts the one-time layout loss).
+  1.0.0-beta umbrella so the render/slot/override conventions come
+  together. P2 is that proposal; the Footer `pagination` render prop breaks
+  as part of it.
+- **Q3 Persisted state:** the version field ships first; unversioned ≤0.4.0
+  payloads are dropped once — stakeholder accepts the one-time layout loss.
 - **Q4 Quick search:** fuzzy is the default; contains stays as a mode.
-- **Q5 Versioning:** this wave IS the 1.0 line — Changesets pre-mode
+- **Q5 Versioning:** this wave *is* the 1.0 line. Changesets pre-mode
   (`changeset pre enter beta`), first release `1.0.0-beta.1`. Breaking
-  changes are free until `1.0.0`; each still gets named in its changeset.
-- **Q6 Styling contract:** documented-but-provisional during beta, frozen at
-  `1.0.0`.
-- **Q7 Reset UX (delegated):** the ColumnsPanel's visibility-only Reset is
-  replaced by a single **Reset layout** that clears every settings slice
-  (visibility, order, widths, pinning), with the scope stated in its
-  tooltip. One button, honest scope, no second menu invented.
+  changes are free until `1.0.0`; each is still named in its changeset.
+- **Q6 Styling contract:** documented-but-provisional during the beta,
+  frozen at `1.0.0`.
+- **Q7 Reset UX:** the ColumnsPanel's visibility-only Reset is replaced by a
+  single **Reset layout** clearing every settings slice (visibility, order,
+  widths, pinning), scope stated in its tooltip. One button, honest scope,
+  no second menu invented.
 
-## Phase 0 — proposals (documents, no code)
+Ordering rationale for the wave as a whole: independent no-conflict work
+first (nothing to rebase), small features next, the medium items that share
+ground with the pending refactor before that refactor starts, the two big
+independent features last, and the styling contract last of all — published
+only once the phases before it stop adding surface.
 
-Four short proposals for stakeholder approval, each a section in a single
-`plans/proposals.md`. Nothing downstream of them starts until approved.
+## Batch A — trivial & foundation
 
-1. **Filter-control & editor registration API** (unblocks phase 5).
-   Sketch: a table-level registry plus a per-column pointer —
-   `controls: { salaryRange: (args) => <MySlider {...args} /> }` and
-   `meta.filterControl: "salaryRange"` / `meta.editor: "salaryRange"` — so a
-   consumer registers a special input once (with its validation pattern) and
-   reuses it across columns and grids. Inspiration: TanStack Form's
-   pre-bound field components. Must define the args contract (value,
-   onChange, operator, column, commit/cancel for editors), how built-ins
-   (range slider, date-range, autocomplete, tri-state boolean) register
-   through the same door, and — per Q1 — precedence against the shipped
-   `meta.renderEditor`. The args contract is the widest blast radius in this
-   plan (every consumer-registered control binds to it); over-review here.
-2. **API coherence refactor (1.0.0-beta)** — per Q2, wider than slot
-   shapes: inventory every render/override surface (Footer `pagination`,
-   `renderDetails`, `rowContextMenu`, `renderEditor`, toolbar slots, …) and
-   unify them under one convention — single typed args object everywhere,
-   `state`/`actions`/`Controls` for composable slots
-   (`[md] package/types/DataTablePaginationRenderContext.tsx`,
-   `DataTablePagination.tsx:76-124`), `internalItems` handback for menus
-   (`[mrt] src/components/menus/MRT_ColumnActionMenu.tsx:272-282`).
-   Deliverable: the rename/reshape table, old → new, each row a named break
-   in the beta changesets.
-3. **Bad-UX warning framework** (built in phase 1). Dev-only detector:
-   known-bad option combinations log one `console.info` with a docs link and
-   the silencing key; silencing is explicit config — working name
-   `acknowledgeUx: [...]`. Keys are forever (renaming un-silences), so name
-   them once. Must fold in the two ad-hoc dev warnings that already ship —
-   `onReachEnd`+pagination (TMDataGridTable) and `editMode` without
-   `getRowId` (useTMDataGrid) — so the library has one warning idiom, not
-   three. First new rule (lands with phase 6): row-click details expansion
-   combined with the selection modes where a row click already means
-   something — under `selectionMode: "highlight"` / `"checkboxAndHighlight"`
-   a click sets the highlighted row, which is the likelier collision than
-   row-select. Complements the `?: never` type-level guards: types catch
-   invalid combos, this catches legal-but-unwise ones.
-4. **Density** — pending stakeholder decision (runtime compact/comfortable
-   row-height toggle; we currently size via the `size` prop at build time).
-   Include a recommendation either way.
+Strict order. A3's marker must precede anything that rewrites stored data,
+and A4 must know the payload shape it clears.
 
-## Phase 1 — robustness & small APIs (all S)
+### A1 — Docs repair
 
-Internal order matters: version marker → realignment → reset (reset must know
-the payload shape it clears; the marker must precede anything rewriting
-stored data).
+Three docs pages (`features.md`, `use-tm-data-grid.md`, `components.md`)
+still document the removed `rowSelectionMode` / `highlightSelectedRows`
+options; the code ships `selectionMode: "checkbox" | "row" |
+"checkboxAndHighlight" | "highlight"` plus `showSelectedBackground`.
+Standing bug, and every later item's docs build on these pages — fix first.
 
-- **Docs repair** — three docs pages (features.md, use-tm-data-grid.md,
-  components.md) still document the removed `rowSelectionMode` /
-  `highlightSelectedRows` options; the code ships `selectionMode:
-  "checkbox" | "row" | "checkboxAndHighlight" | "highlight"` +
-  `showSelectedBackground`. Standing bug, fix first.
-- **Persistence: version marker + slice realignment** — re-scoped by PM
-  review: sanitizing reads (SLICE_GUARDS in core/persistence.ts) and
-  drag-time write throttling (PERSIST_DEBOUNCE_MS trailing flush) already
-  ship, and cross-tab sync was deliberately rejected (two tabs would
-  overwrite each other's layout — documented in use-tm-data-grid.md). The
-  genuinely new work: (a) a version field in the payload — one-way door,
-  ships before anything else touches storage; (b) realigning stored slices
-  when the column set changes between deploys (drop removed ids, append new
-  — in an effect, never during render). Q3 decides the ≤0.4.0 payload story.
-  Reference: `[md] package/hooks/useDataTableColumns.ts` aligned-memo
-  pattern.
-- **Bad-UX warning framework** (pulled forward from phase 6 on PM advice) —
-  smaller than several phase 1 items, and two existing warnings are waiting
-  to be folded in. Phase 6 then adds a rule, not a subsystem.
-- **Reset saved layout** — `resetSettings({ table })` (or per-slice
-  variants) clearing persisted slices back to definition defaults; per Q7
-  the ColumnsPanel's Reset becomes a single **Reset layout** covering all
-  settings slices, scope in the tooltip. No menu consolidation yet.
-- **Per-row styling hooks** — `rowClassName`/`rowStyle` as
-  `T | ((row) => T)` on the Table component, `striped` option, one resolver
-  helper (`[mrt] parseFromValuesOrFunc`). Constraints from the codebase:
-  row colours must land in the `--row-bg` ladder (base < hover < grouped <
-  context-menu < selected < highlighted), because sticky pinned cells and
-  the cell-range `color-mix` tint read `--row-bg` — a raw `background`
-  bypass breaks both. `striped` computes from the row index, not
-  `:nth-child` — mounted rows are a moving window under virtualization.
-- **Cell click handlers** — `onCellClick/onCellDoubleClick/onCellContextMenu`
-  with `{ cell, row, column, event }`. Policy up front (the `onRowClick`
-  precedent): handlers compose, never suppress — double-click still edits,
-  right-click still opens `rowContextMenu` and still moves the cell range
-  selection; consumer handlers run in addition.
-- **`keyof T | (string & {})` typing** — verify feasibility first:
-  `TMDataGridColumnMeta` registers through a non-generic
-  `metaHelper<TMDataGridColumnMeta>()`, so `keyof TData` cannot reach
-  `editField` without a different registration strategy. If infeasible for
-  meta and no other accessor-shaped option exists, the item is void — close
-  it with a note rather than forcing it.
-- **CSS layer packaging** — ship `styles.layer.css`
-  (`@import './styles.css' layer(tmdatagrid);`) alongside the plain file.
-  The layer name is a one-way door (consumers write it into their own
-  `@layer` order) — `tmdatagrid`, chosen deliberately, never renamed.
-  Reference: `[md] package.json` exports map + `app/styling/examples/`.
+### A2 — Changesets pre-mode
 
-## Phase 2 — surface polish
+`changeset pre enter beta`, then a major changeset opening `1.0.0-beta.1`
+(Q5). Everything after this point names its breaks in its own changeset.
+`changeset pre exit` happens when the wave ends and `1.0.0` ships.
 
-- **Scroll-edge shadows + callbacks** (M) — shadow under the sticky header
-  (and optionally the other three edges) driven by scroll position through
-  CSS custom properties, no re-renders; `onScrollToTop/Left/Right` firing on
-  edge transitions only. Check whether `animation-timeline: scroll()` (used
-  for our pinned-lane gradients) covers the header shadow with no JS —
-  prefer that. Naming: `--dg-edge-*` currently means cell-range outline
-  edges; the scroll-edge variables must not collide (resolve before the
-  styling contract freezes anything).
-  Reference: `[md] package/hooks/useDataTableInjectCssVariables.ts`.
-- **Empty-state slot** (M) — `renderEmptyState({ hasActiveFilters })`
-  ReactNode overlay. Design the state matrix first: loading with no rows vs
-  empty data vs filters-removed-everything vs entry rows present — exactly
-  one message wins, and the matrix is documented. Builds on the existing
-  `.messageRow`.
-- **`?: never` prop unions** (M, gated on Q5) — one pass over existing
-  option combos: `editMode: "batch"` requires `onEditCommitBatch`;
-  `manualPagination` requires `rowCount`; others surfaced while auditing.
-  Reference: `[md] package/types/DataTablePaginationProps.ts` and
-  `DataTableSelectionProps.ts` for the union shape.
+### A3 — Persistence: version marker, then realignment
 
-## Phase 3 — layout & lanes
+Re-scoped by PM review: sanitizing reads (`SLICE_GUARDS` in
+`core/persistence.ts`) and drag-time write throttling
+(`PERSIST_DEBOUNCE_MS`, trailing flush) already ship, and cross-tab sync was
+deliberately rejected — two tabs would overwrite each other's layout,
+documented in `use-tm-data-grid.md`. What is genuinely new, in this order:
 
-- **Container-based column visibility** (M, the riskiest M in the plan) —
-  `meta.hideBelow?: number`: the column renders only while the grid
-  container is at least that wide. Container-driven, not viewport media
-  queries — a grid inside a resizing panel adapts. Requirements hardened by
-  PM review: the ResizeObserver mounts only when some column declares
-  `hideBelow` (the no-observers-by-default promise in features.md holds);
-  hiding is a derived render-time layer, NOT written into `columnVisibility`
-  — persisted user visibility and responsive hiding must never fight, and a
-  narrow-then-wide round trip restores exactly what the user had. The
-  derived layer must be applied identically at every visible-columns call
-  site (headers, cells, grid tracks, export, autosize, cell navigation,
-  ColumnsPanel, filter panel) — the codebase already carries a workaround
-  for header/cell visibility desync; do not add a second source of it.
-  Decide and document: ColumnsPanel presentation of a responsively hidden
-  column, and `minSize` interaction with the container threshold.
-- **Row numbers column** (S) — opt-in generated lane, static index over the
-  current sorted/filtered view. Our control-lane machinery makes this small.
+1. A version field in the stored payload. One-way door: v0.4.0 payloads are
+   already on users' machines unversioned, so this ships before anything
+   else touches storage.
+2. Unversioned payloads are dropped once (Q3) — one-time layout loss,
+   accepted, named in the changeset.
+3. Realigning stored slices when the column set changes between deploys
+   (drop removed ids, append new — in an effect, never during render).
+   Reference: `[md] package/hooks/useDataTableColumns.ts` aligned-memo.
 
-Full-screen mode moved to "Deliberately parked" — PM review rates it the
-weakest value-to-risk item (sticky z-ladder, portalled menus, measured
-details panels), which fails the stakeholder's own "if it's easy" condition.
-Revisit on demand.
+### A4 — Reset layout
 
-## Phase 4 — search
+`resetSettings({ table })` (or per-slice variants) clearing the persisted
+settings slices back to definition defaults. Per Q7 the ColumnsPanel's
+Reset becomes a single **Reset layout** covering all settings slices, scope
+in the tooltip. No menu consolidation — that stays parked.
 
-- **Fuzzy ranked quick search** (M, default gated on Q4) — match-sorter-
-  style fuzzy matching as a configurable `Search` mode; while ranking is
-  active and the user has no explicit sort, rows order by match quality.
-  Specify before building: interaction with grouping (grouping runs before
-  sorting), with the persisted `sorting` slice, with `aria-sort` and the
-  multi-sort priority badges.
-  Reference: `[mrt] src/fns/sortingFns.ts` (`rankGlobalFuzzy`),
-  `src/hooks/useMRT_Effects.ts` (sort suspension — do it declaratively, not
-  their stash-and-restore effect).
-- **Filter match highlighting** (M) — opt-in: matched substrings in cells
-  highlighted while a text filter or quick search is active. Only for plain
-  string renders (a custom `cell` renderer opts out by existing). Define
-  what highlighting means under fuzzy (non-contiguous matches) — plausibly
-  highlight only under contains-style matching and skip fuzzy. Perf gate:
-  no measurable cost while off, bounded while on.
+### A5 — CSS layer packaging
 
-## Phase 5 — filter controls & registration (L, needs proposal 1 + Q1)
+Ship `styles.layer.css` (`@import './styles.css' layer(tmdatagrid);`)
+alongside the plain file; additive exports-map entry. The layer name is a
+one-way door — consumers write it into their own `@layer` order — so
+`tmdatagrid` is chosen deliberately and never renamed.
+Reference: `[md] package.json` exports map + `app/styling/examples/`.
 
-Built-in richer filter controls (range slider seeded from faceted min/max,
-date-range, autocomplete, tri-state boolean checkbox) implemented as
-pre-registered entries in the new control registry, proving the same API
-consumers use. Filter panel picks the control by column type/operator as it
-does today; `meta.filterControl` overrides. The editor half of the registry
-lands here too, with the Q1 precedence against `meta.renderEditor`.
+### A6 — `keyof T | (string & {})` typing
 
-## Phase 6 — rows & interaction design
+Feasibility check first, and expect it to close void.
+`TMDataGridColumnMeta` registers through a non-generic
+`metaHelper<TMDataGridColumnMeta>()`, so `keyof TData` cannot reach
+`editField`; no other accessor-shaped option lives outside the generic
+options type. If infeasible, close the item with a note rather than forcing
+a registration rewrite for one string field.
 
-- **Row pinning** (L) — user-pinned rows sticky under the header / above the
-  summary row, reusing the entry-block CSS mechanics (single sticky block,
-  nested subgrid). Use TanStack's rowPinning state if the v9 feature exists
-  in our beta; otherwise a thin slice in our edit-store style. Pin via
-  context menu (+ lane icon where the edit lane already exists).
-  Interactions to design: virtualization (pinned rows leave the virtual
-  flow), selection, grouping (likely pin data rows only), persistence
-  (probably a data slice, not settings), and — added by PM review — the
-  sticky ladder: entry block and pinned rows both sticky under the header
-  (ordering between them; `--dg-z-pinned-row: 4` currently serves both
-  roles), and pinned-bottom rows vs the summary row at equal z. Note the
-  file name collision: `TMDataGridPinnedRows.tsx` today exports the entry
-  block (`TMDataGridEntryRows`) — rename before this phase to keep names
-  honest.
-- **Details ergonomics** (M) — `detailsTrigger: "chevron" | "rowClick"` and
-  `detailsMode: "multiple" | "single"` (accordion). Adds the phase's bad-UX
-  rule (framework already shipped in phase 1): row-click expansion under the
-  selection modes where a row click already acts (`"row"`, `"highlight"`,
-  `"checkboxAndHighlight"`).
+## Batch B — small features
 
-## Phase 7 — styling contract (S, docs; after the surface settles)
+Order free.
+
+### B1 — Per-row styling hooks
+
+`rowClassName` / `rowStyle` as `T | ((row) => T)` on the Table component,
+plus a `striped` option, resolved by one helper
+(`[mrt] parseFromValuesOrFunc`). Two constraints from the codebase:
+
+- Row colours land in the `--row-bg` ladder (base < hover < grouped <
+  context-menu < selected < highlighted). Sticky pinned cells need an opaque
+  background and the cell-range tint `color-mix`es over `--row-bg`, so a raw
+  `background` bypass breaks both.
+- `striped` computes from the row index, never `:nth-child` — mounted rows
+  are a moving window under virtualization. The reference library has no
+  virtualization, so its approach does not port.
+
+### B2 — Cell click handlers
+
+`onCellClick` / `onCellDoubleClick` / `onCellContextMenu` with
+`{ cell, row, column, event }`. Policy stated up front, following the
+`onRowClick` precedent: handlers **compose, never suppress** — double-click
+still edits, right-click still opens `rowContextMenu` and still moves the
+cell-range selection; consumer handlers run in addition.
+
+### B3 — Row numbers lane
+
+Opt-in generated lane, static index over the current sorted/filtered view.
+The control-lane machinery makes this small.
+
+## Batch C — medium, conflict-free
+
+Order free. These land before the P2 refactor so it rebases over finished
+work.
+
+### C1 — `?: never` prop unions
+
+One pass over existing option combos: `editMode: "batch"` requires
+`onEditCommitBatch`; `manualPagination` requires `rowCount`; others surface
+while auditing. Turns currently-compiling consumer code into type errors —
+allowed by Q5, named in the changeset. Each later item adds its own union
+rather than deferring to a second pass.
+Reference: `[md] package/types/DataTablePaginationProps.ts`,
+`DataTableSelectionProps.ts`.
+
+### C2 — Scroll-edge shadows + callbacks
+
+Shadow under the sticky header (optionally the other three edges) driven by
+scroll position through CSS custom properties, no re-renders;
+`onScrollToTop` / `onScrollToLeft` / `onScrollToRight` firing on edge
+transitions only. Check whether `animation-timeline: scroll()` — already
+used for the pinned-lane gradients — covers the header shadow with no JS at
+all; prefer that. **Naming:** `--dg-edge-*` already means cell-range outline
+edges. The scroll-edge variables must not collide, and the clash is resolved
+here, before F1 documents anything.
+Reference: `[md] package/hooks/useDataTableInjectCssVariables.ts`.
+
+### C3 — Empty-state slot
+
+`renderEmptyState({ hasActiveFilters })` ReactNode overlay. Write the state
+matrix first — loading with no rows vs empty data vs filters-removed-
+everything vs entry rows present — so exactly one message wins, and document
+it. Builds on the existing `.messageRow`.
+
+## Batch D — big, independent
+
+Freely reorderable; D3 wants D2 first.
+
+### D1 — Row pinning
+
+User-pinned rows sticky under the header / above the summary row, reusing
+the entry-block CSS mechanics (single sticky block, nested subgrid). Use
+TanStack's rowPinning state if the v9 feature exists in our beta; otherwise
+a thin slice in the edit-store style. Pin via context menu, plus a lane icon
+where the edit lane already exists. Interactions to design:
+
+- Virtualization — pinned rows leave the virtual flow.
+- Selection, and grouping (likely pin data rows only).
+- Persistence — probably a data slice, not settings.
+- The sticky ladder: the entry block and pinned rows are both sticky under
+  the header (ordering between them; `--dg-z-pinned-row: 4` currently serves
+  both roles), and pinned-bottom rows meet the summary row at equal z.
+- File-name collision: `TMDataGridPinnedRows.tsx` today exports the entry
+  block (`TMDataGridEntryRows`). Rename before this lands.
+
+Scope: sticky mode only (`[mrt] rowPinningDisplayMode` for what we are *not*
+shipping).
+
+### D2 — Fuzzy quick search
+
+Match-sorter-style fuzzy matching as the **default** `Search` mode (Q4),
+with contains kept as a mode. While ranking is active and the user has no
+explicit sort, rows order by match quality. Specify before building:
+interaction with grouping (grouping runs before sorting), with the persisted
+`sorting` slice, with `aria-sort`, and with the multi-sort priority badges.
+Reference: `[mrt] src/fns/sortingFns.ts` (`rankGlobalFuzzy`),
+`src/hooks/useMRT_Effects.ts` (sort suspension — do it declaratively, not
+their stash-and-restore effect).
+
+### D3 — Filter match highlighting
+
+Opt-in: matched substrings highlighted while a text filter or quick search
+is active. Plain string renders only — a custom `cell` renderer opts out by
+existing. Define what highlighting means under fuzzy matching (matches are
+non-contiguous); plausibly highlight only under contains-style matching and
+skip fuzzy. Perf gate: no measurable cost while off, bounded while on.
+
+## Held — waiting on approval
+
+Nothing here starts until its proposal is approved. Details live in
+[proposals.md](proposals.md); only the build-side scope is repeated here.
+
+### H1 — Control registry + built-in filter controls (needs P1)
+
+Built-in richer controls — range slider seeded from faceted min/max,
+date-range, autocomplete, tri-state boolean — implemented as pre-registered
+entries in the new registry, proving the same API consumers use. The filter
+panel picks by column type/operator as today; `meta.filterControl`
+overrides. The editor half lands here too, with the Q1 precedence against
+`meta.renderEditor`.
+
+### H2 — API coherence refactor (needs P2 + rename table)
+
+Two gates: P2's conventions, then the rename/reshape table back for yes/no
+before execution. Executed as one commit series, each break named in a beta
+changeset.
+
+### H3 — Bad-UX warning framework (needs P3)
+
+Dev-only detector, one idiom for legal-but-unwise option combinations, plus
+folding in the ad-hoc `onReachEnd`+pagination warning. Silencing keys are
+forever. H4's rule is its first new consumer.
+
+### H4 — Details ergonomics (needs P3, then H3)
+
+`detailsTrigger: "chevron" | "rowClick"` and `detailsMode: "multiple" |
+"single"` (accordion). Ships with the bad-UX rule for row-click expansion
+under the selection modes where a row click already acts (`"row"`,
+`"highlight"`, `"checkboxAndHighlight"` — the highlight modes are the
+likelier collision, since a click there already drives a detail panel).
+
+### H5 — Density recipe (needs P4)
+
+P4 recommends no built-in density: a docs recipe plus a size toggle on the
+demo page, and a test pinning that a runtime `size` change re-estimates
+virtualized row heights.
+
+## Unassigned — needs a call
+
+### U1 — Container-based column visibility (`meta.hideBelow`)
+
+Accepted in the scan, reshaped to container-driven rather than media
+queries, and **not yet assigned to a batch**. It is the riskiest M in the
+wave, which is why it is sitting here rather than quietly inside batch C.
+Requirements already hardened, whenever it runs:
+
+- The ResizeObserver mounts only when some column declares `hideBelow`, so
+  the no-observers-by-default promise in `features.md` holds.
+- Hiding is a derived render-time layer, **not** written into
+  `columnVisibility`: persisted user visibility and responsive hiding must
+  never fight, and a narrow-then-wide round trip restores exactly what the
+  user had.
+- The derived layer must be applied identically at every visible-columns
+  call site — headers, cells, grid tracks, export, autosize, cell
+  navigation, ColumnsPanel, filter panel. The codebase already carries a
+  workaround for header/cell visibility desync; do not add a second source
+  of it.
+- Decide and document: how the ColumnsPanel presents a responsively hidden
+  column, and how `minSize` interacts with the container threshold.
+
+Options for the call: run it as a batch D item (it is independent and big
+enough), or park it until after 1.0.0.
+
+## Final gate
+
+### F1 — Styling contract
 
 A `styling.md` docs page listing every `--dg-*` variable and `data-*`
-attribute with the stability promise per Q6, plus the layer story from
-phase 1. Deliberately last: phases 2-6 each add surface (scroll-edge vars,
-row-numbers lane, `hideBelow`, pinned rows), and publishing earlier means a
-stale page or re-issued promises. The `--dg-edge-*` naming clash must be
-resolved by then (phase 2).
+attribute, with the stability promise per Q6: provisional during the beta,
+frozen at `1.0.0`. Includes the layer story from A5. Deliberately last —
+batches C and D each add surface (scroll-edge vars, row-numbers lane, pinned
+rows), and publishing earlier means a stale page or a re-issued promise. The
+`--dg-edge-*` naming clash must be resolved by C2 before this page exists.
 
 ## Deliberately parked
 
-- **Loading vocabulary** (skeletons, progress bars, isSaving) — explore
-  later; BACKLOG holds it. Needs hands-on play, not a spec.
-- **Full-screen mode** — weakest value-to-risk (PM); revisit on demand.
-- **Density toggle** — pending stakeholder decision (proposal 4).
+- **Loading vocabulary** (skeletons, progress bars, `isSaving`) — needs
+  hands-on play, not a spec. BACKLOG holds it.
+- **Full-screen mode** — *PM recommendation, not yet confirmed.* The
+  stakeholder accepted it in the scan ("if it stays easy"); PM review rates
+  it the weakest value-to-risk item in the wave (sticky z-ladder, portalled
+  menus, measured details panels), which is the condition failing. Parked
+  here pending a yes — if the answer is no, it becomes a batch D item.
 - **Menu consolidation** (one grid menu vs today's buttons) — open question,
-  no design yet; reset-layout deliberately avoids forcing it.
+  no design; A4 deliberately avoids forcing it.
 - **Per-locale subpath packages** — when we grow past EN/SV.
 - **Click-to-copy** — rejected: cell selection already covers copy.
-- **Row drag-reordering** — rejected: DnD is for small lists/trees.
+- **Row drag-reordering** — rejected: DnD is for small lists and trees.
 
-## Versioning
+## Release mechanics
 
-This wave is the 1.0 line (Q5). Before phase 1 lands: `changeset pre enter
-beta`, a major changeset opens `1.0.0-beta.1`, and every breaking change —
-API refactor renames, `?: never` type breaks, the persisted-payload drop —
-is named in its changeset. `changeset pre exit` when the wave is done and
-`1.0.0` ships with the styling contract frozen (Q6).
+Branch `feature/next` for the whole wave; merged to `main` when `1.0.0`
+ships. A2 enters Changesets pre-mode `beta` and opens `1.0.0-beta.1`; every
+breaking change — refactor renames, the `?: never` type breaks, the
+persisted-payload drop — is named in its changeset. `changeset pre exit`
+when the wave is done, and `1.0.0` ships with the styling contract frozen
+(Q6).
 
-Each phase lands green as its own commit(s) with tests, docs and a changeset
-per user-facing change, same discipline as the cell-editing plan. This wave
-builds on the `feature/next` branch, merged to main when 1.0.0 ships.
+Each item lands green by itself: tests, docs, a changeset per user-facing
+change, lint, commit — the same discipline as the cell-editing plan.

@@ -6,8 +6,11 @@ sequenced in [scan-adoption.md](scan-adoption.md)), **pending** (needs a
 concrete proposal or decision first), **rejected** (sunset, with why),
 **explore later** / **icebox** / **noted**.
 
-Stakeholder decisions taken 2026-08-01; the plan and open questions live in
-[plans/scan-adoption.md](scan-adoption.md).
+Stakeholder decisions taken 2026-08-01, and the follow-up questions Q1–Q7
+settled the same day. This file is the raw scan and does not track work:
+status, running order and what is waiting on whom live in
+[scan-adoption.md](scan-adoption.md); the four gating proposals in
+[proposals.md](proposals.md).
 
 ## mantine-datatable (icflorescu, v9.4.0) — scanned 2026-08-01
 
@@ -34,7 +37,7 @@ ahead on the heavy machinery; the items below are what stood out.
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| `state`/`actions`/`Controls` render-slot shape | **pending proposal** | Stakeholder wants the concrete shape on the table before approving. Draft it for our Footer pager first. |
+| `state`/`actions`/`Controls` render-slot shape | **proposal P2, pending approval** | Widened per Q2 into a whole-API coherence refactor under 1.0.0-beta, not a point fix on the Footer pager. |
 | `?: never` mutually-exclusive prop unions | **accepted** | Compile error instead of dev warning — `editMode: "batch"` + `onEditCommitBatch`, `manualPagination` + `rowCount`. Complements (not replaces) the runtime bad-UX warnings, which cover what types can't. |
 | Persistence hardening | **accepted** | `sanitizeStoredArray` on every localStorage read (cross-tab `storage` events deliver malformed values); realign stored state when the column set changes (drop removed, append new — in an effect); throttle writes during resize drag. |
 | Documented styling contract | **accepted** | Publish our `--dg-*` vars + data attributes as a stable, documented API. |
@@ -59,11 +62,11 @@ Inspiration only; nothing to adopt wholesale.
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| Filter variants: range-slider, date-range, autocomplete, tri-state checkbox | **accepted, with extension API** | Built-ins are welcome but the headline requirement is consumer-supplied filter controls: register custom inputs once, reuse per column — TanStack-Form-style pre-bound components as the inspiration. API proposal needed before build; stakeholder's use cases lean on special inputs with special validation. |
+| Filter variants: range-slider, date-range, autocomplete, tri-state checkbox | **accepted; proposal P1 pending approval** | Built-ins are welcome but the headline requirement is consumer-supplied filter controls: register custom inputs once, reuse per column — TanStack-Form-style pre-bound components as the inspiration. Stakeholder's use cases lean on special inputs with special validation. Build is held until P1 is approved. |
 | Filter match highlighting | **accepted** | Opt-in, only if performance stays clean. Matched substrings via Mantine `Highlight`. |
 | Fuzzy global filter with ranked results | **accepted** | Be opinionated: fuzzy as a configurable mode. Sorting suspends while ranking is active (their trick). |
-| Density toggle | **pending decision** | Explained to stakeholder (runtime compact/comfortable row-height toggle); awaiting call. |
-| Full-screen mode | **accepted** | If it stays easy: fixed-position Paper, restore scroll on exit. |
+| Density toggle | **proposal P4, pending approval** | Runtime compact/comfortable row-height toggle. P4 recommends no built-in: `size` is already live, so a toggle is three lines in consumer land — docs recipe + demo toggle instead. |
+| Full-screen mode | **accepted; park proposed** | If it stays easy: fixed-position Paper, restore scroll on exit. PM review says it is not easy (sticky z-ladder, portalled menus, measured panels) and proposes parking — awaiting the stakeholder's yes, see scan-adoption.md. |
 | Click-to-copy cells | **rejected** | Covered by cell selection: Ctrl+C and the right-click copy/export menu. |
 | Loading skeletons + progress bars | **explore later** | Needs hands-on testing to see what we actually want; parked in BACKLOG. |
 | Row pinning (user-pinned sticky rows) | **accepted** | Wanted. Sticky mode reusing the entry-block CSS mechanics. |
@@ -78,7 +81,7 @@ Inspiration only; nothing to adopt wholesale.
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| `internalXxx` handback in render overrides | **pending proposal** | Overrides receive built-in content to append/wrap (`renderColumnActionsMenuItems({ internalColumnMenuItems })`). Stakeholder wants the concrete design first — draft for our column menu + context menu. |
+| `internalXxx` handback in render overrides | **proposal P2, pending approval** | Overrides receive built-in content to append/wrap (`renderColumnActionsMenuItems({ internalColumnMenuItems })`). Folded into P2 as the menu-shaped convention (`internalItems`). |
 | `T \| ((args) => T)` prop pattern + one resolver | noted | Feeds the per-row styling API shape. |
 | String fn-names in state, resolved at prepare time | validated | We already do this with operator strings. |
 | Per-locale subpath packages | **deferred** | We will grow past EN/SV, but not now. |

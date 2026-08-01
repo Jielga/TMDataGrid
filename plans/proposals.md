@@ -1,10 +1,29 @@
-# Phase 0 proposals
+# Proposals — the 1.0 wave
+
+> **Status: all four pending stakeholder approval.** Written 2026-08-01;
+> none approved yet. Held work in the
+> [tracker](scan-adoption.md#execution-tracker) (H1–H5) starts only when its
+> proposal is approved.
 
 The four proposals gating the scan-adoption wave
 ([scan-adoption.md](scan-adoption.md)). Each ends with what approval means.
-Decisions Q1–Q7 (resolved) are assumed throughout.
+Decisions Q1–Q7 (settled 2026-08-01) are assumed throughout.
+
+**Approving one:** change its status line to
+`> **Status: approved <date>.**` and set the matching H-item in the
+[tracker](scan-adoption.md#execution-tracker) from `held` to `ready`. P2
+needs its rename table approved as well before H2 starts.
+
+| Proposal | Status | Unblocks |
+| --- | --- | --- |
+| P1 — Control registry | **pending approval** | H1 |
+| P2 — API coherence refactor | **pending approval** (+ second gate: rename table) | H2 |
+| P3 — Bad-UX warning framework | **pending approval** | H3, then H4 |
+| P4 — Density: no built-in | **pending approval** | H5 |
 
 ## P1 — Control registry: filters & editors
+
+> **Status: pending approval.** Written 2026-08-01. Unblocks H1.
 
 **Goal.** Register a special input once — with its validation pattern — and
 reuse it across columns and grids, for both editing and filtering. The
@@ -65,6 +84,10 @@ final for the beta; phase 5 builds against them.
 
 ## P2 — API coherence refactor (1.0.0-beta)
 
+> **Status: pending approval.** Written 2026-08-01. Unblocks H2 — and H2
+> also waits on the second gate below: the rename table comes back for
+> yes/no before any renaming is executed.
+
 **Goal.** One convention across every render/override surface before 1.0
 freezes them — per Q2, a deliberate refactor rather than point fixes.
 
@@ -108,6 +131,9 @@ see).
 
 ## P3 — Bad-UX warning framework
 
+> **Status: pending approval.** Written 2026-08-01. Unblocks H3, and H4
+> after it.
+
 **Goal.** One idiom for "legal but probably not what you want", replacing
 ad-hoc warnings. Types (`?: never`) catch invalid combos at compile time;
 this catches unwise ones at runtime, dev-only.
@@ -137,6 +163,8 @@ type TMDataGridUxRule = { key, detect(options, features), message, docsRef };
 opinions-vs-errors boundary are settled; phase 1 builds it.
 
 ## P4 — Density: recommendation is NO built-in
+
+> **Status: pending approval.** Written 2026-08-01. Unblocks H5.
 
 The grid already derives row height, paddings and font size from the live
 `size` prop — a runtime compact/comfortable toggle is a `useState` in
