@@ -36,7 +36,14 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { TMDataGridRowData } from "./TMDataGridContext";
 import type { TMDataGridOptionsSource } from "./core/columnOptions";
 import {
@@ -356,6 +363,18 @@ export type TMDataGridApi<TData extends RowData> = {
   renderDetailsEstHeight: number;
   /** Virtualizer overscan: the option, or {@link DEFAULT_OVERSCAN}. */
   overscan: number;
+  /**
+   * Puts the settings state — visibility, order, widths, pinning, grouping —
+   * back to what a first visit with clean storage would have shown: the
+   * consumer's `initialState` plus the structural lanes. With persistence
+   * configured the reset writes through to storage like any other change.
+   *
+   * This, not TanStack's `resetColumnX()` family, is the reset for a
+   * persisted grid: those reset to `initialState`, and the grid bakes the
+   * restored payload into `initialState` at mount — they would "reset" to
+   * the very layout being discarded.
+   */
+  resetSettings: () => void;
 };
 
 export type UseTMDataGridOptions<TData extends RowData> = Omit<
@@ -1128,6 +1147,44 @@ export function useTMDataGrid<TData extends RowData>({
     return () => subscription.unsubscribe();
   }, [ui]);
 
+  // The same recipe the mount uses for `initialState`, minus the persisted
+  // layer — see the api's JSDoc for why TanStack's own resets cannot do this.
+  // Ref-and-stable-wrapper, like the edit engine's context: the recipe reads
+  // this render's flags, the callback identity never changes.
+  const resetSettingsRef = useRef<() => void>(() => {});
+  resetSettingsRef.current = () => {
+    const initial = options.initialState;
+    const grouping = [...(initial?.grouping ?? [])];
+    table.setGrouping(grouping);
+    table.setColumnVisibility({
+      ...initial?.columnVisibility,
+      // The tree lane's visibility tracks the grouping, never the user.
+      ...(groupColumnEnabled ? { [GROUP_COLUMN_ID]: grouping.length > 0 } : {}),
+    });
+    table.setColumnSizing({ ...initial?.columnSizing });
+    table.setColumnOrder([...(initial?.columnOrder ?? [])]);
+    table.setColumnPinning({
+      left: [
+        ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
+        ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
+        ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
+        ...(initial?.columnPinning?.left ?? []).filter(
+          (id) =>
+            id !== SELECT_COLUMN_ID &&
+            id !== DETAILS_COLUMN_ID &&
+            id !== GROUP_COLUMN_ID,
+        ),
+      ],
+      right: [
+        ...(initial?.columnPinning?.right ?? []).filter(
+          (id) => id !== EDIT_COLUMN_ID,
+        ),
+        ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),
+      ],
+    });
+  };
+  const resetSettings = useCallback(() => resetSettingsRef.current(), []);
+
   return {
     table,
     ui,
@@ -1137,6 +1194,7 @@ export function useTMDataGrid<TData extends RowData>({
     renderDetails,
     renderDetailsEstHeight,
     overscan,
+    resetSettings,
   };
 }
 

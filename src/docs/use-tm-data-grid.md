@@ -185,6 +185,14 @@ the order, a width for nothing, and above all a sort or filter that would be
 active with no column to show for itself. New columns need nothing: TanStack
 appends columns missing from `columnOrder` in definition order.
 
+`resetSettings()` on the returned api puts the settings state back to what a
+first visit with clean storage would have shown — your `initialState` plus
+the structural lanes — and, with persistence configured, writes through to
+storage like any other change. The columns panel's **Reset layout** button
+calls exactly this. Note that TanStack's own `resetColumnX()` family cannot
+do it on a persisted grid: those reset to `initialState`, which the mount
+built *from* the restored payload.
+
 All storage access is guarded. If storage is unavailable, disabled or full,
 persistence is skipped rather than throwing.
 

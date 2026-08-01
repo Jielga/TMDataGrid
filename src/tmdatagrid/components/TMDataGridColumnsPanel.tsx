@@ -1,4 +1,11 @@
-import { Button, Checkbox, ScrollArea, Text, TextInput } from "@mantine/core";
+import {
+  Button,
+  Checkbox,
+  ScrollArea,
+  Text,
+  TextInput,
+  Tooltip,
+} from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import classes from "./TMDataGridColumnsPanel.module.css";
@@ -13,7 +20,7 @@ import { SearchIcon } from "./icons";
  * `TMDataGrid.ColumnsButton`.
  */
 export function TMDataGridColumnsPanel() {
-  const { table, labels, controlSize } = useTMDataGridContext();
+  const { table, labels, controlSize, resetSettings } = useTMDataGridContext();
   const [search, setSearch] = useState("");
 
   const columnVisibility = useSelector(
@@ -84,13 +91,19 @@ export function TMDataGridColumnsPanel() {
             table.toggleAllColumnsVisible(event.currentTarget.checked)
           }
         />
-        <Button
-          variant="subtle"
-          size="compact-sm"
-          onClick={() => table.resetColumnVisibility()}
-        >
-          {labels.columnsReset}
-        </Button>
+        {/* The whole layout, not only visibility: one reset with an honest
+            scope, stated in the tooltip. `table.resetColumnVisibility()` would
+            also be wrong under persistence — it resets to `initialState`,
+            which the mount built *from* the persisted payload. */}
+        <Tooltip label={labels.columnsResetHint} withArrow>
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            onClick={() => resetSettings()}
+          >
+            {labels.columnsReset}
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );

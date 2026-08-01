@@ -30,6 +30,8 @@ export type TMDataGridLabels = {
   columnsNoMatch: (search: string) => string;
   columnsShowHideAll: string;
   columnsReset: string;
+  /** Tooltip on the reset button, stating everything the reset covers. */
+  columnsResetHint: string;
 
   // Filter panel
   filterColumn: string;
@@ -158,7 +160,9 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   columnsSearchPlaceholder: "Search",
   columnsNoMatch: (search) => `No columns match “${search}”`,
   columnsShowHideAll: "Show/Hide All",
-  columnsReset: "RESET",
+  columnsReset: "RESET LAYOUT",
+  columnsResetHint:
+    "Resets column visibility, order, widths, pinning and grouping",
 
   filterColumn: "Column",
   filterOperator: "Operator",

@@ -1,5 +1,5 @@
 import { Menu } from "@mantine/core";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -316,6 +316,62 @@ describe("column visibility", () => {
     expect(
       screen.queryByRole("button", { name: "Manage columns" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("Reset layout brings a hidden column back", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Manage columns" }));
+    await user.click(screen.getByRole("checkbox", { name: "City" }));
+    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "RESET LAYOUT" }));
+
+    expect(screen.getByTestId("dg-header-city")).toBeInTheDocument();
+  });
+});
+
+describe("resetSettings", () => {
+  it("puts every settings slice back to a clean first visit", () => {
+    const { result } = renderGrid();
+    const { table } = result.current;
+
+    act(() => {
+      table.getColumn("city")?.toggleVisibility(false);
+      table.setColumnSizing({ name: 300 });
+      table.setColumnOrder(["city", "name", "id", "age"]);
+      table.setGrouping(["city"]);
+    });
+
+    act(() => result.current.resetSettings());
+
+    const state = table.store.state;
+    expect(state.columnVisibility.city).not.toBe(false);
+    expect(state.columnSizing).toEqual({});
+    expect(state.columnOrder).toEqual([]);
+    expect(state.grouping).toEqual([]);
+    // The structural lanes keep their pinning through a reset.
+    expect(state.columnPinning.left).toContain(SELECT_COLUMN_ID);
+  });
+
+  it("keeps the consumer's initialState as the floor", () => {
+    const { result } = renderGrid({
+      initialState: { columnVisibility: { age: false } },
+    });
+    const { table } = result.current;
+
+    act(() => {
+      table.getColumn("age")?.toggleVisibility(true);
+      table.getColumn("city")?.toggleVisibility(false);
+    });
+
+    act(() => result.current.resetSettings());
+
+    const state = table.store.state;
+    // Hidden by definition, so the reset hides it again.
+    expect(state.columnVisibility.age).toBe(false);
+    expect(state.columnVisibility.city).not.toBe(false);
   });
 });
 

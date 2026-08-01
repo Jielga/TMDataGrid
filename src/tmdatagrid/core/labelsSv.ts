@@ -40,7 +40,9 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   columnsSearchPlaceholder: "Sök",
   columnsNoMatch: (search) => `Inga kolumner matchar ”${search}”`,
   columnsShowHideAll: "Visa/dölj alla",
-  columnsReset: "ÅTERSTÄLL",
+  columnsReset: "ÅTERSTÄLL LAYOUT",
+  columnsResetHint:
+    "Återställer kolumnernas synlighet, ordning, bredder, fästning och gruppering",
 
   filterColumn: "Kolumn",
   filterOperator: "Operator",
