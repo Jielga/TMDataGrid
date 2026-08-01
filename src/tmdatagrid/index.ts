@@ -175,6 +175,7 @@ export {
 } from "./core/sizes";
 export {
   DATA_STATE_SLICES,
+  PERSIST_PAYLOAD_VERSION,
   SETTINGS_STATE_SLICES,
   type TMDataGridDataSlice,
   type TMDataGridPersistence,

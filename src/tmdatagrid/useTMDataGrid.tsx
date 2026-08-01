@@ -63,6 +63,7 @@ import {
   type TMDataGridLabelsOverride,
 } from "./core/labels";
 import {
+  collectLeafColumnIds,
   hasPersistenceKeys,
   readPersistedState,
   type TMDataGridPersistence,
@@ -808,7 +809,12 @@ export function useTMDataGrid<TData extends RowData>({
 
   // Read once on mount: `initialState` is only consumed on the first render,
   // and re-reading later would fight the user's live edits.
-  const [persistedState] = useState(() => readPersistedState(persist));
+  // Realigned against the ids this render is about to construct — lanes
+  // included — so a column removed between deploys does not leave a ghost
+  // sort, filter or width behind.
+  const [persistedState] = useState(() =>
+    readPersistedState(persist, collectLeafColumnIds(columns)),
+  );
 
   // Restored grouping decides whether the tree column starts out visible, so a
   // reload comes back to the tree the user left rather than to a hidden lane.

@@ -174,6 +174,17 @@ Only the selected slices are read back. A payload written before the selection
 was narrowed cannot reintroduce slices you have since opted out of. Unrecognised
 keys are ignored.
 
+Payloads carry a version stamp (the exported `PERSIST_PAYLOAD_VERSION`). A
+payload from a different version — including anything written by a 0.x build,
+which had no stamp — is dropped whole rather than migrated: the cost is one
+lost layout, against guessing at a shape the current code no longer knows.
+
+Restored state is realigned against the columns that actually exist: entries
+naming a column that was removed between deploys are dropped — a ghost id in
+the order, a width for nothing, and above all a sort or filter that would be
+active with no column to show for itself. New columns need nothing: TanStack
+appends columns missing from `columnOrder` in definition order.
+
 All storage access is guarded. If storage is unavailable, disabled or full,
 persistence is skipped rather than throwing.
 

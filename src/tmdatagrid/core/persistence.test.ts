@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TableState } from "@tanstack/react-table";
 import {
+  collectLeafColumnIds,
   DATA_STATE_SLICES,
   hasPersistenceKeys,
+  PERSIST_PAYLOAD_VERSION,
   readPersistedState,
   SETTINGS_STATE_SLICES,
   type TMDataGridPersistence,
@@ -50,16 +52,24 @@ describe("writePersistedState", () => {
   it("splits the slices across the two keys", () => {
     writePersistedState(gridState(), { dataKey: "d", settingsKey: "s" });
 
-    expect(Object.keys(stored("d")).sort()).toEqual([...DATA_STATE_SLICES].sort());
+    expect(Object.keys(stored("d")).sort()).toEqual(
+      ["__v", ...DATA_STATE_SLICES].sort(),
+    );
     expect(Object.keys(stored("s")).sort()).toEqual(
-      [...SETTINGS_STATE_SLICES].sort(),
+      ["__v", ...SETTINGS_STATE_SLICES].sort(),
     );
   });
 
   it("writes only the listed slices when a key is narrowed", () => {
     writePersistedState(gridState(), { dataKey: ["d", ["sorting"]] });
 
-    expect(Object.keys(stored("d"))).toEqual(["sorting"]);
+    expect(Object.keys(stored("d"))).toEqual(["__v", "sorting"]);
+  });
+
+  it("stamps the payload version", () => {
+    writePersistedState(gridState(), { dataKey: "d" });
+
+    expect(stored("d").__v).toBe(PERSIST_PAYLOAD_VERSION);
   });
 
   it("writes nothing without a key", () => {
@@ -140,8 +150,27 @@ describe("readPersistedState", () => {
     expect(readPersistedState({ dataKey: "d" })).toEqual({});
   });
 
+  it("drops a payload without a version stamp — pre-1.0 layouts", () => {
+    // A 0.x build wrote slices with no `__v`.
+    window.localStorage.setItem("d", JSON.stringify(gridState()));
+
+    expect(readPersistedState({ dataKey: "d" })).toEqual({});
+  });
+
+  it("drops a payload from a different version whole", () => {
+    window.localStorage.setItem(
+      "d",
+      JSON.stringify({ __v: PERSIST_PAYLOAD_VERSION + 1, ...gridState() }),
+    );
+
+    expect(readPersistedState({ dataKey: "d" })).toEqual({});
+  });
+
   it("honours a custom deserializer", () => {
-    window.localStorage.setItem("d", `custom:${JSON.stringify(gridState())}`);
+    window.localStorage.setItem(
+      "d",
+      `custom:${JSON.stringify({ __v: PERSIST_PAYLOAD_VERSION, ...gridState() })}`,
+    );
 
     const restored = readPersistedState({
       dataKey: "d",
@@ -154,7 +183,10 @@ describe("readPersistedState", () => {
   describe("shape guards", () => {
     /** Writes a raw payload past the serializer, the way a stale build would. */
     const write = (payload: Record<string, unknown>) =>
-      window.localStorage.setItem("k", JSON.stringify(payload));
+      window.localStorage.setItem(
+        "k",
+        JSON.stringify({ __v: PERSIST_PAYLOAD_VERSION, ...payload }),
+      );
 
     const readAll = () =>
       readPersistedState({ dataKey: "k", settingsKey: "k" });
@@ -224,5 +256,79 @@ describe("readPersistedState", () => {
       write({ globalFilter: { anything: true } });
       expect(readAll().globalFilter).toEqual({ anything: true });
     });
+  });
+
+  describe("realignment against the current columns", () => {
+    const persist: TMDataGridPersistence = { dataKey: "d", settingsKey: "s" };
+
+    it("drops entries naming columns that no longer exist", () => {
+      // "name" survives the deploy, "age" and "city" do not.
+      writePersistedState(gridState(), persist);
+
+      const restored = readPersistedState(persist, ["name", "brandNew"]);
+
+      expect(restored.columnOrder).toEqual(["name"]);
+      expect(restored.columnVisibility).toEqual({ name: false });
+      expect(restored.columnSizing).toEqual({ name: 120 });
+      expect(restored.columnPinning).toEqual({ left: ["name"], right: [] });
+      expect(restored.grouping).toEqual([]);
+      expect(restored.sorting).toEqual([{ id: "name", desc: true }]);
+      expect(restored.columnFilters).toHaveLength(1);
+    });
+
+    it("drops a sort and filter on a removed column — no invisible state", () => {
+      writePersistedState(gridState(), persist);
+
+      const restored = readPersistedState(persist, ["age"]);
+
+      expect(restored.sorting).toEqual([]);
+      expect(restored.columnFilters).toEqual([]);
+    });
+
+    it("leaves value-keyed slices alone", () => {
+      // `expanded` keys group values, not column ids.
+      writePersistedState(gridState(), persist);
+
+      const restored = readPersistedState(persist, ["name"]);
+
+      expect(restored.expanded).toEqual({ "city:Malmö": true });
+      expect(restored.pagination).toEqual({ pageIndex: 2, pageSize: 50 });
+    });
+
+    it("changes nothing when no ids are given", () => {
+      const state = gridState();
+      writePersistedState(state, persist);
+
+      const restored = readPersistedState(persist);
+
+      expect(restored.columnOrder).toEqual(state.columnOrder);
+      expect(restored.sorting).toEqual(state.sorting);
+    });
+  });
+});
+
+describe("collectLeafColumnIds", () => {
+  it("derives ids the way TanStack does", () => {
+    expect(
+      collectLeafColumnIds([
+        { id: "explicit", accessorKey: "ignored" },
+        { accessorKey: "plain" },
+        { accessorKey: "address.city" },
+        { header: "From Header" },
+        { header: 42 },
+      ]),
+    ).toEqual(["explicit", "plain", "address_city", "From Header"]);
+  });
+
+  it("recurses into header groups", () => {
+    expect(
+      collectLeafColumnIds([
+        {
+          header: "Person",
+          columns: [{ accessorKey: "firstName" }, { accessorKey: "lastName" }],
+        },
+        { accessorKey: "age" },
+      ]),
+    ).toEqual(["firstName", "lastName", "age"]);
   });
 });

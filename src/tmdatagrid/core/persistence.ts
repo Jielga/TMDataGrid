@@ -78,6 +78,17 @@ export type TMDataGridPersistence = {
   deserialize?: (value: string) => unknown;
 };
 
+/**
+ * Version stamped into every stored payload, under a key no state slice can
+ * collide with. A payload whose version does not match is dropped whole: a
+ * migration would be guessing at a shape this code no longer knows, and the
+ * cost of dropping is one lost layout. Payloads written before versioning
+ * existed (≤0.4.0) have no stamp and are dropped the same way — the 1.0
+ * wave's one-time break, named in its changeset.
+ */
+export const PERSIST_PAYLOAD_VERSION = 1;
+const VERSION_FIELD = "__v";
+
 type ResolvedKey = { key: string; slices: ReadonlyArray<keyof GridState> };
 
 function resolveKey<TSlice extends string>(
@@ -201,6 +212,7 @@ function readSlices(
     if (typeof parsed !== "object" || parsed === null) return {};
 
     const record = parsed as Record<string, unknown>;
+    if (record[VERSION_FIELD] !== PERSIST_PAYLOAD_VERSION) return {};
     const restored: Record<string, unknown> = {};
     // Only copy the selected slices. A payload written before the selection was
     // narrowed cannot reintroduce slices the caller has since opted out of.
@@ -222,7 +234,7 @@ function writeSlices(
   serialize: (value: Partial<GridState>) => string,
 ): void {
   if (!storage || !resolved) return;
-  const payload: Record<string, unknown> = {};
+  const payload: Record<string, unknown> = { [VERSION_FIELD]: PERSIST_PAYLOAD_VERSION };
   for (const slice of resolved.slices) payload[slice] = state[slice];
   try {
     storage.setItem(resolved.key, serialize(payload as Partial<GridState>));
@@ -250,17 +262,99 @@ const defaultDeserialize = (value: string): unknown => JSON.parse(value);
 const defaultSerialize = (value: Partial<GridState>): string =>
   JSON.stringify(value);
 
-/** State to merge into `initialState`, read once on mount. */
+/**
+ * The leaf column ids a set of column defs will produce, by TanStack's own
+ * derivation: `id`, else `accessorKey` with dots replaced by underscores,
+ * else a string `header`. Mirrored here so restored state can be realigned
+ * against the columns that will actually exist — deriving ids any other way
+ * would realign against names the table never uses.
+ */
+export function collectLeafColumnIds(
+  defs: ReadonlyArray<unknown>,
+  into: string[] = [],
+): string[] {
+  for (const def of defs) {
+    if (typeof def !== "object" || def === null) continue;
+    const record = def as Record<string, unknown>;
+    if (Array.isArray(record.columns) && record.columns.length > 0) {
+      collectLeafColumnIds(record.columns, into);
+      continue;
+    }
+    const accessorKey =
+      typeof record.accessorKey === "string" ? record.accessorKey : undefined;
+    const id =
+      (typeof record.id === "string" ? record.id : undefined) ??
+      accessorKey?.replaceAll(".", "_") ??
+      (typeof record.header === "string" ? record.header : undefined);
+    if (id !== undefined) into.push(id);
+  }
+  return into;
+}
+
+/**
+ * Drops restored entries that name columns the grid no longer has.
+ *
+ * A stored layout outlives the column set: a column removed between deploys
+ * would otherwise linger forever — a ghost id in the order, a width for
+ * nothing, and worse, a *filter or sort that is active but has no column to
+ * show for itself*. New columns need no counterpart here: TanStack appends
+ * columns missing from `columnOrder` on its own, in definition order.
+ */
+function realignToColumns(
+  restored: Partial<GridState>,
+  known: ReadonlySet<string>,
+): Partial<GridState> {
+  const has = (id: unknown): boolean =>
+    typeof id === "string" && known.has(id);
+  const keepIds = (values: ReadonlyArray<string>) => values.filter(has);
+  const keepKeys = <T,>(record: Record<string, T>) =>
+    Object.fromEntries(Object.entries(record).filter(([id]) => has(id)));
+  const keepEntries = <T extends { id: string }>(entries: ReadonlyArray<T>) =>
+    entries.filter((entry) => has(entry.id));
+
+  const realigned: Partial<GridState> = { ...restored };
+  if (restored.columnOrder) realigned.columnOrder = keepIds(restored.columnOrder);
+  if (restored.grouping) realigned.grouping = keepIds(restored.grouping);
+  if (restored.columnVisibility) {
+    realigned.columnVisibility = keepKeys(restored.columnVisibility);
+  }
+  if (restored.columnSizing) {
+    realigned.columnSizing = keepKeys(restored.columnSizing);
+  }
+  if (restored.columnPinning) {
+    realigned.columnPinning = {
+      left: keepIds(restored.columnPinning.left ?? []),
+      right: keepIds(restored.columnPinning.right ?? []),
+    };
+  }
+  if (restored.sorting) realigned.sorting = keepEntries(restored.sorting);
+  if (restored.columnFilters) {
+    realigned.columnFilters = keepEntries(restored.columnFilters);
+  }
+  return realigned;
+}
+
+/**
+ * State to merge into `initialState`, read once on mount.
+ *
+ * With `knownColumnIds` — every id the grid is about to construct, generated
+ * lanes included — the column-shaped slices are realigned first; see
+ * {@link realignToColumns}. Without it the payload is returned as stored.
+ */
 export function readPersistedState(
   persistence?: TMDataGridPersistence,
+  knownColumnIds?: ReadonlyArray<string>,
 ): Partial<GridState> {
   const storage = resolveStorage(persistence);
   const { data, settings } = resolveKeys(persistence);
   const deserialize = persistence?.deserialize ?? defaultDeserialize;
-  return {
+  const restored = {
     ...readSlices(storage, settings, deserialize),
     ...readSlices(storage, data, deserialize),
   };
+  return knownColumnIds === undefined
+    ? restored
+    : realignToColumns(restored, new Set(knownColumnIds));
 }
 
 /** Writes both payloads. Called on every table state change. */
