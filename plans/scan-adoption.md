@@ -14,30 +14,28 @@ once the phases before it have stopped adding surface.
 Costs are complexity, not hours: S (contained, one commit), M (touches a few
 subsystems), L (new subsystem or real design surface).
 
-## Stakeholder questions (from PM review — block the items they touch)
+## Stakeholder decisions (questions resolved 2026-08-01)
 
-- **Q1 One door or two for custom editors?** `meta.renderEditor` is shipped,
-  documented API; proposal 1 adds `meta.editor: "name"`. Keep both (registry
-  for reuse, `renderEditor` as inline escape hatch, precedence documented) or
-  deprecate `renderEditor`? *Recommendation: keep both.*
-- **Q2 May the Footer `pagination` render prop break?** Proposal 2's slot
-  shape replaces the published `TMDataGridPaginationApi` signature.
-  *Recommendation: clean replacement at 0.x, minor bump, changeset note.*
-- **Q3 Persisted state written by ≤0.4.0:** migrate silently, or version
-  field + one-time drop (users lose column layout once)?
-  *Recommendation: version field ships first, then one-time drop — migrating
-  an unversioned blob is guesswork.*
-- **Q4 Fuzzy quick search: default on, or contains-by-default with fuzzy as
-  opt-in mode?* Product call, not review call.
-- **Q5 Are types-only breaks acceptable in a 0.x minor?** Covers the
-  `?: never` unions and `keyof T` typing. *Recommendation: yes, changeset
-  names the combination that now fails.*
-- **Q6 What does "stable" mean in the styling contract pre-1.0?**
-  *Recommendation: documented-but-provisional now, frozen at 1.0.*
-- **Q7 Reset UX:** the ColumnsPanel already has a visibility-only Reset.
-  Rename it and add "Reset layout" beside it, replace it with the wider
-  reset, or move layout reset to the column menu? Changes what phase 1
-  builds.
+- **Q1 Custom editors:** both doors stay. The registry (`meta.editor:
+  "name"`) is the register-once reuse path; `meta.renderEditor` stays as the
+  inline one-off and, being the more specific statement, wins when both are
+  set on a column.
+- **Q2 Slots:** not a point fix — a whole-API coherence refactor under the
+  1.0.0-beta umbrella so the render/slot/override conventions "come
+  together". Proposal 2 reframed accordingly; the Footer `pagination` render
+  prop breaks as part of it.
+- **Q3 Persisted state:** version field ships first; unversioned ≤0.4.0
+  payloads are dropped once (stakeholder accepts the one-time layout loss).
+- **Q4 Quick search:** fuzzy is the default; contains stays as a mode.
+- **Q5 Versioning:** this wave IS the 1.0 line — Changesets pre-mode
+  (`changeset pre enter beta`), first release `1.0.0-beta.1`. Breaking
+  changes are free until `1.0.0`; each still gets named in its changeset.
+- **Q6 Styling contract:** documented-but-provisional during beta, frozen at
+  `1.0.0`.
+- **Q7 Reset UX (delegated):** the ColumnsPanel's visibility-only Reset is
+  replaced by a single **Reset layout** that clears every settings slice
+  (visibility, order, widths, pinning), with the scope stated in its
+  tooltip. One button, honest scope, no second menu invented.
 
 ## Phase 0 — proposals (documents, no code)
 
@@ -56,13 +54,16 @@ Four short proposals for stakeholder approval, each a section in a single
    through the same door, and — per Q1 — precedence against the shipped
    `meta.renderEditor`. The args contract is the widest blast radius in this
    plan (every consumer-registered control binds to it); over-review here.
-2. **Slot shapes** (unblocks the Footer pager rework and future EditActions).
-   Concrete before/after for `state`/`actions`/`Controls`
+2. **API coherence refactor (1.0.0-beta)** — per Q2, wider than slot
+   shapes: inventory every render/override surface (Footer `pagination`,
+   `renderDetails`, `rowContextMenu`, `renderEditor`, toolbar slots, …) and
+   unify them under one convention — single typed args object everywhere,
+   `state`/`actions`/`Controls` for composable slots
    (`[md] package/types/DataTablePaginationRenderContext.tsx`,
-   `DataTablePagination.tsx:76-124`) and the `internalXxx` handback for our
-   column menu and context menu
+   `DataTablePagination.tsx:76-124`), `internalItems` handback for menus
    (`[mrt] src/components/menus/MRT_ColumnActionMenu.tsx:272-282`).
-   Includes the Q2 breaking-change call.
+   Deliverable: the rename/reshape table, old → new, each row a named break
+   in the beta changesets.
 3. **Bad-UX warning framework** (built in phase 1). Dev-only detector:
    known-bad option combinations log one `console.info` with a docs link and
    the silencing key; silencing is explicit config — working name
@@ -106,8 +107,9 @@ stored data).
   smaller than several phase 1 items, and two existing warnings are waiting
   to be folded in. Phase 6 then adds a rule, not a subsystem.
 - **Reset saved layout** — `resetSettings({ table })` (or per-slice
-  variants) clearing persisted slices back to definition defaults, plus the
-  UI per Q7. Menu stays the beaten track — no menu consolidation yet.
+  variants) clearing persisted slices back to definition defaults; per Q7
+  the ColumnsPanel's Reset becomes a single **Reset layout** covering all
+  settings slices, scope in the tooltip. No menu consolidation yet.
 - **Per-row styling hooks** — `rowClassName`/`rowStyle` as
   `T | ((row) => T)` on the Table component, `striped` option, one resolver
   helper (`[mrt] parseFromValuesOrFunc`). Constraints from the codebase:
@@ -250,5 +252,14 @@ resolved by then (phase 2).
 - **Click-to-copy** — rejected: cell selection already covers copy.
 - **Row drag-reordering** — rejected: DnD is for small lists/trees.
 
-Each phase lands green on main as its own commit(s) with tests, docs and a
-changeset per user-facing change, same discipline as the cell-editing plan.
+## Versioning
+
+This wave is the 1.0 line (Q5). Before phase 1 lands: `changeset pre enter
+beta`, a major changeset opens `1.0.0-beta.1`, and every breaking change —
+API refactor renames, `?: never` type breaks, the persisted-payload drop —
+is named in its changeset. `changeset pre exit` when the wave is done and
+`1.0.0` ships with the styling contract frozen (Q6).
+
+Each phase lands green as its own commit(s) with tests, docs and a changeset
+per user-facing change, same discipline as the cell-editing plan. This wave
+builds on the `feature/next` branch, merged to main when 1.0.0 ships.
