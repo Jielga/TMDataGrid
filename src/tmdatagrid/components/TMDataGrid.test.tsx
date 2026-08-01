@@ -359,6 +359,47 @@ describe("row numbers", () => {
   });
 });
 
+describe("scroll edge callbacks", () => {
+  it("fires on arrival at an edge, once, and not on mount", () => {
+    const events: Array<string> = [];
+    renderGridUi({
+      tableProps: {
+        onScrollToTop: () => events.push("top"),
+        onScrollToBottom: () => events.push("bottom"),
+      },
+    });
+
+    const container = document.querySelector(
+      "[data-dg-scroll-container]",
+    ) as HTMLElement;
+    // jsdom has no layout, so the metrics are stated.
+    Object.defineProperties(container, {
+      clientHeight: { value: 400, configurable: true },
+      scrollHeight: { value: 1000, configurable: true },
+      clientWidth: { value: 600, configurable: true },
+      scrollWidth: { value: 600, configurable: true },
+    });
+
+    // Mounting fired nothing — the grid starts at the top edge.
+    expect(events).toEqual([]);
+
+    container.scrollTop = 600;
+    fireEvent.scroll(container);
+    container.scrollTop = 599;
+    fireEvent.scroll(container);
+
+    // Two scroll events inside the bottom tolerance, one arrival.
+    expect(events).toEqual(["bottom"]);
+
+    container.scrollTop = 300;
+    fireEvent.scroll(container);
+    container.scrollTop = 0;
+    fireEvent.scroll(container);
+
+    expect(events).toEqual(["bottom", "top"]);
+  });
+});
+
 describe("per-row styling", () => {
   it("stripes by view position and applies rowClassName/rowStyle", () => {
     renderGridUi({

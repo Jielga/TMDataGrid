@@ -80,6 +80,7 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 | `rowClassName` | `string \| (row) => string \| undefined` | Class for a body row, added after the grid's own. |
 | `rowStyle` | `CSSProperties \| (row) => CSSProperties \| undefined` | Inline style for a body row. Colour rows by setting `--row-bg`, not `background` — pinned cells, the range tint and the hover/selection ladder all read the variable. |
 | `striped` | `boolean` | Every second row takes `--dg-row-striped-bg`. Striping follows the row's position in the view, so it survives sorting, filtering and virtualization. |
+| `onScrollToTop` / `onScrollToBottom` / `onScrollToLeft` / `onScrollToRight` | `() => void` | Fire once when the scroll *arrives* at that edge — not per scroll event, and not on mount. For loading more rows, prefer `onReachEnd`: it fires rows-early and latches per row count. |
 | `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 | `cellExport` | `TMDataGridCellExportOptions` | How Ctrl+C and the export item write values, under `cellSelection: "range"`. Nordic Excel defaults — `{ separator: ";", decimalComma: true, includeHeaders: true, fileName: "export" }`. |

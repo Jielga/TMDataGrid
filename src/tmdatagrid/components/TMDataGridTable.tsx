@@ -14,6 +14,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  type UIEvent,
   useCallback,
   useEffect,
   useRef,
@@ -479,6 +480,19 @@ export type TMDataGridTableProps<TData extends RowData> = {
    */
   striped?: boolean;
   /**
+   * Called when the scroll *arrives* at an edge — once per arrival, not per
+   * scroll event, and not on mount (the grid starts at the top-left edge).
+   * For loading more rows as the end approaches, `onReachEnd` is the better
+   * hook: it fires rows-early and latches per row count.
+   */
+  onScrollToTop?: () => void;
+  /** As {@link onScrollToTop}, for the bottom edge. */
+  onScrollToBottom?: () => void;
+  /** As {@link onScrollToTop}, for the left edge. */
+  onScrollToLeft?: () => void;
+  /** As {@link onScrollToTop}, for the right edge. */
+  onScrollToRight?: () => void;
+  /**
    * Contents of the menu a right-click on a row opens, at the pointer. Return
    * `null` to leave a row without one — the browser's own menu stays suppressed
    * either way.
@@ -548,6 +562,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   rowClassName,
   rowStyle,
   striped = false,
+  onScrollToTop,
+  onScrollToBottom,
+  onScrollToLeft,
+  onScrollToRight,
   rowContextMenu,
   rowContextMenuProps,
   cellExport,
@@ -1587,12 +1605,52 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     );
 
   /**
-   * The dropdown is anchored to a fixed viewport point, so it does not travel
-   * with the row when the body scrolls — and under virtualization the row it
-   * belongs to may unmount entirely. Closing is the honest answer, and matches
-   * what every desktop context menu does.
+   * Which edges the scroll position is currently at. Seeded "at top-left",
+   * which is where a grid mounts — so the callbacks report *arrivals*, and
+   * mounting fires nothing.
    */
-  const handleScroll = contextMenuTarget ? closeContextMenu : undefined;
+  const scrollEdgesRef = useRef({
+    top: true,
+    bottom: false,
+    left: true,
+    right: false,
+  });
+  const hasEdgeCallbacks =
+    onScrollToTop !== undefined ||
+    onScrollToBottom !== undefined ||
+    onScrollToLeft !== undefined ||
+    onScrollToRight !== undefined;
+
+  /**
+   * The context menu's dropdown is anchored to a fixed viewport point, so it
+   * does not travel with the row when the body scrolls — and under
+   * virtualization the row it belongs to may unmount entirely. Closing is
+   * the honest answer, and matches what every desktop context menu does.
+   *
+   * The edge callbacks share the handler. Reading scroll offsets here costs
+   * no layout; the 1px tolerance absorbs fractional offsets under browser
+   * zoom, where a "fully scrolled" position can land at 799.5 of 800.
+   */
+  const handleScroll =
+    contextMenuTarget || hasEdgeCallbacks
+      ? (event: UIEvent<HTMLDivElement>) => {
+          if (contextMenuTarget) closeContextMenu();
+          if (!hasEdgeCallbacks) return;
+          const el = event.currentTarget;
+          const next = {
+            top: el.scrollTop <= 1,
+            bottom: el.scrollTop + el.clientHeight >= el.scrollHeight - 1,
+            left: el.scrollLeft <= 1,
+            right: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1,
+          };
+          const previous = scrollEdgesRef.current;
+          scrollEdgesRef.current = next;
+          if (next.top && !previous.top) onScrollToTop?.();
+          if (next.bottom && !previous.bottom) onScrollToBottom?.();
+          if (next.left && !previous.left) onScrollToLeft?.();
+          if (next.right && !previous.right) onScrollToRight?.();
+        }
+      : undefined;
 
   return (
     <div className={classes.tableWrapper}>
@@ -1637,6 +1695,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 role="row"
                 aria-rowindex={groupIndex + 1}
                 data-dg-header-row
+                // The scrolled-under shadow belongs to the boundary between
+                // header and body — the last header row, not every stacked
+                // group row above it. See the stylesheet.
+                data-dg-header-last={
+                  groupIndex === headerGroups.length - 1 || undefined
+                }
                 className={classes.headerRow}
               >
                 {headerGroup.headers.map((header) => (

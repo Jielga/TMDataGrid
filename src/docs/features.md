@@ -665,6 +665,19 @@ Pinned columns keep their lanes in the summary row, and the row sits under
 the pinned-lane gradients on the stacking ladder. The generated lanes define
 no `footer`, so their summary cells stay blank.
 
+## Scroll edges
+
+Once body rows scroll under the sticky header, a soft shadow appears along
+its bottom edge — the depth cue that says "there are rows above the fold".
+Like the pinned-lane gradients it is a scroll-driven animation, tracked on
+the compositor with no listener and no render; a grid with nothing to scroll
+shows none, and where `animation-timeline` is unsupported the header's border
+alone draws the boundary. `--dg-header-shadow-color` recolours it.
+
+`TMDataGrid.Table` also reports edge arrivals — `onScrollToTop`,
+`onScrollToBottom`, `onScrollToLeft`, `onScrollToRight` — each firing once
+when the scroll reaches that edge. See [components](#components).
+
 ## Pinned column edges
 
 A pinned lane casts a soft band over the data beside it, and only while it is

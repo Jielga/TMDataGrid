@@ -60,7 +60,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | B3 | Row numbers lane | S | `done 2026-08-01` | — |
 | **C** | **Medium, conflict-free — order free** | | | |
 | C1 | `?: never` prop unions | M | `done 2026-08-01` | Q5 |
-| C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `ready` | — |
+| C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `done 2026-08-01` | — |
 | C3 | Empty-state slot | M | `ready` | state matrix written first |
 | **D** | **Big, independent — order free** | | | |
 | D1 | Row pinning | L | `ready` | — |
