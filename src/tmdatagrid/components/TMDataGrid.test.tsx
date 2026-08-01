@@ -332,6 +332,43 @@ describe("column visibility", () => {
   });
 });
 
+describe("cell click handlers", () => {
+  it("onCellClick reports the cell and composes with row selection", async () => {
+    const user = userEvent.setup();
+    const clicks: Array<string> = [];
+    renderGridUi({
+      selectionMode: "row",
+      tableProps: {
+        onCellClick: ({ row, column }) => clicks.push(`${row.id}:${column.id}`),
+      },
+    });
+
+    await user.click(within(bodyRows()[0]!).getAllByRole("cell")[1]!);
+
+    // No checkbox lane under "row" mode, so cell 1 is the name column.
+    expect(clicks).toEqual(["1:name"]);
+    // The row click still selected — composed, not suppressed.
+    expect(bodyRows()[0]!.getAttribute("data-selected")).toBe("true");
+  });
+
+  it("onCellDoubleClick and onCellContextMenu fire with the cell", async () => {
+    const user = userEvent.setup();
+    const events: Array<string> = [];
+    renderGridUi({
+      tableProps: {
+        onCellDoubleClick: ({ column }) => events.push(`dbl:${column.id}`),
+        onCellContextMenu: ({ column }) => events.push(`ctx:${column.id}`),
+      },
+    });
+
+    const nameCell = within(bodyRows()[0]!).getAllByRole("cell")[2]!;
+    await user.dblClick(nameCell);
+    fireEvent.contextMenu(nameCell);
+
+    expect(events).toEqual(["dbl:name", "ctx:name"]);
+  });
+});
+
 describe("resetSettings", () => {
   it("puts every settings slice back to a clean first visit", () => {
     const { result } = renderGrid();

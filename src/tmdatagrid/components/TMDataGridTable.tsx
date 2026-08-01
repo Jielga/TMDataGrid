@@ -1,6 +1,7 @@
 import { Checkbox, Loader, Menu, type MenuProps, Text } from "@mantine/core";
 import {
   type Cell,
+  type Column,
   flexRender,
   type Row,
   type RowData,
@@ -201,6 +202,7 @@ function TMDataGridBodyCell({
   nav,
   editor,
   onFocus,
+  onClick,
   onMouseDown,
   onMouseEnter,
   onDoubleClick,
@@ -213,9 +215,10 @@ function TMDataGridBodyCell({
   /** The mounted editor, when this is the cell being edited. */
   editor?: ReactNode;
   onFocus?: () => void;
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseDown?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseEnter?: () => void;
-  onDoubleClick?: () => void;
+  onDoubleClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
   // The edit markers subscribe here, per cell, all to the one projection
@@ -265,6 +268,7 @@ function TMDataGridBodyCell({
       // landing on the cell — the ring follows the user into the checkbox
       // rather than being left behind on whichever cell they came from.
       onFocus={onFocus}
+      onClick={onClick}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
       onDoubleClick={onDoubleClick}
@@ -402,12 +406,38 @@ export type TMDataGridRowContextMenu<TData extends RowData> = (
   args: TMDataGridRowContextMenuArgs<TData>,
 ) => ReactNode;
 
+/**
+ * What the `onCellClick` family receives — the cell with its row and column,
+ * in the consumer's own row type, plus the pointer event.
+ */
+export type TMDataGridCellEventArgs<TData extends RowData> = {
+  cell: Cell<TMDataGridFeatures, TData, unknown>;
+  row: Row<TMDataGridFeatures, TData>;
+  column: Column<TMDataGridFeatures, TData, unknown>;
+  event: MouseEvent<HTMLElement>;
+};
+
 export type TMDataGridTableProps<TData extends RowData> = {
   /**
    * Called when a body row is clicked. Runs in addition to row selection under
    * `selectionMode: "row"`, not instead of it.
    */
   onRowClick?: (row: Row<TMDataGridFeatures, TData>) => void;
+  /**
+   * Called when a body cell is clicked. Composes, never suppresses: whatever
+   * the click already does — selecting, highlighting, moving the cell cursor
+   * — still happens. Group rows sit out the cell handlers the way they sit
+   * out `onRowClick`, and for the same reason.
+   */
+  onCellClick?: (args: TMDataGridCellEventArgs<TData>) => void;
+  /** As {@link onCellClick}; a double-click that opens an editor still does. */
+  onCellDoubleClick?: (args: TMDataGridCellEventArgs<TData>) => void;
+  /**
+   * As {@link onCellClick}; `rowContextMenu` and the cell-selection menu still
+   * open. To suppress the browser's own menu on a grid with neither, call
+   * `event.preventDefault()` here.
+   */
+  onCellContextMenu?: (args: TMDataGridCellEventArgs<TData>) => void;
   /**
    * Contents of the menu a right-click on a row opens, at the pointer. Return
    * `null` to leave a row without one — the browser's own menu stays suppressed
@@ -472,6 +502,9 @@ export type TMDataGridTableProps<TData extends RowData> = {
  */
 export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onRowClick,
+  onCellClick,
+  onCellDoubleClick,
+  onCellContextMenu,
   rowContextMenu,
   rowContextMenuProps,
   cellExport,
@@ -802,6 +835,20 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (features.highlightRow) ui.actions.setHighlightedRow(row.id);
     onRowClick?.(row as unknown as Row<TMDataGridFeatures, TData>);
   };
+
+  // The same erasure crossing `onRowClick` makes, once for all three cell
+  // handlers.
+  const cellEventArgs = (
+    cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>,
+    row: Row<TMDataGridFeatures, TMDataGridRowData>,
+    event: MouseEvent<HTMLElement>,
+  ): TMDataGridCellEventArgs<TData> =>
+    ({
+      cell,
+      row,
+      column: cell.column,
+      event,
+    }) as unknown as TMDataGridCellEventArgs<TData>;
 
   // ---------------------------------------------------------------------------
   // Cell selection
@@ -1740,9 +1787,19 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                           />
                         ) : undefined
                       }
+                      onClick={
+                        onCellClick && !isGroupRow
+                          ? (event) =>
+                              onCellClick(cellEventArgs(cell, row, event))
+                          : undefined
+                      }
                       onDoubleClick={
-                        features.editing && !isGroupRow
-                          ? () => {
+                        (features.editing || onCellDoubleClick) && !isGroupRow
+                          ? (event) => {
+                              onCellDoubleClick?.(
+                                cellEventArgs(cell, row, event),
+                              );
+                              if (!features.editing) return;
                               if (!edit.canEditCell(row, cell.column)) return;
                               openEditor({
                                 rowId: row.id,
@@ -1828,9 +1885,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                           : undefined
                       }
                       onContextMenu={
-                        rowContextMenu || cellRangeSelection
-                          ? () => {
+                        rowContextMenu || cellRangeSelection || onCellContextMenu
+                          ? (event) => {
                               contextMenuColumnRef.current = cell.column.id;
+                              if (isGroupRow) return;
+                              onCellContextMenu?.(
+                                cellEventArgs(cell, row, event),
+                              );
                             }
                           : undefined
                       }

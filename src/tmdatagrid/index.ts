@@ -184,6 +184,7 @@ export {
   type TMDataGridStorageMode,
 } from "./core/persistence";
 export type {
+  TMDataGridCellEventArgs,
   TMDataGridCellNav,
   TMDataGridColumnLayout,
   TMDataGridRowContextMenu,
