@@ -7,7 +7,25 @@ cell editing has its own plan in [plans/cell-editing.md](plans/cell-editing.md).
 
 ## Planned
 
-Nothing — everything decided has shipped.
+Competitor-scan adoption (decisions 2026-08-01) — sequencing and design
+sketches in [plans/scan-adoption.md](plans/scan-adoption.md), raw findings in
+[plans/competitor-scan.md](plans/competitor-scan.md):
+
+- Phase 0: proposals for approval — control/editor registration API, slot
+  shapes, bad-UX warning framework, density decision.
+- Phase 1: persistence hardening, reset saved layout, per-row styling hooks,
+  cell click handlers, `keyof T` typing, CSS layer packaging.
+- Phase 2: scroll-edge shadows + callbacks, empty-state slot, `?: never`
+  option unions, documented styling contract.
+- Phase 3: container-based column visibility, row numbers lane, full-screen.
+- Phase 4: fuzzy ranked quick search, filter match highlighting.
+- Phase 5: filter controls + registration (after proposal approval).
+- Phase 6: row pinning, details ergonomics + bad-UX warnings.
+
+## To explore later
+
+- Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) —
+  needs hands-on play before speccing; see scan notes.
 
 ## Done
 

@@ -1,9 +1,13 @@
 # Competitor scan — working note
 
 Scanning other data table/grid libraries for feature gaps and architecture
-ideas. One section per repo; each idea carries a status so decisions stick:
-**proposed** (awaiting call), **rejected** (sunset, with why), **accepted**
-(move to BACKLOG when planned).
+ideas. One section per repo. Statuses: **accepted** (stakeholder said yes —
+sequenced in [scan-adoption.md](scan-adoption.md)), **pending** (needs a
+concrete proposal or decision first), **rejected** (sunset, with why),
+**explore later** / **icebox** / **noted**.
+
+Stakeholder decisions taken 2026-08-01; the plan and open questions live in
+[plans/scan-adoption.md](scan-adoption.md).
 
 ## mantine-datatable (icflorescu, v9.4.0) — scanned 2026-08-01
 
@@ -16,13 +20,13 @@ ahead on the heavy machinery; the items below are what stood out.
 | Idea | Status | Notes |
 | --- | --- | --- |
 | Row drag-reordering | **rejected** | DnD is for small lists or trees; we aim at bigger data loads. Their slot-based integration (`rowFactory` + `tableWrapper` + width-copying draggable row) noted for reference only. |
-| Reset for persisted layout | proposed | Every persisted slice has a `resetColumnsX()`; consumers build "Reset layout" buttons. Our `settingsKey` has no public reset. Cheap, high value. |
-| Per-row styling hooks | proposed | `rowColor(record)`, `rowBackgroundColor(record)`, `rowClassName`/`rowStyle` as functions; `striped`, `highlightOnHover` toggles. We have data attrs + CSS vars but no per-record function props. |
-| Scroll-edge shadows + callbacks | proposed | Four fade shadows driven by ResizeObserver→CSS vars, zero re-renders; `onScrollToTop/Bottom/Left/Right`. We have pinned gradients + `onReachEnd` only. Header shadow when scrolled is the valuable cue. |
-| Per-column responsive visibility | proposed | `column.visibleMediaQuery` hides columns below a breakpoint. |
-| Empty-state slot | proposed | `emptyState` ReactNode / `noRecordsIcon`, auto-centered overlay. We only have `noResultsLabel` text. |
-| Details-panel ergonomics | proposed | Expansion `trigger: "click"` (row click opens panel), `allowMultiple: false` (accordion), Collapse animation with row kept mounted through exit. |
-| Cell-level click handlers | proposed | `onCellClick/DoubleClick/ContextMenu` with record + column. We expose row-level only. |
+| Reset for persisted layout | **accepted** | Every persisted slice has a `resetColumnsX()`; consumers build "Reset layout" buttons. Ours: reset API + a menu item on the existing columns menu — keep the menu itself light (beaten track: button + Mantine dropdown); the bigger "one menu vs many buttons" question is deliberately open. |
+| Per-row styling hooks | **accepted** | `rowColor(record)`, `rowClassName`/`rowStyle` as functions; `striped`. |
+| Scroll-edge shadows + callbacks | **accepted** | Header shadow when scrolled; `onScrollToTop/Left/Right`. ResizeObserver→CSS-var, zero re-renders. |
+| Per-column responsive visibility | **accepted, reshaped** | NOT media queries — container-size driven: observe the grid container's width (we already own a ResizeObserver) so a grid inside a resizing panel adapts too. API on the column definition. |
+| Empty-state slot | **accepted** | ReactNode overlay; must be carefully combined with loading overlay / skeleton / no-results-from-filters states — design the state matrix first. |
+| Details-panel ergonomics | **accepted** | Row-click-to-expand + accordion mode as options. Must compose with row-click selection — ships together with the bad-UX warning framework (see plan). |
+| Cell-level click handlers | **accepted** | `onCellClick/DoubleClick/ContextMenu` — only if it stays light on our end. |
 | RTL | icebox (already) | Their implementation is the reference: `position` vs `logicalSide` in the pinned map, inverted resize deltas, per-browser RTL `scrollLeft` math. |
 | Minor: humanized titles, `verticalAlign`, `textSelectionDisabled`, `hiddenContent`, loader blur, `{light,dark}` color pairs, right-click column toggle | skip | Low value or already covered by our approach. |
 
@@ -30,12 +34,12 @@ ahead on the heavy machinery; the items below are what stood out.
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| `state`/`actions`/`Controls` render-slot shape | proposed | `renderPagination(ctx)`: pre-bound `Controls.Text/PageSizeSelector/Pagination` components; default render is the three in a row. Consumers rearrange/restyle/drop parts. Candidate for our Footer pager and future EditActions. |
-| `?: never` mutually-exclusive prop unions | proposed | All-or-nothing prop groups (pagination, selection), `ellipsis` XOR `noWrap`. Compile error instead of dev warning — candidate for `editMode: "batch"` + `onEditCommitBatch`, `manualPagination` + `rowCount`. |
-| Persistence hardening | proposed | `sanitizeStoredArray` on every localStorage read (cross-tab `storage` events deliver malformed values); realign stored state when the column set changes (drop removed, append new — in an effect); throttle writes during resize drag. |
-| Documented styling contract | proposed | Stable class names, ~30 public CSS vars, state-as-data-attributes listed in docs as API. We do this internally (`--dg-*`, data attrs) — the steal is documenting it as a stable public surface. |
-| `keyof T \| (string & NonNullable<unknown>)` accessor typing | proposed | Autocomplete on the row type while accepting arbitrary strings — candidate for `editField`. |
-| CSS layer packaging | proposed | Ship `styles.css` and `styles.layer.css` (`layer(mantine-datatable)`) so consumers control cascade order. Relevant when we publish CSS. |
+| `state`/`actions`/`Controls` render-slot shape | **pending proposal** | Stakeholder wants the concrete shape on the table before approving. Draft it for our Footer pager first. |
+| `?: never` mutually-exclusive prop unions | **accepted** | Compile error instead of dev warning — `editMode: "batch"` + `onEditCommitBatch`, `manualPagination` + `rowCount`. Complements (not replaces) the runtime bad-UX warnings, which cover what types can't. |
+| Persistence hardening | **accepted** | `sanitizeStoredArray` on every localStorage read (cross-tab `storage` events deliver malformed values); realign stored state when the column set changes (drop removed, append new — in an effect); throttle writes during resize drag. |
+| Documented styling contract | **accepted** | Publish our `--dg-*` vars + data attributes as a stable, documented API. |
+| `keyof T \| (string & NonNullable<unknown>)` accessor typing | **accepted** | For `editField` and friends. |
+| CSS layer packaging | **accepted** | Ship `styles.layer.css` alongside `styles.css`. |
 
 ### Where they are weaker (confidence, no action)
 
@@ -55,30 +59,30 @@ Inspiration only; nothing to adopt wholesale.
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| Filter variants: range-slider, date-range, autocomplete, tri-state checkbox | proposed | Their `filterVariant` set is richer than our operator set. Range slider seeds min/max from faceted values; date-range = our before/after as one control; tri-state checkbox (checked/unchecked/no filter) for booleans. |
-| Filter match highlighting | proposed | Matched substrings wrapped in Mantine `Highlight` in cells while a text/global filter is active. Small, delightful, cheap with our faceted plumbing. |
-| Fuzzy global filter with ranked results | proposed | match-sorter fuzzy fn; while active, sorting is suspended and rows re-rank by best match. Ours is plain contains. |
-| Density toggle | proposed | `density` state drives spacing + row heights (we already size rows off Mantine `size` — a runtime toggle is mostly chrome). |
-| Full-screen mode | proposed | Paper goes fixed 100dvh; saves/restores page scroll. Common ask in data-heavy apps. |
-| Click-to-copy cells | proposed | `enableClickToCopy` per column, Mantine `CopyButton` wrap with "Copied" tooltip. We have Ctrl+C on cell selection; per-cell copy affordance is complementary. |
-| Loading skeletons + progress bars | proposed | `showSkeletons` fabricates `min(pageSize, 20)` blank rows of `Skeleton`s; `showProgressBars` in toolbars; `isSaving` drives button spinners. Richer than our `loading` + LoadingIndicator. |
-| Row pinning (user-pinned sticky rows) | proposed | `rowPinningDisplayMode`: sticky rows or static top/bottom blocks, plus `select-*` modes that pin as a side-effect of selection. Our sticky entry block already proves the CSS; user-facing row pinning would reuse it. |
-| Row numbers column | proposed | `mrt-row-numbers` display column, static (page-offset) or original-index. Trivial with our lane machinery. |
+| Filter variants: range-slider, date-range, autocomplete, tri-state checkbox | **accepted, with extension API** | Built-ins are welcome but the headline requirement is consumer-supplied filter controls: register custom inputs once, reuse per column — TanStack-Form-style pre-bound components as the inspiration. API proposal needed before build; stakeholder's use cases lean on special inputs with special validation. |
+| Filter match highlighting | **accepted** | Opt-in, only if performance stays clean. Matched substrings via Mantine `Highlight`. |
+| Fuzzy global filter with ranked results | **accepted** | Be opinionated: fuzzy as a configurable mode. Sorting suspends while ranking is active (their trick). |
+| Density toggle | **pending decision** | Explained to stakeholder (runtime compact/comfortable row-height toggle); awaiting call. |
+| Full-screen mode | **accepted** | If it stays easy: fixed-position Paper, restore scroll on exit. |
+| Click-to-copy cells | **rejected** | Covered by cell selection: Ctrl+C and the right-click copy/export menu. |
+| Loading skeletons + progress bars | **explore later** | Needs hands-on testing to see what we actually want; parked in BACKLOG. |
+| Row pinning (user-pinned sticky rows) | **accepted** | Wanted. Sticky mode reusing the entry-block CSS mechanics. |
+| Row numbers column | **accepted** | Optional lane. |
 | Column virtualization | icebox (already) | Their wiring is the reference: pinned-column indexes force-included in the `rangeExtractor`, spacer cells sized from virtual start/end deltas, dragged column kept mounted. |
-| Cell hover reveal | skip | Truncated cell overflows on hover; niche, measures scrollWidth per hover. |
-| Toolbar drop zone (drag header to group) | skip | We group via the column menu; a drop zone adds DnD surface for little gain. |
-| Modal edit/create modes | skip | Our four modes + entry block cover it; their modal mode has no validation and buffers values in `row._valuesCache` (a TanStack-private field). |
+| Cell hover reveal | skip | Niche; measures scrollWidth per hover. |
+| Toolbar drop zone (drag header to group) | skip | We group via the column menu. |
+| Modal edit/create modes | skip | Our four modes + entry block cover it; theirs has no validation and buffers in `row._valuesCache`. |
 | Alert banner (`head-overlay` selection banner) | skip | Our toolbar count covers it. |
 
 ### Architecture notes
 
 | Idea | Status | Notes |
 | --- | --- | --- |
-| `internalXxx` handback in render overrides | proposed | Best idea in the codebase: overrides receive the built-in content as an argument — `renderColumnActionsMenuItems({ internalColumnMenuItems })`, `renderDetailPanel({ internalEditComponents })` — so consumers append/wrap instead of rebuilding. Candidate for our column menu and context menu. |
-| `T \| ((args) => T)` prop pattern + one resolver | noted | `parseFromValuesOrFunc` resolves every `mantineXxxProps`. Fits our per-row styling idea (single `rowProps`-style prop, object or function). |
-| String fn-names in state, resolved at prepare time | validated | Serializable filter state — we already do this with operator strings. |
-| Per-locale subpath packages | proposed | 39 locales each built as its own subpath export (`/locales/sv`) with `sideEffects: false` — clean tree-shaking pattern for when we grow past EN/SV. |
-| Skeleton-row fabrication on empty data + auto-`manual*` flags | noted | Empty `data` auto-forces all `manual*` flags so a loading table never client-filters skeleton rows. |
+| `internalXxx` handback in render overrides | **pending proposal** | Overrides receive built-in content to append/wrap (`renderColumnActionsMenuItems({ internalColumnMenuItems })`). Stakeholder wants the concrete design first — draft for our column menu + context menu. |
+| `T \| ((args) => T)` prop pattern + one resolver | noted | Feeds the per-row styling API shape. |
+| String fn-names in state, resolved at prepare time | validated | We already do this with operator strings. |
+| Per-locale subpath packages | **deferred** | We will grow past EN/SV, but not now. |
+| Skeleton-row fabrication on empty data + auto-`manual*` flags | noted | Ties into the loading-vocabulary exploration. |
 
 ### Anti-patterns confirmed (avoid; mostly v8 scar tissue)
 
