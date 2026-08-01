@@ -370,6 +370,7 @@ export function DataGridExample() {
   const [rowPinning, setRowPinning] = useState(false);
   const [customEmptyState, setCustomEmptyState] = useState(false);
   const [fuzzySearch, setFuzzySearch] = useState(true);
+  const [matchHighlighting, setMatchHighlighting] = useState(false);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   const [cellSelection, setCellSelection] =
@@ -402,6 +403,7 @@ export function DataGridExample() {
     enableRowNumbers: rowNumbers,
     enableRowPinning: rowPinning,
     quickSearchMode: fuzzySearch ? "fuzzy" : "contains",
+    enableMatchHighlighting: matchHighlighting,
     // Setting the render prop is what turns row details on; the grid measures
     // whatever it returns, so the estimate only has to be in the right region.
     renderDetails: rowDetails
@@ -680,6 +682,21 @@ export function DataGridExample() {
                     checked={fuzzySearch}
                     onChange={(event) =>
                       setFuzzySearch(event.currentTarget.checked)
+                    }
+                  />
+                </Tooltip>
+                <Tooltip
+                  label="Cells mark the matched text while a filter or the search narrows — default-rendered columns only"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Match highlighting"
+                    checked={matchHighlighting}
+                    onChange={(event) =>
+                      setMatchHighlighting(event.currentTarget.checked)
                     }
                   />
                 </Tooltip>

@@ -65,7 +65,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | **D** | **Big, independent — order free** | | | |
 | D1 | Row pinning | L | `done 2026-08-01` | — |
 | D2 | Fuzzy quick search (default) | M | `done 2026-08-01` | Q4 |
-| D3 | Filter match highlighting | M | `ready` | D2 |
+| D3 | Filter match highlighting | M | `done 2026-08-01` | D2 |
 | **H** | **Held — waiting on approval** | | | |
 | H1 | Control registry + built-in filter controls | L | `held P1` | P1 approved |
 | H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
@@ -326,6 +326,16 @@ is active. Plain string renders only — a custom `cell` renderer opts out by
 existing. Define what highlighting means under fuzzy matching (matches are
 non-contiguous); plausibly highlight only under contains-style matching and
 skip fuzzy. Perf gate: no measurable cost while off, bounded while on.
+
+> Deviations (2026-08-01): `enableMatchHighlighting`. "Custom renderer opts
+> out" is enforced by renderer *identity* — a cell whose resolved
+> `columnDef.cell` is TanStack's default gets the value-to-string render
+> replicated with `<mark>`s; anything else renders untouched (`flexRender`
+> returns elements even for the default, so output-type sniffing was not an
+> option). Fuzzy answered per the plan's hunch: the contiguous occurrence
+> highlights when there is one, a typo-match shows no mark. Contains,
+> startsWith and endsWith highlight; equals does not. Colour:
+> `--dg-match-highlight-bg`. Off = one flag check per render.
 
 ## Held — waiting on approval
 

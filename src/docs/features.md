@@ -31,6 +31,7 @@ see [Pagination](#pagination).
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 | `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
 | `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](#row-pinning) |
+| `enableMatchHighlighting: true` | Table | Opt-in: cells mark the matched text while a contains-family filter or the quick search is active. See [Match highlighting](#match-highlighting) |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 
@@ -275,6 +276,25 @@ Behaviour worth knowing:
   whose group is collapsed stays hidden while pinned.
 - `rowPinning` is not persisted by `settingsKey`: row ids are data, and a
   layout store outlives any one data set.
+
+## Match highlighting
+
+Opt-in with `enableMatchHighlighting: true`: while a `contains` / `starts
+with` / `ends with` column filter or the quick search is active, cells mark
+the matched slice of their text. What gets marked is the contiguous,
+case-insensitive occurrence of the needle — so under the fuzzy quick search a
+typo-match that has no contiguous occurrence simply shows no highlight, which
+is the honest answer to what a non-contiguous match "is". Equality operators
+highlight nothing: marking the whole cell says nothing the filter did not.
+
+Default-rendered cells only. A column with its own `cell` renderer opts out
+by existing — the grid replicates the default value-to-string render with the
+marks added, and never rummages inside a custom renderer's output.
+
+The mark colour is `--dg-match-highlight-bg`, a yellow that follows the
+Mantine colour scheme by default.
+
+While off — the default — the feature costs one flag check per render.
 
 ## Column ordering
 

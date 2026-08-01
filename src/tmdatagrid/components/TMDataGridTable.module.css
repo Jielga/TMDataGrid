@@ -404,6 +404,19 @@
   justify-content: center;
 }
 
+/* The matched slice of a cell's text, while `enableMatchHighlighting` is on
+   and a contains-family filter or the quick search is active. `mark` resets
+   the browser's default so the colour is the grid's to state — override with
+   `--dg-match-highlight-bg` on the grid. */
+.matchHighlight {
+  background-color: var(
+    --dg-match-highlight-bg,
+    light-dark(var(--mantine-color-yellow-2), rgba(250, 176, 5, 0.35))
+  );
+  color: inherit;
+  border-radius: 2px;
+}
+
 /* The summary row — one sticky row of column footers along the bottom edge,
    rendered only while at least one column defines `footer`. Same subgrid
    placement as the header, so its cells sit exactly on the body's tracks. */

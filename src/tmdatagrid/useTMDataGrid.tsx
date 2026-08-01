@@ -565,6 +565,14 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   quickSearchMode?: TMDataGridQuickSearchMode;
   /**
+   * Highlights the matched text in cells while a contains-family column
+   * filter or the quick search is active. Default-rendered cells only — a
+   * column with its own `cell` renderer opts out by existing; a fuzzy
+   * typo-match with no contiguous occurrence shows no highlight. Off by
+   * default.
+   */
+  enableMatchHighlighting?: boolean;
+  /**
    * How rows are selected. Defaults to `"checkbox"`.
    *
    * | Mode | Checkbox column | Row click |

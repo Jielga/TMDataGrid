@@ -131,6 +131,12 @@ export type TMDataGridFeatureFlags = {
    * the body watching the state.
    */
   rowPinning: boolean;
+  /**
+   * Whether cells highlight the matched text while a contains-family filter
+   * or the quick search is active — `enableMatchHighlighting`. Off by
+   * default, so a grid that has not asked pays nothing per cell.
+   */
+  matchHighlighting: boolean;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -154,6 +160,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "editMode"
     | "enableRowNumbers"
     | "enableRowPinning"
+    | "enableMatchHighlighting"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
@@ -202,6 +209,7 @@ export function readFeatureFlags<TData extends RowData>(
     rowPinning:
       options.enableRowPinning === true ||
       typeof options.enableRowPinning === "function",
+    matchHighlighting: options.enableMatchHighlighting === true,
   };
 }
 

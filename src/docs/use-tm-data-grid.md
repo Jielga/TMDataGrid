@@ -43,6 +43,7 @@ rather than forwarded to TanStack.
 | `enableRowNumbers` | `boolean` | `false` | The row-number gutter, outermost left. Defined by the grid, see [Features](#features). |
 | `enableRowPinning` | `boolean \| (row) => boolean` | `false` | Rows can be pinned to sticky edge blocks with `row.pin()`. See [Features](#features). |
 | `quickSearchMode` | `"fuzzy" \| "contains"` | `"fuzzy"` | How `Search` matches. Fuzzy forgives typos and orders unsorted results by match quality; `"contains"` is plain substring matching. Defined by the grid, see [Components](#components). |
+| `enableMatchHighlighting` | `boolean` | `false` | Cells mark the matched text while a contains-family filter or the quick search is active. Defined by the grid, see [Features](#features). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Features](#features). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Features](#features). |

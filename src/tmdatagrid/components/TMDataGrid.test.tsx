@@ -561,6 +561,36 @@ describe("row pinning", () => {
   });
 });
 
+describe("match highlighting", () => {
+  it("marks the matched text while a contains filter is active", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enableMatchHighlighting: true });
+
+    // The panel seeds on "id", whose "equals" is not a substring match — the
+    // highlight wants the Name column's "contains".
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.click(screen.getAllByLabelText("Column")[0] as HTMLElement);
+    await user.click(await screen.findByRole("option", { name: "Name" }));
+    await user.type(screen.getByLabelText("Value"), "anna");
+
+    // The filter itself must be live on Name before marks mean anything.
+    expect(renderedRowIds()).toEqual(["1", "6", "11"]);
+    const marks = await screen.findAllByText("Anna", { selector: "mark" });
+    expect(marks.length).toBeGreaterThan(0);
+  });
+
+  it("renders no marks without the flag", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "anna");
+
+    expect(screen.getAllByText("Anna").length).toBeGreaterThan(0);
+    expect(document.querySelectorAll("mark")).toHaveLength(0);
+  });
+});
+
 describe("scroll edge callbacks", () => {
   it("fires on arrival at an edge, once, and not on mount", () => {
     const events: Array<string> = [];

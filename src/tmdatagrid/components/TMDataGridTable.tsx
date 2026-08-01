@@ -60,6 +60,7 @@ import {
   resolveRowSelectionClick,
 } from "../core/rowSelection";
 import { readPinnedRows } from "../core/rowPinning";
+import { buildMatchNeedles, findMatchRanges } from "../core/matchHighlight";
 import { ROW_NUMBER_COLUMN_ID } from "./TMDataGridRowNumberColumn";
 import { SearchIcon } from "./icons";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
@@ -200,6 +201,32 @@ export type TMDataGridCellNav = {
   edges: { top: boolean; bottom: boolean; left: boolean; right: boolean } | null;
 };
 
+/**
+ * The text with its matched slices wrapped in `<mark>` — or handed back
+ * whole when nothing matches. Only ever called on string output; a renderer
+ * returning its own elements never reaches this.
+ */
+function withMatchHighlights(
+  text: string,
+  needles: ReadonlyArray<string>,
+): ReactNode {
+  const ranges = findMatchRanges(text, needles);
+  if (ranges === null) return text;
+  const parts: Array<ReactNode> = [];
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start > cursor) parts.push(text.slice(cursor, range.start));
+    parts.push(
+      <mark key={range.start} className={classes.matchHighlight}>
+        {text.slice(range.start, range.end)}
+      </mark>,
+    );
+    cursor = range.end;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return parts;
+}
+
 function TMDataGridBodyCell({
   cell,
   rowHeight,
@@ -207,6 +234,7 @@ function TMDataGridBodyCell({
   nav,
   editor,
   contentOverride,
+  highlightNeedles,
   onFocus,
   onClick,
   onMouseDown,
@@ -225,6 +253,12 @@ function TMDataGridBodyCell({
    * value only the body knows. `undefined` means "render normally".
    */
   contentOverride?: ReactNode;
+  /**
+   * Needles to highlight in string output — see `enableMatchHighlighting`.
+   * `undefined` almost always: only set while a highlightable filter is
+   * active for this column.
+   */
+  highlightNeedles?: ReadonlyArray<string>;
   onFocus?: () => void;
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseDown?: (event: MouseEvent<HTMLDivElement>) => void;
@@ -235,7 +269,7 @@ function TMDataGridBodyCell({
   // The edit markers subscribe here, per cell, all to the one projection
   // store — so typing in an editor repaints the edited row's cells and
   // nothing else. Constant `false` everywhere while editing is off.
-  const { edit } = useTMDataGridContext();
+  const { table, edit } = useTMDataGridContext();
   const fieldName = getEditFieldName(cell.column);
   const cellRowId = cell.row.id;
   const isDirty = useSelector(edit.store, (state) => {
@@ -323,7 +357,25 @@ function TMDataGridBodyCell({
     >
       {editor ?? (
         <span className={classes.cellContent}>
-          {contentOverride ?? renderCellContent(cell)}
+          {(() => {
+            // Highlighting replicates the *default* renderer — value, then
+            // `toString` — with the matched slices marked. A column with its
+            // own `cell` opts out by existing: its renderer's identity is not
+            // the default's, and the grid will not rummage inside its output.
+            if (
+              highlightNeedles !== undefined &&
+              contentOverride === undefined &&
+              !cell.getIsPlaceholder() &&
+              !cell.getIsAggregated() &&
+              cell.column.columnDef.cell === table.getDefaultColumnDef().cell
+            ) {
+              const value = cell.renderValue();
+              if (typeof value === "string" || typeof value === "number") {
+                return withMatchHighlights(String(value), highlightNeedles);
+              }
+            }
+            return contentOverride ?? renderCellContent(cell);
+          })()}
         </span>
       )}
     </div>
@@ -622,6 +674,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Pagination on: the current page; under `manualPagination` TanStack returns
   // the rows as delivered, so the same branch serves server paging.
   const rows = getDisplayedRows(table, features);
+
+  // Per-column highlight needles, or `null` while off or nothing is active —
+  // the common case, costing one flag check per render.
+  const matchNeedles = features.matchHighlighting
+    ? buildMatchNeedles(table)
+    : null;
 
   // The edge blocks. `getDisplayedRows` above has already taken these out of
   // the scrolling order; stale ids resolve to nothing — see readPinnedRows.
@@ -2021,6 +2079,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                           ? rowNumberById.get(row.id)
                           : undefined
                       }
+                      highlightNeedles={matchNeedles?.get(cell.column.id)}
                       editor={
                         isEditingCell ? (
                           <TMDataGridCellEditor
