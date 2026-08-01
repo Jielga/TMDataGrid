@@ -12,15 +12,19 @@ sketches in [plans/scan-adoption.md](plans/scan-adoption.md), raw findings in
 [plans/competitor-scan.md](plans/competitor-scan.md):
 
 - Phase 0: proposals for approval — control/editor registration API, slot
-  shapes, bad-UX warning framework, density decision.
-- Phase 1: persistence hardening, reset saved layout, per-row styling hooks,
-  cell click handlers, `keyof T` typing, CSS layer packaging.
+  shapes, bad-UX warning framework, density decision — plus seven
+  stakeholder questions from the PM review.
+- Phase 1: selection-docs repair, persistence version marker + slice
+  realignment, bad-UX warning framework, reset saved layout, per-row styling
+  hooks, cell click handlers, `keyof T` typing (feasibility-gated), CSS
+  layer packaging.
 - Phase 2: scroll-edge shadows + callbacks, empty-state slot, `?: never`
-  option unions, documented styling contract.
-- Phase 3: container-based column visibility, row numbers lane, full-screen.
+  option unions.
+- Phase 3: container-based column visibility, row numbers lane.
 - Phase 4: fuzzy ranked quick search, filter match highlighting.
 - Phase 5: filter controls + registration (after proposal approval).
-- Phase 6: row pinning, details ergonomics + bad-UX warnings.
+- Phase 6: row pinning, details ergonomics.
+- Phase 7: documented styling contract (last — after the surface settles).
 
 ## To explore later
 

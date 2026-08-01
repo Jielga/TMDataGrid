@@ -1,18 +1,43 @@
 # Scan adoption plan
 
 Sequencing the accepted items from [competitor-scan.md](competitor-scan.md)
-(stakeholder decisions 2026-08-01). Reference implementations live in the
-local clones: `C:\s\temp\mantine-datatable` and
+(stakeholder decisions 2026-08-01, PM review same day). Reference
+implementations live in the local clones: `C:\s\temp\mantine-datatable` and
 `C:\s\temp\mantine-react-table` — cited below as `[md]` and `[mrt]`.
 
 Ordering rationale: robustness and small API additions first (no design
 risk, immediate value), visual polish second, then the items that need an
-approved API proposal, and last the two features with real interaction
-design (row pinning, details ergonomics). Proposals are written early —
-phase 0 — so approvals can happen while the quick wins land.
+approved API proposal, the two features with real interaction design (row
+pinning, details ergonomics), and the styling contract last — published only
+once the phases before it have stopped adding surface.
 
 Costs are complexity, not hours: S (contained, one commit), M (touches a few
 subsystems), L (new subsystem or real design surface).
+
+## Stakeholder questions (from PM review — block the items they touch)
+
+- **Q1 One door or two for custom editors?** `meta.renderEditor` is shipped,
+  documented API; proposal 1 adds `meta.editor: "name"`. Keep both (registry
+  for reuse, `renderEditor` as inline escape hatch, precedence documented) or
+  deprecate `renderEditor`? *Recommendation: keep both.*
+- **Q2 May the Footer `pagination` render prop break?** Proposal 2's slot
+  shape replaces the published `TMDataGridPaginationApi` signature.
+  *Recommendation: clean replacement at 0.x, minor bump, changeset note.*
+- **Q3 Persisted state written by ≤0.4.0:** migrate silently, or version
+  field + one-time drop (users lose column layout once)?
+  *Recommendation: version field ships first, then one-time drop — migrating
+  an unversioned blob is guesswork.*
+- **Q4 Fuzzy quick search: default on, or contains-by-default with fuzzy as
+  opt-in mode?* Product call, not review call.
+- **Q5 Are types-only breaks acceptable in a 0.x minor?** Covers the
+  `?: never` unions and `keyof T` typing. *Recommendation: yes, changeset
+  names the combination that now fails.*
+- **Q6 What does "stable" mean in the styling contract pre-1.0?**
+  *Recommendation: documented-but-provisional now, frozen at 1.0.*
+- **Q7 Reset UX:** the ColumnsPanel already has a visibility-only Reset.
+  Rename it and add "Reset layout" beside it, replace it with the wider
+  reset, or move layout reset to the column menu? Changes what phase 1
+  builds.
 
 ## Phase 0 — proposals (documents, no code)
 
@@ -26,51 +51,86 @@ Four short proposals for stakeholder approval, each a section in a single
    consumer registers a special input once (with its validation pattern) and
    reuses it across columns and grids. Inspiration: TanStack Form's
    pre-bound field components. Must define the args contract (value,
-   onChange, operator, column, commit/cancel for editors) and how built-ins
+   onChange, operator, column, commit/cancel for editors), how built-ins
    (range slider, date-range, autocomplete, tri-state boolean) register
-   through the same door — built-ins are just pre-registered controls.
+   through the same door, and — per Q1 — precedence against the shipped
+   `meta.renderEditor`. The args contract is the widest blast radius in this
+   plan (every consumer-registered control binds to it); over-review here.
 2. **Slot shapes** (unblocks the Footer pager rework and future EditActions).
    Concrete before/after for `state`/`actions`/`Controls`
    (`[md] package/types/DataTablePaginationRenderContext.tsx`,
    `DataTablePagination.tsx:76-124`) and the `internalXxx` handback for our
    column menu and context menu
    (`[mrt] src/components/menus/MRT_ColumnActionMenu.tsx:272-282`).
-3. **Bad-UX warning framework** (ships with phase 6 but the shape matters
-   earlier). Dev-only detector: known-bad option combinations (first case:
-   row-click selection + row-click details expansion) log one `console.info`
-   with a link to docs and the silencing key. Silencing is explicit config —
-   working name `acknowledgeUx: ["row-click-select-and-expand"]`. Complements
-   the `?: never` type-level guards: types catch invalid combos, the
-   framework catches legal-but-unwise ones.
+   Includes the Q2 breaking-change call.
+3. **Bad-UX warning framework** (built in phase 1). Dev-only detector:
+   known-bad option combinations log one `console.info` with a docs link and
+   the silencing key; silencing is explicit config — working name
+   `acknowledgeUx: [...]`. Keys are forever (renaming un-silences), so name
+   them once. Must fold in the two ad-hoc dev warnings that already ship —
+   `onReachEnd`+pagination (TMDataGridTable) and `editMode` without
+   `getRowId` (useTMDataGrid) — so the library has one warning idiom, not
+   three. First new rule (lands with phase 6): row-click details expansion
+   combined with the selection modes where a row click already means
+   something — under `selectionMode: "highlight"` / `"checkboxAndHighlight"`
+   a click sets the highlighted row, which is the likelier collision than
+   row-select. Complements the `?: never` type-level guards: types catch
+   invalid combos, this catches legal-but-unwise ones.
 4. **Density** — pending stakeholder decision (runtime compact/comfortable
    row-height toggle; we currently size via the `size` prop at build time).
    Include a recommendation either way.
 
 ## Phase 1 — robustness & small APIs (all S)
 
-- **Persistence hardening** — sanitize every localStorage read (cross-tab
-  `storage` events can deliver malformed values), realign stored slices when
-  the column set changes between deploys (drop removed ids, append new — in
-  an effect, never during render), throttle writes during a resize drag.
-  Reference: `[md] package/utils.ts#sanitizeStoredArray`,
-  `package/hooks/useDataTableColumnResize.ts:136-141` (dirtyRef skip-while-
-  dragging), the `alignedColumnsX` memos in the sibling hooks.
-- **Reset saved layout** — `resetSettings({ table })` (or per-slice variants)
-  clearing the persisted slices back to definition defaults, plus a "Reset
-  layout" item on the existing columns menu. Menu stays the beaten track —
-  a button with a Mantine dropdown; no menu consolidation yet.
+Internal order matters: version marker → realignment → reset (reset must know
+the payload shape it clears; the marker must precede anything rewriting
+stored data).
+
+- **Docs repair** — three docs pages (features.md, use-tm-data-grid.md,
+  components.md) still document the removed `rowSelectionMode` /
+  `highlightSelectedRows` options; the code ships `selectionMode:
+  "checkbox" | "row" | "checkboxAndHighlight" | "highlight"` +
+  `showSelectedBackground`. Standing bug, fix first.
+- **Persistence: version marker + slice realignment** — re-scoped by PM
+  review: sanitizing reads (SLICE_GUARDS in core/persistence.ts) and
+  drag-time write throttling (PERSIST_DEBOUNCE_MS trailing flush) already
+  ship, and cross-tab sync was deliberately rejected (two tabs would
+  overwrite each other's layout — documented in use-tm-data-grid.md). The
+  genuinely new work: (a) a version field in the payload — one-way door,
+  ships before anything else touches storage; (b) realigning stored slices
+  when the column set changes between deploys (drop removed ids, append new
+  — in an effect, never during render). Q3 decides the ≤0.4.0 payload story.
+  Reference: `[md] package/hooks/useDataTableColumns.ts` aligned-memo
+  pattern.
+- **Bad-UX warning framework** (pulled forward from phase 6 on PM advice) —
+  smaller than several phase 1 items, and two existing warnings are waiting
+  to be folded in. Phase 6 then adds a rule, not a subsystem.
+- **Reset saved layout** — `resetSettings({ table })` (or per-slice
+  variants) clearing persisted slices back to definition defaults, plus the
+  UI per Q7. Menu stays the beaten track — no menu consolidation yet.
 - **Per-row styling hooks** — `rowClassName`/`rowStyle` as
-  `T | ((row) => T)` on the Table component, `striped` option, resolved with
-  one small helper (`[mrt] parseFromValuesOrFunc`). Values land as
-  class/style on `.bodyRow`; document alongside the existing `data-*` attrs.
+  `T | ((row) => T)` on the Table component, `striped` option, one resolver
+  helper (`[mrt] parseFromValuesOrFunc`). Constraints from the codebase:
+  row colours must land in the `--row-bg` ladder (base < hover < grouped <
+  context-menu < selected < highlighted), because sticky pinned cells and
+  the cell-range `color-mix` tint read `--row-bg` — a raw `background`
+  bypass breaks both. `striped` computes from the row index, not
+  `:nth-child` — mounted rows are a moving window under virtualization.
 - **Cell click handlers** — `onCellClick/onCellDoubleClick/onCellContextMenu`
-  with `{ cell, row, column, event }`. Light: BodyCell already owns
-  double-click for editing; these compose, they don't replace. Skip if they
-  turn out to fight the editing/selection handlers — flag instead of forcing.
-- **`keyof T | (string & {})` typing** — apply to `editField` and any other
-  accessor-shaped string options.
+  with `{ cell, row, column, event }`. Policy up front (the `onRowClick`
+  precedent): handlers compose, never suppress — double-click still edits,
+  right-click still opens `rowContextMenu` and still moves the cell range
+  selection; consumer handlers run in addition.
+- **`keyof T | (string & {})` typing** — verify feasibility first:
+  `TMDataGridColumnMeta` registers through a non-generic
+  `metaHelper<TMDataGridColumnMeta>()`, so `keyof TData` cannot reach
+  `editField` without a different registration strategy. If infeasible for
+  meta and no other accessor-shaped option exists, the item is void — close
+  it with a note rather than forcing it.
 - **CSS layer packaging** — ship `styles.layer.css`
   (`@import './styles.css' layer(tmdatagrid);`) alongside the plain file.
+  The layer name is a one-way door (consumers write it into their own
+  `@layer` order) — `tmdatagrid`, chosen deliberately, never renamed.
   Reference: `[md] package.json` exports map + `app/styling/examples/`.
 
 ## Phase 2 — surface polish
@@ -78,65 +138,74 @@ Four short proposals for stakeholder approval, each a section in a single
 - **Scroll-edge shadows + callbacks** (M) — shadow under the sticky header
   (and optionally the other three edges) driven by scroll position through
   CSS custom properties, no re-renders; `onScrollToTop/Left/Right` firing on
-  edge transitions only. We already own the container and a ResizeObserver;
-  check whether `animation-timeline: scroll()` (used for our pinned-lane
-  gradients) covers the header shadow without any JS at all — prefer that.
+  edge transitions only. Check whether `animation-timeline: scroll()` (used
+  for our pinned-lane gradients) covers the header shadow with no JS —
+  prefer that. Naming: `--dg-edge-*` currently means cell-range outline
+  edges; the scroll-edge variables must not collide (resolve before the
+  styling contract freezes anything).
   Reference: `[md] package/hooks/useDataTableInjectCssVariables.ts`.
 - **Empty-state slot** (M) — `renderEmptyState({ hasActiveFilters })`
   ReactNode overlay. Design the state matrix first: loading with no rows vs
   empty data vs filters-removed-everything vs entry rows present — exactly
   one message wins, and the matrix is documented. Builds on the existing
   `.messageRow`.
-- **`?: never` prop unions** (M) — one pass over existing option combos:
-  `editMode: "batch"` requires `onEditCommitBatch`; `manualPagination`
-  requires `rowCount`; others surfaced while auditing. Reference:
-  `[md] package/types/DataTablePaginationProps.ts` and
+- **`?: never` prop unions** (M, gated on Q5) — one pass over existing
+  option combos: `editMode: "batch"` requires `onEditCommitBatch`;
+  `manualPagination` requires `rowCount`; others surfaced while auditing.
+  Reference: `[md] package/types/DataTablePaginationProps.ts` and
   `DataTableSelectionProps.ts` for the union shape.
-- **Documented styling contract** (S, docs) — a `styling.md` docs page
-  listing every `--dg-*` variable and `data-*` attribute as stable API, with
-  the layer story from phase 1. Written after the two items above so the new
-  surfaces are included.
 
 ## Phase 3 — layout & lanes
 
-- **Container-based column visibility** (M) — `meta.hideBelow?: number`:
-  the column renders only while the grid container is at least that wide.
-  Container-driven, not viewport media queries — a grid inside a resizing
-  panel adapts. One ResizeObserver on the scroll container feeding a width
-  store value; hiding is a derived render-time layer, NOT written into
-  `columnVisibility` — persisted user visibility and responsive hiding must
-  never fight, and a narrow-then-wide round trip restores exactly what the
-  user had.
+- **Container-based column visibility** (M, the riskiest M in the plan) —
+  `meta.hideBelow?: number`: the column renders only while the grid
+  container is at least that wide. Container-driven, not viewport media
+  queries — a grid inside a resizing panel adapts. Requirements hardened by
+  PM review: the ResizeObserver mounts only when some column declares
+  `hideBelow` (the no-observers-by-default promise in features.md holds);
+  hiding is a derived render-time layer, NOT written into `columnVisibility`
+  — persisted user visibility and responsive hiding must never fight, and a
+  narrow-then-wide round trip restores exactly what the user had. The
+  derived layer must be applied identically at every visible-columns call
+  site (headers, cells, grid tracks, export, autosize, cell navigation,
+  ColumnsPanel, filter panel) — the codebase already carries a workaround
+  for header/cell visibility desync; do not add a second source of it.
+  Decide and document: ColumnsPanel presentation of a responsively hidden
+  column, and `minSize` interaction with the container threshold.
 - **Row numbers column** (S) — opt-in generated lane, static index over the
   current sorted/filtered view. Our control-lane machinery makes this small.
-- **Full-screen mode** (M) — toolbar toggle; the grid root goes fixed
-  full-viewport; restore page scroll on exit. Keep it simple — if it needs
-  body-style surgery beyond overflow, reconsider.
-  Reference (including what to avoid): `[mrt] src/hooks/useMRT_Effects.ts`.
+
+Full-screen mode moved to "Deliberately parked" — PM review rates it the
+weakest value-to-risk item (sticky z-ladder, portalled menus, measured
+details panels), which fails the stakeholder's own "if it's easy" condition.
+Revisit on demand.
 
 ## Phase 4 — search
 
-- **Fuzzy ranked quick search** (M) — match-sorter-style fuzzy matching as a
-  configurable `Search` mode; while ranking is active and the user has no
-  explicit sort, rows order by match quality. Opinionated default to be
-  settled in review (fuzzy-on vs contains-default).
+- **Fuzzy ranked quick search** (M, default gated on Q4) — match-sorter-
+  style fuzzy matching as a configurable `Search` mode; while ranking is
+  active and the user has no explicit sort, rows order by match quality.
+  Specify before building: interaction with grouping (grouping runs before
+  sorting), with the persisted `sorting` slice, with `aria-sort` and the
+  multi-sort priority badges.
   Reference: `[mrt] src/fns/sortingFns.ts` (`rankGlobalFuzzy`),
-  `src/hooks/useMRT_Effects.ts` (sort suspension — do this declaratively
-  instead of their stash-and-restore effect).
+  `src/hooks/useMRT_Effects.ts` (sort suspension — do it declaratively, not
+  their stash-and-restore effect).
 - **Filter match highlighting** (M) — opt-in: matched substrings in cells
   highlighted while a text filter or quick search is active. Only for plain
-  string renders (a custom `cell` renderer opts out by existing). Perf gate:
+  string renders (a custom `cell` renderer opts out by existing). Define
+  what highlighting means under fuzzy (non-contiguous matches) — plausibly
+  highlight only under contains-style matching and skip fuzzy. Perf gate:
   no measurable cost while off, bounded while on.
 
-## Phase 5 — filter controls & registration (L, needs proposal 1 approved)
+## Phase 5 — filter controls & registration (L, needs proposal 1 + Q1)
 
 Built-in richer filter controls (range slider seeded from faceted min/max,
 date-range, autocomplete, tri-state boolean checkbox) implemented as
 pre-registered entries in the new control registry, proving the same API
 consumers use. Filter panel picks the control by column type/operator as it
 does today; `meta.filterControl` overrides. The editor half of the registry
-lands here too if the proposal unifies them (it should — one registration,
-two contexts).
+lands here too, with the Q1 precedence against `meta.renderEditor`.
 
 ## Phase 6 — rows & interaction design
 
@@ -147,19 +216,33 @@ two contexts).
   context menu (+ lane icon where the edit lane already exists).
   Interactions to design: virtualization (pinned rows leave the virtual
   flow), selection, grouping (likely pin data rows only), persistence
-  (probably a data slice, not settings).
-  Reference: `[mrt] rowPinningDisplayMode` docs/examples for scope —
-  we ship sticky mode only.
-- **Details ergonomics + bad-UX framework** (M) — `detailsTrigger:
-  "chevron" | "rowClick"` and `detailsMode: "multiple" | "single"`
-  (accordion). Ships together with the warning framework from proposal 3,
-  whose first rule guards exactly this: row-click expansion combined with
-  row-click selection.
+  (probably a data slice, not settings), and — added by PM review — the
+  sticky ladder: entry block and pinned rows both sticky under the header
+  (ordering between them; `--dg-z-pinned-row: 4` currently serves both
+  roles), and pinned-bottom rows vs the summary row at equal z. Note the
+  file name collision: `TMDataGridPinnedRows.tsx` today exports the entry
+  block (`TMDataGridEntryRows`) — rename before this phase to keep names
+  honest.
+- **Details ergonomics** (M) — `detailsTrigger: "chevron" | "rowClick"` and
+  `detailsMode: "multiple" | "single"` (accordion). Adds the phase's bad-UX
+  rule (framework already shipped in phase 1): row-click expansion under the
+  selection modes where a row click already acts (`"row"`, `"highlight"`,
+  `"checkboxAndHighlight"`).
+
+## Phase 7 — styling contract (S, docs; after the surface settles)
+
+A `styling.md` docs page listing every `--dg-*` variable and `data-*`
+attribute with the stability promise per Q6, plus the layer story from
+phase 1. Deliberately last: phases 2-6 each add surface (scroll-edge vars,
+row-numbers lane, `hideBelow`, pinned rows), and publishing earlier means a
+stale page or re-issued promises. The `--dg-edge-*` naming clash must be
+resolved by then (phase 2).
 
 ## Deliberately parked
 
 - **Loading vocabulary** (skeletons, progress bars, isSaving) — explore
   later; BACKLOG holds it. Needs hands-on play, not a spec.
+- **Full-screen mode** — weakest value-to-risk (PM); revisit on demand.
 - **Density toggle** — pending stakeholder decision (proposal 4).
 - **Menu consolidation** (one grid menu vs today's buttons) — open question,
   no design yet; reset-layout deliberately avoids forcing it.
