@@ -32,6 +32,8 @@ export type TMDataGridLabels = {
   columnsReset: string;
   /** Tooltip on the reset button, stating everything the reset covers. */
   columnsResetHint: string;
+  /** Menu/panel name of the generated row-number gutter. */
+  rowNumberColumnLabel: string;
 
   // Filter panel
   filterColumn: string;
@@ -163,6 +165,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   columnsReset: "RESET LAYOUT",
   columnsResetHint:
     "Resets column visibility, order, widths, pinning and grouping",
+  rowNumberColumnLabel: "Row number",
 
   filterColumn: "Column",
   filterOperator: "Operator",

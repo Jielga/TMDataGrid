@@ -123,6 +123,16 @@ column that declares nothing still filters: the panel falls back to the faceted
 values. Mantine's dropdowns are not virtualized, so very large sets want the
 function form rather than `"faceted"`.
 
+## Row number column
+
+Under `enableRowNumbers: true` a gutter with the id `ROW_NUMBER_COLUMN_ID`
+(`"__rowNumber__"`) sits outermost left, before every other lane, numbering
+the current view: sorting and filtering renumber, pagination continues the
+count across pages, and group rows take no number — they are headings over
+the rows being counted. It is a system lane like the ones below — fixed
+width, no menu, never exported — and its visibility follows the option, so
+the columns panel does not list it.
+
 ## Checkbox column
 
 Under `selectionMode: "checkbox"` (the default) or `"checkboxAndHighlight"`,

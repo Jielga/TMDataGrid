@@ -55,8 +55,10 @@ import { autosizeColumn } from "../core/autosize";
 import {
   getDisplayedRows,
   getSelectableRowIds,
+  isPagingActive,
   resolveRowSelectionClick,
 } from "../core/rowSelection";
+import { ROW_NUMBER_COLUMN_ID } from "./TMDataGridRowNumberColumn";
 import { SearchIcon } from "./icons";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 
@@ -202,6 +204,7 @@ function TMDataGridBodyCell({
   layout,
   nav,
   editor,
+  contentOverride,
   onFocus,
   onClick,
   onMouseDown,
@@ -215,6 +218,11 @@ function TMDataGridBodyCell({
   nav?: TMDataGridCellNav;
   /** The mounted editor, when this is the cell being edited. */
   editor?: ReactNode;
+  /**
+   * Replaces the column renderer's output — the row-number gutter, whose
+   * value only the body knows. `undefined` means "render normally".
+   */
+  contentOverride?: ReactNode;
   onFocus?: () => void;
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseDown?: (event: MouseEvent<HTMLDivElement>) => void;
@@ -312,7 +320,9 @@ function TMDataGridBodyCell({
       }}
     >
       {editor ?? (
-        <span className={classes.cellContent}>{renderCellContent(cell)}</span>
+        <span className={classes.cellContent}>
+          {contentOverride ?? renderCellContent(cell)}
+        </span>
       )}
     </div>
   );
@@ -580,6 +590,23 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Pagination on: the current page; under `manualPagination` TanStack returns
   // the rows as delivered, so the same branch serves server paging.
   const rows = getDisplayedRows(table, features);
+
+  // The row-number gutter's numbers: one pass over the view per render, only
+  // while the lane exists. A cell cannot know its display position, so the
+  // body hands each row its number — group rows get none (they are headings
+  // over the rows being counted), and paging continues the count across
+  // pages rather than restarting every page at 1.
+  let rowNumberById: Map<string, number> | null = null;
+  if (features.rowNumbers) {
+    rowNumberById = new Map();
+    let n = isPagingActive(table, features)
+      ? table.store.state.pagination.pageIndex *
+        table.store.state.pagination.pageSize
+      : 0;
+    for (const viewRow of rows) {
+      if (!viewRow.getIsGrouped()) rowNumberById.set(viewRow.id, ++n);
+    }
+  }
 
   /**
    * Whether this row opens a detail panel underneath it.
@@ -1824,6 +1851,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       cell={cell}
                       rowHeight={rowHeight}
                       layout={layoutFor(cell.column.id)}
+                      contentOverride={
+                        rowNumberById !== null &&
+                        cell.column.id === ROW_NUMBER_COLUMN_ID
+                          ? rowNumberById.get(row.id)
+                          : undefined
+                      }
                       editor={
                         isEditingCell ? (
                           <TMDataGridCellEditor

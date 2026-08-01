@@ -12,6 +12,7 @@ import classes from "./TMDataGridColumnsPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
+import { ROW_NUMBER_COLUMN_ID } from "./TMDataGridRowNumberColumn";
 import { SearchIcon } from "./icons";
 
 /**
@@ -30,10 +31,14 @@ export function TMDataGridColumnsPanel() {
 
   // The tree column is left out rather than listed and disabled: its visibility
   // is not a setting at all, it follows the grouping state, so an unchecked box
-  // that cannot be ticked would only invite the question.
+  // that cannot be ticked would only invite the question. The row-number
+  // gutter follows `enableRowNumbers` the same way.
   const columns = table
     .getAllLeafColumns()
-    .filter((column) => column.id !== GROUP_COLUMN_ID);
+    .filter(
+      (column) =>
+        column.id !== GROUP_COLUMN_ID && column.id !== ROW_NUMBER_COLUMN_ID,
+    );
   const needle = search.trim().toLowerCase();
   const visibleInPanel = needle
     ? columns.filter((column) =>

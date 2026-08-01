@@ -32,6 +32,7 @@ describe("readFeatureFlags", () => {
       grouping: true,
       editing: false,
       editMode: null,
+      rowNumbers: false,
     });
   });
 

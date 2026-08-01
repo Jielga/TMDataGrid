@@ -122,6 +122,8 @@ export type TMDataGridFeatureFlags = {
   editing: boolean;
   /** The commit policy, or `null` while editing is off. */
   editMode: TMDataGridEditMode | null;
+  /** The generated row-number gutter — `enableRowNumbers`. Off by default. */
+  rowNumbers: boolean;
 };
 
 export function readFeatureFlags<TData extends RowData>(
@@ -143,6 +145,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "manualPagination"
     | "enableGrouping"
     | "editMode"
+    | "enableRowNumbers"
   >,
 ): TMDataGridFeatureFlags {
   const selectionMode = options.selectionMode ?? "checkbox";
@@ -186,6 +189,7 @@ export function readFeatureFlags<TData extends RowData>(
     grouping: options.enableGrouping ?? options.manualPagination !== true,
     editing: options.editMode !== undefined,
     editMode: options.editMode ?? null,
+    rowNumbers: options.enableRowNumbers === true,
   };
 }
 

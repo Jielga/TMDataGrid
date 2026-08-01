@@ -57,7 +57,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | **B** | **Small features — order free** | | | |
 | B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `done 2026-08-01` | — |
 | B2 | Cell click handlers | S | `done 2026-08-01` | — |
-| B3 | Row numbers lane | S | `ready` | — |
+| B3 | Row numbers lane | S | `done 2026-08-01` | — |
 | **C** | **Medium, conflict-free — order free** | | | |
 | C1 | `?: never` prop unions | M | `ready` | Q5 |
 | C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `ready` | — |

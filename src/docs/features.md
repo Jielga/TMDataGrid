@@ -29,6 +29,7 @@ see [Pagination](#pagination).
 | `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](#row-selection) |
 | `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
+| `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
 

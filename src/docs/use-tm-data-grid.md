@@ -40,6 +40,7 @@ than forwarded to TanStack.
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid, see [Features](#features). |
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Features](#features). |
+| `enableRowNumbers` | `boolean` | `false` | The row-number gutter, outermost left. Defined by the grid, see [Features](#features). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Features](#features). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Features](#features). |

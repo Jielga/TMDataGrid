@@ -332,6 +332,33 @@ describe("column visibility", () => {
   });
 });
 
+describe("row numbers", () => {
+  it("numbers the view in display order, renumbering on sort", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enableRowNumbers: true });
+
+    const numbersAt = () =>
+      bodyRows().map(
+        (row) => within(row).getAllByRole("cell")[0]?.textContent ?? "",
+      );
+
+    expect(screen.getByText("#")).toBeInTheDocument();
+    const before = numbersAt();
+    expect(before.slice(0, 3)).toEqual(["1", "2", "3"]);
+
+    // Sorting reorders the rows; the gutter numbers the view, so it stays
+    // 1, 2, 3 while the row ids underneath change order.
+    await user.click(screen.getByTestId("dg-header-name"));
+    expect(numbersAt().slice(0, 3)).toEqual(["1", "2", "3"]);
+  });
+
+  it("renders no gutter by default", () => {
+    renderGridUi();
+
+    expect(screen.queryByText("#")).not.toBeInTheDocument();
+  });
+});
+
 describe("per-row styling", () => {
   it("stripes by view position and applies rowClassName/rowStyle", () => {
     renderGridUi({

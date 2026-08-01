@@ -103,6 +103,10 @@ import {
   createEditColumn,
   EDIT_COLUMN_ID,
 } from "./components/TMDataGridEditColumn";
+import {
+  createRowNumberColumn,
+  ROW_NUMBER_COLUMN_ID,
+} from "./components/TMDataGridRowNumberColumn";
 
 /**
  * How long the grid waits after the last state change before writing to
@@ -423,6 +427,12 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   enablePagination?: boolean;
   /**
+   * The row-number gutter: a generated lane, outermost left, numbering the
+   * rows of the current view — sorted, filtered, continuing across pages,
+   * with group rows unnumbered. Off by default.
+   */
+  enableRowNumbers?: boolean;
+  /**
    * How rows are selected. Defaults to `"checkbox"`.
    *
    * | Mode | Checkbox column | Row click |
@@ -727,6 +737,7 @@ export function useTMDataGrid<TData extends RowData>({
   labels: labelsOverride,
   enableColumnOrdering,
   enablePagination,
+  enableRowNumbers,
   selectionMode,
   showSelectedBackground,
   defaultHighlightedRowId,
@@ -756,6 +767,7 @@ export function useTMDataGrid<TData extends RowData>({
     ...options,
     enableColumnOrdering,
     enablePagination,
+    enableRowNumbers,
     selectionMode,
     showSelectedBackground,
     cellSelection,
@@ -787,6 +799,8 @@ export function useTMDataGrid<TData extends RowData>({
   const groupColumnLabel = labels.groupColumnLabel;
   const detailsColumnLabel = labels.detailsColumnLabel;
   const editColumnLabel = labels.editColumnLabel;
+  const rowNumberColumnLabel = labels.rowNumberColumnLabel;
+  const rowNumbersEnabled = features.rowNumbers;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -803,6 +817,10 @@ export function useTMDataGrid<TData extends RowData>({
     // open it. The details chevron sits last because it acts on the record the
     // lanes to its left have narrowed down to.
     return [
+      // The gutter sits outside everything, the way a spreadsheet's does.
+      ...(rowNumbersEnabled
+        ? [createRowNumberColumn<TData>(rowNumberColumnLabel)]
+        : []),
       ...(selectColumnEnabled
         ? [createSelectColumn<TData>(selectColumnLabel)]
         : []),
@@ -816,10 +834,12 @@ export function useTMDataGrid<TData extends RowData>({
     ];
   }, [
     options.columns,
+    rowNumbersEnabled,
     selectColumnEnabled,
     detailsColumnEnabled,
     groupColumnEnabled,
     editColumnEnabled,
+    rowNumberColumnLabel,
     selectColumnLabel,
     groupColumnLabel,
     detailsColumnLabel,
@@ -877,6 +897,7 @@ export function useTMDataGrid<TData extends RowData>({
         // The generated columns are structurally pinned, so they are re-applied
         // on top of anything restored from storage.
         left: [
+          ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
           ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
           ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
           ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
@@ -886,6 +907,7 @@ export function useTMDataGrid<TData extends RowData>({
             []
           ).filter(
             (id) =>
+              id !== ROW_NUMBER_COLUMN_ID &&
               id !== SELECT_COLUMN_ID &&
               id !== DETAILS_COLUMN_ID &&
               id !== GROUP_COLUMN_ID,
@@ -1165,11 +1187,13 @@ export function useTMDataGrid<TData extends RowData>({
     table.setColumnOrder([...(initial?.columnOrder ?? [])]);
     table.setColumnPinning({
       left: [
+        ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
         ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
         ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
         ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
         ...(initial?.columnPinning?.left ?? []).filter(
           (id) =>
+            id !== ROW_NUMBER_COLUMN_ID &&
             id !== SELECT_COLUMN_ID &&
             id !== DETAILS_COLUMN_ID &&
             id !== GROUP_COLUMN_ID,
