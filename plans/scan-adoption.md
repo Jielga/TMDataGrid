@@ -52,7 +52,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | A2 | Changesets pre-mode beta + major changeset | S | `done 2026-08-01` | Q5 |
 | A3 | Persistence version marker → slice realignment → one-time drop | M | `done 2026-08-01` | Q3; after A2 (the drop is a named break) |
 | A4 | Reset layout | S | `done 2026-08-01` | A3 |
-| A5 | CSS layer packaging | S | `ready` | — |
+| A5 | CSS layer packaging | S | `done 2026-08-01` | — |
 | A6 | `keyof T` typing feasibility check | S | `ready` | — (likely closes void) |
 | **B** | **Small features — order free** | | | |
 | B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `ready` | — |

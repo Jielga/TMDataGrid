@@ -54,6 +54,26 @@ export function Employees({ data }: { data: Employee[] }) {
 Define `columns` at module scope. A new array on every render rebuilds the
 table's column model.
 
+## Styles
+
+The package ships one stylesheet, in two forms:
+
+```tsx
+import "@jielga/tmdatagrid/styles.css";
+// or, inside a named cascade layer:
+import "@jielga/tmdatagrid/styles.layer.css";
+```
+
+The layered form puts every rule in `@layer tmdatagrid`, so your own
+stylesheet can state the cascade order instead of fighting specificity:
+
+```css
+@layer mantine, tmdatagrid, app;
+```
+
+Mantine ships the same pair (`@mantine/core/styles.layer.css`), so the two
+compose. The layer name `tmdatagrid` is stable API.
+
 ## Default behaviour
 
 | Behaviour | Notes |

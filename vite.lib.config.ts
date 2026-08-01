@@ -1,7 +1,26 @@
+import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
+
+/**
+ * Emits `styles.layer.css` beside the built stylesheet: the same rules,
+ * wrapped in a named cascade layer so a consumer can state the order
+ * (`@layer mantine, tmdatagrid, app;`) instead of fighting specificity.
+ * The layer name is public API — never rename it.
+ */
+function emitLayerStylesheet(): Plugin {
+  return {
+    name: "tmdatagrid:styles-layer",
+    async closeBundle() {
+      await writeFile(
+        fileURLToPath(new URL("./dist/styles.layer.css", import.meta.url)),
+        '@import "./styles.css" layer(tmdatagrid);\n',
+      );
+    },
+  };
+}
 
 /**
  * Builds the publishable package into `dist`. The demo site has its own config
@@ -21,7 +40,11 @@ const EXTERNAL = [
 ];
 
 export default defineConfig({
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+    emitLayerStylesheet(),
+  ],
   // `public/` holds the demo site's favicon and icons; none of it belongs in
   // the package.
   publicDir: false,

@@ -52,6 +52,7 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./styles.layer.css": "./dist/styles.layer.css",
     "./package.json": "./package.json"
   },
   "scripts": {
