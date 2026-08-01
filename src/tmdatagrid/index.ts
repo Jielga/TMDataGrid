@@ -52,6 +52,10 @@ export {
   operatorTakesArrayValue,
 } from "./core/filterOperators";
 export {
+  fuzzyGlobalFilterFn,
+  type TMDataGridQuickSearchMode,
+} from "./core/quickSearch";
+export {
   optionsToComboboxData,
   resolveColumnOptions,
   type TMDataGridOption,

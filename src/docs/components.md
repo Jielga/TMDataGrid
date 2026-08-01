@@ -320,6 +320,15 @@ Quick search over every column — a debounced input writing the table's
 | `debounce` | `number` | `250` | Pause before the filter applies, in ms. `0` filters per keystroke. |
 | `w` | `number \| string` | `220` | Input width. |
 
+Matching is fuzzy by default — typos and skipped characters forgiven, and
+while the search is the only thing narrowing the grid (no sort, no grouping)
+the rows order by match quality, best first. The ordering is derived, never
+written into `sorting`: no column claims `aria-sort`, nothing lands in the
+persisted slices, and the user's next sort click takes over just by existing.
+`quickSearchMode: "contains"` on the hook restores plain substring matching,
+and an explicit `globalFilterFn` overrides both — which also switches the
+rank ordering off.
+
 Renders nothing under `enableGlobalFilter: false`. Columns opt out with their
 own `enableGlobalFilter: false`; the generated lanes already do. The state is
 TanStack's `globalFilter` — `manualFiltering` grids forward it to the server,

@@ -64,7 +64,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | C3 | Empty-state slot | M | `done 2026-08-01` | state matrix written first |
 | **D** | **Big, independent — order free** | | | |
 | D1 | Row pinning | L | `done 2026-08-01` | — |
-| D2 | Fuzzy quick search (default) | M | `ready` | Q4 |
+| D2 | Fuzzy quick search (default) | M | `done 2026-08-01` | Q4 |
 | D3 | Filter match highlighting | M | `ready` | D2 |
 | **H** | **Held — waiting on approval** | | | |
 | H1 | Control registry + built-in filter controls | L | `held P1` | P1 approved |
@@ -306,6 +306,18 @@ interaction with grouping (grouping runs before sorting), with the persisted
 Reference: `[mrt] src/fns/sortingFns.ts` (`rankGlobalFuzzy`),
 `src/hooks/useMRT_Effects.ts` (sort suspension — do it declaratively, not
 their stash-and-restore effect).
+
+> Deviations (2026-08-01): shipped as `quickSearchMode: "fuzzy" | "contains"`
+> (fuzzy default), `@tanstack/match-sorter-utils` as a dependency. The rank
+> ordering is a *sorted-row-model wrapper* (`createFuzzyRankedSortedRowModel`
+> in core/quickSearch.ts), never written into `sorting` — so `aria-sort`, the
+> persisted slice and the multi-sort badges are untouched by construction,
+> and an explicit sort or grouping suspends it just by existing. Upstream of
+> pagination, so a ranked page one is the best of the whole set. Known
+> approximation: TanStack stops probing a row's columns at the first passing
+> one, so the row's rank is the best of the probed columns, not of all.
+> An explicit `globalFilterFn` disables both fuzzy and ranking (keyed off the
+> registry name).
 
 ### D3 — Filter match highlighting
 

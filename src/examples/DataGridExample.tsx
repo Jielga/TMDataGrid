@@ -369,6 +369,7 @@ export function DataGridExample() {
   const [rowNumbers, setRowNumbers] = useState(false);
   const [rowPinning, setRowPinning] = useState(false);
   const [customEmptyState, setCustomEmptyState] = useState(false);
+  const [fuzzySearch, setFuzzySearch] = useState(true);
   const [selectionMode, setSelectionMode] =
     useState<TMDataGridSelectionMode>("checkbox");
   const [cellSelection, setCellSelection] =
@@ -400,6 +401,7 @@ export function DataGridExample() {
     cellSelection,
     enableRowNumbers: rowNumbers,
     enableRowPinning: rowPinning,
+    quickSearchMode: fuzzySearch ? "fuzzy" : "contains",
     // Setting the render prop is what turns row details on; the grid measures
     // whatever it returns, so the estimate only has to be in the right region.
     renderDetails: rowDetails
@@ -663,6 +665,21 @@ export function DataGridExample() {
                     checked={customEmptyState}
                     onChange={(event) =>
                       setCustomEmptyState(event.currentTarget.checked)
+                    }
+                  />
+                </Tooltip>
+                <Tooltip
+                  label="Fuzzy quick search: typos forgiven, unsorted results ordered by match quality — try “Stckholm”"
+                  withArrow
+                  multiline
+                  w={240}
+                >
+                  <Switch
+                    size="xs"
+                    label="Fuzzy search"
+                    checked={fuzzySearch}
+                    onChange={(event) =>
+                      setFuzzySearch(event.currentTarget.checked)
                     }
                   />
                 </Tooltip>

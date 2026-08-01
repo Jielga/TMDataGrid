@@ -18,7 +18,6 @@ import {
   createFilteredRowModel,
   createGroupedRowModel,
   createPaginatedRowModel,
-  createSortedRowModel,
   filterFns,
   globalFilteringFeature,
   metaHelper,
@@ -65,6 +64,11 @@ import {
   tmDataGridFilterFn,
   getDefaultOperator,
 } from "./core/filterOperators";
+import {
+  createFuzzyRankedSortedRowModel,
+  fuzzyGlobalFilterFn,
+  type TMDataGridQuickSearchMode,
+} from "./core/quickSearch";
 import {
   mergeLabels,
   type TMDataGridLabels,
@@ -219,14 +223,20 @@ export const tmDataGridFeatures = tableFeatures({
 
   filteredRowModel: createFilteredRowModel(),
   groupedRowModel: createGroupedRowModel(),
-  sortedRowModel: createSortedRowModel(),
+  // The sorted model plus the fuzzy quick search's rank ordering — see
+  // core/quickSearch.ts for when the ordering applies.
+  sortedRowModel: createFuzzyRankedSortedRowModel(),
   expandedRowModel: createExpandedRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
   facetedRowModel: createFacetedRowModel(),
   facetedMinMaxValues: createFacetedMinMaxValues(),
   facetedUniqueValues: createFacetedUniqueValues(),
 
-  filterFns: { ...filterFns, tmDataGrid: tmDataGridFilterFn },
+  filterFns: {
+    ...filterFns,
+    tmDataGrid: tmDataGridFilterFn,
+    tmDataGridFuzzy: fuzzyGlobalFilterFn,
+  },
   sortFns,
   // The names `columnDef.aggregationFn` accepts. Only consulted for columns
   // that ask for one — a column with no `aggregationFn` reports `undefined` on
@@ -546,6 +556,14 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * with group rows unnumbered. Off by default.
    */
   enableRowNumbers?: boolean;
+  /**
+   * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` — the
+   * default — forgives typos and skipped characters, and while it is the
+   * only thing narrowing the grid (no sort, no grouping) the rows order by
+   * match quality, best first. `"contains"` is plain substring matching.
+   * An explicit `globalFilterFn` overrides both.
+   */
+  quickSearchMode?: TMDataGridQuickSearchMode;
   /**
    * How rows are selected. Defaults to `"checkbox"`.
    *
@@ -900,7 +918,14 @@ export function useTMDataGrid<TData extends RowData>({
     columnResizeMode: "onChange",
     enableSorting: true,
     enableColumnResizing: true,
-    globalFilterFn: "includesString",
+    // The quick search's matcher. Fuzzy by default (Q4); `"contains"` keeps
+    // plain substring matching, and an explicit `globalFilterFn` in the
+    // options below overrides both — which also switches the rank ordering
+    // off, since it keys off this exact name.
+    globalFilterFn:
+      options.quickSearchMode === "contains"
+        ? "includesString"
+        : "tmDataGridFuzzy",
     // Grouping by a column takes it out of the grid, the way AG Grid does it:
     // its values have moved into the tree column, so leaving it in place would
     // show every row the same value it was grouped under. Overridable — pass

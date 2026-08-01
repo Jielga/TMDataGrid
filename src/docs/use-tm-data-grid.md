@@ -19,9 +19,9 @@ cannot be overridden.
 `persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode`,
 `showSelectedBackground`, `defaultHighlightedRowId`, `onHighlightedRowChange`,
 `renderDetails`, `renderDetailsEstHeight`, `overscan`, `cellSelection`,
-`onFocusedCellChange`, `labels` and the editing options (see
-[Editing](#editing)) are the grid's own options and are consumed here rather
-than forwarded to TanStack.
+`onFocusedCellChange`, `quickSearchMode`, `labels` and the editing options
+(see [Editing](#editing)) are the grid's own options and are consumed here
+rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -41,6 +41,8 @@ than forwarded to TanStack.
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid, see [Features](#features). |
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Features](#features). |
 | `enableRowNumbers` | `boolean` | `false` | The row-number gutter, outermost left. Defined by the grid, see [Features](#features). |
+| `enableRowPinning` | `boolean \| (row) => boolean` | `false` | Rows can be pinned to sticky edge blocks with `row.pin()`. See [Features](#features). |
+| `quickSearchMode` | `"fuzzy" \| "contains"` | `"fuzzy"` | How `Search` matches. Fuzzy forgives typos and orders unsorted results by match quality; `"contains"` is plain substring matching. Defined by the grid, see [Components](#components). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Features](#features). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Features](#features). |
@@ -58,7 +60,7 @@ than forwarded to TanStack.
 | --- | --- |
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }` — inert until pagination is enabled |
 | `columnPinning.left` | The checkbox, tree and details columns, followed by any columns you provide |
-| `globalFilterFn` | `"includesString"` |
+| `globalFilterFn` | `"tmDataGridFuzzy"` — the fuzzy matcher behind `quickSearchMode`; `"includesString"` under `quickSearchMode: "contains"` |
 
 ## meta
 
