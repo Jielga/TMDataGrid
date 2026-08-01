@@ -53,7 +53,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | A3 | Persistence version marker → slice realignment → one-time drop | M | `done 2026-08-01` | Q3; after A2 (the drop is a named break) |
 | A4 | Reset layout | S | `done 2026-08-01` | A3 |
 | A5 | CSS layer packaging | S | `done 2026-08-01` | — |
-| A6 | `keyof T` typing feasibility check | S | `ready` | — (likely closes void) |
+| A6 | `keyof T` typing feasibility check | S | `done 2026-08-01 — closed void` | — |
 | **B** | **Small features — order free** | | | |
 | B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `ready` | — |
 | B2 | Cell click handlers | S | `ready` | — |
@@ -168,12 +168,14 @@ Reference: `[md] package.json` exports map + `app/styling/examples/`.
 
 ### A6 — `keyof T | (string & {})` typing
 
-Feasibility check first, and expect it to close void.
-`TMDataGridColumnMeta` registers through a non-generic
-`metaHelper<TMDataGridColumnMeta>()`, so `keyof TData` cannot reach
-`editField`; no other accessor-shaped option lives outside the generic
-options type. If infeasible, close the item with a note rather than forcing
-a registration rewrite for one string field.
+> Closed void 2026-08-01. Confirmed: `TMDataGridColumnMeta` registers via
+> the module-scope `metaHelper<TMDataGridColumnMeta>()` in the shared v9
+> feature registry (consumed by the main *and* entry-row tables), so `keyof
+> TData` cannot reach `editField` without building the registry per grid —
+> the shared registry and its stable identity are worth more than
+> autocomplete on one field. No other accessor-shaped option exists: helper
+> `columnId` params take column ids, which are not row keys (dots become
+> underscores in TanStack's derivation).
 
 ## Batch B — small features
 
