@@ -29,7 +29,7 @@ import {
   TMDataGridCellEditor,
   type TMDataGridCellEditorClose,
 } from "./TMDataGridCellEditor";
-import { TMDataGridEntryRows } from "./TMDataGridPinnedRows";
+import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
 import { getColumnAlign, isControlColumn } from "../core/columnUtils";
 import { getEditFieldName } from "../core/editEngine";
 import {

@@ -270,18 +270,6 @@ TanStack's rowPinning state if the v9 feature exists in our beta; otherwise
 a thin slice in the edit-store style. Pin via context menu, plus a lane icon
 where the edit lane already exists. Interactions to design:
 
-> Deviations (2026-08-01): v9's `rowPinningFeature` exists and is used —
-> state, `row.pin()`, `getCanPin` are TanStack's own. No lane icon shipped:
-> there is no built-in pin gesture at all; the context-menu recipe is the
-> documented affordance (revisit if H2's slot reshapes create a natural lane).
-> TanStack's `getTopRows()` throws on a stale pinned id (`getRow` throws once
-> the data row is gone), so the body reads pins through `core/rowPinning.ts`'s
-> `readPinnedRows` — safe lookups, keepPinnedRows-true semantics. Pinned rows
-> sit out striping, the cell range and the row-number gutter (statements about
-> scrolling order), and `rowPinning` is not persisted — ids are data.
-> The body-row renderer is shared with the pinned blocks via a scoped
-> function inside the JSX; a proper extraction rides with H2.
-
 - Virtualization — pinned rows leave the virtual flow.
 - Selection, and grouping (likely pin data rows only).
 - Persistence — probably a data slice, not settings.
@@ -293,6 +281,20 @@ where the edit lane already exists. Interactions to design:
 
 Scope: sticky mode only (`[mrt] rowPinningDisplayMode` for what we are *not*
 shipping).
+
+> Deviations (2026-08-01): v9's `rowPinningFeature` exists and is used —
+> state, `row.pin()`, `getCanPin` are TanStack's own. No lane icon shipped:
+> there is no built-in pin gesture at all; the context-menu recipe is the
+> documented affordance (revisit if H2's slot reshapes create a natural lane).
+> TanStack's `getTopRows()` throws on a stale pinned id (`getRow` throws once
+> the data row is gone), so the body reads pins through `core/rowPinning.ts`'s
+> `readPinnedRows` — safe lookups, keepPinnedRows-true semantics. Pinned rows
+> sit out striping, the cell range and the row-number gutter (statements about
+> scrolling order), and `rowPinning` is not persisted — ids are data.
+> The body-row renderer is shared with the pinned blocks via a scoped
+> function inside the JSX; a proper extraction rides with H2. Entry block
+> ordering: top-pinned rows stack *under* the entry block via a measured
+> `--dg-entry-height`. The file rename landed as its own commit.
 
 ### D2 — Fuzzy quick search
 
