@@ -10,6 +10,7 @@ import {
 import { useSelector } from "@tanstack/react-store";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
@@ -439,6 +440,35 @@ export type TMDataGridTableProps<TData extends RowData> = {
    */
   onCellContextMenu?: (args: TMDataGridCellEventArgs<TData>) => void;
   /**
+   * Class for a body row — a string, or a function of the row (group rows
+   * included; test `row.getIsGrouped()` to skip them). Added after the grid's
+   * own row class.
+   */
+  rowClassName?:
+    | string
+    | ((row: Row<TMDataGridFeatures, TData>) => string | undefined);
+  /**
+   * Inline style for a body row. To colour a row, set `--row-bg` rather than
+   * `background`: the row's own background, its sticky pinned cells and the
+   * cell-range tint all read that variable, and hover/selection/highlight
+   * keep working on top of it — a raw `background` bypasses all of them.
+   *
+   * ```tsx
+   * rowStyle={(row) =>
+   *   row.original.overdue ? { "--row-bg": "var(--mantine-color-red-0)" } : undefined
+   * }
+   * ```
+   */
+  rowStyle?:
+    | CSSProperties
+    | ((row: Row<TMDataGridFeatures, TData>) => CSSProperties | undefined);
+  /**
+   * Every second row takes `--dg-row-striped-bg`. Computed from the row's
+   * position in the view — sorting and filtering restripe, and the stripes
+   * stay put while the virtualizer mounts and unmounts rows.
+   */
+  striped?: boolean;
+  /**
    * Contents of the menu a right-click on a row opens, at the pointer. Return
    * `null` to leave a row without one — the browser's own menu stays suppressed
    * either way.
@@ -505,6 +535,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onCellClick,
   onCellDoubleClick,
   onCellContextMenu,
+  rowClassName,
+  rowStyle,
+  striped = false,
   rowContextMenu,
   rowContextMenuProps,
   cellExport,
@@ -835,6 +868,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (features.highlightRow) ui.actions.setHighlightedRow(row.id);
     onRowClick?.(row as unknown as Row<TMDataGridFeatures, TData>);
   };
+
+  // The value-or-function pair resolved per row, across the same erasure
+  // crossing `onRowClick` makes.
+  const rowClassNameFor = (
+    row: Row<TMDataGridFeatures, TMDataGridRowData>,
+  ): string | undefined =>
+    typeof rowClassName === "function"
+      ? rowClassName(row as unknown as Row<TMDataGridFeatures, TData>)
+      : rowClassName;
+  const rowStyleFor = (
+    row: Row<TMDataGridFeatures, TMDataGridRowData>,
+  ): CSSProperties | undefined =>
+    typeof rowStyle === "function"
+      ? rowStyle(row as unknown as Row<TMDataGridFeatures, TData>)
+      : rowStyle;
 
   // The same erasure crossing `onRowClick` makes, once for all three cell
   // handlers.
@@ -1696,10 +1744,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       ? true
                       : undefined
                   }
-                  className={classes.bodyRow}
+                  // From the row's position in the whole view, so the stripes
+                  // survive the virtualizer's moving window — see the prop.
+                  data-striped={
+                    striped ? virtualItem.index % 2 === 1 : undefined
+                  }
+                  className={[classes.bodyRow, rowClassNameFor(row)]
+                    .filter(Boolean)
+                    .join(" ")}
                   style={{
                     minHeight: rowHeight,
                     cursor: isInteractive ? "pointer" : undefined,
+                    ...rowStyleFor(row),
                   }}
                   // Keyboard parity with the checkbox the row replaces.
                   tabIndex={takesKeyboard ? 0 : undefined}

@@ -55,7 +55,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | A5 | CSS layer packaging | S | `done 2026-08-01` | — |
 | A6 | `keyof T` typing feasibility check | S | `done 2026-08-01 — closed void` | — |
 | **B** | **Small features — order free** | | | |
-| B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `ready` | — |
+| B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `done 2026-08-01` | — |
 | B2 | Cell click handlers | S | `done 2026-08-01` | — |
 | B3 | Row numbers lane | S | `ready` | — |
 | **C** | **Medium, conflict-free — order free** | | | |

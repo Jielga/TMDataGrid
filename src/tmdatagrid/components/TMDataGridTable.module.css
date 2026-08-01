@@ -38,6 +38,15 @@
   align-items: stretch;
 }
 
+/* Every second row, under the Table's `striped` prop. Painted from the row's
+   own position (`data-striped`), never `:nth-child`: virtualization mounts a
+   moving window of rows, so document position says nothing about data
+   position. Declared before the hover rule, which is the stronger statement
+   and wins at equal specificity. */
+.bodyRow[data-striped="true"] {
+  --row-bg: var(--dg-row-striped-bg);
+}
+
 .bodyRow:hover {
   --row-bg: var(--mantine-color-default-hover);
 }

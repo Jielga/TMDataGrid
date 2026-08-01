@@ -332,6 +332,34 @@ describe("column visibility", () => {
   });
 });
 
+describe("per-row styling", () => {
+  it("stripes by view position and applies rowClassName/rowStyle", () => {
+    renderGridUi({
+      tableProps: {
+        striped: true,
+        rowClassName: (row) => (row.id === "1" ? "vip" : undefined),
+        rowStyle: (row) =>
+          row.id === "2"
+            ? ({ "--row-bg": "rgb(255, 0, 0)" } as React.CSSProperties)
+            : undefined,
+      },
+    });
+
+    const rows = bodyRows();
+    expect(rows[0]!.getAttribute("data-striped")).toBe("false");
+    expect(rows[1]!.getAttribute("data-striped")).toBe("true");
+    expect(rows[0]!.className).toContain("vip");
+    expect(rows[1]!.className).not.toContain("vip");
+    expect(rows[1]!.style.getPropertyValue("--row-bg")).toBe("rgb(255, 0, 0)");
+  });
+
+  it("adds no stripe attribute while striped is off", () => {
+    renderGridUi();
+
+    expect(bodyRows()[1]!.hasAttribute("data-striped")).toBe(false);
+  });
+});
+
 describe("cell click handlers", () => {
   it("onCellClick reports the cell and composes with row selection", async () => {
     const user = userEvent.setup();

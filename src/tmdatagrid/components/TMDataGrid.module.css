@@ -59,6 +59,13 @@
      group row, so a tint would grey out the whole grid. Set it to give groups a
      band of their own. */
   --dg-row-group-bg: var(--mantine-color-body);
+  /* Every second row under `striped`. A whisper of the text colour over the
+     body, so one declaration is right in both themes. */
+  --dg-row-striped-bg: color-mix(
+    in srgb,
+    var(--mantine-color-text) 3.5%,
+    var(--mantine-color-body)
+  );
 
   /* The stacking ladder, stated once. Body cells sit at auto (0); everything
      sticky stacks over them in this order, and a sticky row crossing a sticky
