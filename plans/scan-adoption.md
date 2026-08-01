@@ -1,10 +1,10 @@
 # Scan adoption plan — the 1.0 wave
 
-> **Status: ready to start, nothing started.** Decisions Q1–Q7 settled
-> 2026-08-01. Proposals P1–P4 written 2026-08-01, all four awaiting
-> approval. Batches A–D are cleared to run and wait only on the
-> stakeholder's "go"; no implementation has begun. Work lands on branch
-> `feature/next`, merged to `main` when `1.0.0` ships.
+> **Status: batch A in progress** (go given 2026-08-01, remaining calls
+> delegated). Decisions Q1–Q7 settled 2026-08-01. Proposals P1–P4 still
+> awaiting stakeholder approval — the H items stay held. U1 and full-screen
+> parked by delegated call. Work lands on branch `feature/next`, merged to
+> `main` when `1.0.0` ships.
 
 **This file is the tracker for the wave.** The [execution
 tracker](#execution-tracker) is the running order *and the only place item
@@ -24,7 +24,7 @@ few subsystems), L (new subsystem or real design surface).
 | --- | --- |
 | Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
 | Proposals P1–P4 | **Written, pending stakeholder approval** — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
-| Batches A–D | **Ready to start, not started.** No conflicts with the held work; awaiting the stakeholder's go. |
+| Batches A–D | **Running** — go given 2026-08-01. A executes in order; B–D follow. |
 | Held items | **Blocked on approval** — see [Held](#held--waiting-on-approval). |
 | Implementation | **None.** No code from this wave has landed. |
 | Branch | `feature/next`. Merged to `main` at `1.0.0`. |
@@ -32,12 +32,8 @@ few subsystems), L (new subsystem or real design surface).
 
 **Waiting on the stakeholder** — nothing else is waiting on anybody:
 
-1. "Go" on batch A (the rest follows without further prompting).
-2. Approve P1–P4 — [proposals.md](proposals.md). Unblocks H1–H5.
-3. Where does U1 (`meta.hideBelow`) go: batch D, or parked until after
-   1.0.0? See [Unassigned](#unassigned--needs-a-call).
-4. Confirm the full-screen park. Accepted in the scan, PM proposes parking
-   it — see [Deliberately parked](#deliberately-parked).
+1. Approve P1–P4 — [proposals.md](proposals.md). Unblocks H1–H5. (P2's
+   rename table returns for a second yes/no.)
 
 ## Execution tracker
 
@@ -52,7 +48,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | # | Item | Size | Status | Gate / depends on |
 | --- | --- | --- | --- | --- |
 | **A** | **Trivial & foundation — strict order** | | | |
-| A1 | Docs repair: stale selection options | S | `ready` | — |
+| A1 | Docs repair: stale selection options | S | `in progress` | — |
 | A2 | Changesets pre-mode beta + major changeset | S | `ready` | Q5 |
 | A3 | Persistence version marker → slice realignment → one-time drop | M | `ready` | Q3; after A2 (the drop is a named break) |
 | A4 | Reset layout | S | `ready` | A3 |
@@ -77,7 +73,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
 | H5 | Density recipe + demo toggle | S | `held P4` | P4 approved |
 | **—** | **Unassigned / final** | | | |
-| U1 | Container-based column visibility (`meta.hideBelow`) | M | `unassigned` | needs a batch call — see [Unassigned](#unassigned--needs-a-call) |
+| U1 | Container-based column visibility (`meta.hideBelow`) | M | `parked` | past 1.0.0 (called 2026-08-01, delegated) |
 | F1 | Styling contract docs page | S | `ready after A–D + H` | Q6; publish once the surface stops moving |
 
 **Why C before the held refactor:** C's items touch the option types and
@@ -331,10 +327,12 @@ virtualized row heights.
 
 ### U1 — Container-based column visibility (`meta.hideBelow`)
 
+> **Called 2026-08-01 (delegated): parked past 1.0.0.** Riskiest M in the
+> wave, touches the visibility subsystem with a known desync history, and is
+> purely additive — it loses nothing by shipping in 1.1.
+
 Accepted in the scan, reshaped to container-driven rather than media
-queries, and **not yet assigned to a batch**. It is the riskiest M in the
-wave, which is why it is sitting here rather than quietly inside batch C.
-Requirements already hardened, whenever it runs:
+queries. Requirements already hardened, whenever it runs:
 
 - The ResizeObserver mounts only when some column declares `hideBelow`, so
   the no-observers-by-default promise in `features.md` holds.
@@ -350,8 +348,6 @@ Requirements already hardened, whenever it runs:
 - Decide and document: how the ColumnsPanel presents a responsively hidden
   column, and how `minSize` interacts with the container threshold.
 
-Options for the call: run it as a batch D item (it is independent and big
-enough), or park it until after 1.0.0.
 
 ## Final gate
 
@@ -368,11 +364,10 @@ rows), and publishing earlier means a stale page or a re-issued promise. The
 
 - **Loading vocabulary** (skeletons, progress bars, `isSaving`) — needs
   hands-on play, not a spec. BACKLOG holds it.
-- **Full-screen mode** — *PM recommendation, not yet confirmed.* The
-  stakeholder accepted it in the scan ("if it stays easy"); PM review rates
-  it the weakest value-to-risk item in the wave (sticky z-ladder, portalled
-  menus, measured details panels), which is the condition failing. Parked
-  here pending a yes — if the answer is no, it becomes a batch D item.
+- **Full-screen mode** — *park confirmed 2026-08-01 (delegated).* The
+  scan acceptance was conditional on "if it stays easy"; PM review showed
+  it isn't (sticky z-ladder, portalled menus, measured details panels), so
+  the condition fails. Revisit on real demand.
 - **Menu consolidation** (one grid menu vs today's buttons) — open question,
   no design; A4 deliberately avoids forcing it.
 - **Per-locale subpath packages** — when we grow past EN/SV.
