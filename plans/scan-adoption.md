@@ -25,8 +25,8 @@ few subsystems), L (new subsystem or real design surface).
 | Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
 | Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). P2–P4 pending — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
 | Batches A–D | **Done 2026-08-01** — all items landed on `feature/next`. |
-| Held items | H1 in progress (P1 approved); H2–H5 blocked on approval — see [Held](#held--waiting-on-approval). |
-| Implementation | A–D shipped; H1 under way. |
+| Held items | H1 `done 2026-08-09`; H2–H5 blocked on approval — see [Held](#held--waiting-on-approval). |
+| Implementation | A–D and H1 shipped. |
 | Branch | `feature/next`. Merged to `main` at `1.0.0`. |
 | Release | Changesets pre-mode `beta`; first release `1.0.0-beta.1` (A2 opens it). Breaks are free until `1.0.0`, each named in its changeset. |
 
@@ -67,7 +67,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | D2 | Fuzzy quick search (default) | M | `done 2026-08-01` | Q4 |
 | D3 | Filter match highlighting | M | `done 2026-08-01` | D2 |
 | **H** | **Held — waiting on approval** | | | |
-| H1 | Custom controls (direct refs) + built-in filter controls | L | `in progress` | P1 approved 2026-08-09 |
+| H1 | Custom controls (direct refs) + built-in filter controls | L | `done 2026-08-09` | P1 approved 2026-08-09 |
 | H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
 | H3 | Bad-UX warning framework | M | `held P3` | P3 approved |
 | H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
@@ -355,6 +355,23 @@ boolean — ship as named exports built against the same public args
 contracts consumers use. The filter panel picks by column type/operator as
 today; `meta.filterControl` overrides. The editor half lands here too:
 `meta.renderEditor` → `meta.editor` (component) is a named break.
+
+> Shipped 2026-08-09 — `7a8c056`, `c8acb31`, `9984dcd` (three commits, three
+> changesets: between-operator minor, editor-component major,
+> filter-controls minor). Deviations/discoveries: the plan's range controls
+> needed an interval the filter model lacked, so a `between` operator landed
+> first (number + date, inclusive `[min, max]` pair, empty end = open, panel
+> renders From/To) along with `meta.defaultFilterOperator` so a column can
+> *open* on `between` — without it the range controls were unreachable UX.
+> The filter panel's value slot was extracted into
+> `TMDataGridFilterValueInput` (exported), which is also every built-in
+> control's fallback for operators outside its shape. Built-ins:
+> `DgRangeSliderFilter` (bounds via the faceted index — no new row model),
+> `DgDateRangeFilter` (native date inputs, no `@mantine/dates`),
+> `DgAutocompleteFilter`, `DgTriStateFilter` (new label `filterAll`).
+> `args.options` is pre-resolved only for declared or select-shaped columns
+> — resolving faceted values for every column would build indexes the panel
+> never shows.
 
 ### H2 — API coherence refactor (needs P2 + rename table)
 
