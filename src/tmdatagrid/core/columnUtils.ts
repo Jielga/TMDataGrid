@@ -1,4 +1,8 @@
-import type { TMDataGridColumnType } from "./filterOperators";
+import {
+  getDefaultOperator,
+  type TMDataGridColumnType,
+  type TMDataGridFilterOperator,
+} from "./filterOperators";
 import { DETAILS_COLUMN_ID } from "../components/TMDataGridDetailsColumn";
 import { EDIT_COLUMN_ID } from "../components/TMDataGridEditColumn";
 import { ROW_NUMBER_COLUMN_ID } from "../components/TMDataGridRowNumberColumn";
@@ -27,6 +31,19 @@ export function getColumnLabel(column: ColumnLike): string {
 
 export function getColumnType(column: ColumnLike): TMDataGridColumnType {
   return column.columnDef.meta?.type ?? "string";
+}
+
+/**
+ * The operator a fresh filter on this column starts with —
+ * `meta.defaultFilterOperator`, else the type's default.
+ */
+export function getColumnDefaultOperator(
+  column: ColumnLike,
+): TMDataGridFilterOperator {
+  return (
+    column.columnDef.meta?.defaultFilterOperator ??
+    getDefaultOperator(getColumnType(column))
+  );
 }
 
 export function getColumnAlign(column: ColumnLike): "left" | "right" | "center" {

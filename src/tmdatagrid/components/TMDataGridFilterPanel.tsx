@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Button,
+  Group,
   MultiSelect,
   Select,
   Stack,
@@ -15,15 +16,21 @@ import {
   optionsToComboboxData,
   resolveColumnOptions,
 } from "../core/columnOptions";
-import { getColumnLabel, getColumnType } from "../core/columnUtils";
+import {
+  getColumnDefaultOperator,
+  getColumnLabel,
+  getColumnType,
+} from "../core/columnUtils";
 import {
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
+  emptyValueForOperator,
   getDefaultOperator,
   getOperatorsForType,
   isTMDataGridFilterValue,
   operatorNeedsValue,
   operatorTakesArrayValue,
+  operatorTakesRangeValue,
 } from "../core/filterOperators";
 import { CloseIcon } from "./icons";
 
@@ -31,6 +38,19 @@ const FALLBACK_FILTER: TMDataGridFilterValue = { operator: "contains", value: ""
 
 function asFilterValue(value: unknown): TMDataGridFilterValue {
   return isTMDataGridFilterValue(value) ? value : FALLBACK_FILTER;
+}
+
+/**
+ * The three value shapes an operator can take. A typed value survives an
+ * operator or column change only within its shape — a set is not a range,
+ * even though both are arrays.
+ */
+function valueShape(
+  operator: TMDataGridFilterOperator,
+): "scalar" | "set" | "range" {
+  if (operatorTakesArrayValue(operator)) return "set";
+  if (operatorTakesRangeValue(operator)) return "range";
+  return "scalar";
 }
 
 /**
@@ -90,18 +110,16 @@ export function TMDataGridFilterPanel() {
       columnFilters.find((filter) => filter.id === fromColumnId)?.value,
     );
     const target = table.getColumn(toColumnId);
-    const operator = getDefaultOperator(
-      target ? getColumnType(target) : "string",
-    );
+    const operator = target
+      ? getColumnDefaultOperator(target)
+      : getDefaultOperator("string");
     // The typed value only survives the move while it still fits the new
     // operator — a text needle has no meaning to an `isAnyOf` set, or a set
     // to a text input.
     const value =
-      operatorTakesArrayValue(operator) === Array.isArray(current.value)
+      valueShape(operator) === valueShape(current.operator)
         ? current.value
-        : operatorTakesArrayValue(operator)
-          ? []
-          : "";
+        : emptyValueForOperator(operator);
     table.setColumnFilters(
       columnFilters
         .filter((filter) => filter.id !== toColumnId)
@@ -132,13 +150,11 @@ export function TMDataGridFilterPanel() {
       columnFilters.find((filter) => filter.id === columnId)?.value,
     );
     // Same arity rule as changing the column: keep the value across operators
-    // of the same shape, reset it across the array/scalar boundary.
+    // of the same shape, reset it across any shape boundary.
     const value =
-      operatorTakesArrayValue(operator) === Array.isArray(current.value)
+      valueShape(operator) === valueShape(current.operator)
         ? current.value
-        : operatorTakesArrayValue(operator)
-          ? []
-          : "";
+        : emptyValueForOperator(operator);
     patchFilter(columnId, { operator, value });
   }
 
@@ -155,13 +171,14 @@ export function TMDataGridFilterPanel() {
       (column) => !columnFilters.some((filter) => filter.id === column.id),
     );
     if (!nextColumn) return;
+    const operator = getColumnDefaultOperator(nextColumn);
     table.setColumnFilters([
       ...columnFilters,
       {
         id: nextColumn.id,
         value: {
-          operator: getDefaultOperator(getColumnType(nextColumn)),
-          value: "",
+          operator,
+          value: emptyValueForOperator(operator),
         } satisfies TMDataGridFilterValue,
       },
     ]);
@@ -207,7 +224,13 @@ export function TMDataGridFilterPanel() {
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
           const takesArray = operatorTakesArrayValue(value.operator);
+          const takesRange = operatorTakesRangeValue(value.operator);
           const scalarValue = typeof value.value === "string" ? value.value : "";
+          const rangeValue: [string, string] = Array.isArray(value.value)
+            ? [String(value.value[0] ?? ""), String(value.value[1] ?? "")]
+            : ["", ""];
+          const inputType =
+            type === "number" ? "number" : type === "date" ? "date" : "text";
 
           return (
             <div key={filter.id} className={classes.filterRow}>
@@ -252,7 +275,36 @@ export function TMDataGridFilterPanel() {
                 }
               />
 
-              {takesArray && column ? (
+              {takesRange ? (
+                // The interval's two ends. Either may stay empty — an open
+                // end — and each writes its slot of the `[min, max]` pair.
+                <Group gap={4} wrap="nowrap" align="flex-start">
+                  <TextInput
+                    label={labels.filterFrom}
+                    size={controlSize}
+                    w={88}
+                    type={inputType}
+                    value={rangeValue[0]}
+                    onChange={(event) =>
+                      patchFilter(filter.id, {
+                        value: [event.currentTarget.value, rangeValue[1]],
+                      })
+                    }
+                  />
+                  <TextInput
+                    label={labels.filterTo}
+                    size={controlSize}
+                    w={88}
+                    type={inputType}
+                    value={rangeValue[1]}
+                    onChange={(event) =>
+                      patchFilter(filter.id, {
+                        value: [rangeValue[0], event.currentTarget.value],
+                      })
+                    }
+                  />
+                </Group>
+              ) : takesArray && column ? (
                 // The set the cell is tested against. Options come from
                 // `meta.options`; a select column that declares none still
                 // gets the values present in the data, via the faceted index.
@@ -291,15 +343,7 @@ export function TMDataGridFilterPanel() {
                   label={labels.filterValue}
                   size={controlSize}
                   w={180}
-                  type={
-                    !needsValue
-                      ? "text"
-                      : type === "number"
-                        ? "number"
-                        : type === "date"
-                          ? "date"
-                          : "text"
-                  }
+                  type={needsValue ? inputType : "text"}
                   disabled={!needsValue}
                   placeholder={needsValue ? labels.filterValuePlaceholder : ""}
                   value={needsValue ? scalarValue : ""}

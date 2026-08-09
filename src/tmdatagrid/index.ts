@@ -43,6 +43,7 @@ export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
+  emptyValueForOperator,
   FILTER_OPERATOR_LABELS,
   formatFilterLabel,
   getDefaultOperator,
@@ -50,6 +51,7 @@ export {
   isFilterActive,
   operatorNeedsValue,
   operatorTakesArrayValue,
+  operatorTakesRangeValue,
 } from "./core/filterOperators";
 export {
   fuzzyGlobalFilterFn,
@@ -97,6 +99,7 @@ export {
 } from "./core/labels";
 export { TMDATAGRID_LABELS_SV } from "./core/labelsSv";
 export {
+  getColumnDefaultOperator,
   getColumnLabel,
   getColumnType,
   isColumnReorderable,

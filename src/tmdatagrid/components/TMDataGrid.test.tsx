@@ -2782,6 +2782,10 @@ describe("typed columns in the filter panel", () => {
   const typedColumns = (() => {
     const helper = createTMDataGridColumnHelper<TypedRow>();
     return helper.columns([
+      helper.accessor("id", {
+        header: "Id",
+        meta: { type: "number", defaultFilterOperator: "between" },
+      }),
       helper.accessor("status", {
         header: "Status",
         meta: { type: "select", options: "faceted" },
@@ -2846,6 +2850,29 @@ describe("typed columns in the filter panel", () => {
     await user.click(await screen.findByRole("option", { name: "Yes" }));
 
     expect(gridRowCount()).toBe(2);
+  });
+
+  it("filters through a between pair, seeded by meta.defaultFilterOperator", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<TypedGrid filterColumnId="id" />);
+
+    await openFilter(user);
+    // The column's own default, not the number type's "equals".
+    expect(screen.getByDisplayValue("is between")).toBeInTheDocument();
+
+    const from = screen.getByLabelText("From");
+    const to = screen.getByLabelText("To");
+    expect(from).toHaveAttribute("type", "number");
+
+    fireEvent.change(from, { target: { value: "2" } });
+    expect(gridRowCount()).toBe(3);
+
+    fireEvent.change(to, { target: { value: "3" } });
+    expect(gridRowCount()).toBe(2);
+
+    // An emptied end reopens that side of the interval.
+    fireEvent.change(from, { target: { value: "" } });
+    expect(gridRowCount()).toBe(3);
   });
 
   it("filters a date column by calendar day through a date input", async () => {

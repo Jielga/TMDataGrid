@@ -36,6 +36,7 @@ table's column model.
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment applied to both header and cells. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
+| `defaultFilterOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter on this column starts with — a salary column can open on `"between"`. Must be one of the type's own operators. |
 
 `enableOrdering` lives in `meta` because column ordering is the one feature
 TanStack defines no column option for. See [Features](#features).
@@ -177,7 +178,8 @@ type TMDataGridFilterValue = {
 The filter model is therefore plain JSON, which allows it to be forwarded to a
 server without transformation — dates as ISO strings, booleans as `"true"` /
 `"false"`, and an array only under `isAnyOf` / `isNoneOf` (the set the cell is
-tested against). See [Server-side](#server-side).
+tested against) and `between` (a `[min, max]` pair, an empty string leaving
+that end open). See [Server-side](#server-side).
 
 ### Operators
 
@@ -192,6 +194,7 @@ tested against). See [Server-side](#server-side).
 | `greaterThanOrEqual` | is greater than or equal to | `number` |
 | `lessThan` | is less than | `number` |
 | `lessThanOrEqual` | is less than or equal to | `number` |
+| `between` | is between | `number`, `date` |
 | `before` | is before | `date` |
 | `after` | is after | `date` |
 | `onOrBefore` | is on or before | `date` |
@@ -205,7 +208,9 @@ tested against). See [Server-side](#server-side).
 comparisons are by calendar day, and `equals` on a `date` column plays the role
 of "is". On a `multiSelect` column — whose cells hold arrays — `isAnyOf` is an
 intersection test and `isNoneOf` its complement; an empty cell array counts as
-empty for `isEmpty`.
+empty for `isEmpty`. `between` is inclusive at both ends; the panel renders a
+From/To pair, and either end may stay empty to leave the interval open on that
+side.
 
 A filter with an empty value remains in state so the panel continues to display
 its row while the user types. It matches all rows, does not activate the filter

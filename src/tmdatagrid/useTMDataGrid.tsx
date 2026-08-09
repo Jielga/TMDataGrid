@@ -60,10 +60,12 @@ import {
   type TMDataGridRowValidators,
 } from "./core/editEngine";
 import {
+  emptyValueForOperator,
   type TMDataGridColumnType,
+  type TMDataGridFilterOperator,
   tmDataGridFilterFn,
-  getDefaultOperator,
 } from "./core/filterOperators";
+import { getColumnDefaultOperator } from "./core/columnUtils";
 import {
   createFuzzyRankedSortedRowModel,
   fuzzyGlobalFilterFn,
@@ -152,6 +154,12 @@ export type TMDataGridColumnMeta = {
    * so its switch lives here rather than on the column definition.
    */
   enableOrdering?: boolean;
+  /**
+   * The operator a fresh filter on this column starts with, instead of the
+   * type's default — a salary column can open on `"between"`. Must be one of
+   * the type's own operators.
+   */
+  defaultFilterOperator?: TMDataGridFilterOperator;
   /**
    * Whether this column's cells take edits, once `editMode` is on. `false`
    * switches the column off outright; a predicate decides per row. Defaults
@@ -1311,9 +1319,10 @@ export function openColumnFilter<TData extends RowData>(
 ): void {
   const column = api.table.getColumn(columnId);
   if (column && column.getFilterValue() === undefined) {
+    const operator = getColumnDefaultOperator(column);
     column.setFilterValue({
-      operator: getDefaultOperator(column.columnDef.meta?.type ?? "string"),
-      value: "",
+      operator,
+      value: emptyValueForOperator(operator),
     });
   }
   api.ui.actions.openFilterPanel(columnId);

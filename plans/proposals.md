@@ -1,9 +1,9 @@
 # Proposals — the 1.0 wave
 
-> **Status: all four pending stakeholder approval.** Written 2026-08-01;
-> none approved yet. Held work in the
-> [tracker](scan-adoption.md#execution-tracker) (H1–H5) starts only when its
-> proposal is approved.
+> **Status: P1 approved 2026-08-09 (as amended in discussion — registry
+> dropped for direct component references). P2–P4 pending.** Held work in
+> the [tracker](scan-adoption.md#execution-tracker) (H1–H5) starts only when
+> its proposal is approved.
 
 The four proposals gating the scan-adoption wave
 ([scan-adoption.md](scan-adoption.md)). Each ends with what approval means.
@@ -16,71 +16,75 @@ needs its rename table approved as well before H2 starts.
 
 | Proposal | Status | Unblocks |
 | --- | --- | --- |
-| P1 — Control registry | **pending approval** | H1 |
+| P1 — Custom controls (direct references) | **approved 2026-08-09** | H1 |
 | P2 — API coherence refactor | **pending approval** (+ second gate: rename table) | H2 |
 | P3 — Bad-UX warning framework | **pending approval** | H3, then H4 |
 | P4 — Density: no built-in | **pending approval** | H5 |
 
-## P1 — Control registry: filters & editors
+## P1 — Custom controls: direct component references
 
-> **Status: pending approval.** Written 2026-08-01. Unblocks H1.
+> **Status: approved 2026-08-09**, as amended in stakeholder discussion.
+> Unblocks H1. The original registry proposal (named controls in a
+> `controls` option, referenced by string) is superseded: column defs are
+> never serialized, so string indirection bought nothing over plain
+> imports. This amendment also amends **Q1** — the two-door editor
+> (`renderEditor` + registry name) collapses to a single component door.
 
-**Goal.** Register a special input once — with its validation pattern — and
-reuse it across columns and grids, for both editing and filtering. The
-stakeholder's use cases lean on custom inputs; this is the API to
-over-review, since every registered control binds to the args contracts.
+**Goal.** Build a special input once — with its validation pattern — and
+reuse it across columns and grids, for both editing and filtering. Controls
+are ordinary named exports, imported and assigned directly on the column;
+reuse is `import`, the way everything else in React works. Typos are
+compile errors, go-to-definition works, and there is no name-collision
+surface at all.
 
 **Shape.**
 
 ```tsx
-const controls: TMDataGridControls = {
-  salaryRange: {
-    editor: (args) => <SalarySlider {...args} />,   // TMDataGridEditorArgs
-    filter: (args) => <SalaryRangeFilter {...args} />, // TMDataGridFilterControlArgs
-  },
-  personnummer: {
-    editor: (args) => <PersonnummerInput {...args} />,
-  },
-};
+// salaryControls.tsx — plain named exports, shared app-wide by import
+export const SalaryEditor = (args: TMDataGridEditorArgs) => { ... };
+export const SalaryRangeFilter = (args: TMDataGridFilterControlArgs) => { ... };
 
-const grid = useTMDataGrid({ data, columns, controls, editMode: "cell" });
-
-// column definition
+// column definition — direct references, no strings
 columnHelper.accessor("salary", {
-  meta: { type: "number", editor: "salaryRange", filterControl: "salaryRange" },
+  meta: { type: "number", editor: SalaryEditor, filterControl: SalaryRangeFilter },
 });
 ```
 
 **Args contracts.**
 
-- Editor entries receive the existing `TMDataGridEditorArgs` — the exact
-  args `meta.renderEditor` gets today (`field`, `form`, `cell`, `row`,
-  `column`, `table`, `commit`, `cancel`, `size`, `autoFocus`, `seedText`).
-  One contract, two doors: an inline `renderEditor` lifts into the registry
-  unchanged. `field` is the TanStack Form `FieldApi`, so a custom input
-  plugs into `meta.validate` / `rowValidators` with no extra wiring — the
-  "special validations" requirement falls out for free.
-- Filter entries receive a new `TMDataGridFilterControlArgs`:
-  `{ column, table, operator, value, onChange(next), options, size,
-  labels }` — `options` pre-resolved through `resolveColumnOptions` for
-  select-shaped controls, `onChange` writing the operator-aware
-  `TMDataGridFilterValue`.
-- Entries are rendered as JSX components, never invoked as bare functions
-  (the MRT hook-attachment footgun).
+- **Editor:** `meta.editor` is a component receiving the existing
+  `TMDataGridEditorArgs` (`field`, `form`, `cell`, `row`, `column`,
+  `table`, `commit`, `cancel`, `size`, `autoFocus`, `seedText`). It is
+  rendered as JSX — a real component, so hooks are legal inside (the MRT
+  bare-call footgun is structurally excluded). `field` is the TanStack Form
+  `FieldApi`, so a custom input plugs into `meta.validate` /
+  `rowValidators` with no extra wiring. **`meta.renderEditor` is removed**
+  (breaking, named in its changeset): one door, always a component. Inline
+  still works (`editor: (args) => <X {...args} />`); the docs carry the
+  standard React caveat to define editors at module scope so identity stays
+  stable across renders.
+- **Filter:** `meta.filterControl` is a component receiving the new
+  `TMDataGridFilterControlArgs`: `{ column, table, operator, value,
+  onChange(nextValue), options, size, labels }`. **Value-only contract:**
+  the control reads `operator` to shape itself (e.g. `between` → two
+  handles) and calls `onChange` with the bare value; the grid composes the
+  operator-aware `TMDataGridFilterValue` internally. Controls never build
+  the wrapper and cannot write the operator — `table` is the escape hatch
+  for the rare control that must. `options` comes pre-resolved through
+  `resolveColumnOptions` for select-shaped controls.
 
-**Resolution order** (most specific wins):
-`meta.renderEditor` → `meta.editor` (registry) → built-in by `meta.type`;
-`meta.filterControl` (registry) → built-in by type/operator. An unknown
-registry name logs through the P3 framework and falls back to the built-in.
+**Resolution order** (most specific wins, two steps each):
+`meta.editor` → built-in editor by `meta.type`;
+`meta.filterControl` → built-in control by type/operator.
 
-**Built-ins through the same door.** Phase 5's new controls (range slider
-seeded from faceted min/max, date-range, autocomplete, tri-state boolean)
-are pre-registered under a reserved `dg:` prefix (`dg:rangeSlider`,
-`dg:dateRange`, …), so a column can opt into them by name and consumer names
-can never collide with ours.
+**Built-ins through the same door.** The H1 controls (range slider seeded
+from faceted min/max, date-range, autocomplete, tri-state boolean) ship as
+PascalCase named exports (`DgRangeSliderFilter`, `DgDateRangeFilter`, …)
+built against the same public args contracts consumers use — proving the
+contract by construction. No reserved prefix needed; imports don't collide.
 
 **Approval means:** the two args contracts and the resolution order are
-final for the beta; phase 5 builds against them.
+final for the beta; H1 builds against them.
 
 ## P2 — API coherence refactor (1.0.0-beta)
 

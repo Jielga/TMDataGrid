@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  emptyValueForOperator,
+  formatFilterLabel,
   getDefaultOperator,
   getOperatorsForType,
   isFilterActive,
@@ -7,6 +9,7 @@ import {
   matchesFilter,
   operatorNeedsValue,
   operatorTakesArrayValue,
+  operatorTakesRangeValue,
   type TMDataGridFilterOperator,
 } from "./filterOperators";
 
@@ -92,6 +95,40 @@ describe("matchesFilter", () => {
     });
   });
 
+  describe("between", () => {
+    it("keeps what lies inside a closed numeric interval", () => {
+      expect(match(50, "between", ["40", "60"])).toBe(true);
+      expect(match(40, "between", ["40", "60"])).toBe(true);
+      expect(match(60, "between", ["40", "60"])).toBe(true);
+      expect(match(39, "between", ["40", "60"])).toBe(false);
+      expect(match(61, "between", ["40", "60"])).toBe(false);
+    });
+
+    it("treats an empty end as open", () => {
+      expect(match(999, "between", ["40", ""])).toBe(true);
+      expect(match(39, "between", ["40", ""])).toBe(false);
+      expect(match(-5, "between", ["", "60"])).toBe(true);
+      expect(match(61, "between", ["", "60"])).toBe(false);
+    });
+
+    it("matches everything while both ends are empty", () => {
+      expect(match(50, "between", ["", ""])).toBe(true);
+      expect(match("anything", "between", ["", ""])).toBe(true);
+    });
+
+    it("compares dates by calendar day", () => {
+      const day = new Date(2026, 6, 15); // 2026-07-15 local
+      expect(match(day, "between", ["2026-07-01", "2026-07-31"])).toBe(true);
+      expect(match(day, "between", ["2026-07-16", "2026-07-31"])).toBe(false);
+      expect(match("2026-07-15", "between", ["2026-07-15", ""])).toBe(true);
+    });
+
+    it("never matches a cell that is neither number nor day", () => {
+      expect(match("Stockholm", "between", ["40", "60"])).toBe(false);
+      expect(match(null, "between", ["40", ""])).toBe(false);
+    });
+  });
+
   describe("set operators", () => {
     it("tests scalar cells for membership", () => {
       expect(match("Paid", "isAnyOf", ["Paid", "Pending"])).toBe(true);
@@ -158,6 +195,16 @@ describe("isFilterActive", () => {
     expect(isFilterActive({ operator: "isAnyOf", value: [] })).toBe(false);
     expect(isFilterActive({ operator: "isAnyOf", value: ["Paid"] })).toBe(true);
   });
+
+  it("needs at least one spoken end of a between pair", () => {
+    expect(isFilterActive({ operator: "between", value: ["", ""] })).toBe(false);
+    expect(isFilterActive({ operator: "between", value: ["40", ""] })).toBe(
+      true,
+    );
+    expect(isFilterActive({ operator: "between", value: ["", "60"] })).toBe(
+      true,
+    );
+  });
 });
 
 describe("isTMDataGridFilterValue", () => {
@@ -209,6 +256,31 @@ describe("operator sets", () => {
     expect(operatorTakesArrayValue("isNoneOf")).toBe(true);
     expect(operatorTakesArrayValue("equals")).toBe(false);
     expect(operatorTakesArrayValue("before")).toBe(false);
+    expect(operatorTakesArrayValue("between")).toBe(false);
+  });
+
+  it("offers between to numbers and dates, as a range value", () => {
+    expect(getOperatorsForType("number")).toContain("between");
+    expect(getOperatorsForType("date")).toContain("between");
+    expect(getOperatorsForType("string")).not.toContain("between");
+    expect(operatorTakesRangeValue("between")).toBe(true);
+    expect(operatorTakesRangeValue("isAnyOf")).toBe(false);
+  });
+
+  it("starts each operator with its shape of nothing", () => {
+    expect(emptyValueForOperator("contains")).toBe("");
+    expect(emptyValueForOperator("isAnyOf")).toEqual([]);
+    expect(emptyValueForOperator("between")).toEqual(["", ""]);
+  });
+
+  it("formats a between pill as an interval", () => {
+    expect(
+      formatFilterLabel({
+        label: "Salary",
+        type: "number",
+        filter: { operator: "between", value: ["40000", "60000"] },
+      }),
+    ).toBe("Salary is between 40000–60000");
   });
 
   it("only offers operators the default is a member of", () => {

@@ -9,8 +9,10 @@ import type { Row, RowData, TableFeatures } from "@tanstack/react-table";
  * `manualFiltering` table (just forward `columnFilters` to the API).
  *
  * `value` is a string array under `isAnyOf` / `isNoneOf` (the set the cell is
- * tested against) and a single string everywhere else — dates travel as ISO
- * `YYYY-MM-DD` strings, booleans as `"true"` / `"false"`. Still plain JSON.
+ * tested against), a `[min, max]` pair under `between` (an empty string means
+ * that end is open), and a single string everywhere else — dates travel as
+ * ISO `YYYY-MM-DD` strings, booleans as `"true"` / `"false"`. Still plain
+ * JSON.
  */
 export type TMDataGridFilterValue = {
   operator: TMDataGridFilterOperator;
@@ -35,6 +37,7 @@ export type TMDataGridFilterOperator =
   | "greaterThanOrEqual"
   | "lessThan"
   | "lessThanOrEqual"
+  | "between"
   | "before"
   | "after"
   | "onOrBefore"
@@ -54,6 +57,7 @@ export const FILTER_OPERATOR_LABELS: Record<TMDataGridFilterOperator, string> = 
   greaterThanOrEqual: "is greater than or equal to",
   lessThan: "is less than",
   lessThanOrEqual: "is less than or equal to",
+  between: "is between",
   before: "is before",
   after: "is after",
   onOrBefore: "is on or before",
@@ -81,6 +85,7 @@ const NUMBER_OPERATORS: readonly TMDataGridFilterOperator[] = [
   "greaterThanOrEqual",
   "lessThan",
   "lessThanOrEqual",
+  "between",
   "isEmpty",
   "isNotEmpty",
 ];
@@ -95,6 +100,7 @@ const DATE_OPERATORS: readonly TMDataGridFilterOperator[] = [
   "after",
   "onOrBefore",
   "onOrAfter",
+  "between",
   "isEmpty",
   "isNotEmpty",
 ];
@@ -126,6 +132,9 @@ const ARRAY_OPERATORS: readonly TMDataGridFilterOperator[] = [
   "isAnyOf",
   "isNoneOf",
 ];
+
+/** Operators whose value is a `[min, max]` pair. */
+const RANGE_OPERATORS: readonly TMDataGridFilterOperator[] = ["between"];
 
 const OPERATORS_BY_TYPE: Record<
   TMDataGridColumnType,
@@ -174,6 +183,22 @@ export function operatorTakesArrayValue(
   return ARRAY_OPERATORS.includes(operator);
 }
 
+/** Whether the operator's value is a `[min, max]` pair — `between`. */
+export function operatorTakesRangeValue(
+  operator: TMDataGridFilterOperator,
+): boolean {
+  return RANGE_OPERATORS.includes(operator);
+}
+
+/** The untouched value a fresh filter starts with — the operator's shape, empty. */
+export function emptyValueForOperator(
+  operator: TMDataGridFilterOperator,
+): string | ReadonlyArray<string> {
+  if (operatorTakesArrayValue(operator)) return [];
+  if (operatorTakesRangeValue(operator)) return ["", ""];
+  return "";
+}
+
 export function isTMDataGridFilterValue(
   value: unknown,
 ): value is TMDataGridFilterValue {
@@ -193,8 +218,10 @@ export function isTMDataGridFilterValue(
 export function isFilterActive(value: unknown): boolean {
   if (!isTMDataGridFilterValue(value)) return false;
   if (!operatorNeedsValue(value.operator)) return true;
+  // A `between` pair is `["", ""]` while untouched, so an array is active
+  // once some entry says something, not merely by existing.
   return Array.isArray(value.value)
-    ? value.value.length > 0
+    ? value.value.some((entry) => String(entry).trim() !== "")
     : typeof value.value === "string" && value.value.trim() !== "";
 }
 
@@ -221,7 +248,12 @@ export function formatFilterLabel({
   if (!operatorNeedsValue(operator)) {
     return `${label} ${operatorLabels[operator]}`;
   }
-  const text = Array.isArray(value) ? value.join(", ") : String(value).trim();
+  const text =
+    operator === "between" && Array.isArray(value)
+      ? value.map((entry) => String(entry).trim()).join("–")
+      : Array.isArray(value)
+        ? value.join(", ")
+        : String(value).trim();
   if (operator === getDefaultOperator(type)) return `${label}: ${text}`;
   return `${label} ${operatorLabels[operator]} ${text}`;
 }
@@ -244,6 +276,29 @@ function toIsoDay(value: unknown): string | null {
     return match ? match[1] : null;
   }
   return null;
+}
+
+/** One end of a `between` interval. An empty bound is an open end. */
+function boundHolds(
+  cellValue: unknown,
+  bound: string,
+  end: "min" | "max",
+): boolean {
+  const boundText = bound.trim();
+  if (boundText === "") return true;
+
+  const numericCell = typeof cellValue === "number" ? cellValue : Number.NaN;
+  const numericBound = Number(boundText);
+  if (!Number.isNaN(numericCell) && !Number.isNaN(numericBound)) {
+    return end === "min"
+      ? numericCell >= numericBound
+      : numericCell <= numericBound;
+  }
+
+  const cellDay = toIsoDay(cellValue);
+  const boundDay = toIsoDay(boundText);
+  if (cellDay === null || boundDay === null) return false;
+  return end === "min" ? cellDay >= boundDay : cellDay <= boundDay;
 }
 
 function isEmptyCell(cellValue: unknown): boolean {
@@ -274,6 +329,19 @@ export function matchesFilter(
       set.includes(String(entry ?? "").toLowerCase()),
     );
     return operator === "isAnyOf" ? hit : !hit;
+  }
+
+  // A closed or half-open interval. Each present end must hold; an empty end
+  // is open — and a fully empty pair matches everything, the same way a blank
+  // needle does. Ends compare the way the single-ended operators would:
+  // numerically when both sides are numbers, by calendar day otherwise.
+  if (operator === "between") {
+    const [min, max] = Array.isArray(value)
+      ? [String(value[0] ?? ""), String(value[1] ?? "")]
+      : [String(value), ""];
+    return (
+      boundHolds(cellValue, min, "min") && boundHolds(cellValue, max, "max")
+    );
   }
 
   const filterText =

@@ -1,10 +1,10 @@
 # Scan adoption plan — the 1.0 wave
 
-> **Status: batch A in progress** (go given 2026-08-01, remaining calls
-> delegated). Decisions Q1–Q7 settled 2026-08-01. Proposals P1–P4 still
-> awaiting stakeholder approval — the H items stay held. U1 and full-screen
-> parked by delegated call. Work lands on branch `feature/next`, merged to
-> `main` when `1.0.0` ships.
+> **Status: batches A–D done 2026-08-01; H batch started 2026-08-09.**
+> P1 approved 2026-08-09 as amended (registry dropped — direct component
+> references; amends Q1). P2–P4 still awaiting stakeholder approval. U1 and
+> full-screen parked by delegated call. Work lands on branch `feature/next`,
+> merged to `main` when `1.0.0` ships.
 
 **This file is the tracker for the wave.** The [execution
 tracker](#execution-tracker) is the running order *and the only place item
@@ -23,17 +23,17 @@ few subsystems), L (new subsystem or real design surface).
 | What | Where it stands |
 | --- | --- |
 | Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
-| Proposals P1–P4 | **Written, pending stakeholder approval** — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
-| Batches A–D | **Running** — go given 2026-08-01. A executes in order; B–D follow. |
-| Held items | **Blocked on approval** — see [Held](#held--waiting-on-approval). |
-| Implementation | **None.** No code from this wave has landed. |
+| Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). P2–P4 pending — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
+| Batches A–D | **Done 2026-08-01** — all items landed on `feature/next`. |
+| Held items | H1 in progress (P1 approved); H2–H5 blocked on approval — see [Held](#held--waiting-on-approval). |
+| Implementation | A–D shipped; H1 under way. |
 | Branch | `feature/next`. Merged to `main` at `1.0.0`. |
 | Release | Changesets pre-mode `beta`; first release `1.0.0-beta.1` (A2 opens it). Breaks are free until `1.0.0`, each named in its changeset. |
 
 **Waiting on the stakeholder** — nothing else is waiting on anybody:
 
-1. Approve P1–P4 — [proposals.md](proposals.md). Unblocks H1–H5. (P2's
-   rename table returns for a second yes/no.)
+1. Approve P2–P4 — [proposals.md](proposals.md). Unblocks H2–H5. (P2's
+   rename table returns for a second yes/no.) P1 approved 2026-08-09.
 
 ## Execution tracker
 
@@ -67,7 +67,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | D2 | Fuzzy quick search (default) | M | `done 2026-08-01` | Q4 |
 | D3 | Filter match highlighting | M | `done 2026-08-01` | D2 |
 | **H** | **Held — waiting on approval** | | | |
-| H1 | Control registry + built-in filter controls | L | `held P1` | P1 approved |
+| H1 | Custom controls (direct refs) + built-in filter controls | L | `in progress` | P1 approved 2026-08-09 |
 | H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
 | H3 | Bad-UX warning framework | M | `held P3` | P3 approved |
 | H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
@@ -92,6 +92,10 @@ deviations. Status lives in the table and nowhere else.
   "name"`) is the register-once reuse path; `meta.renderEditor` stays as the
   inline one-off and, being the more specific statement, wins when both are
   set on a column.
+  > **Amended 2026-08-09 with P1 approval:** the registry is dropped
+  > (column defs are never serialized) and the two doors collapse to one —
+  > `meta.editor` takes a component directly, rendered as JSX;
+  > `meta.renderEditor` is removed as a named break.
 - **Q2 Slots:** not a point fix — a whole-API coherence refactor under the
   1.0.0-beta umbrella so the render/slot/override conventions come
   together. P2 is that proposal; the Footer `pagination` render prop breaks
@@ -342,14 +346,15 @@ skip fuzzy. Perf gate: no measurable cost while off, bounded while on.
 Nothing here starts until its proposal is approved. Details live in
 [proposals.md](proposals.md); only the build-side scope is repeated here.
 
-### H1 — Control registry + built-in filter controls (needs P1)
+### H1 — Custom controls + built-in filter controls (needs P1)
 
-Built-in richer controls — range slider seeded from faceted min/max,
-date-range, autocomplete, tri-state boolean — implemented as pre-registered
-entries in the new registry, proving the same API consumers use. The filter
-panel picks by column type/operator as today; `meta.filterControl`
-overrides. The editor half lands here too, with the Q1 precedence against
-`meta.renderEditor`.
+Per P1 as amended: no registry. `meta.editor` and `meta.filterControl` take
+components directly, rendered as JSX. Built-in richer controls — range
+slider seeded from faceted min/max, date-range, autocomplete, tri-state
+boolean — ship as named exports built against the same public args
+contracts consumers use. The filter panel picks by column type/operator as
+today; `meta.filterControl` overrides. The editor half lands here too:
+`meta.renderEditor` → `meta.editor` (component) is a named break.
 
 ### H2 — API coherence refactor (needs P2 + rename table)
 

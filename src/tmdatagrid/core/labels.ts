@@ -45,6 +45,10 @@ export type TMDataGridLabels = {
   filterOperator: string;
   filterValue: string;
   filterValuePlaceholder: string;
+  /** The lower bound of a `between` filter. */
+  filterFrom: string;
+  /** The upper bound of a `between` filter. */
+  filterTo: string;
   /** What a boolean column's `true` reads as — its filter choice and cell text. */
   booleanTrue: string;
   booleanFalse: string;
@@ -177,6 +181,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   filterOperator: "Operator",
   filterValue: "Value",
   filterValuePlaceholder: "Filter value",
+  filterFrom: "From",
+  filterTo: "To",
   booleanTrue: "Yes",
   booleanFalse: "No",
   addFilter: "Add filter",
