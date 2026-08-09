@@ -37,6 +37,7 @@ table's column model.
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment applied to both header and cells. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
 | `defaultFilterOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter on this column starts with — a salary column can open on `"between"`. Must be one of the type's own operators. |
+| `filterControl` | `TMDataGridFilterControlComponent` | By type/operator | Replaces the built-in value control in the filter panel. See [Custom filter controls](#columns). |
 
 `enableOrdering` lives in `meta` because column ordering is the one feature
 TanStack defines no column option for. See [Features](#features).
@@ -217,6 +218,50 @@ its row while the user types. It matches all rows, does not activate the filter
 indicator in the header and gets no pill in
 [`TMDataGrid.FilterPills`](#components). Use `isFilterActive(value)` to test for
 this.
+
+### Custom filter controls
+
+`meta.filterControl` replaces the built-in value control in the column's
+filter-panel row. It is a component — rendered as JSX, hooks legal inside —
+receiving `TMDataGridFilterControlArgs`, a **value-only contract**: the
+control reads `operator` to shape itself and writes the bare value through
+`onChange`; the grid composes the stored `{ operator, value }` around it.
+The column and operator dropdowns stay the panel's.
+
+```tsx
+const SalaryFilter: TMDataGridFilterControlComponent = ({
+  operator,
+  value,
+  onChange,
+}) =>
+  operator === "between" ? (
+    <RangeSlider /* value is the [min, max] pair */ />
+  ) : (
+    <NumberInput /* a single bound */ />
+  );
+
+meta: { filterControl: SalaryFilter, defaultFilterOperator: "between" }
+```
+
+Define controls at module scope so their identity is stable. `args.options`
+arrives pre-resolved through `resolveColumnOptions` for a column that
+declares `meta.options` or is select-shaped; `args.table` is the escape
+hatch for the rare control that must reach further.
+
+Four ready-made controls ship as named exports, built against this same
+contract:
+
+| Export | For | Renders |
+| --- | --- | --- |
+| `DgRangeSliderFilter` | `number` | A range slider seeded from the data's min/max, writing the `between` pair. |
+| `DgDateRangeFilter` | `date` | A From/To pair of native date inputs, writing the `between` pair. |
+| `DgAutocompleteFilter` | `string` | Free text with the faceted (or declared) values as suggestions. |
+| `DgTriStateFilter` | `boolean` | All / Yes / No segments — All clears the filter. |
+
+Pair the range-shaped ones with `defaultFilterOperator: "between"` so the
+filter opens on them; for operators outside their shape every built-in falls
+back to `TMDataGridFilterValueInput`, the default control, which is exported
+for custom controls that want the same escape.
 
 To give a column its own matching logic, set `filterFn` on the column
 definition. The grid only provides `"tmDataGrid"` as the default.

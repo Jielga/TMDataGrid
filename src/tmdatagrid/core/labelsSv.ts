@@ -53,6 +53,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   filterValuePlaceholder: "Filtervärde",
   filterFrom: "Från",
   filterTo: "Till",
+  filterAll: "Alla",
   booleanTrue: "Ja",
   booleanFalse: "Nej",
   addFilter: "Lägg till filter",

@@ -31,6 +31,11 @@ import {
   type UseTMDataGridOptions,
 } from "../useTMDataGrid";
 import type { TMDataGridEditorComponent } from "../core/editEngine";
+import type { TMDataGridFilterControlComponent } from "../core/filterControls";
+import { DgAutocompleteFilter } from "./filters/DgAutocompleteFilter";
+import { DgDateRangeFilter } from "./filters/DgDateRangeFilter";
+import { DgRangeSliderFilter } from "./filters/DgRangeSliderFilter";
+import { DgTriStateFilter } from "./filters/DgTriStateFilter";
 
 type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
@@ -2936,5 +2941,172 @@ describe("typed columns in the filter panel", () => {
     fireEvent.change(input, { target: { value: "2026-01-01" } });
 
     expect(gridRowCount()).toBe(1);
+  });
+});
+
+describe("filter controls", () => {
+  type ControlRow = { id: number; status: string; active: boolean; hired: string };
+
+  const controlRows: ControlRow[] = [
+    { id: 1, status: "Paid", active: true, hired: "2026-01-15" },
+    { id: 2, status: "Pending", active: false, hired: "2026-03-01" },
+    { id: 3, status: "Overdue", active: true, hired: "2025-11-20" },
+    { id: 4, status: "Paid", active: false, hired: "2026-06-05" },
+  ];
+
+  // A custom control sees only the bare value; the grid wraps it with the
+  // current operator on the way into filter state.
+  const StatusPicker: TMDataGridFilterControlComponent = ({ value, onChange }) => (
+    <input
+      aria-label="Status picker"
+      value={typeof value === "string" ? value : ""}
+      onChange={(event) => onChange(event.currentTarget.value)}
+    />
+  );
+
+  const controlColumns = (() => {
+    const helper = createTMDataGridColumnHelper<ControlRow>();
+    return helper.columns([
+      helper.accessor("id", {
+        header: "Id",
+        meta: {
+          type: "number",
+          defaultFilterOperator: "between",
+          filterControl: DgRangeSliderFilter,
+        },
+      }),
+      helper.accessor("status", {
+        header: "Status",
+        meta: { filterControl: DgAutocompleteFilter },
+      }),
+      helper.accessor("active", {
+        header: "Active",
+        meta: { type: "boolean", filterControl: DgTriStateFilter },
+        cell: (info) => (info.getValue() ? "yes" : "no"),
+      }),
+      helper.accessor("hired", {
+        header: "Hired",
+        meta: {
+          type: "date",
+          defaultFilterOperator: "between",
+          filterControl: DgDateRangeFilter,
+        },
+      }),
+    ]);
+  })();
+
+  function ControlGrid({
+    filterColumnId,
+    columns = controlColumns,
+  }: {
+    filterColumnId: string;
+    columns?: UseTMDataGridOptions<ControlRow>["columns"];
+  }) {
+    const grid = useTMDataGrid<ControlRow>({
+      data: controlRows,
+      columns,
+      getRowId: (row) => String(row.id),
+    });
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => openColumnFilter(grid, filterColumnId)}
+        >
+          open filter
+        </button>
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<ControlRow> />
+        </TMDataGrid>
+      </>
+    );
+  }
+
+  const openFilter = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "open filter" }));
+  };
+
+  it("hands meta.filterControl the bare value and wraps what it writes", async () => {
+    const helper = createTMDataGridColumnHelper<ControlRow>();
+    const customColumns = helper.columns([
+      helper.accessor("status", {
+        header: "Status",
+        meta: { filterControl: StatusPicker },
+      }),
+    ]);
+
+    const user = userEvent.setup();
+    renderWithMantine(
+      <ControlGrid filterColumnId="status" columns={customColumns} />,
+    );
+    expect(gridRowCount()).toBe(controlRows.length);
+
+    await openFilter(user);
+    // The custom control replaced the built-in value input entirely.
+    expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Status picker"), "Paid");
+    // Written as the bare value, matched under the seeded "contains".
+    expect(gridRowCount()).toBe(2);
+  });
+
+  it("filters booleans through DgTriStateFilter's segments", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<ControlGrid filterColumnId="active" />);
+
+    await openFilter(user);
+    await user.click(screen.getByRole("radio", { name: "Yes" }));
+    expect(gridRowCount()).toBe(2);
+
+    await user.click(screen.getByRole("radio", { name: "No" }));
+    expect(gridRowCount()).toBe(2);
+
+    // All clears the value — an inactive filter matches every row.
+    await user.click(screen.getByRole("radio", { name: "All" }));
+    expect(gridRowCount()).toBe(controlRows.length);
+  });
+
+  it("filters numbers through DgRangeSliderFilter, seeded from the data", async () => {
+    renderWithMantine(<ControlGrid filterColumnId="id" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "open filter" }));
+    const fromThumb = screen.getByRole("slider", { name: "From" });
+    // Bounds came from the faceted values: 1–4.
+    expect(fromThumb).toHaveAttribute("aria-valuemin", "1");
+    expect(fromThumb).toHaveAttribute("aria-valuemax", "4");
+
+    fireEvent.keyDown(fromThumb, { key: "ArrowRight" });
+    // The pair became ["2", "4"] — ids 2, 3 and 4 remain.
+    expect(gridRowCount()).toBe(3);
+  });
+
+  it("filters dates through DgDateRangeFilter's From/To pair", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<ControlGrid filterColumnId="hired" />);
+
+    await openFilter(user);
+    const from = screen.getByLabelText("From");
+    expect(from).toHaveAttribute("type", "date");
+
+    fireEvent.change(from, { target: { value: "2026-01-01" } });
+    expect(gridRowCount()).toBe(3);
+
+    fireEvent.change(screen.getByLabelText("To"), {
+      target: { value: "2026-03-31" },
+    });
+    expect(gridRowCount()).toBe(2);
+  });
+
+  it("suggests the faceted values through DgAutocompleteFilter", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<ControlGrid filterColumnId="status" />);
+
+    await openFilter(user);
+    const input = screen.getByRole("combobox", { name: "Value" });
+    await user.type(input, "Pa");
+    // The data's own values as suggestions…
+    await user.click(await screen.findByRole("option", { name: "Paid" }));
+    // …and the picked one filters under "contains".
+    expect(gridRowCount()).toBe(2);
   });
 });

@@ -361,6 +361,11 @@ Closing only hides the panel; the filters stay. "Clear all" drops every filter,
 half-typed ones included, and closes the panel — the same exit as removing the
 last filter row by hand.
 
+The value slot of each row is `meta.filterControl` when the column declares
+one, else the built-in control shaped by the operator: a multi-select for the
+set operators, a From/To pair for `between`, a Yes/No dropdown for booleans,
+a typed input otherwise. See [Custom filter controls](#columns).
+
 ## TMDataGrid.FilterPills
 
 One pill per active filter — `First name: Sofia ✕` — where the ✕ clears that

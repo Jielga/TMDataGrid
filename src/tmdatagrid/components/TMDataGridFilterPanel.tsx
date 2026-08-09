@@ -1,8 +1,6 @@
 import {
   ActionIcon,
   Button,
-  Group,
-  MultiSelect,
   Select,
   Stack,
   Text,
@@ -12,10 +10,7 @@ import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import {
-  optionsToComboboxData,
-  resolveColumnOptions,
-} from "../core/columnOptions";
+import { resolveColumnOptions } from "../core/columnOptions";
 import {
   getColumnDefaultOperator,
   getColumnLabel,
@@ -33,6 +28,7 @@ import {
   operatorTakesRangeValue,
 } from "../core/filterOperators";
 import { CloseIcon } from "./icons";
+import { TMDataGridFilterValueInput } from "./filters/TMDataGridFilterValueInput";
 
 const FALLBACK_FILTER: TMDataGridFilterValue = { operator: "contains", value: "" };
 
@@ -223,14 +219,21 @@ export function TMDataGridFilterPanel() {
           const value = asFilterValue(filter.value);
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
-          const takesArray = operatorTakesArrayValue(value.operator);
-          const takesRange = operatorTakesRangeValue(value.operator);
           const scalarValue = typeof value.value === "string" ? value.value : "";
-          const rangeValue: [string, string] = Array.isArray(value.value)
-            ? [String(value.value[0] ?? ""), String(value.value[1] ?? "")]
-            : ["", ""];
-          const inputType =
-            type === "number" ? "number" : type === "date" ? "date" : "text";
+          // Pre-resolved only where options mean something out of the box —
+          // a declared set, or a select-shaped column's faceted values. A
+          // custom control wanting faceted values elsewhere resolves them
+          // itself; resolving here would build the faceted index for every
+          // filtered column.
+          const options =
+            column &&
+            (column.columnDef.meta?.options !== undefined ||
+              type === "select" ||
+              type === "multiSelect")
+              ? resolveColumnOptions({ table, column, fallback: "faceted" })
+              : [];
+          const ValueControl =
+            column?.columnDef.meta?.filterControl ?? TMDataGridFilterValueInput;
 
           return (
             <div key={filter.id} className={classes.filterRow}>
@@ -275,75 +278,27 @@ export function TMDataGridFilterPanel() {
                 }
               />
 
-              {takesRange ? (
-                // The interval's two ends. Either may stay empty — an open
-                // end — and each writes its slot of the `[min, max]` pair.
-                <Group gap={4} wrap="nowrap" align="flex-start">
-                  <TextInput
-                    label={labels.filterFrom}
-                    size={controlSize}
-                    w={88}
-                    type={inputType}
-                    value={rangeValue[0]}
-                    onChange={(event) =>
-                      patchFilter(filter.id, {
-                        value: [event.currentTarget.value, rangeValue[1]],
-                      })
-                    }
-                  />
-                  <TextInput
-                    label={labels.filterTo}
-                    size={controlSize}
-                    w={88}
-                    type={inputType}
-                    value={rangeValue[1]}
-                    onChange={(event) =>
-                      patchFilter(filter.id, {
-                        value: [rangeValue[0], event.currentTarget.value],
-                      })
-                    }
-                  />
-                </Group>
-              ) : takesArray && column ? (
-                // The set the cell is tested against. Options come from
-                // `meta.options`; a select column that declares none still
-                // gets the values present in the data, via the faceted index.
-                <MultiSelect
-                  label={labels.filterValue}
-                  size={controlSize}
-                  w={180}
-                  comboboxProps={{ withinPortal: false }}
-                  searchable
-                  data={optionsToComboboxData(
-                    resolveColumnOptions({ table, column, fallback: "faceted" }),
-                  )}
-                  value={Array.isArray(value.value) ? [...value.value] : []}
+              {column ? (
+                // The value slot: `meta.filterControl` if the column declares
+                // one, the built-in shape-by-operator input otherwise — both
+                // through the same value-only contract.
+                <ValueControl
+                  column={column}
+                  table={table}
+                  operator={value.operator}
+                  value={value.value}
                   onChange={(next) => patchFilter(filter.id, { value: next })}
-                />
-              ) : type === "boolean" ? (
-                <Select
-                  label={labels.filterValue}
+                  options={options}
                   size={controlSize}
-                  w={180}
-                  comboboxProps={{ withinPortal: false }}
-                  disabled={!needsValue}
-                  clearable
-                  placeholder={needsValue ? labels.filterValuePlaceholder : ""}
-                  data={[
-                    { value: "true", label: labels.booleanTrue },
-                    { value: "false", label: labels.booleanFalse },
-                  ]}
-                  value={needsValue && scalarValue !== "" ? scalarValue : null}
-                  onChange={(next) =>
-                    patchFilter(filter.id, { value: next ?? "" })
-                  }
+                  labels={labels}
                 />
               ) : (
+                // The column is gone from the definition; the row survives
+                // only to be re-pointed or removed.
                 <TextInput
                   label={labels.filterValue}
                   size={controlSize}
                   w={180}
-                  type={needsValue ? inputType : "text"}
                   disabled={!needsValue}
                   placeholder={needsValue ? labels.filterValuePlaceholder : ""}
                   value={needsValue ? scalarValue : ""}

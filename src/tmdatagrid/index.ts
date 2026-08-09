@@ -85,6 +85,15 @@ export {
   type TMDataGridRowEditForm,
   type TMDataGridRowValidators,
 } from "./core/editEngine";
+export type {
+  TMDataGridFilterControlArgs,
+  TMDataGridFilterControlComponent,
+} from "./core/filterControls";
+export { TMDataGridFilterValueInput } from "./components/filters/TMDataGridFilterValueInput";
+export { DgRangeSliderFilter } from "./components/filters/DgRangeSliderFilter";
+export { DgDateRangeFilter } from "./components/filters/DgDateRangeFilter";
+export { DgAutocompleteFilter } from "./components/filters/DgAutocompleteFilter";
+export { DgTriStateFilter } from "./components/filters/DgTriStateFilter";
 export { TMDataGridStringEditor } from "./components/editors/TMDataGridStringEditor";
 export { TMDataGridNumberEditor } from "./components/editors/TMDataGridNumberEditor";
 export { TMDataGridBooleanEditor } from "./components/editors/TMDataGridBooleanEditor";

@@ -49,6 +49,8 @@ export type TMDataGridLabels = {
   filterFrom: string;
   /** The upper bound of a `between` filter. */
   filterTo: string;
+  /** `DgTriStateFilter`'s no-filter segment. */
+  filterAll: string;
   /** What a boolean column's `true` reads as — its filter choice and cell text. */
   booleanTrue: string;
   booleanFalse: string;
@@ -183,6 +185,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   filterValuePlaceholder: "Filter value",
   filterFrom: "From",
   filterTo: "To",
+  filterAll: "All",
   booleanTrue: "Yes",
   booleanFalse: "No",
   addFilter: "Add filter",

@@ -25,6 +25,8 @@ import {
 import {
   aggregateColumn,
   createTMDataGridColumnHelper,
+  DgAutocompleteFilter,
+  DgRangeSliderFilter,
   exportGridToCsv,
   TMDataGrid,
   TMDATAGRID_LABELS_SV,
@@ -175,10 +177,18 @@ const columns = columnHelper.columns([
   columnHelper.accessor("location", {
     header: "Location",
     minSize: 120,
+    // Free text, but the values in the data offered as suggestions.
+    meta: { filterControl: DgAutocompleteFilter },
   }),
   columnHelper.accessor("salary", {
     header: "Salary",
-    meta: { type: "number", align: "right" },
+    // Filtering opens on a range slider seeded from the data's min/max.
+    meta: {
+      type: "number",
+      align: "right",
+      defaultFilterOperator: "between",
+      filterControl: DgRangeSliderFilter,
+    },
     minSize: 130,
     cell: (info) => sek(info.getValue()),
     // The one column told how to summarise itself. Group by Department and this

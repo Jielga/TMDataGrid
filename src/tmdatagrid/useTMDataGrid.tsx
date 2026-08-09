@@ -66,6 +66,7 @@ import {
   tmDataGridFilterFn,
 } from "./core/filterOperators";
 import { getColumnDefaultOperator } from "./core/columnUtils";
+import type { TMDataGridFilterControlComponent } from "./core/filterControls";
 import {
   createFuzzyRankedSortedRowModel,
   fuzzyGlobalFilterFn,
@@ -160,6 +161,14 @@ export type TMDataGridColumnMeta = {
    * the type's own operators.
    */
   defaultFilterOperator?: TMDataGridFilterOperator;
+  /**
+   * Replaces the built-in value control in this column's filter-panel row. A
+   * component rendered as JSX — hooks are legal inside — receiving the
+   * value-only contract: it reads the current operator, writes the bare
+   * value, and the grid composes the stored filter around it. Define it at
+   * module scope. See {@link TMDataGridFilterControlArgs}.
+   */
+  filterControl?: TMDataGridFilterControlComponent;
   /**
    * Whether this column's cells take edits, once `editMode` is on. `false`
    * switches the column off outright; a predicate decides per row. Defaults
