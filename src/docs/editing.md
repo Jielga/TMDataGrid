@@ -89,24 +89,26 @@ while `editMode` is set.
 
 ### Custom editors
 
-`meta.renderEditor` fills the same slot the built-ins do, and receives the
-live TanStack Form `field` API — bind any control to it exactly as inside a
-form:
+`meta.editor` fills the same slot the built-ins do. It is a component —
+rendered as JSX, so hooks are legal inside — receiving the live TanStack
+Form `field` API; bind any control to it exactly as inside a form:
 
 ```tsx
-meta: {
-  renderEditor: ({ field, commit, cancel }) => (
-    <Slider
-      value={field.state.value}
-      onChange={field.handleChange}
-      onChangeEnd={() => void commit()}
-    />
-  ),
-}
+const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => (
+  <Slider
+    value={field.state.value}
+    onChange={field.handleChange}
+    onChangeEnd={() => void commit()}
+  />
+);
+
+meta: { editor: SalaryEditor }
 ```
 
-The built-ins are exported (`TMDataGridStringEditor`, …) so a custom editor
-can wrap one instead of starting over.
+Define editors at module scope — an inline arrow gets a new identity every
+render, which remounts the editor mid-edit. The built-ins are exported
+(`TMDataGridStringEditor`, …) so a custom editor can wrap one instead of
+starting over.
 
 ## Validation
 

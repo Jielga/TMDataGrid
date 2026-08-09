@@ -46,7 +46,8 @@ Shipped 2026-07-31, one commit per step (see git log):
   boolean/date/select/multiSelect with typed filter operators and one shared
   `meta.options` source; the edit engine (one TanStack Form per editing row,
   drafts surviving virtualization); `editMode: "cell" | "cellConfirm" |
-  "row" | "batch"`; built-in editors per type plus `meta.renderEditor`;
+  "row" | "batch"`; built-in editors per type plus `meta.renderEditor`
+  (since renamed `meta.editor`, a component);
   `meta.validate` / `rowValidators` via Standard Schema (Zod); the generated
   edit lane pinned right; `TMDataGrid.EditActions`; `edit.addRow`/`deleteRow`
   with the sticky entry block. `@tanstack/react-form` joined the peer family;

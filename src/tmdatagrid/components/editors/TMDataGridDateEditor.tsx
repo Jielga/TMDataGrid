@@ -8,7 +8,7 @@ import { useFieldError, useFieldValue } from "./editorShared";
 /**
  * The built-in editor for `meta.type: "date"` — the native
  * `<input type="date">` styled by Mantine, no `@mantine/dates` involved. A
- * consumer wanting a real picker plugs one in through `meta.renderEditor`.
+ * consumer wanting a real picker plugs one in through `meta.editor`.
  */
 export function TMDataGridDateEditor({
   field,

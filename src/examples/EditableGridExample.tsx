@@ -16,6 +16,7 @@ import {
   useTMDataGrid,
   type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditMode,
+  type TMDataGridEditorComponent,
 } from "../tmdatagrid";
 
 type Employee = {
@@ -112,6 +113,22 @@ const inlineColumns = columnHelper.columns([
 ]);
 
 /**
+ * A custom editor is a component over the live Form field API — defined at
+ * module scope so its identity is stable across renders.
+ */
+const SalarySliderEditor: TMDataGridEditorComponent = ({ field }) => (
+  <Slider
+    w="100%"
+    min={20_000}
+    max={90_000}
+    step={500}
+    label={(value) => sek(value)}
+    value={typeof field.state.value === "number" ? field.state.value : 0}
+    onChange={(value) => field.handleChange(value)}
+  />
+);
+
+/**
  * Grid B — row mode: the pencil opens every cell of the row, the ✓ saves
  * them as one commit. Salary demos a custom editor over the live Form field
  * API; the row schema's `.refine()` is a cross-field rule that lands on the
@@ -130,17 +147,7 @@ const rowColumns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      renderEditor: ({ field }) => (
-        <Slider
-          w="100%"
-          min={20_000}
-          max={90_000}
-          step={500}
-          label={(value) => sek(value)}
-          value={typeof field.state.value === "number" ? field.state.value : 0}
-          onChange={(value) => field.handleChange(value)}
-        />
-      ),
+      editor: SalarySliderEditor,
     },
     cell: (info) => sek(info.getValue()),
   }),

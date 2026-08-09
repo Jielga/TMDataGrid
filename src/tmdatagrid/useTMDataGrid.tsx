@@ -53,7 +53,7 @@ import {
   type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditEngineContext,
   type TMDataGridEditMode,
-  type TMDataGridEditorRenderer,
+  type TMDataGridEditorComponent,
   type TMDataGridFieldValidate,
   type TMDataGridRowAddArgs,
   type TMDataGridRowDeleteArgs,
@@ -186,11 +186,13 @@ export type TMDataGridColumnMeta = {
    */
   validate?: TMDataGridFieldValidate;
   /**
-   * Replaces the built-in editor for this column. Receives the live TanStack
-   * Form `field` API plus the table context — the same contract the
-   * built-ins fill. See {@link TMDataGridEditorArgs}.
+   * Replaces the built-in editor for this column. A component rendered as
+   * JSX — hooks are legal inside — receiving the live TanStack Form `field`
+   * API plus the table context, the same contract the built-ins fill. Define
+   * it at module scope so its identity is stable across renders. See
+   * {@link TMDataGridEditorArgs}.
    */
-  renderEditor?: TMDataGridEditorRenderer;
+  editor?: TMDataGridEditorComponent;
 };
 
 /** Grid-wide configuration passed through `options.meta`. */
@@ -480,7 +482,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * One TanStack Form per editing row; drafts survive scrolling because the
  * forms live outside the DOM, keyed by row id. Which columns edit, and with
  * what, is declared per column: `meta.type` picks the built-in editor,
- * `meta.validate` its validators, `meta.editable` / `meta.renderEditor` the
+ * `meta.validate` its validators, `meta.editable` / `meta.editor` the
  * overrides.
  */
 export type TMDataGridEditingOptions<TData extends RowData> =

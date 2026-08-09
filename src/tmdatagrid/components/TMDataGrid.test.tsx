@@ -30,6 +30,7 @@ import {
   type TMDataGridDetailsArgs,
   type UseTMDataGridOptions,
 } from "../useTMDataGrid";
+import type { TMDataGridEditorComponent } from "../core/editEngine";
 
 type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
@@ -2400,6 +2401,52 @@ describe("cell editing", () => {
 
     // The seed replaced the value — the Sheets gesture.
     expect(editorInput()).toHaveValue("Z");
+  });
+
+  it("renders meta.editor as a component, hooks included", async () => {
+    // A stateful custom editor — legal exactly because the grid renders it
+    // as JSX instead of calling it.
+    const StampEditor: TMDataGridEditorComponent = ({ field }) => {
+      const [touches, setTouches] = useState(0);
+      return (
+        <div>
+          <span data-testid="touch-count">{touches}</span>
+          <input
+            aria-label="Stamp name"
+            value={String(field.state.value ?? "")}
+            onChange={(event) => {
+              setTouches((count) => count + 1);
+              field.handleChange(event.currentTarget.value);
+            }}
+          />
+        </div>
+      );
+    };
+    const helper = createTMDataGridColumnHelper<Employee>();
+    const customColumns = helper.columns([
+      helper.accessor("name", { header: "Name", meta: { editor: StampEditor } }),
+    ]);
+
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        columns={customColumns}
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    const input = screen.getByRole("textbox", { name: "Stamp name" });
+    await user.clear(input);
+    await user.type(input, "Ann");
+    // The editor's own state survived every keystroke — it is a component.
+    expect(screen.getByTestId("touch-count").textContent).not.toBe("0");
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    const commit = commits[0] as { changes: Array<{ next: unknown }> };
+    expect(commit.changes[0]?.next).toBe("Ann");
   });
 
   it("blocks the commit on a field error and shows the message", async () => {

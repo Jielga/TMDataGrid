@@ -48,7 +48,7 @@ export type TMDataGridCellEditorClose =
 /**
  * The host an editing cell mounts — it owns the field, the keys and the blur
  * policy; the editor inside it (a built-in picked by `meta.type`, or the
- * column's `renderEditor`) owns the input.
+ * column's `meta.editor`) owns the input.
  *
  * The form outlives this component by design: scrolling the row away
  * unmounts the host, and the form in the engine's map keeps the draft.
@@ -204,8 +204,8 @@ export function TMDataGridCellEditor({
     seedText,
   };
 
-  const renderEditor = column.columnDef.meta?.renderEditor;
-  const BuiltIn =
+  const Editor =
+    column.columnDef.meta?.editor ??
     BUILT_IN_EDITORS[column.columnDef.meta?.type ?? "string"] ??
     TMDataGridStringEditor;
 
@@ -221,7 +221,7 @@ export function TMDataGridCellEditor({
       onMouseDown={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
     >
-      {renderEditor ? renderEditor(args) : <BuiltIn {...args} />}
+      <Editor {...args} />
       {/* cellConfirm's chrome: the draft only commits through the ✓ (or
           Enter), so the pair sits right beside the input. */}
       {features.editMode === "cellConfirm" && (

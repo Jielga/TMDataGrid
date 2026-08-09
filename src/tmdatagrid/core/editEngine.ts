@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-form";
 import { Store } from "@tanstack/store";
 import type { Cell, Column, Row, RowData } from "@tanstack/react-table";
-import type { ReactNode } from "react";
+import type { ComponentType } from "react";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 import { isControlColumn } from "./columnUtils";
@@ -148,7 +148,7 @@ type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
  * inside any TanStack Form. The table side is where the editor is standing.
  *
  * The built-ins are implemented against this same contract, so
- * `meta.renderEditor` is not a special case — it is the slot the defaults
+ * `meta.editor` is not a special case — it is the slot the defaults
  * fill, and the exported built-ins can be wrapped instead of replaced.
  */
 export type TMDataGridEditorArgs = {
@@ -177,10 +177,12 @@ export type TMDataGridEditorArgs = {
   seedText?: string;
 };
 
-/** `meta.renderEditor` — replaces the built-in editor for this column. */
-export type TMDataGridEditorRenderer = (
-  args: TMDataGridEditorArgs,
-) => ReactNode;
+/**
+ * `meta.editor` — replaces the built-in editor for this column. Rendered as
+ * JSX, never invoked as a bare function, so hooks are legal inside. Define it
+ * at module scope: a new identity per render remounts the editor mid-edit.
+ */
+export type TMDataGridEditorComponent = ComponentType<TMDataGridEditorArgs>;
 
 /** A new row being committed — `onRowAdd`, and `submitAll`'s `added`. */
 export type TMDataGridRowAddArgs<TData extends RowData> = {

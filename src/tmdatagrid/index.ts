@@ -76,7 +76,7 @@ export {
   type TMDataGridEditField,
   type TMDataGridEditMode,
   type TMDataGridEditorArgs,
-  type TMDataGridEditorRenderer,
+  type TMDataGridEditorComponent,
   type TMDataGridEditRowProjection,
   type TMDataGridEditState,
   type TMDataGridFieldValidate,
