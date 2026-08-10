@@ -8,7 +8,7 @@
 >
 > **What landed, against the plan:**
 >
-> - 24 topics, 34 demos, one route each under `/examples/<topic>`, plus
+> - 24 topics, 35 demos, one route each under `/examples/<topic>`, plus
 >   `/examples` as a card index and `/playground` for the kitchen sink.
 > - `rowStyle` was widened to `TMDataGridRowStyle` while writing the row
 >   styling demo — its own JSDoc showed `{ "--row-bg": … }`, which did not
@@ -87,44 +87,45 @@ category → topic. **Playground** sits at the top, outside the categories,
 so the "show me everything" page is one click from anywhere.
 
 ```
-DOCUMENTATION            (unchanged — the seven markdown pages)
 EXAMPLES
   Playground             ← the renamed kitchen sink
+  All examples           ← the card index
   Getting started
     Basic grid
     Column definitions
-    Sizing & density
+    Density and layout
   Columns
     Sorting
     Filtering
     Filter controls
-    Visibility, pinning & ordering
+    Visibility, pinning and ordering
   Rows
     Row selection
     Row details
-    Grouping & summary
-    Pinning & numbering
-    Styling & interaction
+    Grouping and summary
+    Pinning and numbering
+    Styling and interaction
   Cells
-    Cell selection
-    Copy & export
+    Cell selection and export
   Data
     Pagination
     Quick search
     Persistence
-    Server-side
+    Server-side data
     Infinite scroll
-    Loading & empty states
+    Loading and empty states
   Editing
     Cell editing
-    Row editing
-    Batch editing
-    Editors & validation
+    Row and batch editing
+    Editors and validation
   Customization
-    Toolbar composition
-    Localization
+    Toolbar and localization
     Styling
+DOCUMENTATION            (unchanged — the seven markdown pages)
 ```
+
+Examples come first in the sidebar: they are what a first visit wants, and
+the reference pages are what a second one does.
 
 Categories are nav grouping only, so routes stay flat and short:
 `/examples/sorting`, `/examples/row-details`, `/playground`. `/examples`
@@ -280,7 +281,7 @@ feature ships with its demo, the same way it ships with a changeset.**
 
 ## The examples
 
-24 topics, 34 demos.
+24 topics, 35 demos.
 
 ### Playground — `/playground`
 
@@ -294,7 +295,7 @@ code. Labelled as the kitchen sink so nobody reads it as a starting point.
 | Topic | Demos |
 | --- | --- |
 | **Basic grid** | `Minimal` — data, columns, `TMDataGrid.Table`, nothing else · `ToolbarAndFooter` — the compound parts, added one checkbox at a time |
-| **Column definitions** | `ColumnDefinitions` — key and computed accessors, a custom `cell`, all six `meta.type`, `align`, `flex`/`minSize` |
+| **Column definitions** | `ColumnDefinitions` — key and computed accessors, a custom `cell`, all six `meta.type`, `align`, `flex`/`minSize` · `HeaderGroups` — `columnHelper.group`, and why the group is a header row rather than a column |
 | **Density and layout** | `DensityAndLayout` — xs→xl, and filling a flex parent without forgetting `minHeight: 0` |
 
 ### Columns
@@ -354,18 +355,24 @@ code. Labelled as the kitchen sink so nobody reads it as a starting point.
   nothing. It stays a docs section.
 - **Capability helpers** (`grid.features`) — used *inside* the selection and
   toolbar demos where they earn their place, not demoed alone.
-- **Nested header groups** — no demo: the grid recurses into `column.columns`
-  but nothing documents or tests it. Verify support first; if it works it
-  joins **Column definitions**, if it does not it is a backlog item, not an
-  example.
+Nested header groups were on this list as unverified. They work —
+`columnHelper.group` nests, the leaves keep sorting, filtering and resizing,
+and the table already rendered more than one header row. **Column
+definitions** gained a second demo for it, so the list is now empty.
 
 ## What is left
 
 | Item | Size | Note |
 | --- | --- | --- |
-| StackBlitz "open in" per demo | M | A POST form against a fixed template. Wanted only if people ask. |
-| Docs → example cross-links | S | Topics link to their docs page already; the reverse needs an anchor convention in the markdown (`rehype-slug`). |
-| "On this page" rail | S | Only earns its place if a topic ever grows past three demos. |
+| StackBlitz "open in" per demo | M | A POST form against a fixed template project. Not built: every demo already shows and copies its own source, and the template is a second thing to keep in step with the package. Worth doing if people ask to *run* a demo rather than read it. |
+
+Closed rather than deferred:
+
+- **Docs → example cross-links** — done. Every reference page opens with a
+  `> **Live examples:**` line, and a test fails if one of those links names a
+  topic that no longer exists.
+- **"On this page" rail** — not needed. No topic has more than two demos, and
+  the sidebar already lands you on the one you want.
 
 ## Decisions taken — 2026-08-10
 
