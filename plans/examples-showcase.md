@@ -362,12 +362,13 @@ definitions** gained a second demo for it, so the list is now empty.
 
 ## What is left
 
-| Item | Size | Note |
-| --- | --- | --- |
-| StackBlitz "open in" per demo | M | A POST form against a fixed template project. Not built: every demo already shows and copies its own source, and the template is a second thing to keep in step with the package. Worth doing if people ask to *run* a demo rather than read it. |
+Nothing. Every optional item was decided rather than deferred:
 
-Closed rather than deferred:
-
+- **StackBlitz "open in" per demo** — **declined 2026-08-10.** Every demo
+  already shows and copies its own source, so it would only serve someone who
+  wants to *run* a demo rather than read one — at the price of a template
+  project (package.json, vite config, peer versions) that has to stay in step
+  with the package forever. Reopen only if people ask to run them.
 - **Docs → example cross-links** — done. Every reference page opens with a
   `> **Live examples:**` line, and a test fails if one of those links names a
   topic that no longer exists.
