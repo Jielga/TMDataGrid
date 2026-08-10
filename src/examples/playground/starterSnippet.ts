@@ -2,7 +2,7 @@ import type {
   TMDataGridCellSelectionMode,
   TMDataGridSelectionMode,
   TMDataGridSize,
-} from "../tmdatagrid";
+} from "../../tmdatagrid";
 
 /**
  * Builds the smallest file that reproduces what the example page is currently

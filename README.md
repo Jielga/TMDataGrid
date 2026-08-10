@@ -109,9 +109,26 @@ is the demo site that documents it.
 | `core/`             | Headless logic: filtering, ordering, persistence, capabilities |
 | `components/`       | The React chrome and its co-located CSS modules               |
 
+### Examples
+
+The demo site's examples live in [`src/examples/`](src/examples):
+
+| Path              | Contents                                                       |
+| ----------------- | -------------------------------------------------------------- |
+| `examplePages.ts` | The tree — categories, topics, and the prose for every demo     |
+| `demos/`          | One file per demo: one idea, no headings, no explanation        |
+| `data/`           | Shared datasets, and the column set for demos about other things |
+| `playground/`     | The kitchen sink, every feature at once behind switches          |
+
+Adding a demo is adding a file under `demos/` and naming it from a topic in
+`examplePages.ts` — the registry pairs each module with its own source through
+`import.meta.glob`, so the code on screen cannot drift from the code running.
+[`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo,
+so a demo that stops working fails the suite whether or not it still compiles.
+
 ```sh
 npm install
-npm run dev    # demo site with the grid example and docs
+npm run dev    # demo site: examples, playground and docs
 npm run lint   # oxlint
 npm run test   # vitest, once
 npm run test:watch

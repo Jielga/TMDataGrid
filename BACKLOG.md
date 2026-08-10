@@ -33,9 +33,11 @@ As of 2026-08-01 nothing has started. Branch `feature/next`;
 
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) —
   needs hands-on play before speccing; see scan notes.
-- Showcase pass (noted 2026-08-01): docs and example pages that demonstrate
-  every feature properly — beyond the reference docs and the three demo
-  pages. Scope after the 1.0 wave lands, alongside or after F1.
+- ~~Showcase pass~~ — **done 2026-08-10**, ahead of the rest of the wave.
+  24 topic pages and 34 focused demos under `/examples`, each with its own
+  source; the kitchen sink survives as `/playground`. Plan and what it cost:
+  [plans/examples-showcase.md](plans/examples-showcase.md). From here a
+  user-facing feature ships with its demo, the way it ships with a changeset.
 
 ## Done
 

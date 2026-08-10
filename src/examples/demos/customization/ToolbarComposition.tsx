@@ -1,0 +1,88 @@
+import { Badge, Button, Divider, Menu, Switch } from "@mantine/core";
+import { useSelector } from "@tanstack/react-store";
+import { useState } from "react";
+import { exportGridToCsv, TMDataGrid, useTMDataGrid } from "../../../tmdatagrid";
+import { employeeColumns } from "../../data/employeeColumns";
+import { EMPLOYEES, type Employee } from "../../data/employees";
+
+/**
+ * The toolbar is a plain flex row you fill. There is no slot API, no ordered
+ * list of allowed children: the built-ins are components like any other, and
+ * an app's own actions sit between them wherever they belong.
+ */
+export function ToolbarComposition() {
+  const [refetching, setRefetching] = useState(false);
+
+  const grid = useTMDataGrid({
+    data: EMPLOYEES,
+    columns: employeeColumns,
+    getRowId: (row) => String(row.id),
+    meta: { loading: false },
+    selectionMode: "checkbox",
+  });
+
+  const selectedCount = useSelector(
+    grid.table.store,
+    (state) => Object.keys(state.rowSelection).length,
+  );
+
+  return (
+    <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
+      <TMDataGrid.Toolbar>
+        {/* Row count after filtering. Pass children to say it your own way. */}
+        <TMDataGrid.SummaryCount />
+
+        {selectedCount > 0 && (
+          <Badge variant="light" size="sm">
+            {selectedCount} selected
+          </Badge>
+        )}
+
+        <TMDataGrid.Search />
+
+        {/* Everything after the spacer is pushed to the right edge. */}
+        <TMDataGrid.Spacer />
+
+        <Switch
+          size="xs"
+          label="Refetching"
+          checked={refetching}
+          onChange={(event) => setRefetching(event.currentTarget.checked)}
+        />
+        {/* A small spinner for refetches that keep rows on screen — the full
+            loader would blank a grid the user is still reading. */}
+        {refetching && <TMDataGrid.LoadingIndicator />}
+
+        <Menu withinPortal>
+          <Menu.Target>
+            <Button size="compact-xs" variant="subtle" color="gray">
+              Actions
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              onClick={() =>
+                exportGridToCsv({
+                  table: grid.table,
+                  options: { fileName: "employees" },
+                })
+              }
+            >
+              Export CSV
+            </Menu.Item>
+            <Menu.Item onClick={() => grid.resetSettings()}>
+              Reset layout
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <Divider orientation="vertical" />
+
+        <TMDataGrid.FilterButton />
+        <TMDataGrid.ColumnsButton />
+      </TMDataGrid.Toolbar>
+
+      <TMDataGrid.Table<Employee> />
+    </TMDataGrid>
+  );
+}

@@ -7,9 +7,9 @@ import {
 } from "@tanstack/react-router";
 import { AppLayout } from "./AppLayout";
 import { DocsRoutePage } from "./docs/DocsRoutePage";
-import { DataGridExample } from "./examples/DataGridExample";
-import { EditableGridExample } from "./examples/EditableGridExample";
-import { InfiniteScrollExample } from "./examples/InfiniteScrollExample";
+import { ExamplesIndexPage } from "./examples/ExamplesIndexPage";
+import { ExampleTopicPage } from "./examples/ExampleTopicPage";
+import { PlaygroundExample } from "./examples/playground/PlaygroundExample";
 
 const rootRoute = createRootRoute({ component: AppLayout });
 
@@ -17,7 +17,7 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/data-grid", replace: true });
+    throw redirect({ to: "/playground", replace: true });
   },
 });
 
@@ -27,30 +27,64 @@ export const docsRoute = createRoute({
   component: DocsRoutePage,
 });
 
-export const dataGridRoute = createRoute({
+export const playgroundRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/data-grid",
-  component: DataGridExample,
+  path: "/playground",
+  component: PlaygroundExample,
 });
 
-export const editableGridRoute = createRoute({
+export const examplesIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/editable-grid",
-  component: EditableGridExample,
+  path: "/examples",
+  component: ExamplesIndexPage,
 });
 
-export const infiniteScrollRoute = createRoute({
+export const exampleTopicRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/infinite-scroll",
-  component: InfiniteScrollExample,
+  path: "/examples/$topicId",
+  component: ExampleTopicPage,
 });
+
+/**
+ * The routes the site shipped with before the examples became a tree. Kept as
+ * redirects because they are in the README, the changelog and anything anyone
+ * has already linked.
+ */
+const legacyTopicRoutes = [
+  { path: "/editable-grid", topicId: "cell-editing" },
+  { path: "/infinite-scroll", topicId: "infinite-scroll" },
+] as const;
+
+const redirectRoutes = [
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/data-grid",
+    beforeLoad: () => {
+      throw redirect({ to: "/playground", replace: true });
+    },
+  }),
+  ...legacyTopicRoutes.map(({ path, topicId }) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path,
+      beforeLoad: () => {
+        throw redirect({
+          to: "/examples/$topicId",
+          params: { topicId },
+          replace: true,
+        });
+      },
+    }),
+  ),
+];
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
   docsRoute,
-  dataGridRoute,
-  editableGridRoute,
-  infiniteScrollRoute,
+  playgroundRoute,
+  examplesIndexRoute,
+  exampleTopicRoute,
+  ...redirectRoutes,
 ]);
 
 export const router = createRouter({

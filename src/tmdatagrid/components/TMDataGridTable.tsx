@@ -482,6 +482,15 @@ export type TMDataGridCellEventArgs<TData extends RowData> = {
   event: MouseEvent<HTMLElement>;
 };
 
+/**
+ * Inline styles for a row. Widened to accept CSS variables, because setting
+ * `--row-bg` is the supported way to colour a row — see {@link
+ * TMDataGridTableProps.rowStyle}.
+ */
+export type TMDataGridRowStyle =
+  | CSSProperties
+  | (CSSProperties & Record<`--${string}`, string | number>);
+
 export type TMDataGridTableProps<TData extends RowData> = {
   /**
    * Called when a body row is clicked. Runs in addition to row selection under
@@ -524,8 +533,8 @@ export type TMDataGridTableProps<TData extends RowData> = {
    * ```
    */
   rowStyle?:
-    | CSSProperties
-    | ((row: Row<TMDataGridFeatures, TData>) => CSSProperties | undefined);
+    | TMDataGridRowStyle
+    | ((row: Row<TMDataGridFeatures, TData>) => TMDataGridRowStyle | undefined);
   /**
    * Every second row takes `--dg-row-striped-bg`. Computed from the row's
    * position in the view — sorting and filtering restripe, and the stripes

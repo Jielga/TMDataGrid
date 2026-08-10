@@ -19,7 +19,6 @@ import {
   type Dispatch,
   type SetStateAction,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 import {
@@ -36,58 +35,9 @@ import {
   type TMDataGridSelectionMode,
   type TMDataGridSize,
   useTMDataGrid,
-} from "../tmdatagrid";
+} from "../../tmdatagrid";
+import { MANY_EMPLOYEES, sek, type Employee } from "../data/employees";
 import { StarterSnippetModal } from "./StarterSnippetModal";
-
-type Employee = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  age: number;
-  department: string;
-  location: string;
-  salary: number;
-  status: "Active" | "On leave" | "Terminated";
-};
-
-const FIRST_NAMES = [
-  "Anna", "Erik", "Maria", "Lars", "Sofia", "Johan", "Emma", "Anders",
-  "Karin", "Mikael", "Lena", "Patrik", "Helena", "Martin", "Cecilia",
-  "Fredrik", "Sara", "Tobias", "Åsa", "Daniel",
-];
-
-const LAST_NAMES = [
-  "Lindqvist", "Johansson", "Svensson", "Eriksson", "Karlsson", "Nilsson",
-  "Petersson", "Gustafsson", "Magnusson", "Olsson", "Persson", "Björk",
-  "Lundström", "Holm", "Strand",
-];
-
-const DEPARTMENTS = [
-  "Engineering", "Product", "Design", "Sales", "HR",
-  "Finance", "Marketing", "Operations",
-];
-
-const LOCATIONS = ["Stockholm", "Göteborg", "Malmö", "Remote"];
-
-function generateEmployees(count: number): Employee[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    firstName: FIRST_NAMES[i % FIRST_NAMES.length],
-    lastName: LAST_NAMES[(i * 3 + 7) % LAST_NAMES.length],
-    age: 22 + ((i * 17) % 40),
-    department: DEPARTMENTS[i % DEPARTMENTS.length],
-    location: LOCATIONS[(i * 3 + 1) % LOCATIONS.length],
-    salary: 42000 + ((i * 3761 + 17) % 80) * 1000,
-    status: i % 10 < 7 ? "Active" : i % 10 < 9 ? "On leave" : "Terminated",
-  }));
-}
-
-const sek = (value: number) =>
-  value.toLocaleString("sv-SE", {
-    style: "currency",
-    currency: "SEK",
-    maximumFractionDigits: 0,
-  });
 
 /** Keeps a menu item on one line whatever the cell holds. */
 const truncate = (value: string, max = 20) =>
@@ -353,8 +303,14 @@ function FeatureSwitches({
   ));
 }
 
-export function DataGridExample() {
-  const data = useMemo(() => generateEmployees(5000), []);
+/**
+ * The kitchen sink. Every feature at once behind switches, so the way they
+ * compose can be seen — and so a configuration can be dialled in and taken as
+ * code. It is deliberately not a starting point: for that, the examples under
+ * `/examples` show one thing at a time.
+ */
+export function PlaygroundExample() {
+  const data = MANY_EMPLOYEES;
   const [size, setSize] = useState<TMDataGridSize>("md");
 
   // Stock TanStack options, apart from `enableColumnOrdering` and

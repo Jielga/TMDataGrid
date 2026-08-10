@@ -207,6 +207,7 @@ export type {
   TMDataGridColumnLayout,
   TMDataGridRowContextMenu,
   TMDataGridRowContextMenuArgs,
+  TMDataGridRowStyle,
   TMDataGridTableProps,
 } from "./components/TMDataGridTable";
 export {
