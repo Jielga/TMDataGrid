@@ -1,5 +1,7 @@
 # Server-side data
 
+> **Live examples:** [Server-side data](/examples/server-side) · [Infinite scroll](/examples/infinite-scroll)
+
 The grid reads rows through `getPaginatedRowModel()` and totals through
 `getRowCount()` and `getPageCount()`, all of which respect TanStack's manual
 modes. A server-driven grid therefore requires only the standard `manual*`

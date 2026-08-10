@@ -1,5 +1,7 @@
 # Components
 
+> **Live examples:** [Basic grid](/examples/basic-grid) · [Toolbar and localization](/examples/toolbar-localization) · [Styling](/examples/styling) · [Loading and empty states](/examples/loading-empty)
+
 Every component below reads the grid from context and must be rendered inside
 `TMDataGrid`. Their order and presence are up to you: the root is a plain flex
 column.

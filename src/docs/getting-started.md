@@ -1,5 +1,7 @@
 # Getting started
 
+> **Live examples:** [Basic grid](/examples/basic-grid) · [Column definitions](/examples/column-definitions) · [Density and layout](/examples/density-and-layout)
+
 TMDataGrid is a compound component built on TanStack Table v9. `useTMDataGrid`
 creates the table, `TMDataGrid` provides it through context, and the parts
 rendered inside read what they need from that context.

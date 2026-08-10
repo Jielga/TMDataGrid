@@ -1,4 +1,5 @@
 import { Table, Typography } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 import type { ComponentPropsWithoutRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -55,18 +56,21 @@ export function DocsPage({ source }: { source: string }) {
               pre: ({ children }: ComponentPropsWithoutRef<"pre">) => (
                 <>{children}</>
               ),
-              // Root-relative links in the markdown must respect the deploy
-              // base path (the site lives under /TMDataGrid/ on GitHub Pages).
-              a: ({ href, ...props }: ComponentPropsWithoutRef<"a">) => (
-                <a
-                  href={
-                    href?.startsWith("/")
-                      ? import.meta.env.BASE_URL + href.slice(1)
-                      : href
-                  }
-                  {...props}
-                />
-              ),
+              // A root-relative link points somewhere else on this site, so it
+              // goes through the router: client-side navigation, and the
+              // deploy base path (the site lives under /TMDataGrid/ on GitHub
+              // Pages) handled by the router rather than by hand. Anything
+              // else — an external URL, an in-page anchor — is left alone.
+              a: ({ href, children, ...props }: ComponentPropsWithoutRef<"a">) =>
+                href?.startsWith("/") ? (
+                  <Link to={href} {...props}>
+                    {children}
+                  </Link>
+                ) : (
+                  <a href={href} {...props}>
+                    {children}
+                  </a>
+                ),
             }}
           >
             {source}

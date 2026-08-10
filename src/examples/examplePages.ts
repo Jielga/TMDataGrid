@@ -100,6 +100,13 @@ export const EXAMPLE_TOPICS: Array<ExampleTopic> = [
         description:
           "Key and computed accessors, a custom cell, and one column per meta.type — open a filter on each to see what the type decided.",
       },
+      {
+        file: "getting-started/HeaderGroups.tsx",
+        title: "Header groups",
+        description:
+          "columnHelper.group nests columns under a shared header. The group is a header row, not a column — the leaves keep the behaviour.",
+        hint: "Sort, filter and resize the leaves; the group header follows them.",
+      },
     ],
   },
   {

@@ -1,5 +1,7 @@
 # Features
 
+> **Live examples:** [Sorting](/examples/sorting) · [Row selection](/examples/row-selection) · [Row details](/examples/row-details) · [Grouping and summary](/examples/grouping) · [Pinning and numbering](/examples/row-pinning) · [Cell selection and export](/examples/cell-selection) · [Pagination](/examples/pagination) · [Quick search](/examples/quick-search)
+
 Almost every control is bound to the TanStack capability check for that feature,
 so setting the standard table or column option removes the corresponding
 interface. Empty menus and inactive buttons are never rendered.

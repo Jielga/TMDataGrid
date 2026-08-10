@@ -1,5 +1,7 @@
 # useTMDataGrid
 
+> **Live examples:** [Persistence](/examples/persistence) · [Toolbar and localization](/examples/toolbar-localization)
+
 Creates the table instance and the state used by the grid interface.
 
 ```tsx

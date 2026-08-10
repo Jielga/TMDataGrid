@@ -1,5 +1,6 @@
 import { cleanup, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DOCS_PAGES } from "../docs/docsPages";
 import { renderWithMantine } from "../test/gridHarness";
 import { loadDemo, listDemoFiles, loadSharedSource } from "./demoRegistry";
 import { EXAMPLE_TOPICS } from "./examplePages";
@@ -18,15 +19,30 @@ afterEach(cleanup);
 const demoFiles = listDemoFiles();
 
 describe("example demos", () => {
+  const errors: Array<string> = [];
+
+  beforeEach(() => {
+    errors.length = 0;
+    // React reports a duplicate key, a bad prop or an update outside `act`
+    // through console.error and carries on rendering. On a page of examples
+    // that is exactly the class of bug nobody notices, so it fails here.
+    // `restoreMocks` in the vitest config puts console.error back afterwards.
+    vi.spyOn(console, "error").mockImplementation((...args: Array<unknown>) => {
+      errors.push(String(args[0]));
+    });
+  });
+
   it("finds demo files to test", () => {
     expect(demoFiles.length).toBeGreaterThan(0);
   });
 
-  it.each(demoFiles)("%s mounts", (file) => {
+  it.each(demoFiles)("%s mounts cleanly", (file) => {
     const { Component } = loadDemo(file);
     renderWithMantine(<Component />);
+
     // Every demo renders a grid, and every grid renders its column headers.
     expect(screen.getAllByRole("columnheader").length).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
   });
 });
 
@@ -53,5 +69,28 @@ describe("example pages", () => {
   it("topic ids are unique — they are the route", () => {
     const ids = EXAMPLE_TOPICS.map((topic) => topic.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("every topic points at a documentation page that exists", () => {
+    const docIds = new Set(DOCS_PAGES.map((page) => page.id));
+    const broken = EXAMPLE_TOPICS.filter(
+      (topic) => topic.docs !== undefined && !docIds.has(topic.docs),
+    ).map((topic) => `${topic.id} → ${topic.docs}`);
+
+    expect(broken).toEqual([]);
+  });
+
+  it("every example link in the docs points at a topic that exists", () => {
+    const topicIds = new Set(EXAMPLE_TOPICS.map((topic) => topic.id));
+    // The docs link back to the examples by id. Renaming a topic without
+    // renaming the link would leave a dead link on a page nobody rereads.
+    const broken = DOCS_PAGES.flatMap((page) =>
+      [...page.source.matchAll(/\]\(\/examples\/([a-z-]+)\)/g)]
+        .map((match) => match[1])
+        .filter((id) => !topicIds.has(id))
+        .map((id) => `${page.id}.md → ${id}`),
+    );
+
+    expect(broken).toEqual([]);
   });
 });

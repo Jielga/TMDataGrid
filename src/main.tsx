@@ -19,6 +19,12 @@ import "./index.css";
  * bundle every grammar it knows. Five grammars are what this site shows. The
  * JavaScript regex engine keeps the 600 kB oniguruma WASM out of the build
  * too; it handles these grammars without it.
+ *
+ * Both GitHub themes are registered so `CodeBlock` can ask for them by name.
+ * Mantine's adapter only substitutes its own bundled theme objects for the
+ * literal strings "light" and "dark" — any other value is passed through to
+ * shiki as a theme name. That matters: the bundled dark theme renders
+ * comments at #676867 on a #2e2e2e background, a contrast ratio of 2.4:1.
  */
 const shikiAdapter = createShikiAdapter(async () => {
   const [{ createHighlighterCore }, { createJavaScriptRegexEngine }] =
@@ -36,8 +42,8 @@ const shikiAdapter = createShikiAdapter(async () => {
       import("@shikijs/langs/json"),
     ],
     themes: [
-      import("@shikijs/themes/github-light"),
-      import("@shikijs/themes/github-dark"),
+      import("@shikijs/themes/github-light-default"),
+      import("@shikijs/themes/github-dark-default"),
     ],
     engine: createJavaScriptRegexEngine(),
   });
