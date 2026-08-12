@@ -670,6 +670,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     renderDetails,
     renderDetailsEstHeight,
     overscan,
+    scrollerRef,
   } = useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
@@ -880,6 +881,35 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const paddingTop = virtualItems[0]?.start ?? 0;
   const paddingBottom =
     virtualizer.getTotalSize() - (virtualItems.at(-1)?.end ?? 0);
+
+  /**
+   * `api.scrollToRow`, implemented where the virtualizer is.
+   *
+   * Registered in an effect rather than during render, and with no dependency
+   * array so it re-registers on every one: the closure has to see this render's
+   * `rows`, which sorting, filtering and paging all change. A grid whose Table
+   * has unmounted leaves the hook's default behind, which answers `false`.
+   */
+  useEffect(() => {
+    scrollerRef.current = ({ rowId, align = "auto" }) => {
+      // Already parked at an edge, and outside the scrolling order — see
+      // `getDisplayedRows`. Nothing to scroll, but the row *is* on screen, so
+      // reporting failure would be the wrong answer.
+      if (
+        pinnedTopRows.some((row) => row.id === rowId) ||
+        pinnedBottomRows.some((row) => row.id === rowId)
+      ) {
+        return true;
+      }
+      const index = rows.findIndex((row) => row.id === rowId);
+      if (index < 0) return false;
+      virtualizer.scrollToIndex(index, { align });
+      return true;
+    };
+    return () => {
+      scrollerRef.current = () => false;
+    };
+  });
 
   /**
    * Infinite scroll. Latched on the row count rather than debounced: one call

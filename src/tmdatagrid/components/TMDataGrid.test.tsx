@@ -27,6 +27,7 @@ import {
   createTMDataGridColumnHelper,
   openColumnFilter,
   useTMDataGrid,
+  type TMDataGridApi,
   type TMDataGridDetailsArgs,
   type UseTMDataGridOptions,
 } from "../useTMDataGrid";
@@ -2283,6 +2284,113 @@ describe("summary row", () => {
       aggregateColumn({ table: result.current.table, columnId: "age" }),
     ).toBe(expected);
     void user;
+  });
+});
+
+describe("scrollToRow", () => {
+  const manyRows = makeRows(500);
+
+  /** Captures the api so a test can call it the way a consumer would. */
+  function ScrollGrid({
+    onReady,
+    ...options
+  }: Partial<UseTMDataGridOptions<TestRow>> & {
+    onReady: (api: TMDataGridApi<TestRow>) => void;
+  }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: manyRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      ...options,
+    } as UseTMDataGridOptions<TestRow>);
+    onReady(grid);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  const renderScrollGrid = (options: Partial<UseTMDataGridOptions<TestRow>> = {}) => {
+    let api: TMDataGridApi<TestRow> | null = null;
+    renderWithMantine(
+      <ScrollGrid {...options} onReady={(next) => (api = next)} />,
+    );
+    if (api === null) throw new Error("grid never rendered");
+    return api as TMDataGridApi<TestRow>;
+  };
+
+  /**
+   * How many times the body asked its scroll container to move.
+   *
+   * The offset it asks for is TanStack Virtual's to compute, and jsdom cannot
+   * check it: nothing is laid out, the ResizeObserver is a stub, and the
+   * virtualizer measures everything as zero. What is testable here is the part
+   * this grid owns — whether a row resolves to a scroll at all. That the rows
+   * then mount is a browser-level concern; see the Testing docs page.
+   */
+  function countScrolls(run: () => void): number {
+    const container = document.querySelector<HTMLElement>(
+      "[data-dg-scroll-container]",
+    );
+    if (container === null) throw new Error("no scroll container");
+    const original = container.scrollTo;
+    let calls = 0;
+    container.scrollTo = (() => {
+      calls += 1;
+    }) as typeof container.scrollTo;
+    try {
+      act(run);
+    } finally {
+      container.scrollTo = original;
+    }
+    return calls;
+  }
+
+  it("scrolls for a row virtualization left out of the DOM", () => {
+    const api = renderScrollGrid();
+
+    // The point of the method: row 400 is real, and has no element — so there
+    // is nothing for `scrollIntoView` to be called on.
+    expect(queryPart("row", { rowId: "400" })).toBeNull();
+
+    expect(countScrolls(() => api.scrollToRow({ rowId: "400" }))).toBe(1);
+  });
+
+  it("does not scroll for a row it cannot reach", () => {
+    const api = renderScrollGrid();
+
+    expect(countScrolls(() => api.scrollToRow({ rowId: "9999" }))).toBe(0);
+  });
+
+  it("answers false for a row the current view does not hold", () => {
+    const api = renderScrollGrid();
+
+    expect(api.scrollToRow({ rowId: "9999" })).toBe(false);
+  });
+
+  it("answers false for a row a filter has taken out", () => {
+    const api = renderScrollGrid();
+
+    act(() => {
+      api.table.setGlobalFilter("Stockholm");
+    });
+
+    // Row 2 is Göteborg — filtered away, so there is nowhere to scroll to.
+    expect(api.scrollToRow({ rowId: "2" })).toBe(false);
+    expect(api.scrollToRow({ rowId: "1" })).toBe(true);
+  });
+
+  it("answers true for a pinned row without scrolling", () => {
+    const api = renderScrollGrid({ enableRowPinning: true });
+
+    act(() => {
+      api.table.setRowPinning({ top: ["300"], bottom: [] });
+    });
+
+    // Parked at the edge: already on screen, and out of the scrolling order.
+    expect(api.scrollToRow({ rowId: "300" })).toBe(true);
+    expect(part("row", { rowId: "300" }, part("pinned-top"))).toBeInTheDocument();
   });
 });
 

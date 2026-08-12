@@ -168,6 +168,25 @@ await orders.locator('[data-dg-part="search"]').fill("Nordkvist");
 await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 ```
 
+**Or scroll to it.** When the row has to be reached where it is — testing the
+scroll itself, or a grid with no search — `scrollToRow` moves the virtualizer,
+which is the only thing that can put an element there:
+
+```ts
+const found = grid.scrollToRow({ rowId: "42", align: "center" });
+```
+
+It answers `false` when the row is not in the current view — filtered out, on
+another page, or an unknown id — and scrolls nothing. From a Playwright test
+that means going through the page, since the api lives in React:
+
+```ts
+await page.evaluate(() => window.__ordersGrid.scrollToRow({ rowId: "42" }));
+```
+
+which needs the app to expose it. Narrowing needs no such hook, which is why it
+is the default advice.
+
 ## Waiting
 
 `meta.loading` sets `aria-busy` on the grid whether or not the body has rows, so

@@ -37,6 +37,7 @@ import {
 } from "@tanstack/react-table";
 import type { Store } from "@tanstack/store";
 import {
+  type MutableRefObject,
   type ReactNode,
   useCallback,
   useEffect,
@@ -377,6 +378,19 @@ export type TMDataGridUiActions = {
 
 export type TMDataGridUiStore = Store<TMDataGridUiState, TMDataGridUiActions>;
 
+/** Where a scrolled-to row lands in the viewport. TanStack's own alignments. */
+export type TMDataGridScrollAlign = "auto" | "start" | "center" | "end";
+
+export type TMDataGridScrollToRowArgs = {
+  /** The row's id, as `getRowId` produced it. */
+  rowId: string;
+  /** Defaults to `"auto"` — the nearest edge, leaving a visible row alone. */
+  align?: TMDataGridScrollAlign;
+};
+
+/** @internal The body's scroll implementation. See `scrollToRow`. */
+export type TMDataGridScroller = (args: TMDataGridScrollToRowArgs) => boolean;
+
 /** What `useTMDataGrid` returns — spread straight onto `<TMDataGrid />`. */
 export type TMDataGridApi<TData extends RowData> = {
   table: TMDataGridTable<TData>;
@@ -410,6 +424,28 @@ export type TMDataGridApi<TData extends RowData> = {
    * the very layout being discarded.
    */
   resetSettings: () => void;
+  /**
+   * Scrolls a row into view. The grid is always virtualized, so a row far down
+   * the list has no element to scroll to — this moves the virtualizer instead,
+   * which is the only thing that can put one there.
+   *
+   * ```ts
+   * grid.scrollToRow({ rowId: "42", align: "center" });
+   * ```
+   *
+   * Answers whether the row could be reached. `false` means it is not in the
+   * current view at all — filtered out, on another page, or an id that matches
+   * no row — and nothing scrolled. A pinned row answers `true` without
+   * scrolling: it is already parked at an edge.
+   *
+   * Identity is stable, so it is safe in a dependency array.
+   */
+  scrollToRow: (args: TMDataGridScrollToRowArgs) => boolean;
+  /**
+   * @internal Wiring for `TMDataGrid.Table`, which owns the virtualizer and
+   * fills this in. Not part of the supported surface.
+   */
+  scrollerRef: MutableRefObject<TMDataGridScroller>;
 };
 
 /** The editing callbacks every mode shares. See {@link TMDataGridEditingOptions}. */
@@ -1307,6 +1343,15 @@ export function useTMDataGrid<TData extends RowData>({
   };
   const resetSettings = useCallback(() => resetSettingsRef.current(), []);
 
+  // Filled in by `TMDataGrid.Table` on every render, because only the body
+  // holds the virtualizer and the current view. Answers `false` until one is
+  // mounted, which is the honest answer: there is nothing to scroll yet.
+  const scrollerRef = useRef<TMDataGridScroller>(() => false);
+  const scrollToRow = useCallback(
+    (args: TMDataGridScrollToRowArgs) => scrollerRef.current(args),
+    [],
+  );
+
   return {
     table,
     ui,
@@ -1317,6 +1362,8 @@ export function useTMDataGrid<TData extends RowData>({
     renderDetailsEstHeight,
     overscan,
     resetSettings,
+    scrollToRow,
+    scrollerRef,
   };
 }
 

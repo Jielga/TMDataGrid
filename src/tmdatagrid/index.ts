@@ -26,6 +26,8 @@ export {
   type TMDataGridTableMeta,
   type TMDataGridUiActions,
   type TMDataGridEditingOptions,
+  type TMDataGridScrollAlign,
+  type TMDataGridScrollToRowArgs,
   type TMDataGridUiState,
   type TMDataGridUiStore,
   useTMDataGrid,
