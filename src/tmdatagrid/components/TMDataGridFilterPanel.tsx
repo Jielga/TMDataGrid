@@ -76,7 +76,7 @@ export function TMDataGridFilterPanel() {
       if (panelRef.current?.contains(target)) return;
       // The toolbar button toggles the panel itself. Closing from here first
       // would leave its click reopening what the user meant to close.
-      if (target.closest("[data-dg-filter-toggle]")) return;
+      if (target.closest('[data-dg-part="filter-button"]')) return;
       ui.actions.closeFilterPanel();
     };
 
@@ -189,7 +189,7 @@ export function TMDataGridFilterPanel() {
       ref={panelRef}
       role="group"
       aria-label={labels.filters}
-      data-testid="dg-filter-panel"
+      data-dg-part="filter-panel"
       className={classes.filterPanel}
       // Escape is what closes a floating surface, and every control that can
       // hold focus in here sits inside this element.
@@ -208,7 +208,7 @@ export function TMDataGridFilterPanel() {
           color="gray"
           size="sm"
           aria-label={labels.closeFilters}
-          data-testid="dg-filter-panel-close"
+          data-dg-part="filter-panel-close"
           onClick={ui.actions.closeFilterPanel}
         >
           <CloseIcon size={16} stroke={1.6} />
@@ -243,7 +243,7 @@ export function TMDataGridFilterPanel() {
               // The row is the handle: a `meta.filterControl` renders whatever
               // it likes in the value slot, so the one thing a test can always
               // count on is which row it is in.
-              data-testid={`dg-filter-row-${filter.id}`}
+              data-dg-part="filter-row"
               data-column-id={filter.id}
               className={classes.filterRow}
             >
@@ -252,7 +252,7 @@ export function TMDataGridFilterPanel() {
                 color="gray"
                 size="lg"
                 aria-label={labels.removeFilter}
-                data-testid="dg-filter-remove"
+                data-dg-part="filter-remove"
                 onClick={() => removeFilter(filter.id)}
               >
                 <CloseIcon size={18} stroke={1.6} />
@@ -267,7 +267,7 @@ export function TMDataGridFilterPanel() {
                 // outside it in the DOM, and picking an option would read as a
                 // click away and close the panel under the user.
                 comboboxProps={{ withinPortal: false }}
-                data-testid="dg-filter-column"
+                data-dg-part="filter-column"
                 data={columnOptions}
                 value={filter.id}
                 onChange={(next) => next && changeFilterColumn(filter.id, next)}
@@ -279,7 +279,7 @@ export function TMDataGridFilterPanel() {
                 w={170}
                 allowDeselect={false}
                 comboboxProps={{ withinPortal: false }}
-                data-testid="dg-filter-operator"
+                data-dg-part="filter-operator"
                 data={getOperatorsForType(type).map((operator) => ({
                   value: operator,
                   label: labels.operators[operator],
@@ -312,7 +312,7 @@ export function TMDataGridFilterPanel() {
                   label={labels.filterValue}
                   size={controlSize}
                   w={180}
-                  data-testid="dg-filter-value"
+                  data-dg-part="filter-value"
                   disabled={!needsValue}
                   placeholder={needsValue ? labels.filterValuePlaceholder : ""}
                   value={needsValue ? scalarValue : ""}
@@ -330,7 +330,7 @@ export function TMDataGridFilterPanel() {
             variant="subtle"
             size="compact-sm"
             disabled={!canAddFilter}
-            data-testid="dg-filter-add"
+            data-dg-part="filter-add"
             onClick={addFilter}
           >
             {labels.addFilter}
@@ -340,7 +340,7 @@ export function TMDataGridFilterPanel() {
             color="gray"
             size="compact-sm"
             disabled={columnFilters.length === 0}
-            data-testid="dg-filter-clear-all"
+            data-dg-part="filter-clear-all"
             onClick={clearAllFilters}
           >
             {labels.clearAllFilters}

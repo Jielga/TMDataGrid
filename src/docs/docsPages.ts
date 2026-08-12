@@ -61,7 +61,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "testing",
     label: "Testing",
-    description: "Test ids, roles and Playwright",
+    description: "Part hooks, roles and Playwright",
     source: testingDoc,
   },
 ];

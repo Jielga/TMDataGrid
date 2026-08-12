@@ -812,7 +812,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (pinnedBottomRows.length === 0) return;
     const grid = gridElementRef.current;
     if (grid === null) return;
-    const summaryRow = grid.querySelector<HTMLElement>("[data-dg-summary-row]");
+    const summaryRow = grid.querySelector<HTMLElement>(
+      '[data-dg-part="summary-row"]',
+    );
     if (summaryRow === null) return;
     const measure = () =>
       grid.style.setProperty(
@@ -1951,7 +1953,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   key={row.id}
                   role="row"
                   aria-rowindex={ariaRowIndex}
-                  data-testid={`dg-row-${row.id}`}
+                  data-dg-part="row"
+                  data-row-id={row.id}
                   // Only measured when details are on: without them every row
                   // is exactly `rowHeight`, and the estimate above is already
                   // the answer — so a plain grid keeps its ResizeObserver-free
@@ -2242,7 +2245,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     <div
                       role="cell"
                       aria-colspan={orderedColumns.length}
-                      data-testid={`dg-details-${row.id}`}
+                      data-dg-part="details"
+                      data-row-id={row.id}
                       className={classes.detailsCell}
                       // The row underneath may select, highlight or open a
                       // context menu. A panel is content, not part of that
@@ -2274,7 +2278,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   {pinnedTopRows.length > 0 && (
                     <div
                       role="presentation"
-                      data-testid="dg-pinned-top"
+                      data-dg-part="pinned-top"
                       className={classes.pinnedTopBlock}
                     >
                       {pinnedTopRows.map((row, index) =>
@@ -2318,7 +2322,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   {pinnedBottomRows.length > 0 && (
                     <div
                       role="presentation"
-                      data-testid="dg-pinned-bottom"
+                      data-dg-part="pinned-bottom"
                       className={classes.pinnedBottomBlock}
                     >
                       {pinnedBottomRows.map((row, index) =>
@@ -2383,11 +2387,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               aria-rowindex={
                 rows.length + pinnedRowCount + headerGroups.length + 1
               }
-              data-testid="dg-summary-row"
-              // The marker the height measurement above looks for. Separate
-              // from the test id on purpose: a `data-testid` is a promise to
-              // consumers, not a hook the component may quietly depend on.
-              data-dg-summary-row
+              // Also what the height measurement above looks for. One
+              // attribute serves both now that the part name *is* the
+              // published contract rather than a testing-only alias.
+              data-dg-part="summary-row"
               className={classes.summaryRow}
             >
               {leafHeaders.map((header) => {

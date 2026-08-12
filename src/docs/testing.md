@@ -1,17 +1,34 @@
 # Testing
 
-The grid publishes a fixed set of roles, ARIA attributes and test ids so that a
-consumer's suite can be written against structure rather than against copy or
-class names. Everything on this page is a supported contract; anything else in
-the DOM is internal plumbing and may change without notice.
+The grid publishes a fixed set of roles, ARIA attributes and `data-*` hooks so
+that a consumer's suite can be written against structure rather than against
+copy or class names. Everything on this page is a supported contract; anything
+else in the DOM is internal plumbing and may change without notice.
 
 > During the `1.0.0-beta` line the contract is still provisional. It freezes at
 > `1.0.0`.
 
+## Why not `data-testid`
+
+The grid does not mint `data-testid` of its own, and neither do its
+dependencies — `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
+testing-framework convention that belongs to your app: Playwright's
+`testIdAttribute` is configurable, so a codebase standardised on `data-qa` or
+`data-cy` could not use `getByTestId()` on our nodes without breaking its own.
+
+Instead the grid names its pieces the way MUI X and AG Grid do — with semantic
+attributes it owns:
+
+- **`data-dg-part`** — *what* an element is (`"row"`, `"filter-button"`)
+- **`data-row-id` / `data-column-id`** — *which* one, using your own ids
+- **roles and ARIA** — framework-neutral, and the same thing a screen reader reads
+
+`<TMDataGrid data-testid>` is the one exception, because that value is yours,
+not ours.
+
 ## Naming a grid
 
-The grid's test ids are keyed on row and column ids, which two grids on the same
-page share. Name the grid and scope through it:
+Parts repeat across grids on the same page. Name the grid and scope through it:
 
 ```tsx
 <TMDataGrid {...grid} data-testid="orders">
@@ -21,12 +38,13 @@ page share. Name the grid and scope through it:
 
 ```ts
 const orders = page.getByTestId("orders");
-await expect(orders.getByTestId("dg-row-42")).toBeVisible();
+await expect(orders.locator('[data-dg-part="row"][data-row-id="42"]')).toBeVisible();
 ```
 
-`data-testid` and `id` go on the root element; `aria-label` (or
-`aria-labelledby`) goes on `TMDataGrid.Table`, because the accessible name
-belongs to the element carrying the `grid` role.
+`data-testid` and `id` go on the root element (which also carries
+`data-dg-root`); `aria-label` — or `aria-labelledby` — goes on
+`TMDataGrid.Table`, because the accessible name belongs to the element carrying
+the `grid` role.
 
 ## Structure
 
@@ -35,10 +53,9 @@ belongs to the element carrying the `grid` role.
 | Root | — | `data-dg-root`, `data-size` |
 | Grid | `table`, or `grid` under cell selection | `aria-rowcount`, `aria-colcount`, `aria-busy`, `data-dg-row-count` |
 | Header row | `row` | `aria-rowindex` |
-| Header cell | `columnheader` | `data-column-id`, `aria-sort`, `data-active` |
-| Body row | `row` | `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-striped` |
+| Header cell | `columnheader` | `data-dg-part="header"`, `data-column-id`, `aria-sort`, `data-active` |
+| Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-striped` |
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
-| Summary row | `row` | — |
 
 **The role flips with cell selection.** `enableCellSelection` turns the grid's
 `table` into a `grid` and every `cell` into a `gridcell` — a widget with a
@@ -51,62 +68,82 @@ cells by their coordinates instead, which do not move:
 const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
 ```
 
-## Test ids
+Body cells carry no `data-dg-part`: the coordinate pair already names them, and
+one attribute per cell is the one place where a virtualized grid's DOM weight
+is worth counting.
 
-Row and column ids come from your data — `getRowId` and the column definitions —
-so `dg-row-42` means your record 42.
+## Parts
 
-| Test id | What it is |
+Row and column ids come from your data — `getRowId` and the column definitions
+— so a part that repeats is addressed by adding the coordinate.
+
+### Whole-grid
+
+| `data-dg-part` | What it is |
 | --- | --- |
-| `dg-row-<rowId>` | A body row, wherever it sits |
-| `dg-entry-<rowId>` | An open entry row in the new-row block |
-| `dg-details-<rowId>` | A row's detail panel |
-| `dg-pinned-top` / `dg-pinned-bottom` | The pinned-row edge blocks |
-| `dg-summary-row` | The footer summary row |
-| `dg-header-<columnId>` | A column header |
-| `dg-header-sort-<columnId>` | Its sort button |
-| `dg-header-menu-<columnId>` | Its column menu button |
-| `dg-header-filter-<columnId>` | Its filter shortcut, shown while filtered |
-| `dg-sort-index` | A column's position in a multi-column sort |
-| `dg-toolbar` | The toolbar row |
-| `dg-summary-count` | The visible/total count |
-| `dg-loading` | The toolbar spinner |
-| `dg-search` / `dg-search-clear` | Quick search input and its ✕ |
-| `dg-filter-button` | The funnel toggle |
-| `dg-filter-panel` / `dg-filter-panel-close` | The filter panel and its ✕ |
-| `dg-filter-row-<columnId>` | One filter row; also carries `data-column-id` |
-| `dg-filter-column` / `dg-filter-operator` / `dg-filter-value` | Its three controls |
-| `dg-filter-value-from` / `dg-filter-value-to` | The two ends of a `between` filter |
-| `dg-filter-remove` | The filter row's ✕ |
-| `dg-filter-add` / `dg-filter-clear-all` | The panel's footer buttons |
-| `dg-filter-pills` | The active-filter pill group |
-| `dg-filter-pill-<columnId>` | One pill; its ✕ is the only button inside it |
-| `dg-columns-button` | The burger toggle |
-| `dg-columns-panel` / `dg-columns-search` | The column manager and its search |
-| `dg-columns-toggle-<columnId>` / `dg-columns-toggle-all` | Its checkboxes |
-| `dg-columns-reset` | Its reset-layout button |
-| `dg-footer` | The pager row |
-| `dg-page-size` / `dg-page-range` / `dg-page-prev` / `dg-page-next` | The pager |
-| `dg-select-all` / `dg-select-row-<rowId>` | Selection checkboxes |
-| `dg-details-toggle-<rowId>` / `dg-details-toggle-all` | Detail chevrons |
-| `dg-group-toggle-<rowId>` | A group row's chevron |
-| `dg-edit-row-<rowId>` / `dg-delete-row-<rowId>` | The edit lane, idle |
-| `dg-save-row-<rowId>` / `dg-cancel-row-<rowId>` | The edit lane, open |
-| `dg-restore-row-<rowId>` | Undo a batch deletion mark |
-| `dg-confirm-new-row-<rowId>` / `dg-discard-new-row-<rowId>` | An entry row's ✓ and ✕ |
-| `dg-editor-<rowId>-<columnId>` | An open cell editor |
-| `dg-editor-input` | The input inside a built-in editor |
-| `dg-editor-confirm` / `dg-editor-cancel` | `cellConfirm`'s ✓ and ✕ |
-| `dg-save-all` / `dg-discard-all` | `TMDataGrid.EditActions` |
+| `toolbar` | The toolbar row |
+| `summary-count` | The visible/total count |
+| `loading` | The toolbar spinner |
+| `search`, `search-clear` | Quick search input and its ✕ |
+| `filter-button` | The funnel toggle |
+| `filter-panel`, `filter-panel-close` | The filter panel and its ✕ |
+| `filter-add`, `filter-clear-all` | The panel's footer buttons |
+| `filter-pills` | The active-filter pill group |
+| `columns-button` | The burger toggle |
+| `columns-panel`, `columns-search` | The column manager and its search |
+| `columns-toggle-all`, `columns-reset` | Its footer controls |
+| `footer` | The pager row |
+| `page-size`, `page-range`, `page-prev`, `page-next` | The pager |
+| `summary-row` | The footer summary row |
+| `pinned-top`, `pinned-bottom` | The pinned-row edge blocks |
+| `select-all` | The header select-all checkbox |
+| `details-toggle-all` | Expand/collapse every detail panel |
+| `save-all`, `discard-all` | `TMDataGrid.EditActions` |
+| `editor-confirm`, `editor-cancel` | `cellConfirm`'s ✓ and ✕ |
+| `editor-input` | The input inside a built-in editor |
+| `sort-index` | A column's position in a multi-column sort |
+
+### Keyed by `data-row-id`
+
+| `data-dg-part` | What it is |
+| --- | --- |
+| `row` | A body row, wherever it sits |
+| `entry-row` | An open entry row in the new-row block |
+| `details` | A row's detail panel |
+| `select-row` | Its selection checkbox |
+| `details-toggle`, `group-toggle` | Its detail and tree chevrons |
+| `edit-row`, `delete-row` | The edit lane, idle |
+| `save-row`, `cancel-row` | The edit lane, open |
+| `restore-row` | Undo a batch deletion mark |
+| `confirm-new-row`, `discard-new-row` | An entry row's ✓ and ✕ |
+
+### Keyed by `data-column-id`
+
+| `data-dg-part` | What it is |
+| --- | --- |
+| `header` | A column header |
+| `header-sort`, `header-menu`, `header-filter` | Its three action buttons |
+| `filter-row` | One row of the filter panel |
+| `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
+| `columns-toggle` | One checkbox in the column manager |
+
+### Keyed by both
+
+| `data-dg-part` | What it is |
+| --- | --- |
+| `editor` | An open cell editor |
+
+Within a filter row the three controls are `filter-column`,
+`filter-operator` and `filter-value` (or `filter-value-from` /
+`filter-value-to` for `between`).
 
 A column declaring `meta.filterControl` or `meta.editor` renders your component
-in that slot, so `dg-filter-value` and `dg-editor-input` are the built-ins only.
-`dg-filter-row-<columnId>` and `dg-editor-<rowId>-<columnId>` still hold — scope
-your own queries through them.
+in that slot, so `filter-value` and `editor-input` cover the built-ins only.
+`filter-row` and `editor` still hold — scope your own queries through them.
 
 Every icon-only control also carries an `aria-label` drawn from `labels`. Those
-are yours to translate, so they make brittle selectors; prefer the test ids
-above unless your grid runs in one language.
+are yours to translate, so they make brittle selectors; prefer the parts above
+unless your grid runs in one language.
 
 ## Virtualization
 
@@ -127,8 +164,8 @@ await expect(grid).toHaveAttribute("data-dg-row-count", "3");
 more stable than scrolling, and it is what a user would do:
 
 ```ts
-await orders.getByTestId("dg-search").fill("Nordkvist");
-await expect(orders.getByTestId("dg-row-42")).toBeVisible();
+await orders.locator('[data-dg-part="search"]').fill("Nordkvist");
+await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 ```
 
 ## Waiting
@@ -147,8 +184,12 @@ the assertion until the debounce lands.
 
 ## A page object
 
+One helper turns the parts into something as short as `getByTestId`:
+
 ```ts
 import { type Locator, type Page, expect } from "@playwright/test";
+
+type PartKey = { rowId?: string; columnId?: string };
 
 export class DataGrid {
   readonly root: Locator;
@@ -159,8 +200,13 @@ export class DataGrid {
     this.grid = this.root.getByRole("table");
   }
 
-  row(rowId: string): Locator {
-    return this.root.getByTestId(`dg-row-${rowId}`);
+  /** A named part, narrowed by row or column when the part repeats. */
+  part(name: string, key: PartKey = {}): Locator {
+    const selector =
+      `[data-dg-part="${name}"]` +
+      (key.rowId === undefined ? "" : `[data-row-id="${key.rowId}"]`) +
+      (key.columnId === undefined ? "" : `[data-column-id="${key.columnId}"]`);
+    return this.root.locator(selector);
   }
 
   cell({ rowId, columnId }: { rowId: string; columnId: string }): Locator {
@@ -170,11 +216,11 @@ export class DataGrid {
   }
 
   async search(text: string): Promise<void> {
-    await this.root.getByTestId("dg-search").fill(text);
+    await this.part("search").fill(text);
   }
 
   async sortBy(columnId: string): Promise<void> {
-    await this.root.getByTestId(`dg-header-sort-${columnId}`).click();
+    await this.part("header-sort", { columnId }).click();
   }
 
   async filterBy({
@@ -184,14 +230,15 @@ export class DataGrid {
     columnId: string;
     value: string;
   }): Promise<void> {
-    await this.root.getByTestId("dg-filter-button").click();
-    const row = this.root.getByTestId(`dg-filter-row-${columnId}`);
-    await row.getByTestId("dg-filter-value").fill(value);
+    await this.part("filter-button").click();
+    await this.part("filter-row", { columnId })
+      .locator('[data-dg-part="filter-value"]')
+      .fill(value);
   }
 
   async toggleColumn(columnId: string): Promise<void> {
-    await this.root.getByTestId("dg-columns-button").click();
-    await this.root.getByTestId(`dg-columns-toggle-${columnId}`).click();
+    await this.part("columns-button").click();
+    await this.part("columns-toggle", { columnId }).click();
   }
 
   async expectRowCount(count: number): Promise<void> {

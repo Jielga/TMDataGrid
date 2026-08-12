@@ -212,8 +212,9 @@ export function TMDataGridCellEditor({
   return (
     <div
       className={classes.cellEditor}
-      data-dg-cell-editor
-      data-testid={`dg-editor-${row.id}-${column.id}`}
+      data-dg-part="editor"
+      data-row-id={row.id}
+      data-column-id={column.id}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
       // The cell underneath listens for selection gestures; a click inside
@@ -231,7 +232,7 @@ export function TMDataGridCellEditor({
             variant="subtle"
             color="green"
             aria-label={labels.confirmEdit}
-            data-testid="dg-editor-confirm"
+            data-dg-part="editor-confirm"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => void commitAndClose("pick")}
           >
@@ -242,7 +243,7 @@ export function TMDataGridCellEditor({
             variant="subtle"
             color="gray"
             aria-label={labels.cancelEdit}
-            data-testid="dg-editor-cancel"
+            data-dg-part="editor-cancel"
             onMouseDown={(event) => event.preventDefault()}
             onClick={cancelAndClose}
           >

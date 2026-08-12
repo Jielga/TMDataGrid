@@ -84,10 +84,38 @@ function Grid({
 const renderGridUi = (options: GridProps = {}) =>
   renderWithMantine(<Grid {...options} />);
 
-const bodyRows = () =>
-  screen
-    .getAllByRole("row")
-    .filter((row) => row.getAttribute("data-testid")?.startsWith("dg-row-"));
+/**
+ * Which part of the grid, and — where a part repeats — which row or column of
+ * it. The `data-dg-part` contract consumers write their own suites against, so
+ * the tests reach for it the same way the Testing docs page tells them to.
+ */
+type PartKey = { rowId?: string; columnId?: string };
+
+const partSelector = (name: string, key: PartKey = {}) =>
+  `[data-dg-part="${name}"]` +
+  (key.rowId === undefined ? "" : `[data-row-id="${CSS.escape(key.rowId)}"]`) +
+  (key.columnId === undefined
+    ? ""
+    : `[data-column-id="${CSS.escape(key.columnId)}"]`);
+
+const parts = (name: string, key?: PartKey, scope: ParentNode = document) =>
+  Array.from(scope.querySelectorAll<HTMLElement>(partSelector(name, key)));
+
+/** The one matching element, or `null` — for `not.toBeInTheDocument()`. */
+const queryPart = (name: string, key?: PartKey, scope: ParentNode = document) =>
+  scope.querySelector<HTMLElement>(partSelector(name, key));
+
+const part = (name: string, key?: PartKey, scope?: ParentNode) => {
+  const found = queryPart(name, key, scope);
+  if (found === null) {
+    throw new Error(`No element matching ${partSelector(name, key)}`);
+  }
+  return found;
+};
+
+const header = (columnId: string) => part("header", { columnId });
+
+const bodyRows = () => parts("row");
 
 /**
  * How many rows the grid says it has, mounted or not. Virtualization decides
@@ -100,9 +128,7 @@ const gridRowCount = () =>
 
 /** Row ids in the order they are rendered. */
 const renderedRowIds = () =>
-  bodyRows().map((row) =>
-    (row.getAttribute("data-testid") ?? "").replace("dg-row-", ""),
-  );
+  bodyRows().map((row) => row.getAttribute("data-row-id") ?? "");
 
 /**
  * Text of one column's cells, in rendered order. Cell 0 is the generated
@@ -117,8 +143,8 @@ describe("rendering", () => {
   it("renders a header per column and the rows beneath them", () => {
     renderGridUi();
 
-    expect(screen.getByTestId("dg-header-name")).toHaveTextContent("Name");
-    expect(screen.getByTestId("dg-header-city")).toHaveTextContent("City");
+    expect(header("name")).toHaveTextContent("Name");
+    expect(header("city")).toHaveTextContent("City");
     expect(renderedRowIds().length).toBeGreaterThan(0);
   });
 
@@ -221,20 +247,20 @@ describe("sorting", () => {
   it("sorts on a header click and reports it through aria-sort", async () => {
     const user = userEvent.setup();
     renderGridUi();
-    const header = screen.getByTestId("dg-header-name");
+    const nameHeader = header("name");
 
-    expect(header).toHaveAttribute("aria-sort", "none");
+    expect(nameHeader).toHaveAttribute("aria-sort", "none");
 
     // The name column repeats values, so the order is asserted on the values
     // themselves — a stable sort keeps tied rows in place, which means
     // descending is not the exact reverse of ascending.
-    await user.click(header);
-    expect(header).toHaveAttribute("aria-sort", "ascending");
+    await user.click(nameHeader);
+    expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
     const ascending = renderedColumn(2);
     expect(ascending).toEqual([...ascending].sort());
 
-    await user.click(header);
-    expect(header).toHaveAttribute("aria-sort", "descending");
+    await user.click(nameHeader);
+    expect(nameHeader).toHaveAttribute("aria-sort", "descending");
     const descending = renderedColumn(2);
     expect(descending).toEqual([...descending].sort().reverse());
   });
@@ -242,17 +268,17 @@ describe("sorting", () => {
   it("sorts a numeric column descending first, as TanStack does", async () => {
     const user = userEvent.setup();
     renderGridUi();
-    const header = screen.getByTestId("dg-header-age");
+    const ageHeader = header("age");
 
-    await user.click(header);
+    await user.click(ageHeader);
 
-    expect(header).toHaveAttribute("aria-sort", "descending");
+    expect(ageHeader).toHaveAttribute("aria-sort", "descending");
   });
 
   it("does not advertise sorting on a grid that has it switched off", () => {
     renderGridUi({ enableSorting: false });
 
-    expect(screen.getByTestId("dg-header-age")).not.toHaveAttribute(
+    expect(header("age")).not.toHaveAttribute(
       "aria-sort",
     );
   });
@@ -313,7 +339,7 @@ describe("filtering", () => {
 
     await user.click(screen.getByRole("button", { name: "Filters" }));
     await user.type(screen.getByLabelText("Value"), "3");
-    await user.click(screen.getByTestId("dg-header-name"));
+    await user.click(header("name"));
 
     expect(screen.queryByLabelText("Value")).not.toBeInTheDocument();
     expect(renderedRowIds()).toEqual(["3"]);
@@ -386,8 +412,8 @@ describe("column visibility", () => {
     // "Select row", so the column label is unambiguous.
     await user.click(screen.getByRole("checkbox", { name: "City" }));
 
-    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
-    expect(screen.getByTestId("dg-header-name")).toBeInTheDocument();
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
+    expect(header("name")).toBeInTheDocument();
   });
 
   it("hides the columns button when hiding is off", () => {
@@ -404,11 +430,11 @@ describe("column visibility", () => {
 
     await user.click(screen.getByRole("button", { name: "Manage columns" }));
     await user.click(screen.getByRole("checkbox", { name: "City" }));
-    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "RESET LAYOUT" }));
 
-    expect(screen.getByTestId("dg-header-city")).toBeInTheDocument();
+    expect(header("city")).toBeInTheDocument();
   });
 });
 
@@ -428,7 +454,7 @@ describe("row numbers", () => {
 
     // Sorting reorders the rows; the gutter numbers the view, so it stays
     // 1, 2, 3 while the row ids underneath change order.
-    await user.click(screen.getByTestId("dg-header-name"));
+    await user.click(header("name"));
     expect(numbersAt().slice(0, 3)).toEqual(["1", "2", "3"]);
   });
 
@@ -491,10 +517,10 @@ describe("row pinning", () => {
 
     await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
 
-    const topBlock = screen.getByTestId("dg-pinned-top");
-    expect(within(topBlock).getByTestId("dg-row-1")).toBeInTheDocument();
+    const topBlock = part("pinned-top");
+    expect(part("row", { rowId: "1" }, topBlock)).toBeInTheDocument();
     // Exactly once: the centre no longer renders it.
-    expect(screen.getAllByTestId("dg-row-1")).toHaveLength(1);
+    expect(parts("row", { rowId: "1" })).toHaveLength(1);
   });
 
   it("pins a row into the bottom block", async () => {
@@ -503,8 +529,8 @@ describe("row pinning", () => {
 
     await user.click(screen.getByRole("button", { name: "Pin 2 bottom" }));
 
-    const bottomBlock = screen.getByTestId("dg-pinned-bottom");
-    expect(within(bottomBlock).getByTestId("dg-row-2")).toBeInTheDocument();
+    const bottomBlock = part("pinned-bottom");
+    expect(part("row", { rowId: "2" }, bottomBlock)).toBeInTheDocument();
   });
 
   it("unpins back into the body", async () => {
@@ -514,8 +540,8 @@ describe("row pinning", () => {
     await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
     await user.click(screen.getByRole("button", { name: "Unpin 1" }));
 
-    expect(screen.queryByTestId("dg-pinned-top")).not.toBeInTheDocument();
-    expect(screen.getByTestId("dg-row-1")).toBeInTheDocument();
+    expect(queryPart("pinned-top")).not.toBeInTheDocument();
+    expect(part("row", { rowId: "1" })).toBeInTheDocument();
   });
 
   it("survives the pinned row's data being deleted", async () => {
@@ -527,8 +553,8 @@ describe("row pinning", () => {
     await user.click(screen.getByRole("button", { name: "Pin 1 top" }));
     await user.click(screen.getByRole("button", { name: "Remove 1" }));
 
-    expect(screen.queryByTestId("dg-pinned-top")).not.toBeInTheDocument();
-    expect(screen.getByTestId("dg-row-2")).toBeInTheDocument();
+    expect(queryPart("pinned-top")).not.toBeInTheDocument();
+    expect(part("row", { rowId: "2" })).toBeInTheDocument();
   });
 
   it("keeps a pinned row at its edge when the filters drop it", async () => {
@@ -539,8 +565,8 @@ describe("row pinning", () => {
     await user.click(screen.getByRole("button", { name: "Filters" }));
     await user.type(screen.getByLabelText("Value"), "999999");
 
-    const topBlock = screen.getByTestId("dg-pinned-top");
-    expect(within(topBlock).getByTestId("dg-row-1")).toBeInTheDocument();
+    const topBlock = part("pinned-top");
+    expect(part("row", { rowId: "1" }, topBlock)).toBeInTheDocument();
     // The pinned row is content, so the filtered-empty message stays away.
     expect(
       screen.queryByText("No rows match your filters"),
@@ -765,7 +791,7 @@ describe("column menu", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
 
-    fireEvent.contextMenu(screen.getByTestId("dg-header-city"));
+    fireEvent.contextMenu(header("city"));
 
     expect(itemLabels()).toEqual(fromButton);
   });
@@ -775,7 +801,7 @@ describe("column menu", () => {
 
     // No column menu on the select-all lane, so nothing to open — the native
     // menu is the right answer there rather than an empty dropdown.
-    fireEvent.contextMenu(screen.getByTestId(`dg-header-${SELECT_COLUMN_ID}`));
+    fireEvent.contextMenu(header(SELECT_COLUMN_ID));
 
     expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
   });
@@ -786,7 +812,7 @@ describe("row selection", () => {
     const user = userEvent.setup();
     renderGridUi();
     const [firstRow] = screen.getAllByRole("row").filter((row) =>
-      row.getAttribute("data-testid")?.startsWith("dg-row-"),
+      row.hasAttribute("data-row-id"),
     );
 
     await user.click(within(firstRow).getByRole("checkbox"));
@@ -803,7 +829,7 @@ describe("row selection", () => {
     // asserted here: the cell padding grows with `size` and would squeeze the
     // box out of its fixed 36px track at `xl`. The attribute is what the CSS
     // hangs off, so it is what the test pins down.
-    expect(screen.getByTestId("dg-header-__select__")).toHaveAttribute(
+    expect(header("__select__")).toHaveAttribute(
       "data-control-column",
       "true",
     );
@@ -829,7 +855,7 @@ describe("row selection", () => {
     const user = userEvent.setup();
     renderGridUi({ selectionMode: "row" });
     const [firstRow] = screen.getAllByRole("row").filter((row) =>
-      row.getAttribute("data-testid")?.startsWith("dg-row-"),
+      row.hasAttribute("data-row-id"),
     );
 
     await user.click(firstRow);
@@ -989,8 +1015,8 @@ describe("grouping", () => {
     expect(groups).toHaveLength(3);
     expect(groups.every((row) => row.dataset.grouped === "true")).toBe(true);
     // The tree lane replaced the column it groups on.
-    expect(screen.getByTestId("dg-header-__group__")).toBeInTheDocument();
-    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+    expect(header("__group__")).toBeInTheDocument();
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
   });
 
   it("writes the group value and how many rows are under it", async () => {
@@ -1026,8 +1052,8 @@ describe("grouping", () => {
     // tree column carries the item.
     await clickMenuItem(user, "Group", "Ungroup City");
 
-    expect(screen.getByTestId("dg-header-city")).toBeInTheDocument();
-    expect(screen.queryByTestId("dg-header-__group__")).not.toBeInTheDocument();
+    expect(header("city")).toBeInTheDocument();
+    expect(queryPart("header", { columnId: "__group__" })).not.toBeInTheDocument();
     expect(bodyRows()).toHaveLength(12);
   });
 
@@ -1079,7 +1105,7 @@ describe("grouping — rendering stays in step", () => {
   const headerIds = () =>
     screen
       .getAllByRole("columnheader")
-      .map((header) => (header.getAttribute("data-testid") ?? "").replace("dg-header-", ""));
+      .map((header) => header.getAttribute("data-column-id") ?? "");
 
   it("drops the second grouped column's header, not only the first", async () => {
     const user = userEvent.setup();
@@ -1220,7 +1246,7 @@ describe("row details", () => {
   const detailsToggle = (rowId?: string) =>
     rowId === undefined
       ? screen.getByRole("button", { name: /(Expand|Collapse) all details/ })
-      : within(screen.getByTestId(`dg-row-${rowId}`)).getByRole("button", {
+      : within(part("row", { rowId })).getByRole("button", {
           name: /(Show|Hide) details/,
         });
 
@@ -1228,7 +1254,7 @@ describe("row details", () => {
     renderGridUi({ renderDetails });
 
     expect(detailsToggle("1")).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByTestId("dg-details-1")).not.toBeInTheDocument();
+    expect(queryPart("details", { rowId: "1" })).not.toBeInTheDocument();
   });
 
   it("lets a data row expand, which it cannot do on its own", () => {
@@ -1277,11 +1303,11 @@ describe("row details", () => {
 
     await user.click(detailsToggle("3"));
 
-    const panel = screen.getByTestId("dg-details-3");
+    const panel = part("details", { rowId: "3" });
     expect(panel).toHaveTextContent("Details for Maria");
     // Inside the row element: one measurement covers the row and its panel.
-    expect(screen.getByTestId("dg-row-3")).toContainElement(panel);
-    expect(screen.queryByTestId("dg-details-2")).not.toBeInTheDocument();
+    expect(part("row", { rowId: "3" })).toContainElement(panel);
+    expect(queryPart("details", { rowId: "2" })).not.toBeInTheDocument();
   });
 
   it("closes it again on the second click", async () => {
@@ -1291,7 +1317,7 @@ describe("row details", () => {
     await user.click(detailsToggle("3"));
     await user.click(detailsToggle("3"));
 
-    expect(screen.queryByTestId("dg-details-3")).not.toBeInTheDocument();
+    expect(queryPart("details", { rowId: "3" })).not.toBeInTheDocument();
   });
 
   it("spans every column without adding a row to the count", async () => {
@@ -1304,7 +1330,7 @@ describe("row details", () => {
 
     // A cell spanning the row rather than a row of its own, so the count still
     // counts records.
-    expect(screen.getByTestId("dg-details-3")).toHaveAttribute(
+    expect(part("details", { rowId: "3" })).toHaveAttribute(
       "aria-colspan",
       grid.getAttribute("aria-colcount"),
     );
@@ -1344,8 +1370,8 @@ describe("row details", () => {
 
     await user.click(screen.getByRole("button", { name: "Act on Maria" }));
 
-    expect(screen.getByTestId("dg-details-3")).toBeInTheDocument();
-    expect(screen.getByTestId("dg-row-3")).toHaveAttribute(
+    expect(part("details", { rowId: "3" })).toBeInTheDocument();
+    expect(part("row", { rowId: "3" })).toHaveAttribute(
       "data-selected",
       "false",
     );
@@ -1362,11 +1388,11 @@ describe("row details", () => {
     // there are, and only then is there one to open.
     const headers = screen
       .getAllByRole("columnheader")
-      .map((header) => header.getAttribute("data-testid"));
+      .map((header) => header.getAttribute("data-column-id"));
     expect(headers.slice(0, 3)).toEqual([
-      `dg-header-${SELECT_COLUMN_ID}`,
-      `dg-header-${GROUP_COLUMN_ID}`,
-      `dg-header-${DETAILS_COLUMN_ID}`,
+      SELECT_COLUMN_ID,
+      GROUP_COLUMN_ID,
+      DETAILS_COLUMN_ID,
     ]);
   });
 
@@ -1531,7 +1557,7 @@ describe("cell selection", () => {
 
     // Out of the body entirely — not into the next row's checkbox, and not into
     // a control inside the cell just left.
-    expect(focused().closest('[data-testid^="dg-row-"]')).toBeNull();
+    expect(focused().closest(`[data-dg-part="row"]`)).toBeNull();
   });
 
   it("selects the row from Space under the checkbox mode too", async () => {
@@ -2146,25 +2172,25 @@ describe("multi-column sorting", () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await user.click(screen.getByTestId("dg-header-city"));
+    await user.click(header("city"));
     await user.keyboard("{Shift>}");
-    await user.click(screen.getByTestId("dg-header-age"));
+    await user.click(header("age"));
     await user.keyboard("{/Shift}");
 
     // Both columns sort at once: city first, age appended by the Shift.
-    expect(screen.getByTestId("dg-header-city")).toHaveAttribute(
+    expect(header("city")).toHaveAttribute(
       "aria-sort",
       "ascending",
     );
-    expect(screen.getByTestId("dg-header-age")).toHaveAttribute(
+    expect(header("age")).toHaveAttribute(
       "aria-sort",
       "descending",
     );
     expect(
-      within(screen.getByTestId("dg-header-city")).getByTestId("dg-sort-index"),
+      part("sort-index", undefined, header("city")),
     ).toHaveTextContent("1");
     expect(
-      within(screen.getByTestId("dg-header-age")).getByTestId("dg-sort-index"),
+      part("sort-index", undefined, header("age")),
     ).toHaveTextContent("2");
   });
 
@@ -2172,21 +2198,21 @@ describe("multi-column sorting", () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await user.click(screen.getByTestId("dg-header-city"));
+    await user.click(header("city"));
     await user.keyboard("{Shift>}");
-    await user.click(screen.getByTestId("dg-header-age"));
+    await user.click(header("age"));
     await user.keyboard("{/Shift}");
-    await user.click(screen.getByTestId("dg-header-name"));
+    await user.click(header("name"));
 
-    expect(screen.getByTestId("dg-header-name")).toHaveAttribute(
+    expect(header("name")).toHaveAttribute(
       "aria-sort",
       "ascending",
     );
-    expect(screen.getByTestId("dg-header-city")).toHaveAttribute(
+    expect(header("city")).toHaveAttribute(
       "aria-sort",
       "none",
     );
-    expect(screen.queryByTestId("dg-sort-index")).not.toBeInTheDocument();
+    expect(queryPart("sort-index")).not.toBeInTheDocument();
   });
 });
 
@@ -2221,7 +2247,7 @@ describe("summary row", () => {
     renderWithMantine(<SummaryGrid />);
 
     const total = testRows.reduce((sum, row) => sum + row.age, 0);
-    const summary = screen.getByTestId("dg-summary-row");
+    const summary = part("summary-row");
     expect(within(summary).getByText(`Sum ${total}`)).toBeInTheDocument();
     // Included in the stated row count: header + rows + summary.
     expect(screen.getByRole("table")).toHaveAttribute(
@@ -2232,7 +2258,7 @@ describe("summary row", () => {
 
   it("renders no summary row when no column defines a footer", () => {
     renderGridUi();
-    expect(screen.queryByTestId("dg-summary-row")).not.toBeInTheDocument();
+    expect(queryPart("summary-row")).not.toBeInTheDocument();
   });
 
   it("follows the filters through aggregateColumn", async () => {
@@ -2739,7 +2765,7 @@ describe("cell editing", () => {
 
     // The entry block appears with open editors; type a name.
     await user.click(screen.getByRole("button", { name: "add" }));
-    const entryRow = screen.getByTestId("dg-entry-__new__1");
+    const entryRow = part("entry-row", { rowId: "__new__1" });
     const entryName = within(entryRow).getByRole("textbox", {
       name: "Edit Name",
     });
@@ -2766,7 +2792,7 @@ describe("cell editing", () => {
     expect(batch.added.map((add) => add.value.name)).toEqual(["Ny Person"]);
     expect(batch.deleted).toEqual(["2"]);
     // The entry block is gone and the mark is cleared.
-    expect(screen.queryByTestId("dg-entry-__new__1")).not.toBeInTheDocument();
+    expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
     expect(bodyRows()[1]).not.toHaveAttribute("data-deleted", "true");
   });
 
@@ -2799,14 +2825,14 @@ describe("cell editing", () => {
     renderWithMantine(<EntryGrid />);
 
     await user.click(screen.getByRole("button", { name: "add" }));
-    const entryRow = screen.getByTestId("dg-entry-__new__1");
+    const entryRow = part("entry-row", { rowId: "__new__1" });
     await user.click(
       within(entryRow).getByRole("button", { name: "Add row" }),
     );
 
     await waitFor(() => expect(adds.length).toBe(1));
     expect(adds[0]).toMatchObject({ value: { name: "Ny" } });
-    expect(screen.queryByTestId("dg-entry-__new__1")).not.toBeInTheDocument();
+    expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
   });
 
   it("clears the cell on Delete and commits the empty value", async () => {
@@ -3132,7 +3158,7 @@ describe("testing contract", () => {
     expect(root).toHaveAttribute("data-dg-root");
     // The scoping the whole contract rests on: a row is found *through* the
     // named root, which is what keeps two grids on a page apart.
-    expect(within(root).getByTestId("dg-row-1")).toBeInTheDocument();
+    expect(part("row", { rowId: "1" }, root)).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "Employees" })).toBeInTheDocument();
   });
 
@@ -3151,7 +3177,7 @@ describe("testing contract", () => {
   it("carries the column id on the header as well as the cells", () => {
     const { container } = renderGridUi();
 
-    expect(screen.getByTestId("dg-header-name")).toHaveAttribute(
+    expect(header("name")).toHaveAttribute(
       "data-column-id",
       "name",
     );
@@ -3167,8 +3193,8 @@ describe("testing contract", () => {
     const grid = screen.getByRole("table");
     expect(grid).toHaveAttribute("data-dg-row-count", String(testRows.length));
 
-    await user.click(screen.getByTestId("dg-filter-button"));
-    await user.type(screen.getByTestId("dg-filter-value"), "3");
+    await user.click(part("filter-button"));
+    await user.type(part("filter-value"), "3");
 
     expect(grid).toHaveAttribute("data-dg-row-count", "1");
   });
@@ -3189,41 +3215,41 @@ describe("testing contract", () => {
     // The point of the sweep: none of these ids move when the copy does.
     renderGridUi({ labels: TMDATAGRID_LABELS_SV });
 
-    expect(screen.getByTestId("dg-toolbar")).toBeInTheDocument();
-    expect(screen.getByTestId("dg-summary-count")).toHaveTextContent("12 / 12");
+    expect(part("toolbar")).toBeInTheDocument();
+    expect(part("summary-count")).toHaveTextContent("12 / 12");
 
-    await user.click(screen.getByTestId("dg-filter-button"));
-    const filterRow = screen.getByTestId("dg-filter-row-id");
+    await user.click(part("filter-button"));
+    const filterRow = part("filter-row", { columnId: "id" });
     expect(filterRow).toHaveAttribute("data-column-id", "id");
-    await user.type(within(filterRow).getByTestId("dg-filter-value"), "3");
+    await user.type(part("filter-value", undefined, filterRow), "3");
     expect(gridRowCount()).toBe(1);
 
-    await user.click(screen.getByTestId("dg-filter-panel-close"));
-    expect(screen.queryByTestId("dg-filter-panel")).not.toBeInTheDocument();
+    await user.click(part("filter-panel-close"));
+    expect(queryPart("filter-panel")).not.toBeInTheDocument();
 
     // Clearing takes the panel with it — nothing left in it to show.
-    await user.click(screen.getByTestId("dg-filter-button"));
-    await user.click(screen.getByTestId("dg-filter-clear-all"));
+    await user.click(part("filter-button"));
+    await user.click(part("filter-clear-all"));
     expect(gridRowCount()).toBe(12);
 
-    await user.click(screen.getByTestId("dg-columns-button"));
-    await user.click(screen.getByTestId("dg-columns-toggle-city"));
-    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+    await user.click(part("columns-button"));
+    await user.click(part("columns-toggle", { columnId: "city" }));
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
   });
 
   it("sorts and pages through the lane and pager test ids", async () => {
     const user = userEvent.setup();
     renderGridUi({ enablePagination: true, initialState: { pagination: { pageIndex: 0, pageSize: 5 } } });
 
-    await user.click(screen.getByTestId("dg-header-sort-age"));
-    expect(screen.getByTestId("dg-header-age")).toHaveAttribute(
+    await user.click(part("header-sort", { columnId: "age" }));
+    expect(header("age")).toHaveAttribute(
       "aria-sort",
       "ascending",
     );
 
-    expect(screen.getByTestId("dg-page-range")).toHaveTextContent("1–5 of 12");
-    await user.click(screen.getByTestId("dg-page-next"));
-    expect(screen.getByTestId("dg-page-range")).toHaveTextContent("6–10 of 12");
+    expect(part("page-range")).toHaveTextContent("1–5 of 12");
+    await user.click(part("page-next"));
+    expect(part("page-range")).toHaveTextContent("6–10 of 12");
   });
 
   it("drives the edit lane and its editor by test id", async () => {
@@ -3257,11 +3283,11 @@ describe("testing contract", () => {
 
     renderWithMantine(<EditGrid />);
 
-    await user.click(screen.getByTestId("dg-edit-row-1"));
-    const editor = screen.getByTestId("dg-editor-1-name");
-    await user.clear(within(editor).getByTestId("dg-editor-input"));
-    await user.type(within(editor).getByTestId("dg-editor-input"), "Annika");
-    await user.click(screen.getByTestId("dg-save-row-1"));
+    await user.click(part("edit-row", { rowId: "1" }));
+    const editor = part("editor", { rowId: "1", columnId: "name" });
+    await user.clear(part("editor-input", undefined, editor));
+    await user.type(part("editor-input", undefined, editor), "Annika");
+    await user.click(part("save-row", { rowId: "1" }));
 
     await waitFor(() => expect(commits).toEqual([{ rowId: "1" }]));
   });
@@ -3286,25 +3312,26 @@ describe("testing contract", () => {
 
     renderWithMantine(<SearchGrid />);
 
-    await user.type(screen.getByTestId("dg-search"), "Sofia");
+    await user.type(part("search"), "Sofia");
     // The count the docs tell a Playwright suite to wait on.
     expect(screen.getByRole("table")).toHaveAttribute("data-dg-row-count", "2");
 
-    await user.click(screen.getByTestId("dg-search-clear"));
+    await user.click(part("search-clear"));
     expect(screen.getByRole("table")).toHaveAttribute("data-dg-row-count", "12");
   });
 
-  it("ticks a row through its checkbox test id", async () => {
+  it("ticks a row through its checkbox part", async () => {
     const user = userEvent.setup();
-    const { container } = renderGridUi();
+    renderGridUi();
 
-    await user.click(screen.getByTestId("dg-select-row-2"));
-    expect(
-      container.querySelector('[data-testid="dg-row-2"]'),
-    ).toHaveAttribute("data-selected", "true");
+    await user.click(part("select-row", { rowId: "2" }));
+    expect(part("row", { rowId: "2" })).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
 
-    await user.click(screen.getByTestId("dg-select-all"));
-    expect(screen.getByTestId("dg-row-1")).toHaveAttribute(
+    await user.click(part("select-all"));
+    expect(part("row", { rowId: "1" })).toHaveAttribute(
       "data-selected",
       "true",
     );

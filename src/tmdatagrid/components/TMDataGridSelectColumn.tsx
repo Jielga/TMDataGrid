@@ -46,7 +46,7 @@ function SelectAllCheckbox<TData extends RowData>({
     <Checkbox
       size="xs"
       aria-label={labels.selectAllRows}
-      data-testid="dg-select-all"
+      data-dg-part="select-all"
       checked={allSelected}
       indeterminate={someSelected && !allSelected}
       onChange={table.getToggleAllRowsSelectedHandler()}
@@ -112,7 +112,8 @@ function SelectRowCheckbox<TData extends RowData>({
       size="xs"
       tabIndex={tabIndex}
       aria-label={isGroupRow ? labels.selectGroup : labels.selectRow}
-      data-testid={`dg-select-row-${row.id}`}
+      data-dg-part="select-row"
+      data-row-id={row.id}
       checked={selected}
       disabled={selectableIds.length === 0}
       indeterminate={someSelected && !selected}

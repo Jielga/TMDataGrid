@@ -72,7 +72,7 @@ export function measureColumnContentWidth({
   }
 
   const title = container.querySelector<HTMLElement>(
-    `[data-testid="dg-header-${CSS.escape(columnId)}"] [data-dg-header-title]`,
+    `[data-column-id="${CSS.escape(columnId)}"] [data-dg-header-title]`,
   );
   if (title) {
     const header = title.closest<HTMLElement>('[role="columnheader"]');

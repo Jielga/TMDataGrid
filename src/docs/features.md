@@ -554,7 +554,7 @@ The panel is a cell spanning the row, inside the row element. So it takes the
 row's background, moves with it, and is measured with it — but it is not a row:
 `aria-rowcount` still counts records, and a click or right-click inside it stops
 there rather than selecting or highlighting the row underneath. It carries
-`data-testid="dg-details-<rowId>"`.
+`data-dg-part="details"` with the row's `data-row-id` — see [Testing](#testing).
 
 Group rows have no panel. Expanding one opens its children, and the record a
 group row is built from is an arbitrary one of them — the same reason group rows

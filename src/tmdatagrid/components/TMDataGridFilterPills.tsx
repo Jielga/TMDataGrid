@@ -68,7 +68,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
     <div
       role="group"
       aria-label={labels.activeFilters}
-      data-testid="dg-filter-pills"
+      data-dg-part="filter-pills"
       className={[classes.filterPills, className].filter(Boolean).join(" ")}
     >
       <Pill.Group size={size}>
@@ -84,7 +84,8 @@ export function TMDataGridFilterPills<TData extends RowData>({
               key={filter.id}
               size={size}
               className={classes.pill}
-              data-testid={`dg-filter-pill-${filter.id}`}
+              data-dg-part="filter-pill"
+              data-column-id={filter.id}
               withRemoveButton
               onRemove={() =>
                 table.setColumnFilters(

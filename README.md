@@ -97,7 +97,7 @@ demo site:
 | [Features](src/docs/features.md)               | Enabling and disabling behaviour |
 | [Editing](src/docs/editing.md)                 | Modes, editors and validation    |
 | [Server-side](src/docs/server-side.md)         | Manual pagination and filtering  |
-| [Testing](src/docs/testing.md)                 | Test ids, roles and Playwright   |
+| [Testing](src/docs/testing.md)                 | Part hooks, roles and Playwright |
 
 ## Development
 

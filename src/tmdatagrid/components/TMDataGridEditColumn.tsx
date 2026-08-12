@@ -56,7 +56,8 @@ function EditLaneCell<TData extends RowData>({
             size="sm"
             tabIndex={tabIndex}
             aria-label={labels.confirmNewRow}
-            data-testid={`dg-confirm-new-row-${rowId}`}
+            data-dg-part="confirm-new-row"
+            data-row-id={rowId}
             onClick={() => void edit.commit(rowId)}
           >
             <CheckIcon size={16} stroke={2} />
@@ -68,7 +69,8 @@ function EditLaneCell<TData extends RowData>({
           size="sm"
           tabIndex={tabIndex}
           aria-label={labels.discardNewRow}
-          data-testid={`dg-discard-new-row-${rowId}`}
+          data-dg-part="discard-new-row"
+          data-row-id={rowId}
           onClick={() => edit.cancel(rowId)}
         >
           <CloseIcon size={16} stroke={1.6} />
@@ -86,7 +88,8 @@ function EditLaneCell<TData extends RowData>({
         size="sm"
         tabIndex={tabIndex}
         aria-label={labels.restoreRow}
-        data-testid={`dg-restore-row-${rowId}`}
+        data-dg-part="restore-row"
+        data-row-id={rowId}
         onClick={(event) => {
           event.stopPropagation();
           edit.deleteRow(rowId);
@@ -110,7 +113,8 @@ function EditLaneCell<TData extends RowData>({
             size="sm"
             tabIndex={tabIndex}
             aria-label={labels.editRow}
-            data-testid={`dg-edit-row-${rowId}`}
+            data-dg-part="edit-row"
+            data-row-id={rowId}
             onClick={(event) => {
               event.stopPropagation();
               edit.begin({ rowId, columnId: null });
@@ -126,7 +130,8 @@ function EditLaneCell<TData extends RowData>({
             size="sm"
             tabIndex={tabIndex}
             aria-label={labels.deleteRow}
-            data-testid={`dg-delete-row-${rowId}`}
+            data-dg-part="delete-row"
+            data-row-id={rowId}
             onClick={(event) => {
               event.stopPropagation();
               edit.deleteRow(rowId);
@@ -158,8 +163,8 @@ function EditLaneCell<TData extends RowData>({
       size="sm"
       tabIndex={tabIndex}
       aria-label={labels.saveRow}
-      data-testid={`dg-save-row-${rowId}`}
-      data-dg-save-row
+      data-dg-part="save-row"
+      data-row-id={rowId}
       onClick={(event) => {
         event.stopPropagation();
         void edit.commit(rowId);
@@ -184,7 +189,8 @@ function EditLaneCell<TData extends RowData>({
         size="sm"
         tabIndex={tabIndex}
         aria-label={labels.cancelRowEdit}
-        data-testid={`dg-cancel-row-${rowId}`}
+        data-dg-part="cancel-row"
+        data-row-id={rowId}
         onClick={(event) => {
           event.stopPropagation();
           edit.cancel(rowId);

@@ -42,12 +42,12 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
   /** Set on the root element. */
   id?: string;
   /**
-   * Names this grid for tests. The grid's own test ids are keyed on row and
-   * column ids, which two grids on one page share — scope through this one
-   * and they stop colliding:
+   * Names this grid for tests. The grid names its own pieces with
+   * `data-dg-part` rather than minting test ids, and those repeat across
+   * grids — scope through this one and they stop colliding:
    *
    * ```ts
-   * page.getByTestId("orders").getByTestId("dg-row-42")
+   * page.getByTestId("orders").locator('[data-dg-part="row"][data-row-id="42"]')
    * ```
    *
    * See the Testing docs page for the full attribute contract.

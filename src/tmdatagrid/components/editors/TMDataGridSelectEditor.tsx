@@ -35,7 +35,7 @@ export function TMDataGridSelectEditor({
       // reason the filter panel keeps its dropdowns unportalled.
       comboboxProps={{ withinPortal: false }}
       aria-label={labels.editCell(getColumnLabel(column))}
-      data-testid="dg-editor-input"
+      data-dg-part="editor-input"
       data={optionsToComboboxData(
         resolveColumnOptions({ table, column, row, fallback: "faceted" }),
       )}

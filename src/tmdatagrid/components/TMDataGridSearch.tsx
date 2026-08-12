@@ -99,7 +99,7 @@ export function TMDataGridSearch({
       onChange={(event) => handleChange(event.currentTarget.value)}
       placeholder={placeholder ?? labels.searchPlaceholder}
       aria-label={labels.searchLabel}
-      data-testid="dg-search"
+      data-dg-part="search"
       leftSection={<SearchIcon size={16} stroke={1.6} />}
       rightSection={
         draft !== "" ? (
@@ -108,7 +108,7 @@ export function TMDataGridSearch({
             color="gray"
             size="sm"
             aria-label={labels.clearSearch}
-            data-testid="dg-search-clear"
+            data-dg-part="search-clear"
             onClick={() => {
               clearTimeout(timeoutRef.current);
               setDraft("");

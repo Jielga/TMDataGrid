@@ -23,7 +23,7 @@ Root component. Provides `{ table, ui, features }` to its children.
 | `className` | `string` | – | Added to the root element class. |
 | `style` | `CSSProperties` + `--*` variables | – | Root element styles. Set a bounded height. |
 | `id` | `string` | – | Set on the root element. |
-| `data-testid` | `string` | – | Names the grid for tests. The grid's own test ids are keyed on row and column ids, so scope through this one when a page holds more than one grid — see [Testing](#testing). |
+| `data-testid` | `string` | – | Names the grid for tests. The grid's own `data-dg-part` hooks repeat across grids, so scope through this one when a page holds more than one — see [Testing](#testing). |
 
 Spread the hook result rather than assigning the first three props individually:
 

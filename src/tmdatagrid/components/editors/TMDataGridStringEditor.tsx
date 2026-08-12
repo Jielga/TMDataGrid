@@ -21,7 +21,7 @@ export function TMDataGridStringEditor({
       autoFocus={autoFocus}
       onFocus={selectAllOnFocus}
       aria-label={labels.editCell(getColumnLabel(column))}
-      data-testid="dg-editor-input"
+      data-dg-part="editor-input"
       value={typeof value === "string" ? value : ""}
       onChange={(event) => field.handleChange(event.currentTarget.value)}
       onBlur={field.handleBlur}
