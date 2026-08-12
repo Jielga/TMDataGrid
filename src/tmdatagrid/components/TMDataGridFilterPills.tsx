@@ -68,6 +68,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
     <div
       role="group"
       aria-label={labels.activeFilters}
+      data-testid="dg-filter-pills"
       className={[classes.filterPills, className].filter(Boolean).join(" ")}
     >
       <Pill.Group size={size}>
@@ -83,6 +84,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
               key={filter.id}
               size={size}
               className={classes.pill}
+              data-testid={`dg-filter-pill-${filter.id}`}
               withRemoveButton
               onRemove={() =>
                 table.setColumnFilters(
@@ -93,6 +95,9 @@ export function TMDataGridFilterPills<TData extends RowData>({
               // the tab order, because inside a `PillsInput` Backspace is the
               // way out. These pills stand on their own, so the ✕ has to be a
               // real button.
+              // No test id of its own: Mantine types these props as
+              // `CloseButtonProps`, which has no room for `data-*`. The pill
+              // carries one, and the ✕ is the only button inside it.
               removeButtonProps={{
                 "aria-label": labels.clearFilter(label),
                 "aria-hidden": false,

@@ -42,6 +42,7 @@ export function TMDataGridEditActions() {
         size="compact-sm"
         disabled={dirtyCount === 0}
         loading={isSubmitting}
+        data-testid="dg-save-all"
         onClick={() => void edit.submitAll()}
       >
         {labels.saveAllEdits(dirtyCount)}
@@ -51,6 +52,7 @@ export function TMDataGridEditActions() {
         color="gray"
         size="compact-sm"
         disabled={dirtyCount === 0}
+        data-testid="dg-discard-all"
         onClick={() => edit.cancelAll()}
       >
         {labels.discardAllEdits}

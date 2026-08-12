@@ -4,6 +4,7 @@ import editingDoc from "./editing.md?raw";
 import featuresDoc from "./features.md?raw";
 import gettingStartedDoc from "./getting-started.md?raw";
 import serverSideDoc from "./server-side.md?raw";
+import testingDoc from "./testing.md?raw";
 import useTMDataGridDoc from "./use-tm-data-grid.md?raw";
 
 export type DocsPageEntry = {
@@ -56,6 +57,12 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Server-side",
     description: "Manual pagination and filtering",
     source: serverSideDoc,
+  },
+  {
+    id: "testing",
+    label: "Testing",
+    description: "Test ids, roles and Playwright",
+    source: testingDoc,
   },
 ];
 

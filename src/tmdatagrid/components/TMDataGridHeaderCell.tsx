@@ -449,6 +449,9 @@ export function TMDataGridHeaderCell({
       ref={cellRef}
       role="columnheader"
       data-testid={`dg-header-${column.id}`}
+      // The same coordinate the body, summary and entry cells carry, so one
+      // selector reaches a column's header and its cells alike.
+      data-column-id={column.id}
       data-active={isSorted || isFiltered}
       data-align={align}
       // A control lane is a fixed track, so it cannot take the cell padding the
@@ -525,6 +528,7 @@ export function TMDataGridHeaderCell({
               color="gray"
               size="xs"
               aria-label={labels.filterOn(label)}
+              data-testid={`dg-header-filter-${column.id}`}
               onClick={(event) => {
                 event.stopPropagation();
                 openColumnFilter(api, column.id);
@@ -542,6 +546,7 @@ export function TMDataGridHeaderCell({
               color="gray"
               size="xs"
               aria-label={labels.sortColumn(label)}
+              data-testid={`dg-header-sort-${column.id}`}
               onClick={column.getToggleSortingHandler()}
             >
               {sortDirection ? (
@@ -581,6 +586,7 @@ export function TMDataGridHeaderCell({
                   color="gray"
                   size="xs"
                   aria-label={labels.columnMenu(label)}
+                  data-testid={`dg-header-menu-${column.id}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     setMenuOpened((opened) => !opened);

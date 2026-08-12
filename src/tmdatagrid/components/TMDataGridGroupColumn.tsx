@@ -72,6 +72,7 @@ function GroupCell<TData extends RowData>({
       aria-label={
         expanded ? labels.collapseGroup(label) : labels.expandGroup(label)
       }
+      data-testid={`dg-group-toggle-${row.id}`}
       // The row underneath may select or highlight on click; expanding is its
       // own gesture and must not also trigger those.
       onClick={(event) => {

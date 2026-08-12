@@ -294,10 +294,12 @@ function TMDataGridBodyCell({
       // a cell is the grid's, one from inside a cell belongs to whatever holds
       // the focus in there.
       data-cell={nav ? true : undefined}
-      data-row-id={nav?.rowId}
-      // Always present, not only under cell selection: autosize finds a
-      // column's mounted cells by it. The cell-navigation selectors also
-      // require `data-cell`, so they are unaffected.
+      // Both coordinates are always present, not only under cell selection:
+      // autosize finds a column's mounted cells by the column id, and the pair
+      // is how a test addresses one cell —
+      // `[data-row-id="42"][data-column-id="name"]`. The cell-navigation
+      // selectors also require `data-cell`, so they are unaffected.
+      data-row-id={cell.row.id}
       data-column-id={cell.column.id}
       data-focused={nav?.focused}
       aria-selected={nav?.selected}
@@ -620,6 +622,14 @@ export type TMDataGridTableProps<TData extends RowData> = {
    * How many rows before the end {@link onReachEnd} fires at. Defaults to 10.
    */
   reachEndThreshold?: number;
+  /**
+   * Accessible name for the grid — what a screen reader announces on entry,
+   * and what `getByRole("grid", { name })` matches. Worth setting on any page
+   * holding more than one grid; without it they are all just "grid".
+   */
+  "aria-label"?: string;
+  /** As {@link "aria-label"}, pointing at an element that already names it. */
+  "aria-labelledby"?: string;
 };
 
 /**
@@ -646,6 +656,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   cellExport,
   onReachEnd,
   reachEndThreshold = 10,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: TMDataGridTableProps<TData>) {
   const {
     table,
@@ -800,9 +812,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (pinnedBottomRows.length === 0) return;
     const grid = gridElementRef.current;
     if (grid === null) return;
-    const summaryRow = grid.querySelector<HTMLElement>(
-      '[data-testid="dg-summary-row"]',
-    );
+    const summaryRow = grid.querySelector<HTMLElement>("[data-dg-summary-row]");
     if (summaryRow === null) return;
     const measure = () =>
       grid.style.setProperty(
@@ -1815,6 +1825,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           // and saying `grid` without one would promise arrow keys that do
           // nothing.
           role={cellSelection ? "grid" : "table"}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
+          // Set while `meta.loading` is, whether or not the body has rows to
+          // show — a refetch over existing rows is still a fetch, and a test
+          // waiting for the grid to settle has nothing else to wait on.
+          aria-busy={loading === true ? true : undefined}
           aria-multiselectable={
             cellSelection && features.rowSelection && features.multiRowSelection
               ? true
@@ -1836,6 +1852,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             (hasSummaryRow ? 1 : 0)
           }
           aria-colcount={orderedColumns.length}
+          // Body rows the grid is currently showing — the page under
+          // pagination, everything the filters left otherwise, edge blocks
+          // included. Most of them are not in the DOM, so this is what a test
+          // waits on rather than counting nodes.
+          data-dg-row-count={rows.length + pinnedRowCount}
           style={{ gridTemplateColumns, minWidth: gridMinWidth }}
         >
           <div role="rowgroup" style={{ display: "contents" }}>
@@ -2363,6 +2384,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 rows.length + pinnedRowCount + headerGroups.length + 1
               }
               data-testid="dg-summary-row"
+              // The marker the height measurement above looks for. Separate
+              // from the test id on purpose: a `data-testid` is a promise to
+              // consumers, not a hook the component may quietly depend on.
+              data-dg-summary-row
               className={classes.summaryRow}
             >
               {leafHeaders.map((header) => {

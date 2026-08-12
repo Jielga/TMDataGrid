@@ -42,6 +42,7 @@ function DetailsCell<TData extends RowData>({
       tabIndex={tabIndex}
       aria-expanded={expanded}
       aria-label={expanded ? labels.hideDetails : labels.showDetails}
+      data-testid={`dg-details-toggle-${row.id}`}
       // The row underneath may select or highlight on click; opening a panel is
       // its own gesture and must not also trigger those.
       onClick={(event) => {
@@ -90,6 +91,7 @@ function DetailsHeader<TData extends RowData>({
       aria-label={
         allExpanded ? labels.collapseAllDetails : labels.expandAllDetails
       }
+      data-testid="dg-details-toggle-all"
       // Partly expanded opens the rest rather than closing what is already
       // open — the same reading as an indeterminate select-all box.
       onClick={() =>

@@ -45,6 +45,7 @@ export function TMDataGridFilterValueInput({
           size={size}
           w={88}
           type={inputType}
+          data-testid="dg-filter-value-from"
           value={rangeValue[0]}
           onChange={(event) =>
             onChange([event.currentTarget.value, rangeValue[1]])
@@ -55,6 +56,7 @@ export function TMDataGridFilterValueInput({
           size={size}
           w={88}
           type={inputType}
+          data-testid="dg-filter-value-to"
           value={rangeValue[1]}
           onChange={(event) =>
             onChange([rangeValue[0], event.currentTarget.value])
@@ -75,6 +77,7 @@ export function TMDataGridFilterValueInput({
         w={180}
         comboboxProps={{ withinPortal: false }}
         searchable
+        data-testid="dg-filter-value"
         data={optionsToComboboxData(options)}
         value={Array.isArray(value) ? [...value] : []}
         onChange={onChange}
@@ -89,6 +92,7 @@ export function TMDataGridFilterValueInput({
         size={size}
         w={180}
         comboboxProps={{ withinPortal: false }}
+        data-testid="dg-filter-value"
         disabled={!needsValue}
         clearable
         placeholder={needsValue ? labels.filterValuePlaceholder : ""}
@@ -108,6 +112,7 @@ export function TMDataGridFilterValueInput({
       size={size}
       w={180}
       type={needsValue ? inputType : "text"}
+      data-testid="dg-filter-value"
       disabled={!needsValue}
       placeholder={needsValue ? labels.filterValuePlaceholder : ""}
       value={needsValue ? scalarValue : ""}

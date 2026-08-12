@@ -32,6 +32,7 @@ export function TMDataGridMultiSelectEditor({
       searchable
       comboboxProps={{ withinPortal: false }}
       aria-label={labels.editCell(getColumnLabel(column))}
+      data-testid="dg-editor-input"
       data={optionsToComboboxData(
         resolveColumnOptions({ table, column, row, fallback: "faceted" }),
       )}

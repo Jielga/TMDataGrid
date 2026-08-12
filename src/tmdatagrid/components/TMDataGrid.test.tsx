@@ -40,6 +40,8 @@ import { DgTriStateFilter } from "./filters/DgTriStateFilter";
 type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
   tableProps?: TMDataGridTableProps<TestRow>;
+  /** Passed to `<TMDataGrid>` itself, the way a consumer names a grid. */
+  "data-testid"?: string;
 };
 
 /**
@@ -47,7 +49,11 @@ type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
  * a header sorts, that the panels write filter and visibility state, and that
  * the pager pages. TanStack's own behaviour is not re-tested here.
  */
-function Grid({ tableProps, ...options }: GridProps = {}) {
+function Grid({
+  tableProps,
+  "data-testid": testId,
+  ...options
+}: GridProps = {}) {
   const grid = useTMDataGrid<TestRow>({
     data: testRows,
     columns: testColumns,
@@ -60,7 +66,7 @@ function Grid({ tableProps, ...options }: GridProps = {}) {
       {/* Rendered outside the provider on purpose: the pills take the api as a
           prop, and nothing else in the grid may. */}
       <TMDataGridFilterPills api={grid} />
-      <TMDataGrid {...grid}>
+      <TMDataGrid {...grid} data-testid={testId}>
         <TMDataGrid.Toolbar>
           <TMDataGrid.SummaryCount />
           <TMDataGrid.Spacer />
@@ -3108,5 +3114,199 @@ describe("filter controls", () => {
     await user.click(await screen.findByRole("option", { name: "Paid" }));
     // …and the picked one filters under "contains".
     expect(gridRowCount()).toBe(2);
+  });
+});
+
+/**
+ * The attributes a consumer's own suite is written against — see the Testing
+ * docs page. They are a published contract, so they get tests of their own
+ * rather than being covered incidentally by whatever else queries them.
+ */
+describe("testing contract", () => {
+  it("names the root and the grid element", () => {
+    renderWithMantine(
+      <Grid tableProps={{ "aria-label": "Employees" }} data-testid="employees" />,
+    );
+
+    const root = screen.getByTestId("employees");
+    expect(root).toHaveAttribute("data-dg-root");
+    // The scoping the whole contract rests on: a row is found *through* the
+    // named root, which is what keeps two grids on a page apart.
+    expect(within(root).getByTestId("dg-row-1")).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Employees" })).toBeInTheDocument();
+  });
+
+  it("addresses a cell by its row and column, with cell selection off", () => {
+    const { container } = renderGridUi();
+
+    const cell = container.querySelector(
+      '[data-row-id="3"][data-column-id="name"]',
+    );
+    expect(cell).toHaveTextContent("Maria");
+    // Not a `gridcell`: that role is cell selection's promise, and this grid
+    // makes none.
+    expect(cell).toHaveAttribute("role", "cell");
+  });
+
+  it("carries the column id on the header as well as the cells", () => {
+    const { container } = renderGridUi();
+
+    expect(screen.getByTestId("dg-header-name")).toHaveAttribute(
+      "data-column-id",
+      "name",
+    );
+    expect(
+      container.querySelectorAll('[data-column-id="name"]').length,
+    ).toBeGreaterThan(1);
+  });
+
+  it("publishes the row count the grid is showing, mounted or not", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    const grid = screen.getByRole("table");
+    expect(grid).toHaveAttribute("data-dg-row-count", String(testRows.length));
+
+    await user.click(screen.getByTestId("dg-filter-button"));
+    await user.type(screen.getByTestId("dg-filter-value"), "3");
+
+    expect(grid).toHaveAttribute("data-dg-row-count", "1");
+  });
+
+  it("marks itself busy while meta.loading is set", () => {
+    const { rerender } = renderGridUi();
+    expect(screen.getByRole("table")).not.toHaveAttribute("aria-busy");
+
+    // Set even with rows on screen: a refetch is still a fetch, and this is
+    // the only thing saying so once the body has stopped being empty.
+    rerender(<Grid meta={{ loading: true }} />);
+    expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
+    expect(bodyRows().length).toBeGreaterThan(0);
+  });
+
+  it("reaches the chrome by test id under a translated grid", async () => {
+    const user = userEvent.setup();
+    // The point of the sweep: none of these ids move when the copy does.
+    renderGridUi({ labels: TMDATAGRID_LABELS_SV });
+
+    expect(screen.getByTestId("dg-toolbar")).toBeInTheDocument();
+    expect(screen.getByTestId("dg-summary-count")).toHaveTextContent("12 / 12");
+
+    await user.click(screen.getByTestId("dg-filter-button"));
+    const filterRow = screen.getByTestId("dg-filter-row-id");
+    expect(filterRow).toHaveAttribute("data-column-id", "id");
+    await user.type(within(filterRow).getByTestId("dg-filter-value"), "3");
+    expect(gridRowCount()).toBe(1);
+
+    await user.click(screen.getByTestId("dg-filter-panel-close"));
+    expect(screen.queryByTestId("dg-filter-panel")).not.toBeInTheDocument();
+
+    // Clearing takes the panel with it — nothing left in it to show.
+    await user.click(screen.getByTestId("dg-filter-button"));
+    await user.click(screen.getByTestId("dg-filter-clear-all"));
+    expect(gridRowCount()).toBe(12);
+
+    await user.click(screen.getByTestId("dg-columns-button"));
+    await user.click(screen.getByTestId("dg-columns-toggle-city"));
+    expect(screen.queryByTestId("dg-header-city")).not.toBeInTheDocument();
+  });
+
+  it("sorts and pages through the lane and pager test ids", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enablePagination: true, initialState: { pagination: { pageIndex: 0, pageSize: 5 } } });
+
+    await user.click(screen.getByTestId("dg-header-sort-age"));
+    expect(screen.getByTestId("dg-header-age")).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+
+    expect(screen.getByTestId("dg-page-range")).toHaveTextContent("1–5 of 12");
+    await user.click(screen.getByTestId("dg-page-next"));
+    expect(screen.getByTestId("dg-page-range")).toHaveTextContent("6–10 of 12");
+  });
+
+  it("drives the edit lane and its editor by test id", async () => {
+    const user = userEvent.setup();
+    type Employee = { id: number; name: string; age: number };
+    const helper = createTMDataGridColumnHelper<Employee>();
+    const columns = helper.columns([
+      helper.accessor("name", { header: "Name" }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+    ]);
+    const commits: Array<{ rowId: string }> = [];
+    // Outside the component: a fresh array identity every render rebuilds the
+    // row model, and the render that follows makes another one.
+    const data: Array<Employee> = [{ id: 1, name: "Anna", age: 34 }];
+
+    function EditGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data,
+        columns,
+        getRowId: (row) => String(row.id),
+        editMode: "row",
+        selectionMode: "highlight",
+        onEditCommit: (args) => void commits.push({ rowId: args.rowId }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+
+    renderWithMantine(<EditGrid />);
+
+    await user.click(screen.getByTestId("dg-edit-row-1"));
+    const editor = screen.getByTestId("dg-editor-1-name");
+    await user.clear(within(editor).getByTestId("dg-editor-input"));
+    await user.type(within(editor).getByTestId("dg-editor-input"), "Annika");
+    await user.click(screen.getByTestId("dg-save-row-1"));
+
+    await waitFor(() => expect(commits).toEqual([{ rowId: "1" }]));
+  });
+
+  it("narrows through the search test id", async () => {
+    const user = userEvent.setup();
+    function SearchGrid() {
+      const grid = useTMDataGrid<TestRow>({
+        data: testRows,
+        columns: testColumns,
+        getRowId: (row) => String(row.id),
+      });
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <TMDataGrid.Search debounce={0} />
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+
+    renderWithMantine(<SearchGrid />);
+
+    await user.type(screen.getByTestId("dg-search"), "Sofia");
+    // The count the docs tell a Playwright suite to wait on.
+    expect(screen.getByRole("table")).toHaveAttribute("data-dg-row-count", "2");
+
+    await user.click(screen.getByTestId("dg-search-clear"));
+    expect(screen.getByRole("table")).toHaveAttribute("data-dg-row-count", "12");
+  });
+
+  it("ticks a row through its checkbox test id", async () => {
+    const user = userEvent.setup();
+    const { container } = renderGridUi();
+
+    await user.click(screen.getByTestId("dg-select-row-2"));
+    expect(
+      container.querySelector('[data-testid="dg-row-2"]'),
+    ).toHaveAttribute("data-selected", "true");
+
+    await user.click(screen.getByTestId("dg-select-all"));
+    expect(screen.getByTestId("dg-row-1")).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
   });
 });

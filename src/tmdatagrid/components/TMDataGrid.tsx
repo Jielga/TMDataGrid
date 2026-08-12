@@ -39,6 +39,20 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
    * background. Plain `CSSProperties` rejects `--*` keys.
    */
   style?: CSSProperties & Record<`--${string}`, string | number>;
+  /** Set on the root element. */
+  id?: string;
+  /**
+   * Names this grid for tests. The grid's own test ids are keyed on row and
+   * column ids, which two grids on one page share — scope through this one
+   * and they stop colliding:
+   *
+   * ```ts
+   * page.getByTestId("orders").getByTestId("dg-row-42")
+   * ```
+   *
+   * See the Testing docs page for the full attribute contract.
+   */
+  "data-testid"?: string;
 };
 
 /**
@@ -73,6 +87,8 @@ function TMDataGridRoot<TData extends RowData>({
   children,
   className,
   style,
+  id,
+  "data-testid": testId,
 }: TMDataGridProps<TData>) {
   const rowHeight = table.options.meta?.rowHeight ?? SIZE_ROW_HEIGHT[size];
 
@@ -109,6 +125,10 @@ function TMDataGridRoot<TData extends RowData>({
   return (
     <TMDataGridContextProvider value={api}>
       <div
+        id={id}
+        data-testid={testId}
+        // The handle everything else scopes off — see the `data-testid` prop.
+        data-dg-root
         data-size={size}
         className={[classes.root, className].filter(Boolean).join(" ")}
         style={style}
