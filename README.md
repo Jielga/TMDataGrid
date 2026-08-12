@@ -207,7 +207,7 @@ The package build runs from `prepublishOnly` rather than as a workflow step, so
 `metadata.library_version` in every `skills/*/SKILL.md` to the new version.
 
 Intent reports a skill as stale when its `library_version` trails the package
-version, so without that step every release would leave all five skills stale.
+version, so without that step every release would leave every skill stale.
 Because it runs inside the version command, the bump and the skill sync land in
 the same PR and are reviewed together.
 
