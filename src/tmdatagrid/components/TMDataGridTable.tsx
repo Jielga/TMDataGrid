@@ -294,10 +294,12 @@ function TMDataGridBodyCell({
       // a cell is the grid's, one from inside a cell belongs to whatever holds
       // the focus in there.
       data-cell={nav ? true : undefined}
-      data-row-id={nav?.rowId}
-      // Always present, not only under cell selection: autosize finds a
-      // column's mounted cells by it. The cell-navigation selectors also
-      // require `data-cell`, so they are unaffected.
+      // Both coordinates are always present, not only under cell selection:
+      // autosize finds a column's mounted cells by the column id, and the pair
+      // is how a test addresses one cell —
+      // `[data-row-id="42"][data-column-id="name"]`. The cell-navigation
+      // selectors also require `data-cell`, so they are unaffected.
+      data-row-id={cell.row.id}
       data-column-id={cell.column.id}
       data-focused={nav?.focused}
       aria-selected={nav?.selected}
@@ -620,6 +622,14 @@ export type TMDataGridTableProps<TData extends RowData> = {
    * How many rows before the end {@link onReachEnd} fires at. Defaults to 10.
    */
   reachEndThreshold?: number;
+  /**
+   * Accessible name for the grid — what a screen reader announces on entry,
+   * and what `getByRole("grid", { name })` matches. Worth setting on any page
+   * holding more than one grid; without it they are all just "grid".
+   */
+  "aria-label"?: string;
+  /** As {@link "aria-label"}, pointing at an element that already names it. */
+  "aria-labelledby"?: string;
 };
 
 /**
@@ -646,6 +656,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   cellExport,
   onReachEnd,
   reachEndThreshold = 10,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: TMDataGridTableProps<TData>) {
   const {
     table,
@@ -658,6 +670,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     renderDetails,
     renderDetailsEstHeight,
     overscan,
+    scrollerRef,
   } = useTMDataGridContext();
 
   // The body depends on every state slice (sorting, filters, paging, sizing,
@@ -801,7 +814,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     const grid = gridElementRef.current;
     if (grid === null) return;
     const summaryRow = grid.querySelector<HTMLElement>(
-      '[data-testid="dg-summary-row"]',
+      '[data-dg-part="summary-row"]',
     );
     if (summaryRow === null) return;
     const measure = () =>
@@ -868,6 +881,35 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const paddingTop = virtualItems[0]?.start ?? 0;
   const paddingBottom =
     virtualizer.getTotalSize() - (virtualItems.at(-1)?.end ?? 0);
+
+  /**
+   * `api.scrollToRow`, implemented where the virtualizer is.
+   *
+   * Registered in an effect rather than during render, and with no dependency
+   * array so it re-registers on every one: the closure has to see this render's
+   * `rows`, which sorting, filtering and paging all change. A grid whose Table
+   * has unmounted leaves the hook's default behind, which answers `false`.
+   */
+  useEffect(() => {
+    scrollerRef.current = ({ rowId, align = "auto" }) => {
+      // Already parked at an edge, and outside the scrolling order — see
+      // `getDisplayedRows`. Nothing to scroll, but the row *is* on screen, so
+      // reporting failure would be the wrong answer.
+      if (
+        pinnedTopRows.some((row) => row.id === rowId) ||
+        pinnedBottomRows.some((row) => row.id === rowId)
+      ) {
+        return true;
+      }
+      const index = rows.findIndex((row) => row.id === rowId);
+      if (index < 0) return false;
+      virtualizer.scrollToIndex(index, { align });
+      return true;
+    };
+    return () => {
+      scrollerRef.current = () => false;
+    };
+  });
 
   /**
    * Infinite scroll. Latched on the row count rather than debounced: one call
@@ -1815,6 +1857,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           // and saying `grid` without one would promise arrow keys that do
           // nothing.
           role={cellSelection ? "grid" : "table"}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
+          // Set while `meta.loading` is, whether or not the body has rows to
+          // show — a refetch over existing rows is still a fetch, and a test
+          // waiting for the grid to settle has nothing else to wait on.
+          aria-busy={loading === true ? true : undefined}
           aria-multiselectable={
             cellSelection && features.rowSelection && features.multiRowSelection
               ? true
@@ -1836,6 +1884,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             (hasSummaryRow ? 1 : 0)
           }
           aria-colcount={orderedColumns.length}
+          // Body rows the grid is currently showing — the page under
+          // pagination, everything the filters left otherwise, edge blocks
+          // included. Most of them are not in the DOM, so this is what a test
+          // waits on rather than counting nodes.
+          data-dg-row-count={rows.length + pinnedRowCount}
           style={{ gridTemplateColumns, minWidth: gridMinWidth }}
         >
           <div role="rowgroup" style={{ display: "contents" }}>
@@ -1930,7 +1983,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   key={row.id}
                   role="row"
                   aria-rowindex={ariaRowIndex}
-                  data-testid={`dg-row-${row.id}`}
+                  data-dg-part="row"
+                  data-row-id={row.id}
                   // Only measured when details are on: without them every row
                   // is exactly `rowHeight`, and the estimate above is already
                   // the answer — so a plain grid keeps its ResizeObserver-free
@@ -2221,7 +2275,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     <div
                       role="cell"
                       aria-colspan={orderedColumns.length}
-                      data-testid={`dg-details-${row.id}`}
+                      data-dg-part="details"
+                      data-row-id={row.id}
                       className={classes.detailsCell}
                       // The row underneath may select, highlight or open a
                       // context menu. A panel is content, not part of that
@@ -2253,7 +2308,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   {pinnedTopRows.length > 0 && (
                     <div
                       role="presentation"
-                      data-testid="dg-pinned-top"
+                      data-dg-part="pinned-top"
                       className={classes.pinnedTopBlock}
                     >
                       {pinnedTopRows.map((row, index) =>
@@ -2297,7 +2352,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   {pinnedBottomRows.length > 0 && (
                     <div
                       role="presentation"
-                      data-testid="dg-pinned-bottom"
+                      data-dg-part="pinned-bottom"
                       className={classes.pinnedBottomBlock}
                     >
                       {pinnedBottomRows.map((row, index) =>
@@ -2362,7 +2417,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               aria-rowindex={
                 rows.length + pinnedRowCount + headerGroups.length + 1
               }
-              data-testid="dg-summary-row"
+              // Also what the height measurement above looks for. One
+              // attribute serves both now that the part name *is* the
+              // published contract rather than a testing-only alias.
+              data-dg-part="summary-row"
               className={classes.summaryRow}
             >
               {leafHeaders.map((header) => {

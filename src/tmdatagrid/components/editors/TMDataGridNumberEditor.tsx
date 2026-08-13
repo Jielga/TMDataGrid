@@ -22,6 +22,7 @@ export function TMDataGridNumberEditor({
       onFocus={selectAllOnFocus}
       hideControls
       aria-label={labels.editCell(getColumnLabel(column))}
+      data-dg-part="editor-input"
       value={typeof value === "number" ? value : ""}
       onChange={(next) =>
         // Mantine reports a number once one can be parsed, and a string while

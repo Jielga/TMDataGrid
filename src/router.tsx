@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { AppLayout } from "./AppLayout";
 import { DocsRoutePage } from "./docs/DocsRoutePage";
+import { GettingStartedPage } from "./GettingStartedPage";
 import { ExamplesIndexPage } from "./examples/ExamplesIndexPage";
 import { ExampleTopicPage } from "./examples/ExampleTopicPage";
 import { PlaygroundExample } from "./examples/playground/PlaygroundExample";
@@ -16,9 +17,7 @@ const rootRoute = createRootRoute({ component: AppLayout });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/playground", replace: true });
-  },
+  component: GettingStartedPage,
 });
 
 export const docsRoute = createRoute({
@@ -61,6 +60,16 @@ const redirectRoutes = [
     path: "/data-grid",
     beforeLoad: () => {
       throw redirect({ to: "/playground", replace: true });
+    },
+  }),
+  // Getting started moved to the front page. The static path outranks
+  // `/docs/$docId`, so existing links land on "/" instead of a 404-ish
+  // "no page named" message.
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/docs/getting-started",
+    beforeLoad: () => {
+      throw redirect({ to: "/", replace: true });
     },
   }),
   ...legacyTopicRoutes.map(({ path, topicId }) =>

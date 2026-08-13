@@ -448,7 +448,10 @@ export function TMDataGridHeaderCell({
     <div
       ref={cellRef}
       role="columnheader"
-      data-testid={`dg-header-${column.id}`}
+      data-dg-part="header"
+      // The same coordinate the body, summary and entry cells carry, so one
+      // selector reaches a column's header and its cells alike.
+      data-column-id={column.id}
       data-active={isSorted || isFiltered}
       data-align={align}
       // A control lane is a fixed track, so it cannot take the cell padding the
@@ -525,6 +528,8 @@ export function TMDataGridHeaderCell({
               color="gray"
               size="xs"
               aria-label={labels.filterOn(label)}
+              data-dg-part="header-filter"
+              data-column-id={column.id}
               onClick={(event) => {
                 event.stopPropagation();
                 openColumnFilter(api, column.id);
@@ -542,6 +547,8 @@ export function TMDataGridHeaderCell({
               color="gray"
               size="xs"
               aria-label={labels.sortColumn(label)}
+              data-dg-part="header-sort"
+              data-column-id={column.id}
               onClick={column.getToggleSortingHandler()}
             >
               {sortDirection ? (
@@ -556,7 +563,7 @@ export function TMDataGridHeaderCell({
               `isMultiSortEvent`); the number is its priority. Outside the
               hover-revealed action so an active multi-sort stays readable. */}
           {sortIndex !== null && (
-            <span className={classes.sortIndex} data-testid="dg-sort-index">
+            <span className={classes.sortIndex} data-dg-part="sort-index">
               {sortIndex}
             </span>
           )}
@@ -581,6 +588,8 @@ export function TMDataGridHeaderCell({
                   color="gray"
                   size="xs"
                   aria-label={labels.columnMenu(label)}
+                  data-dg-part="header-menu"
+                  data-column-id={column.id}
                   onClick={(event) => {
                     event.stopPropagation();
                     setMenuOpened((opened) => !opened);

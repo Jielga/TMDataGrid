@@ -11,7 +11,11 @@ import { openColumnFilter } from "../useTMDataGrid";
 
 /** Row above the grid. Compose it from the pieces below, or anything else. */
 export function TMDataGridToolbar({ children }: { children?: ReactNode }) {
-  return <div className={classes.toolbar}>{children}</div>;
+  return (
+    <div data-dg-part="toolbar" className={classes.toolbar}>
+      {children}
+    </div>
+  );
 }
 
 /** Pushes the following toolbar items to the right. */
@@ -39,7 +43,7 @@ export function TMDataGridToolbarSpacer() {
 export function TMDataGridLoadingIndicator() {
   const { table, labels } = useTMDataGridContext();
   if (table.options.meta?.loading !== true) return null;
-  return <Loader size="xs" aria-label={labels.loading} />;
+  return <Loader size="xs" data-dg-part="loading" aria-label={labels.loading} />;
 }
 
 /**
@@ -52,7 +56,7 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
 
   if (children !== undefined) {
     return (
-      <Text size={controlSize} c="dimmed">
+      <Text size={controlSize} c="dimmed" data-dg-part="summary-count">
         {children}
       </Text>
     );
@@ -64,7 +68,7 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
     table.getPreFilteredRowModel().rows.length;
 
   return (
-    <Text size={controlSize} c="dimmed">
+    <Text size={controlSize} c="dimmed" data-dg-part="summary-count">
       {shown} / {total}
     </Text>
   );
@@ -97,6 +101,7 @@ export function TMDataGridColumnsButton() {
             color="gray"
             size={controlSize}
             aria-label={labels.manageColumns}
+            data-dg-part="columns-button"
             onClick={ui.actions.toggleColumnsPanel}
           >
             <BurgerIcon size={18} stroke={1.6} />
@@ -135,9 +140,9 @@ export function TMDataGridFilterButton() {
         color={activeCount > 0 ? undefined : "gray"}
         size={controlSize}
         aria-label={labels.filters}
-        // Marks this as the panel's own toggle, so the panel's click-away
-        // handler leaves it alone and the button stays a toggle.
-        data-dg-filter-toggle
+        // Also what the panel's click-away handler tests for, so that a click
+        // here reads as a toggle rather than as a click outside.
+        data-dg-part="filter-button"
         onClick={() => {
           if (opened) {
             ui.actions.closeFilterPanel();

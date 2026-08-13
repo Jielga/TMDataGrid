@@ -52,7 +52,7 @@ export function TMDataGridColumnsPanel() {
   ).length;
 
   return (
-    <div className={classes.columnsPanel}>
+    <div data-dg-part="columns-panel" className={classes.columnsPanel}>
       <div className={classes.columnsPanelSearch}>
         <TextInput
           value={search}
@@ -60,6 +60,7 @@ export function TMDataGridColumnsPanel() {
           placeholder={labels.columnsSearchPlaceholder}
           leftSection={<SearchIcon size={16} stroke={1.6} />}
           size={controlSize}
+          data-dg-part="columns-search"
           data-autofocus
         />
       </div>
@@ -71,6 +72,8 @@ export function TMDataGridColumnsPanel() {
               key={column.id}
               size={controlSize}
               label={getColumnLabel(column)}
+              data-dg-part="columns-toggle"
+              data-column-id={column.id}
               disabled={!column.getCanHide()}
               checked={columnVisibility[column.id] !== false}
               onChange={(event) =>
@@ -90,6 +93,7 @@ export function TMDataGridColumnsPanel() {
         <Checkbox
           size={controlSize}
           label={labels.columnsShowHideAll}
+          data-dg-part="columns-toggle-all"
           checked={shownCount === hideableColumns.length}
           indeterminate={shownCount > 0 && shownCount < hideableColumns.length}
           onChange={(event) =>
@@ -104,6 +108,7 @@ export function TMDataGridColumnsPanel() {
           <Button
             variant="subtle"
             size="compact-sm"
+            data-dg-part="columns-reset"
             onClick={() => resetSettings()}
           >
             {labels.columnsReset}

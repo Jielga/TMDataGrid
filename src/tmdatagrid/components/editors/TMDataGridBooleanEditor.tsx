@@ -19,6 +19,7 @@ export function TMDataGridBooleanEditor({
       size={size}
       autoFocus={autoFocus}
       aria-label={labels.editCell(getColumnLabel(column))}
+      data-dg-part="editor-input"
       checked={value === true}
       onChange={(event) => field.handleChange(event.currentTarget.checked)}
       onBlur={field.handleBlur}

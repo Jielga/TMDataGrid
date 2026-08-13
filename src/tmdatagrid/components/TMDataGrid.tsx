@@ -39,6 +39,20 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
    * background. Plain `CSSProperties` rejects `--*` keys.
    */
   style?: CSSProperties & Record<`--${string}`, string | number>;
+  /** Set on the root element. */
+  id?: string;
+  /**
+   * Names this grid for tests. The grid names its own pieces with
+   * `data-dg-part` rather than minting test ids, and those repeat across
+   * grids — scope through this one and they stop colliding:
+   *
+   * ```ts
+   * page.getByTestId("orders").locator('[data-dg-part="row"][data-row-id="42"]')
+   * ```
+   *
+   * See the Testing docs page for the full attribute contract.
+   */
+  "data-testid"?: string;
 };
 
 /**
@@ -69,10 +83,14 @@ function TMDataGridRoot<TData extends RowData>({
   renderDetailsEstHeight,
   overscan,
   resetSettings,
+  scrollToRow,
+  scrollerRef,
   size = DEFAULT_TMDATAGRID_SIZE,
   children,
   className,
   style,
+  id,
+  "data-testid": testId,
 }: TMDataGridProps<TData>) {
   const rowHeight = table.options.meta?.rowHeight ?? SIZE_ROW_HEIGHT[size];
 
@@ -87,6 +105,8 @@ function TMDataGridRoot<TData extends RowData>({
       renderDetailsEstHeight,
       overscan,
       resetSettings,
+      scrollToRow,
+      scrollerRef,
       size,
       rowHeight,
       controlSize: SIZE_CONTROL_SIZE[size],
@@ -101,6 +121,8 @@ function TMDataGridRoot<TData extends RowData>({
       renderDetailsEstHeight,
       overscan,
       resetSettings,
+      scrollToRow,
+      scrollerRef,
       size,
       rowHeight,
     ],
@@ -109,6 +131,10 @@ function TMDataGridRoot<TData extends RowData>({
   return (
     <TMDataGridContextProvider value={api}>
       <div
+        id={id}
+        data-testid={testId}
+        // The handle everything else scopes off — see the `data-testid` prop.
+        data-dg-root
         data-size={size}
         className={[classes.root, className].filter(Boolean).join(" ")}
         style={style}

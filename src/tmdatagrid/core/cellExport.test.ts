@@ -1,7 +1,8 @@
 import { act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderGrid, testRows } from "../../test/gridHarness";
+import { erased, renderGrid, testRows } from "../../test/gridHarness";
 import {
+  buildCellMatrix,
   buildGridCellMatrix,
   formatExportValue,
   toClipboardText,
@@ -34,6 +35,90 @@ describe("formatExportValue", () => {
   it("keeps what an object held rather than stringifying it to nothing", () => {
     expect(formatExportValue({ a: 1 }, nordic)).toBe('{"a":1}');
     expect(formatExportValue(true, nordic)).toBe("true");
+  });
+
+  it("joins a multiSelect cell's array the way it reads on screen", () => {
+    expect(formatExportValue(["Paid", "Pending"], nordic)).toBe("Paid, Pending");
+    // Elements go through the same formatting as scalar cells.
+    expect(formatExportValue([1.5, 2], nordic)).toBe("1,5, 2");
+    expect(formatExportValue([], nordic)).toBe("");
+  });
+});
+
+describe("buildCellMatrix", () => {
+  // The range-export path: what Ctrl+C over a cell rectangle writes.
+  function gridSlice() {
+    const api = erased(renderGrid().result.current);
+    const columns = [
+      ...api.table.getLeftVisibleLeafColumns(),
+      ...api.table.getCenterVisibleLeafColumns(),
+      ...api.table.getRightVisibleLeafColumns(),
+    ];
+    // Render order: the checkbox lane first, then id, name, age, city.
+    expect(columns[0]?.id).toBe("__select__");
+    return { rows: api.table.getRowModel().rows, columns };
+  }
+
+  it("flattens the selected rectangle, headers first", () => {
+    const { rows, columns } = gridSlice();
+
+    const matrix = buildCellMatrix({
+      rows,
+      columns,
+      bounds: { top: 0, bottom: 1, left: 1, right: 2 },
+      includeHeaders: true,
+      decimalComma: true,
+    });
+
+    expect(matrix).toEqual([
+      ["ID", "Name"],
+      ["1", "Anna"],
+      ["2", "Erik"],
+    ]);
+  });
+
+  it("drops a control column the rectangle swept over", () => {
+    const { rows, columns } = gridSlice();
+
+    const matrix = buildCellMatrix({
+      rows,
+      columns,
+      bounds: { top: 0, bottom: 0, left: 0, right: 1 },
+      includeHeaders: false,
+      decimalComma: true,
+    });
+
+    // The checkbox lane holds a control, not a value — exporting it would
+    // paste an empty column that shifts everything to its right.
+    expect(matrix).toEqual([["1"]]);
+  });
+
+  it("writes nothing when the rectangle held only control columns", () => {
+    const { rows, columns } = gridSlice();
+
+    const matrix = buildCellMatrix({
+      rows,
+      columns,
+      bounds: { top: 0, bottom: 5, left: 0, right: 0 },
+      includeHeaders: true,
+      decimalComma: true,
+    });
+
+    expect(matrix).toEqual([]);
+  });
+
+  it("skips bounds rows that are not there to read", () => {
+    const { rows, columns } = gridSlice();
+
+    const matrix = buildCellMatrix({
+      rows,
+      columns,
+      bounds: { top: rows.length - 1, bottom: rows.length + 3, left: 1, right: 1 },
+      includeHeaders: false,
+      decimalComma: true,
+    });
+
+    expect(matrix).toEqual([[String(rows.length)]]);
   });
 });
 

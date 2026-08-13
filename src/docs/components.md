@@ -22,6 +22,8 @@ Root component. Provides `{ table, ui, features }` to its children.
 | `children` | `ReactNode` | – | Grid components. |
 | `className` | `string` | – | Added to the root element class. |
 | `style` | `CSSProperties` + `--*` variables | – | Root element styles. Set a bounded height. |
+| `id` | `string` | – | Set on the root element. |
+| `data-testid` | `string` | – | Names the grid for tests. The grid's own `data-dg-part` hooks repeat across grids, so scope through this one when a page holds more than one — see [Testing](#testing). |
 
 Spread the hook result rather than assigning the first three props individually:
 
@@ -87,6 +89,7 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 | `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 | `cellExport` | `TMDataGridCellExportOptions` | How Ctrl+C and the export item write values, under `cellSelection: "range"`. Nordic Excel defaults — `{ separator: ";", decimalComma: true, includeHeaders: true, fileName: "export" }`. |
+| `aria-label` / `aria-labelledby` | `string` | Accessible name for the grid — what a screen reader announces on entry, and what `getByRole("grid", { name })` matches. Worth setting on any page holding more than one grid. |
 
 Pass the row type to keep `onRowClick` typed:
 

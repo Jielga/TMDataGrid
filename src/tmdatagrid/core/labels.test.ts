@@ -4,6 +4,8 @@ import { FILTER_OPERATOR_LABELS } from "./filterOperators";
 
 describe("mergeLabels", () => {
   it("returns the English defaults untouched with no override", () => {
+    // Identity on purpose, not just equality: a stable reference is what lets
+    // memoized chrome skip re-rendering when no labels were passed.
     expect(mergeLabels()).toBe(TMDATAGRID_LABELS_EN);
   });
 

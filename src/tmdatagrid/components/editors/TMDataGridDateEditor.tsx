@@ -38,6 +38,7 @@ export function TMDataGridDateEditor({
       autoFocus={autoFocus}
       type="date"
       aria-label={labels.editCell(getColumnLabel(column))}
+      data-dg-part="editor-input"
       value={text}
       onChange={(event) => {
         const next = event.currentTarget.value;

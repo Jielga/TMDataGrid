@@ -103,7 +103,8 @@ export function TMDataGridEntryRows({
           <div
             key={entryRow.id}
             role="row"
-            data-testid={`dg-entry-${entryRow.id}`}
+            data-dg-part="entry-row"
+            data-row-id={entryRow.id}
             className={classes.entryRow}
           >
             {orderedColumns.map((column) => {

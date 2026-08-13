@@ -35,7 +35,9 @@ function DocsSection() {
   return (
     <>
       <SectionLabel>DOCUMENTATION</SectionLabel>
-      {DOCS_PAGES.map((page) => (
+      {/* Getting started is the front page, linked at the top of the nav —
+          listing it here too would give the same page two active states. */}
+      {DOCS_PAGES.filter((page) => page.id !== "getting-started").map((page) => (
         <NavLink
           key={page.id}
           component={Link}
@@ -172,6 +174,16 @@ export function AppLayout() {
 
         {open && (
           <>
+            {/* The front page leads the nav, the way a package site starts
+                with its install-and-first-render page. */}
+            <NavLink
+              component={Link}
+              to="/"
+              activeOptions={EXACT}
+              label="Getting started"
+              description="Install and your first grid"
+              style={NAV_LINK_STYLE}
+            />
             <ExamplesSection pathname={pathname} />
             <DocsSection />
           </>

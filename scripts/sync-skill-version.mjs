@@ -4,7 +4,7 @@
 // Runs as the second half of `npm run version-packages`, immediately after
 // `changeset version` bumps package.json. Intent compares each skill's
 // library_version against the package version and reports drift, so without this
-// step every release would leave all five skills stale until someone noticed.
+// step every release would leave every skill stale until someone noticed.
 // Doing it here means the bump and the skill sync land in the same Version
 // Packages PR and can be reviewed together.
 

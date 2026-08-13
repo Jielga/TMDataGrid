@@ -45,6 +45,13 @@ const columns = helper.columns([
         row === undefined ? ["for-filter"] : [`for-row-${String(row.id)}`],
     },
   }),
+  // A select column that never declared options — what the resolver's
+  // fallback parameter exists for.
+  helper.accessor("city", {
+    id: "bareCity",
+    header: "Bare city",
+    meta: { type: "select" },
+  }),
 ]);
 
 const rows: Array<Order> = [
@@ -115,14 +122,7 @@ describe("resolveColumnOptions", () => {
 
   it("is empty without a declaration, unless a fallback is given", () => {
     const api = renderOrderGrid();
-    const cityColumn = column(api, "city");
-    // The same column with its declaration removed — what a plain select
-    // column with no `meta.options` looks like to the resolver.
-    const bare = {
-      ...cityColumn,
-      columnDef: { ...cityColumn.columnDef, meta: {} },
-      getFacetedUniqueValues: cityColumn.getFacetedUniqueValues.bind(cityColumn),
-    } as typeof cityColumn;
+    const bare = column(api, "bareCity");
     expect(resolveColumnOptions({ table: api.table, column: bare })).toEqual(
       [],
     );

@@ -95,7 +95,9 @@ demo site:
 | [Components](src/docs/components.md)           | Props for every component        |
 | [Columns](src/docs/columns.md)                 | Definitions, sizing and filters  |
 | [Features](src/docs/features.md)               | Enabling and disabling behaviour |
+| [Editing](src/docs/editing.md)                 | Modes, editors and validation    |
 | [Server-side](src/docs/server-side.md)         | Manual pagination and filtering  |
+| [Testing](src/docs/testing.md)                 | Part hooks, roles and Playwright |
 
 ## Development
 
@@ -135,6 +137,10 @@ npm run test:watch
 ```
 
 ## Testing
+
+For testing an application that *uses* the grid — the test ids, roles and ARIA
+attributes it publishes, and how to drive it from Playwright — see
+[Testing](src/docs/testing.md). What follows is about this repo's own suite.
 
 Vitest with React Testing Library, in jsdom. Tests sit next to the code they
 cover as `*.test.ts(x)` and are excluded from both the package and the
@@ -201,7 +207,7 @@ The package build runs from `prepublishOnly` rather than as a workflow step, so
 `metadata.library_version` in every `skills/*/SKILL.md` to the new version.
 
 Intent reports a skill as stale when its `library_version` trails the package
-version, so without that step every release would leave all five skills stale.
+version, so without that step every release would leave every skill stale.
 Because it runs inside the version command, the bump and the skill sync land in
 the same PR and are reviewed together.
 

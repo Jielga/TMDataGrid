@@ -78,7 +78,7 @@ export function TMDataGridFooter({
 
   if (pagination) {
     return (
-      <div className={classes.footer}>
+      <div data-dg-part="footer" className={classes.footer}>
         {pagination(getTMDataGridPaginationApi(table))}
       </div>
     );
@@ -108,7 +108,11 @@ export function TMDataGridFooter({
       w={260}
       position="top"
     >
-      <div className={classes.footer} data-paging-suspended={!paging}>
+      <div
+        data-dg-part="footer"
+        className={classes.footer}
+        data-paging-suspended={!paging}
+      >
         <Group gap="xs" wrap="nowrap">
           <Text size={controlSize} c="dimmed">
             {labels.rowsPerPage}
@@ -119,6 +123,7 @@ export function TMDataGridFooter({
             allowDeselect={false}
             variant="unstyled"
             disabled={!paging}
+            data-dg-part="page-size"
             data={sizeOptions.map(String)}
             value={String(pageSize)}
             onChange={(value) => {
@@ -128,7 +133,7 @@ export function TMDataGridFooter({
           />
         </Group>
 
-        <Text size={controlSize} c="dimmed">
+        <Text size={controlSize} c="dimmed" data-dg-part="page-range">
           {paging
             ? labels.pageRange({ from, to, total })
             : // Not a range: nothing is being sliced, so a range would be a lie.
@@ -142,6 +147,7 @@ export function TMDataGridFooter({
             variant="subtle"
             color="gray"
             aria-label={labels.previousPage}
+            data-dg-part="page-prev"
             disabled={!paging || !table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
@@ -151,6 +157,7 @@ export function TMDataGridFooter({
             variant="subtle"
             color="gray"
             aria-label={labels.nextPage}
+            data-dg-part="page-next"
             disabled={!paging || !table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >

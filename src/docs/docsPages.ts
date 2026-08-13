@@ -4,6 +4,7 @@ import editingDoc from "./editing.md?raw";
 import featuresDoc from "./features.md?raw";
 import gettingStartedDoc from "./getting-started.md?raw";
 import serverSideDoc from "./server-side.md?raw";
+import testingDoc from "./testing.md?raw";
 import useTMDataGridDoc from "./use-tm-data-grid.md?raw";
 
 export type DocsPageEntry = {
@@ -15,6 +16,9 @@ export type DocsPageEntry = {
 
 /** Ordered as they appear in the sidebar. */
 export const DOCS_PAGES: DocsPageEntry[] = [
+  // Served at "/" as the front page, not under /docs — the router redirects
+  // /docs/getting-started there. It stays in this list so example topics can
+  // keep referencing it and the docs-link tests keep covering its source.
   {
     id: "getting-started",
     label: "Getting started",
@@ -56,6 +60,12 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Server-side",
     description: "Manual pagination and filtering",
     source: serverSideDoc,
+  },
+  {
+    id: "testing",
+    label: "Testing",
+    description: "Part hooks, roles and Playwright",
+    source: testingDoc,
   },
 ];
 

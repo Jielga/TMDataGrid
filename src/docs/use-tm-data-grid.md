@@ -229,6 +229,32 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
 | `overscan` | `number` | The overscan, resolved to its default when the option was not set. |
+| `resetSettings` | `() => void` | Puts the settings state back to a clean first visit — see [persist](#persist). |
+| `scrollToRow` | `({ rowId, align? }) => boolean` | Scrolls a row into view; see below. |
+
+### scrollToRow
+
+The grid is always virtualized, so a row far down the list has no element and
+`scrollIntoView` has nothing to act on. `scrollToRow` moves the virtualizer
+instead:
+
+```ts
+grid.scrollToRow({ rowId: "42" });
+grid.scrollToRow({ rowId: "42", align: "center" });
+```
+
+`align` is TanStack Virtual's — `"auto"` (the default, nearest edge, leaving a
+visible row alone), `"start"`, `"center"` or `"end"`.
+
+It answers whether the row could be reached. `false` means it is not in the
+current view — filtered out, on another page, or an id matching no row — and
+nothing scrolled; paging or clearing the filter first is the caller's decision,
+not something a scroll should do behind their back. A pinned row answers `true`
+without scrolling: it is already parked at an edge.
+
+The identity is stable, so it is safe in a dependency array. Before
+`TMDataGrid.Table` has mounted there is nothing to scroll and it answers
+`false`.
 
 Both stores are subscribable, which is how a parent component reacts to grid
 state without owning it:
