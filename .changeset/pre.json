@@ -4,5 +4,32 @@
   "initialVersions": {
     "@jielga/tmdatagrid": "0.5.0"
   },
-  "changesets": []
+  "changesets": [
+    "add-delete-rows",
+    "batch-editing",
+    "between-operator",
+    "cell-click-handlers",
+    "cell-editing",
+    "css-layer",
+    "edit-modes",
+    "editing-option-unions",
+    "editor-component",
+    "empty-state-centering",
+    "empty-state-slot",
+    "filter-controls",
+    "fuzzy-quick-search",
+    "getting-started-front-page",
+    "match-highlighting",
+    "per-row-styling",
+    "persist-payload-version",
+    "reset-layout",
+    "row-numbers",
+    "row-pinning",
+    "row-style-css-variables",
+    "scroll-edges",
+    "scroll-to-row",
+    "selection-docs-repair",
+    "testing-contract",
+    "the-one-point-oh-wave"
+  ]
 }
