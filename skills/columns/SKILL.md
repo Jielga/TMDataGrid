@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '0.5.0'
+  library_version: '1.0.0-beta.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/columns.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/filterOperators.ts'
