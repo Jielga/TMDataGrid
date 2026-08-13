@@ -14,10 +14,15 @@ const NPM_PAGE = `https://www.npmjs.com/package/${PACKAGE}`;
 const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE}`;
 const REGISTRY_ACCEPT = "application/vnd.npm.install-v1+json";
 
-/** Newest run of the CI workflow on the default branch — the badge's subject. */
+/**
+ * Newest *finished* run of the CI workflow on the default branch. Without
+ * `status=completed` the newest run is the one the current push just started,
+ * whose conclusion is null for a minute or two — so the badge would blink out
+ * on every deploy, exactly when someone is most likely to be looking at it.
+ */
 const CI_RUNS_URL =
   `https://api.github.com/repos/${REPO}/actions/workflows/${CI_WORKFLOW}` +
-  `/runs?branch=main&per_page=1`;
+  `/runs?branch=main&status=completed&per_page=1`;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -44,7 +49,8 @@ function readBuildStatus(value: unknown): BuildStatus | null {
   const [run] = value.workflow_runs;
   if (!isRecord(run)) return null;
 
-  // A run still in progress has a null conclusion — nothing to report yet.
+  // `status=completed` should mean a conclusion is always present; a run that
+  // somehow lacks one is not worth a badge either way.
   const { conclusion, html_url: url } = run;
   if (typeof conclusion !== "string" || typeof url !== "string") return null;
 
