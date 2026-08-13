@@ -27,24 +27,9 @@
   margin-top: var(--mantine-spacing-xl);
 }
 
-/* Mantine's Typography styles inline code but leaves fenced blocks plain. */
-.article pre {
-  padding: var(--mantine-spacing-md);
-  border-radius: var(--mantine-radius-md);
-  border: 1px solid var(--mantine-color-default-border);
-  background-color: var(--mantine-color-default);
-  overflow-x: auto;
-  font-size: var(--mantine-font-size-sm);
-  line-height: 1.55;
-}
-
-.article pre code {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: inherit;
-  color: inherit;
-}
+/* No rules for `pre` here: every fence in the article renders as a `CodeBlock`,
+   which owns its own border, radius and surface. Styling the bare element was
+   what stacked a second outline inside that border. */
 
 .article td,
 .article th {

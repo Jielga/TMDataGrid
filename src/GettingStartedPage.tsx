@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { DocsMarkdown } from "./docs/DocsPage";
 import classes from "./docs/DocsPage.module.css";
 import gettingStartedDoc from "./docs/getting-started.md?raw";
+import { ProjectStatus } from "./ProjectStatus";
 
 /**
  * The hero owns the page's one h1, so the document's own title comes off
@@ -25,6 +26,7 @@ export function GettingStartedPage() {
           <Title order={1} mb={0}>
             TMDataGrid
           </Title>
+          <ProjectStatus />
           <Text c="dimmed" size="lg">
             A React data grid built on TanStack Table v9 and Mantine — always
             virtualized, with resizable, reorderable, sortable, filterable,
