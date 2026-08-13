@@ -140,6 +140,40 @@ const renderedColumn = (index: number) =>
     (row) => within(row).getAllByRole("cell")[index]?.textContent ?? "",
   );
 
+/**
+ * One body cell by position, on a grid running cell selection (which is what
+ * flips the cells' role to `gridcell`). On the default harness grid the
+ * columns are [checkbox, ID, Name, Age, City], so `name` is cell 2.
+ */
+const cellAt = (rowIndex: number, columnIndex: number) =>
+  within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
+
+/** The selected block as `rowId:columnId`, in render order. */
+const selectedCells = () =>
+  Array.from(
+    document.querySelectorAll<HTMLElement>('[data-cell][data-selected="true"]'),
+  ).map((cell) => `${cell.dataset.rowId}:${cell.dataset.columnId}`);
+
+/** Opens a header's column menu and returns its items. */
+const openColumnMenu = async (
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+) => {
+  await user.click(
+    screen.getByRole("button", { name: `${label} column menu` }),
+  );
+  return screen.getAllByRole("menuitem");
+};
+
+const clickMenuItem = async (
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  item: string | RegExp,
+) => {
+  await openColumnMenu(user, label);
+  await user.click(screen.getByRole("menuitem", { name: item }));
+};
+
 describe("rendering", () => {
   it("renders a header per column and the rows beneath them", () => {
     renderGridUi();
@@ -608,7 +642,11 @@ describe("match highlighting", () => {
     // The panel seeds on "id", whose "equals" is not a substring match — the
     // highlight wants the Name column's "contains".
     await user.click(screen.getByRole("button", { name: "Filters" }));
-    await user.click(screen.getAllByLabelText("Column")[0] as HTMLElement);
+    // Mantine's Select renders a hidden input under the same label, so the
+    // query goes by role, which only the visible input carries.
+    await user.click(
+      within(part("filter-panel")).getByRole("combobox", { name: "Column" }),
+    );
     await user.click(await screen.findByRole("option", { name: "Name" }));
     await user.type(screen.getByLabelText("Value"), "anna");
 
@@ -974,26 +1012,6 @@ describe("pagination", () => {
 });
 
 describe("grouping", () => {
-  /** Opens a header's column menu and returns its items. */
-  const openColumnMenu = async (
-    user: ReturnType<typeof userEvent.setup>,
-    label: string,
-  ) => {
-    await user.click(
-      screen.getByRole("button", { name: `${label} column menu` }),
-    );
-    return screen.getAllByRole("menuitem");
-  };
-
-  const clickMenuItem = async (
-    user: ReturnType<typeof userEvent.setup>,
-    label: string,
-    item: string | RegExp,
-  ) => {
-    await openColumnMenu(user, label);
-    await user.click(screen.getByRole("menuitem", { name: item }));
-  };
-
   it("offers to group on a column that has an accessor", async () => {
     const user = userEvent.setup();
     renderGridUi();
@@ -1093,15 +1111,6 @@ describe("grouping", () => {
 });
 
 describe("grouping — rendering stays in step", () => {
-  const openMenu = async (
-    user: ReturnType<typeof userEvent.setup>,
-    label: string,
-  ) => {
-    await user.click(
-      screen.getByRole("button", { name: `${label} column menu` }),
-    );
-  };
-
   /** Header ids in render order. */
   const headerIds = () =>
     screen
@@ -1112,11 +1121,11 @@ describe("grouping — rendering stays in step", () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await openMenu(user, "City");
+    await openColumnMenu(user, "City");
     await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
     expect(headerIds()).not.toContain("city");
 
-    await openMenu(user, "Name");
+    await openColumnMenu(user, "Name");
     await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
     expect(headerIds()).not.toContain("name");
   });
@@ -1125,9 +1134,9 @@ describe("grouping — rendering stays in step", () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await openMenu(user, "City");
+    await openColumnMenu(user, "City");
     await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
-    await openMenu(user, "Name");
+    await openColumnMenu(user, "Name");
     await user.click(screen.getByRole("menuitem", { name: "Group by Name" }));
 
     // A stale header list would leave a track and a header with no cell under
@@ -1141,8 +1150,7 @@ describe("grouping — rendering stays in step", () => {
 
 describe("grouping and the pager", () => {
   const groupIt = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.click(screen.getByRole("button", { name: "City column menu" }));
-    await user.click(screen.getByRole("menuitem", { name: "Group by City" }));
+    await clickMenuItem(user, "City", "Group by City");
   };
 
   it("greys the pager out rather than hiding it", async () => {
@@ -1459,22 +1467,13 @@ describe("row details", () => {
 
 describe("cell selection", () => {
   /**
-   * The columns are [checkbox, ID, Name, Age, City], so `name` is cell 2. All
-   * twelve test rows are mounted under jsdom — the virtualizer falls back to a
-   * 600px viewport, which is more than they need — so a move never has to wait
-   * for a scroll to mount its target here.
+   * All twelve test rows are mounted under jsdom — the virtualizer falls back
+   * to a 600px viewport, which is more than they need — so a move never has to
+   * wait for a scroll to mount its target here.
    */
-  const cellAt = (rowIndex: number, columnIndex: number) =>
-    within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
-
   /** Where the keyboard is, read off the DOM rather than off the store. */
   const focused = () => document.activeElement as HTMLElement;
 
-  /** The selected block as `rowId:columnId`, in render order. */
-  const selectedCells = () =>
-    Array.from(
-      document.querySelectorAll<HTMLElement>('[data-cell][data-selected="true"]'),
-    ).map((cell) => `${cell.dataset.rowId}:${cell.dataset.columnId}`);
   const focusedCoords = () => {
     const cell = document.querySelector<HTMLElement>(
       '[data-cell="true"][data-focused="true"]',
@@ -1746,14 +1745,6 @@ describe("cell selection", () => {
 });
 
 describe("cell selection — ranges", () => {
-  const cellAt = (rowIndex: number, columnIndex: number) =>
-    within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
-
-  const selectedCells = () =>
-    Array.from(
-      document.querySelectorAll<HTMLElement>('[data-cell][data-selected="true"]'),
-    ).map((cell) => `${cell.dataset.rowId}:${cell.dataset.columnId}`);
-
   const rangeGrid = () => renderGridUi({ cellSelection: "range" });
 
   it("selects the rectangle a drag covers", async () => {
@@ -2262,8 +2253,7 @@ describe("summary row", () => {
     expect(queryPart("summary-row")).not.toBeInTheDocument();
   });
 
-  it("follows the filters through aggregateColumn", async () => {
-    const user = userEvent.setup();
+  it("follows the filters through aggregateColumn", () => {
     const { result } = renderGrid();
     const filtered = aggregateColumn({
       table: result.current.table,
@@ -2271,7 +2261,7 @@ describe("summary row", () => {
     });
     expect(filtered).toBe(testRows.reduce((sum, row) => sum + row.age, 0));
 
-    await waitFor(() => {
+    act(() => {
       result.current.table.setColumnFilters([
         { id: "name", value: { operator: "equals", value: "Anna" } },
       ]);
@@ -2283,7 +2273,6 @@ describe("summary row", () => {
     expect(
       aggregateColumn({ table: result.current.table, columnId: "age" }),
     ).toBe(expected);
-    void user;
   });
 });
 
@@ -2483,9 +2472,8 @@ describe("cell editing", () => {
     );
   }
 
-  const cellAt = (rowIndex: number, columnIndex: number) =>
-    within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
-
+  // This grid has no checkbox lane, so its columns start at cell 0:
+  // [Name, Age, Note].
   const editorInput = () =>
     screen.getByRole("textbox", { name: "Edit Name" });
 
@@ -2763,28 +2751,35 @@ describe("cell editing", () => {
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
 
+  function BatchGrid({
+    onEditCommit,
+  }: {
+    onEditCommit: (args: unknown) => void;
+  }) {
+    const grid = useTMDataGrid<Employee>({
+      data: editRows,
+      columns: editColumns,
+      getRowId: (row) => String(row.id),
+      editMode: "batch",
+      selectionMode: "highlight",
+      onEditCommit,
+    } as UseTMDataGridOptions<Employee>);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.EditActions />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<Employee> />
+      </TMDataGrid>
+    );
+  }
+
   it("batch mode parks drafts on Enter and saves them through EditActions", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
-    function BatchGrid() {
-      const grid = useTMDataGrid<Employee>({
-        data: editRows,
-        columns: editColumns,
-        getRowId: (row) => String(row.id),
-        editMode: "batch",
-        selectionMode: "highlight",
-        onEditCommit: (args) => void commits.push(args),
-      } as UseTMDataGridOptions<Employee>);
-      return (
-        <TMDataGrid {...grid}>
-          <TMDataGrid.Toolbar>
-            <TMDataGrid.EditActions />
-          </TMDataGrid.Toolbar>
-          <TMDataGrid.Table<Employee> />
-        </TMDataGrid>
-      );
-    }
-    renderWithMantine(<BatchGrid />);
+    renderWithMantine(
+      <BatchGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
 
     // Two rows edited; Enter parks each draft instead of committing.
     await user.dblClick(cellAt(0, 1));
@@ -2811,25 +2806,9 @@ describe("cell editing", () => {
   it("EditActions' Discard drops every draft", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
-    function BatchGrid() {
-      const grid = useTMDataGrid<Employee>({
-        data: editRows,
-        columns: editColumns,
-        getRowId: (row) => String(row.id),
-        editMode: "batch",
-        selectionMode: "highlight",
-        onEditCommit: (args) => void commits.push(args),
-      } as UseTMDataGridOptions<Employee>);
-      return (
-        <TMDataGrid {...grid}>
-          <TMDataGrid.Toolbar>
-            <TMDataGrid.EditActions />
-          </TMDataGrid.Toolbar>
-          <TMDataGrid.Table<Employee> />
-        </TMDataGrid>
-      );
-    }
-    renderWithMantine(<BatchGrid />);
+    renderWithMantine(
+      <BatchGrid onEditCommit={(args) => void commits.push(args)} />,
+    );
 
     await user.dblClick(cellAt(0, 0));
     const input = editorInput();

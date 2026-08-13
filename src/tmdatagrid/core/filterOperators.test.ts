@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TMDATAGRID_LABELS_SV } from "./labelsSv";
 import {
   emptyValueForOperator,
   formatFilterLabel,
@@ -116,6 +117,11 @@ describe("matchesFilter", () => {
       expect(match("anything", "between", ["", ""])).toBe(true);
     });
 
+    it("reads a stray single value as the lower bound", () => {
+      expect(match(50, "between", "40")).toBe(true);
+      expect(match(30, "between", "40")).toBe(false);
+    });
+
     it("compares dates by calendar day", () => {
       const day = new Date(2026, 6, 15); // 2026-07-15 local
       expect(match(day, "between", ["2026-07-01", "2026-07-31"])).toBe(true);
@@ -148,6 +154,15 @@ describe("matchesFilter", () => {
       expect(match("PAID", "isAnyOf", ["paid"])).toBe(true);
       expect(match("anything", "isAnyOf", [])).toBe(true);
       expect(match("anything", "isNoneOf", [])).toBe(true);
+    });
+  });
+
+  describe("boolean cells", () => {
+    it("matches the stringly filter value a boolean filter stores", () => {
+      // The filter panel writes "true"/"false"; the cell holds a boolean.
+      expect(match(true, "equals", "true")).toBe(true);
+      expect(match(false, "equals", "true")).toBe(false);
+      expect(match(false, "notEquals", "true")).toBe(true);
     });
   });
 
@@ -204,6 +219,86 @@ describe("isFilterActive", () => {
     expect(isFilterActive({ operator: "between", value: ["", "60"] })).toBe(
       true,
     );
+  });
+});
+
+describe("formatFilterLabel", () => {
+  // This is the text on a filter pill — the one place the filter model is
+  // read back to the user in words.
+  it("leaves the type's default operator implicit", () => {
+    expect(
+      formatFilterLabel({
+        label: "First name",
+        type: "string",
+        filter: { operator: "contains", value: "Sofia" },
+      }),
+    ).toBe("First name: Sofia");
+    expect(
+      formatFilterLabel({
+        label: "Salary",
+        type: "number",
+        filter: { operator: "equals", value: "40" },
+      }),
+    ).toBe("Salary: 40");
+  });
+
+  it("spells out any operator the reader could not guess", () => {
+    expect(
+      formatFilterLabel({
+        label: "First name",
+        type: "string",
+        filter: { operator: "startsWith", value: "So" },
+      }),
+    ).toBe("First name starts with So");
+  });
+
+  it("says a valueless operator without the colon or a value", () => {
+    expect(
+      formatFilterLabel({
+        label: "City",
+        type: "string",
+        filter: { operator: "isEmpty", value: "" },
+      }),
+    ).toBe("City is empty");
+  });
+
+  it("joins a set value with commas", () => {
+    // `isAnyOf` is a select's default, so it elides like any default.
+    expect(
+      formatFilterLabel({
+        label: "Status",
+        type: "select",
+        filter: { operator: "isAnyOf", value: ["Paid", "Pending"] },
+      }),
+    ).toBe("Status: Paid, Pending");
+    expect(
+      formatFilterLabel({
+        label: "Status",
+        type: "select",
+        filter: { operator: "isNoneOf", value: ["Paid", "Pending"] },
+      }),
+    ).toBe("Status is none of Paid, Pending");
+  });
+
+  it("formats a between pill as an interval", () => {
+    expect(
+      formatFilterLabel({
+        label: "Salary",
+        type: "number",
+        filter: { operator: "between", value: ["40000", "60000"] },
+      }),
+    ).toBe("Salary is between 40000–60000");
+  });
+
+  it("speaks the caller's language through operatorLabels", () => {
+    expect(
+      formatFilterLabel({
+        label: "Stad",
+        type: "string",
+        filter: { operator: "isEmpty", value: "" },
+        operatorLabels: TMDATAGRID_LABELS_SV.operators,
+      }),
+    ).toBe("Stad är tom");
   });
 });
 
@@ -271,16 +366,6 @@ describe("operator sets", () => {
     expect(emptyValueForOperator("contains")).toBe("");
     expect(emptyValueForOperator("isAnyOf")).toEqual([]);
     expect(emptyValueForOperator("between")).toEqual(["", ""]);
-  });
-
-  it("formats a between pill as an interval", () => {
-    expect(
-      formatFilterLabel({
-        label: "Salary",
-        type: "number",
-        filter: { operator: "between", value: ["40000", "60000"] },
-      }),
-    ).toBe("Salary is between 40000–60000");
   });
 
   it("only offers operators the default is a member of", () => {

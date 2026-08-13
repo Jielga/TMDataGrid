@@ -448,6 +448,51 @@ describe("edit engine", () => {
     ]);
   });
 
+  it("cancelAll drops every draft, mark and entry in one motion", () => {
+    const onEditCommit = vi.fn();
+    const onEditCommitBatch = vi.fn();
+    const grid = renderEditGrid({
+      editMode: "batch",
+      onEditCommitBatch,
+      onEditCommit,
+      onRowDelete: vi.fn(),
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.deleteRow("2");
+    edit.addRow();
+
+    edit.cancelAll();
+
+    // Back to a clean slate — the discard-all button's whole promise.
+    expect(edit.state.openRowIds).toEqual([]);
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+    expect(edit.state.active).toBe(null);
+    expect(edit.getForm("1")).toBe(undefined);
+    expect(onEditCommit).not.toHaveBeenCalled();
+    expect(onEditCommitBatch).not.toHaveBeenCalled();
+  });
+
+  it("canDeleteRows follows the handlers the mode can deliver to", () => {
+    // Immediate modes need onRowDelete — there is nowhere else to report.
+    expect(renderEditGrid().current.edit.canDeleteRows()).toBe(false);
+    expect(
+      renderEditGrid({ onRowDelete: vi.fn() }).current.edit.canDeleteRows(),
+    ).toBe(true);
+
+    // Batch can also deliver deletions through the batch commit.
+    expect(
+      renderEditGrid({ editMode: "batch" }).current.edit.canDeleteRows(),
+    ).toBe(false);
+    expect(
+      renderEditGrid({ editMode: "batch", onEditCommitBatch: vi.fn() })
+        .current.edit.canDeleteRows(),
+    ).toBe(true);
+  });
+
   it("gates per-row editability through isRowEditable and meta.editable", () => {
     const grid = renderEditGrid({
       isRowEditable: (row) => row.original.id !== 2,
