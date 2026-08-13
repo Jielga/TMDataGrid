@@ -12,6 +12,9 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  /* Lets .messageRow size itself to the scrollport (100cqi) instead of the
+     full column-track width, so its content centres in the visible window. */
+  container-type: inline-size;
 }
 
 /* Column tracks are set inline via gridTemplateColumns. */
@@ -308,8 +311,16 @@
   cursor: auto;
 }
 
+/* Spans every column track, but the rendered box is pinned to the scrollport:
+   sticky at the left edge and exactly one container-width wide, so the
+   centred content stays in the middle of the window however far the grid is
+   scrolled horizontally. */
 .messageRow {
   grid-column: 1 / -1;
+  position: sticky;
+  left: 0;
+  width: 100cqi;
+  justify-self: start;
   display: flex;
   flex-direction: column;
   align-items: center;
