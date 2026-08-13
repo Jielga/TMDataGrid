@@ -1,11 +1,15 @@
 import { MantineProvider } from "@mantine/core";
-import { render, renderHook } from "@testing-library/react";
+import { render, renderHook, screen, within } from "@testing-library/react";
+import type userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import {
   createTMDataGridColumnHelper,
+  TMDataGrid,
+  TMDataGridFilterPills,
   useTMDataGrid,
   type TMDataGridApi,
   type TMDataGridRowData,
+  type TMDataGridTableProps,
   type UseTMDataGridOptions,
 } from "../tmdatagrid";
 
@@ -105,3 +109,141 @@ export function visibleColumnIds(api: TMDataGridApi<TestRow>): Array<string> {
     ...api.table.getRightVisibleLeafColumns(),
   ].map((column) => column.id);
 }
+
+export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
+  /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
+  tableProps?: TMDataGridTableProps<TestRow>;
+  /** Passed to `<TMDataGrid>` itself, the way a consumer names a grid. */
+  "data-testid"?: string;
+};
+
+/**
+ * The full compound grid the component tests render — chrome, table and
+ * footer — over the harness rows. Smoke tests for the wiring between the
+ * chrome and the table live on this; TanStack's own behaviour is not
+ * re-tested through it.
+ */
+export function Grid({
+  tableProps,
+  "data-testid": testId,
+  ...options
+}: GridProps = {}) {
+  const grid = useTMDataGrid<TestRow>({
+    data: testRows,
+    columns: testColumns,
+    getRowId: (row) => String(row.id),
+    ...options,
+  } as UseTMDataGridOptions<TestRow>);
+
+  return (
+    <>
+      {/* Rendered outside the provider on purpose: the pills take the api as a
+          prop, and nothing else in the grid may. */}
+      <TMDataGridFilterPills api={grid} />
+      <TMDataGrid {...grid} data-testid={testId}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.SummaryCount />
+          <TMDataGrid.Spacer />
+          <TMDataGrid.FilterButton />
+          <TMDataGrid.ColumnsButton />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> {...tableProps} />
+        <TMDataGrid.Footer />
+      </TMDataGrid>
+    </>
+  );
+}
+
+export const renderGridUi = (options: GridProps = {}) =>
+  renderWithMantine(<Grid {...options} />);
+
+/**
+ * Which part of the grid, and — where a part repeats — which row or column of
+ * it. The `data-dg-part` contract consumers write their own suites against, so
+ * the tests reach for it the same way the Testing docs page tells them to.
+ */
+export type PartKey = { rowId?: string; columnId?: string };
+
+export const partSelector = (name: string, key: PartKey = {}) =>
+  `[data-dg-part="${name}"]` +
+  (key.rowId === undefined ? "" : `[data-row-id="${CSS.escape(key.rowId)}"]`) +
+  (key.columnId === undefined
+    ? ""
+    : `[data-column-id="${CSS.escape(key.columnId)}"]`);
+
+export const parts = (name: string, key?: PartKey, scope: ParentNode = document) =>
+  Array.from(scope.querySelectorAll<HTMLElement>(partSelector(name, key)));
+
+/** The one matching element, or `null` — for `not.toBeInTheDocument()`. */
+export const queryPart = (
+  name: string,
+  key?: PartKey,
+  scope: ParentNode = document,
+) => scope.querySelector<HTMLElement>(partSelector(name, key));
+
+export const part = (name: string, key?: PartKey, scope?: ParentNode) => {
+  const found = queryPart(name, key, scope);
+  if (found === null) {
+    throw new Error(`No element matching ${partSelector(name, key)}`);
+  }
+  return found;
+};
+
+export const header = (columnId: string) => part("header", { columnId });
+
+export const bodyRows = () => parts("row");
+
+/**
+ * How many rows the grid says it has, mounted or not. Virtualization decides
+ * what is in the DOM — and under jsdom, which has no layout, it mounts a
+ * handful — so a count of rows has to come off `aria-rowcount`, minus the one
+ * header row it includes.
+ */
+export const gridRowCount = () =>
+  Number(screen.getByRole("table").getAttribute("aria-rowcount")) - 1;
+
+/** Row ids in the order they are rendered. */
+export const renderedRowIds = () =>
+  bodyRows().map((row) => row.getAttribute("data-row-id") ?? "");
+
+/**
+ * Text of one column's cells, in rendered order. Cell 0 is the generated
+ * checkbox column, so the defined columns start at 1.
+ */
+export const renderedColumn = (index: number) =>
+  bodyRows().map(
+    (row) => within(row).getAllByRole("cell")[index]?.textContent ?? "",
+  );
+
+/**
+ * One body cell by position, on a grid running cell selection (which is what
+ * flips the cells' role to `gridcell`). On the default harness grid the
+ * columns are [checkbox, ID, Name, Age, City], so `name` is cell 2.
+ */
+export const cellAt = (rowIndex: number, columnIndex: number) =>
+  within(bodyRows()[rowIndex]!).getAllByRole("gridcell")[columnIndex]!;
+
+/** The selected block as `rowId:columnId`, in render order. */
+export const selectedCells = () =>
+  Array.from(
+    document.querySelectorAll<HTMLElement>('[data-cell][data-selected="true"]'),
+  ).map((cell) => `${cell.dataset.rowId}:${cell.dataset.columnId}`);
+
+type UserEvent = ReturnType<typeof userEvent.setup>;
+
+/** Opens a header's column menu and returns its items. */
+export const openColumnMenu = async (user: UserEvent, label: string) => {
+  await user.click(
+    screen.getByRole("button", { name: `${label} column menu` }),
+  );
+  return screen.getAllByRole("menuitem");
+};
+
+export const clickMenuItem = async (
+  user: UserEvent,
+  label: string,
+  item: string | RegExp,
+) => {
+  await openColumnMenu(user, label);
+  await user.click(screen.getByRole("menuitem", { name: item }));
+};
