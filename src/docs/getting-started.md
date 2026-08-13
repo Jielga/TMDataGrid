@@ -6,6 +6,23 @@ TMDataGrid is a compound component built on TanStack Table v9. `useTMDataGrid`
 creates the table, `TMDataGrid` provides it through context, and the parts
 rendered inside read what they need from that context.
 
+## Installation
+
+```bash
+npm install @jielga/tmdatagrid
+```
+
+Peer dependencies: `react` and `react-dom` (19.1 or later), `@mantine/core`,
+`@tanstack/react-table` (v9), `@tanstack/react-store`, `@tanstack/store`,
+`@tanstack/react-virtual` and `@tabler/icons-react`.
+
+> **TanStack Table v9 is still in beta.** The grid is built against
+> `^9.0.0-beta.21` and uses its feature-registry API, which beta releases may
+> change without a major bump. Pin `@tanstack/react-table` and
+> `@tanstack/table-core` to an exact version if you need reproducible installs.
+
+The grid must be rendered inside a Mantine `MantineProvider`.
+
 ## Usage
 
 ```tsx
@@ -13,7 +30,7 @@ import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
-} from "./tmdatagrid";
+} from "@jielga/tmdatagrid";
 
 type Employee = { id: number; firstName: string; age: number };
 
@@ -93,7 +110,7 @@ compose. The layer name `tmdatagrid` is stable API.
 
 Each of these is controlled by a capability check. Disabling a feature through
 the standard table options also removes its interface. See
-[Features](#features).
+[Features](/docs/features).
 
 ## Layout
 
