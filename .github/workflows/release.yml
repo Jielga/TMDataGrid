@@ -17,7 +17,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write # commit the version PR, push tags, create releases
   pull-requests: write # open and update the version PR
-  id-token: write # npm provenance
+  id-token: write # npm trusted publishing (auth) and provenance
 
 jobs:
   release:
@@ -44,6 +44,11 @@ jobs:
       # `publish` runs only when there are no changesets left to consume, i.e.
       # on the merge of the version PR. `prepublishOnly` rebuilds dist from this
       # commit, so a stale build cannot reach the registry.
+      #
+      # There is no npm token: the registry authenticates this job through
+      # trusted publishing, configured package-side on npmjs.com against this
+      # repo and this workflow filename. Renaming this file breaks publishing,
+      # and a broken config surfaces as a misleading `E404 ... PUT` on publish.
       - uses: changesets/action@v1.9.0
         with:
           version: npm run version-packages
@@ -52,5 +57,4 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
