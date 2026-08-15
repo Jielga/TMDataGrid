@@ -435,6 +435,9 @@ export function TMDataGridHeaderCell({
   const cellClass = [
     classes.headerCell,
     canSort ? classes.headerCellSortable : "",
+    // Only the filter tints the title. `data-active` below stays
+    // sorted-or-filtered — it is the queryable state, not the styling hook.
+    isFiltered ? classes.headerCellFiltered : "",
     isDragged ? classes.headerCellDragging : "",
     dropSide === "before" ? classes.headerCellDropBefore : "",
     dropSide === "after" ? classes.headerCellDropAfter : "",
@@ -541,10 +544,15 @@ export function TMDataGridHeaderCell({
 
           {canSort && (
             <ActionIcon
-              className={classes.headerAction}
+              className={`${classes.headerAction} ${classes.sortAction}`}
               data-pinned-visible={isSorted}
+              // The arrow is the whole signal now that the title no longer
+              // tints, so it takes the colour while the sort holds. On an
+              // unsorted column it is only the hover affordance, and stays a
+              // faded grey so the two never read alike.
+              data-sorted={isSorted}
               variant="subtle"
-              color="gray"
+              color={isSorted ? undefined : "gray"}
               size="xs"
               aria-label={labels.sortColumn(label)}
               data-dg-part="header-sort"
