@@ -2,8 +2,10 @@ import { Burger, Flex, NavLink, Text, Tooltip } from "@mantine/core";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
-import { ColorSchemeSwitch } from "./ColorSchemeSwitch";
+import { AppHeader } from "./AppHeader";
 import { DOCS_PAGES } from "./docs/docsPages";
+import { DocsSearch } from "./docs/DocsSearch";
+import { useDocsSearch } from "./docs/useDocsSearch";
 import { exampleTopicsByCategory } from "./examples/examplePages";
 
 function SectionLabel({ children }: { children: string }) {
@@ -147,9 +149,13 @@ export function AppLayout() {
   const [navOpen, setNavOpen] = useState<boolean | null>(null);
   const open = navOpen ?? wide;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useDocsSearch();
 
   return (
-    <Flex h="100vh" style={{ overflow: "hidden" }}>
+    <Flex direction="column" h="100vh" style={{ overflow: "hidden" }}>
+      <AppHeader onSearch={search.open} />
+      <DocsSearch opened={search.opened} onClose={search.close} />
+      <Flex flex={1} style={{ minHeight: 0, overflow: "hidden" }}>
       <nav
         style={{
           width: open ? NAV_WIDTH_OPEN : NAV_WIDTH_RAIL,
@@ -189,21 +195,14 @@ export function AppLayout() {
           </>
         )}
 
-        <div
-          style={{
-            marginTop: "auto",
-            paddingTop: "var(--mantine-spacing-sm)",
-            // The router devtools badge floats in this corner during dev; the
-            // theme switch is what it would land on.
-            paddingBottom: import.meta.env.DEV ? 36 : 0,
-          }}
-        >
-          <ColorSchemeSwitch />
-        </div>
+        {/* The router devtools badge floats in this corner during dev, and
+            the nav's last link is what it would land on. */}
+        {import.meta.env.DEV && <div style={{ height: 36, flexShrink: 0 }} />}
       </nav>
-      <main style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-        <Outlet />
-      </main>
+        <main style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+          <Outlet />
+        </main>
+      </Flex>
       {/* Bottom-left: the grid's pager lives in the opposite corner, and a
           floating badge over it is the one thing you cannot scroll out of the
           way. */}

@@ -1,9 +1,20 @@
 import { cleanup, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { findDemoFences } from "../docs/demoFence";
 import { DOCS_PAGES } from "../docs/docsPages";
 import { renderWithMantine } from "../test/gridHarness";
 import { loadDemo, listDemoFiles, loadSharedSource } from "./demoRegistry";
 import { EXAMPLE_TOPICS } from "./examplePages";
+
+/** Every demo named by a ```demo fence on a docs page, with its page id. */
+function docsFences(): Array<{ page: string; file: string }> {
+  return DOCS_PAGES.flatMap((page) =>
+    findDemoFences(page.source).map((demo) => ({
+      page: page.id,
+      file: demo.file,
+    })),
+  );
+}
 
 /**
  * One test for every demo on the site, from one loop.
@@ -58,12 +69,33 @@ describe("example pages", () => {
     }
   });
 
-  it("every demo file is reachable from the tree", () => {
-    const referenced = new Set(
-      EXAMPLE_TOPICS.flatMap((topic) => topic.demos.map((demo) => demo.file)),
-    );
+  it("every demo file is reachable, from a topic or a docs page", () => {
+    const referenced = new Set([
+      ...EXAMPLE_TOPICS.flatMap((topic) => topic.demos.map((d) => d.file)),
+      ...docsFences().map((fence) => fence.file),
+    ]);
     // A demo nothing links to is a demo nobody sees.
     expect([...demoFiles].filter((file) => !referenced.has(file))).toEqual([]);
+  });
+
+  it("no demo is shown in two places", () => {
+    // A demo on a docs page *and* an example topic means the migration left
+    // half of a topic behind — two routes telling the same thing.
+    const topicFiles = EXAMPLE_TOPICS.flatMap((topic) =>
+      topic.demos.map((demo) => demo.file),
+    );
+    const fenceFiles = docsFences().map((fence) => fence.file);
+    const all = [...topicFiles, ...fenceFiles];
+
+    expect(all.filter((file, i) => all.indexOf(file) !== i)).toEqual([]);
+  });
+
+  it("every demo fence on a docs page resolves", () => {
+    // Parsing throws on a malformed fence, so reaching the loop is half the
+    // assertion; the other half is that the file it names exists.
+    for (const { page, file } of docsFences()) {
+      expect(() => loadDemo(file), `${page}.md → ${file}`).not.toThrow();
+    }
   });
 
   it("topic ids are unique — they are the route", () => {

@@ -54,6 +54,27 @@ const legacyTopicRoutes = [
   { path: "/infinite-scroll", topicId: "infinite-scroll" },
 ] as const;
 
+/**
+ * Example topics that have become documentation pages, where the demo now
+ * stands beside the prose explaining it rather than on a route of its own.
+ * The static path outranks `/examples/$topicId`, so these win.
+ */
+const migratedTopicRoutes = [
+  { path: "/examples/grouping", docId: "grouping" },
+  { path: "/examples/row-selection", docId: "row-selection" },
+  { path: "/examples/row-details", docId: "row-details" },
+  { path: "/examples/row-pinning", docId: "row-pinning" },
+  // Its two demos split: row styling kept the id, clicks and context menus
+  // became a page of its own, which the styling page links to.
+  { path: "/examples/row-styling", docId: "row-styling" },
+  { path: "/examples/sorting", docId: "sorting" },
+  // Filtering and its controls were two topics; one page holds both.
+  { path: "/examples/filtering", docId: "filtering" },
+  { path: "/examples/filter-controls", docId: "filtering" },
+  { path: "/examples/column-layout", docId: "column-layout" },
+  { path: "/examples/column-definitions", docId: "columns" },
+] as const;
+
 const redirectRoutes = [
   createRoute({
     getParentRoute: () => rootRoute,
@@ -80,6 +101,19 @@ const redirectRoutes = [
         throw redirect({
           to: "/examples/$topicId",
           params: { topicId },
+          replace: true,
+        });
+      },
+    }),
+  ),
+  ...migratedTopicRoutes.map(({ path, docId }) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path,
+      beforeLoad: () => {
+        throw redirect({
+          to: "/docs/$docId",
+          params: { docId },
           replace: true,
         });
       },

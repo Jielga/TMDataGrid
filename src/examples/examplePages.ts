@@ -8,24 +8,12 @@
  * belongs in the docs page the topic links to.
  */
 
-export type ExampleDemo = {
-  /** Path under `demos/`. Identifies both the component and its source. */
-  file: string;
+import type { DemoBlockDemo } from "./DemoBlock";
+
+/** A demo on an example-tree page always carries its own title and blurb. */
+export type ExampleDemo = DemoBlockDemo & {
   title: string;
-  /** One line. What this demo teaches that the others do not. */
   description: string;
-  /**
-   * What to *do* — "Shift+click a second header", "try Stckholm". Lives here
-   * rather than in the demo so the source stays code you would actually paste.
-   */
-  hint?: string;
-  /**
-   * Further files to show as tabs beside the demo — the shared modules it
-   * imports, so nothing it depends on is hidden. Paths under `src/examples/`.
-   */
-  extraSources?: Array<string>;
-  /** Height of the live area. Defaults to {@link DEFAULT_DEMO_HEIGHT}. */
-  height?: number;
 };
 
 export type ExampleTopic = {
@@ -50,9 +38,6 @@ export const EXAMPLE_CATEGORIES = [
 ] as const;
 
 export type ExampleCategory = (typeof EXAMPLE_CATEGORIES)[number];
-
-/** Tall enough for a header, a handful of rows and a footer. */
-export const DEFAULT_DEMO_HEIGHT = 380;
 
 /** Editing demos need room for an open editor and its validation message. */
 const EDITING_DEMO_HEIGHT = 440;
@@ -87,29 +72,6 @@ export const EXAMPLE_TOPICS: Array<ExampleTopic> = [
     ],
   },
   {
-    id: "column-definitions",
-    category: "Getting started",
-    label: "Column definitions",
-    description:
-      "Accessors, cell renderers, the six column types, alignment and sizing.",
-    docs: "columns",
-    demos: [
-      {
-        file: "getting-started/ColumnDefinitions.tsx",
-        title: "Defining columns",
-        description:
-          "Key and computed accessors, a custom cell, and one column per meta.type — open a filter on each to see what the type decided.",
-      },
-      {
-        file: "getting-started/HeaderGroups.tsx",
-        title: "Header groups",
-        description:
-          "columnHelper.group nests columns under a shared header. The group is a header row, not a column — the leaves keep the behaviour.",
-        hint: "Sort, filter and resize the leaves; the group header follows them.",
-      },
-    ],
-  },
-  {
     id: "density-and-layout",
     category: "Getting started",
     label: "Density and layout",
@@ -127,197 +89,8 @@ export const EXAMPLE_TOPICS: Array<ExampleTopic> = [
   },
 
   // ── Columns ──────────────────────────────────────────────────────────────
-  {
-    id: "sorting",
-    category: "Columns",
-    label: "Sorting",
-    description: "Single and multi-column sorting, and where the state lives.",
-    docs: "features",
-    demos: [
-      {
-        file: "columns/Sorting.tsx",
-        title: "Sorting",
-        description:
-          "Click to sort, Shift+click to append — the badge is the priority. One column opts out entirely.",
-        hint:
-          "Click a header to sort, Shift+click a second to append — the badge beside the arrow is its priority.",
-      },
-    ],
-  },
-  {
-    id: "filtering",
-    category: "Columns",
-    label: "Filtering",
-    description:
-      "The filter panel, the operators each type offers, and driving filters from your own UI.",
-    docs: "columns",
-    demos: [
-      {
-        file: "columns/Filtering.tsx",
-        title: "Filtering",
-        description:
-          "Every column type offers its own operators; salary opens on between because it says so in meta.",
-      },
-      {
-        file: "columns/FilterPills.tsx",
-        title: "Filters outside the grid",
-        description:
-          "FilterPills takes the grid as a prop rather than from context, so active filters can live in a page header.",
-      },
-    ],
-  },
-  {
-    id: "filter-controls",
-    category: "Columns",
-    label: "Filter controls",
-    description:
-      "Replacing the value input a filter opens with — built in, or your own.",
-    docs: "columns",
-    demos: [
-      {
-        file: "columns/BuiltInFilterControls.tsx",
-        title: "Built-in controls",
-        description:
-          "A slider for a range, a calendar for dates, suggestions for free text, three states for a boolean.",
-        hint:
-          "Open the filter panel and compare each row's control with the plain input the other demos show.",
-      },
-      {
-        file: "columns/CustomFilterControl.tsx",
-        title: "A control of your own",
-        description:
-          "meta.filterControl takes a component: read the operator and value, write a new one back.",
-        hint:
-          "Open the filter panel: Status offers chips, every other column the built-in control.",
-      },
-    ],
-  },
-  {
-    id: "column-layout",
-    category: "Columns",
-    label: "Visibility, pinning and ordering",
-    description:
-      "Hiding columns, pinning them to an edge, reordering them, and putting it all back.",
-    docs: "features",
-    demos: [
-      {
-        file: "columns/ColumnLayout.tsx",
-        title: "Column layout",
-        description:
-          "Drag a header to reorder, pin from the menu, hide in the columns panel — and Reset layout clears the lot.",
-        hint:
-          "Drag a header to reorder · pin or hide from a column menu · drag a divider to resize, or double-click it to fit the content.",
-      },
-    ],
-  },
 
   // ── Rows ─────────────────────────────────────────────────────────────────
-  {
-    id: "row-selection",
-    category: "Rows",
-    label: "Row selection",
-    description: "The four selection modes, and reading what is selected.",
-    docs: "features",
-    demos: [
-      {
-        file: "rows/SelectionModes.tsx",
-        title: "Selection modes",
-        description:
-          "Checkbox, row, both, or highlight-only — and what enableMultiRowSelection does to each.",
-      },
-      {
-        file: "rows/SelectionState.tsx",
-        title: "Acting on a selection",
-        description:
-          "Subscribe to the table store and the toolbar becomes a bulk-action bar.",
-      },
-    ],
-  },
-  {
-    id: "row-details",
-    category: "Rows",
-    label: "Row details",
-    description: "A panel under an expanded row, at whatever height it needs.",
-    docs: "features",
-    demos: [
-      {
-        file: "rows/DetailsPanel.tsx",
-        title: "Details panel",
-        description:
-          "Setting renderDetails is what turns the lane on; every panel is measured, so they can differ in height.",
-        hint:
-          "Expand a few rows — the panels differ in height, and each one is measured.",
-        height: 460,
-      },
-    ],
-  },
-  {
-    id: "grouping",
-    category: "Rows",
-    label: "Grouping and summary",
-    description:
-      "Grouping rows, aggregating a column per group, and totalling the grid.",
-    docs: "features",
-    demos: [
-      {
-        file: "rows/Grouping.tsx",
-        title: "Grouping and aggregation",
-        description:
-          "Group by from any column menu. Only the columns told how to aggregate fill in — the rest stay blank.",
-        hint:
-          "“Group by …” lives in every column menu. Group by Location as well and the tree nests.",
-      },
-      {
-        file: "rows/SummaryRow.tsx",
-        title: "Summary row",
-        description:
-          "A column footer summons the sticky bottom row; aggregateColumn totals every filtered row, all pages.",
-      },
-    ],
-  },
-  {
-    id: "row-pinning",
-    category: "Rows",
-    label: "Pinning and numbering",
-    description: "Sticky rows at the edges, and a gutter that counts.",
-    docs: "features",
-    demos: [
-      {
-        file: "rows/PinningAndNumbers.tsx",
-        title: "Pinned rows and row numbers",
-        description:
-          "Pin a row to either edge and the body scrolls beneath it; the number lane follows the view, not the data.",
-        hint:
-          "Right-click a row to pin it to either edge, then scroll.",
-      },
-    ],
-  },
-  {
-    id: "row-styling",
-    category: "Rows",
-    label: "Styling and interaction",
-    description:
-      "Colouring rows by their data, and reacting to clicks on rows and cells.",
-    docs: "components",
-    demos: [
-      {
-        file: "rows/RowStyling.tsx",
-        title: "Row styling",
-        description:
-          "Set --row-bg rather than background, and hover, selection and pinned cells keep working on top of it.",
-        hint:
-          "Select and hover a coloured row — both still read through the row background.",
-      },
-      {
-        file: "rows/ClickAndContextMenu.tsx",
-        title: "Clicks and context menus",
-        description:
-          "Row, cell and double-click handlers compose with what the click already does; right-click fills a menu the grid opens.",
-        hint:
-          "Click, double-click and right-click anywhere in the body.",
-      },
-    ],
-  },
 
   // ── Cells ────────────────────────────────────────────────────────────────
   {
@@ -582,7 +355,13 @@ export function findExampleTopic(id: string): ExampleTopic | undefined {
   return EXAMPLE_TOPICS.find((topic) => topic.id === id);
 }
 
-/** The tree the sidebar and the index page both render. */
+/**
+ * The tree the sidebar and the index page both render.
+ *
+ * Empty categories are left out: as topics migrate to documentation pages a
+ * category empties, and an expandable nav group that opens onto nothing is
+ * worse than no group at all.
+ */
 export function exampleTopicsByCategory(): Array<{
   category: ExampleCategory;
   topics: Array<ExampleTopic>;
@@ -590,5 +369,5 @@ export function exampleTopicsByCategory(): Array<{
   return EXAMPLE_CATEGORIES.map((category) => ({
     category,
     topics: EXAMPLE_TOPICS.filter((topic) => topic.category === category),
-  }));
+  })).filter((group) => group.topics.length > 0);
 }

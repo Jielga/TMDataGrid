@@ -1,6 +1,6 @@
 # Features
 
-> **Live examples:** [Sorting](/examples/sorting) · [Row selection](/examples/row-selection) · [Row details](/examples/row-details) · [Grouping and summary](/examples/grouping) · [Pinning and numbering](/examples/row-pinning) · [Cell selection and export](/examples/cell-selection) · [Pagination](/examples/pagination) · [Quick search](/examples/quick-search)
+> **Live examples:** [Cell selection and export](/examples/cell-selection) · [Pagination](/examples/pagination) · [Quick search](/examples/quick-search)
 
 Almost every control is bound to the TanStack capability check for that feature,
 so setting the standard table or column option removes the corresponding
@@ -16,118 +16,26 @@ see [Pagination](#pagination).
 
 | Option | Level | Interface removed |
 | --- | --- | --- |
-| `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort |
-| `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel |
+| `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort. See [Sorting](/docs/sorting) |
+| `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel. See [Filtering](/docs/filtering) |
 | `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
 | `enableGlobalFilter: false` | Table, column | `Search` — the whole input at table level, one column's participation at column level |
-| `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton` |
-| `enableColumnPinning: false` | Table | Pin and unpin menu items |
+| `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton`. See [Column layout](/docs/column-layout) |
+| `enableColumnPinning: false` | Table | Pin and unpin menu items. See [Column layout](/docs/column-layout) |
 | `enablePinning: false` | Column | That column's pin menu items |
 | `enableColumnResizing: false` | Table | Resize dragging, double-click autosize, the Autosize menu item. The divider remains as a separator |
 | `enableResizing: false` | Column | That column's resize dragging and autosize |
-| `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
+| `enableColumnOrdering: false` | Table | Header dragging and the move menu items. See [Column layout](/docs/column-layout#ordering) |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
-| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](#row-selection) |
+| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](/docs/row-selection) |
 | `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 | `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
-| `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](#row-pinning) |
+| `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](/docs/row-pinning) |
 | `enableMatchHighlighting: true` | Table | Opt-in: cells mark the matched text while a contains-family filter or the quick search is active. See [Match highlighting](#match-highlighting) |
-| `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Row grouping](#row-grouping) |
-| `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](#row-details) |
-
-### Multi-column sorting
-
-Shift+click a second header to add it to the sort instead of replacing it —
-TanStack's own `isMultiSortEvent`, so `enableMultiSort`, `maxMultiSortColCount`
-and a custom `isMultiSortEvent` all pass straight through. While more than one
-column sorts, each sorted header shows its priority (1, 2, …) beside the
-arrow. A plain click still replaces the whole sort, and the menu's Sort items
-do the same.
-
-The menu opens from the ⋮ button on the header or from a right-click anywhere on
-it — the same items either way, at the pointer for the right-click. A column
-whose menu has no remaining items renders no menu button and takes no
-right-click, so the browser's own menu comes up there instead. Dividers are
-never left at the end of a menu.
-
-```tsx
-// Read-only grid: no selection, hiding, pinning or filtering.
-const grid = useTMDataGrid({
-  data,
-  columns,
-  enableRowSelection: false,
-  enableHiding: false,
-  enableColumnPinning: false,
-  enableColumnFilters: false,
-});
-```
-
-## Row selection
-
-`selectionMode` sets what selecting looks like and what a bare row click
-does. One option rather than two, because the pair cannot vary freely: a
-click can either toggle a multi-selection or move the highlight, never both.
-Defaults to `"checkbox"`.
-
-| Mode | Checkbox column | Row click |
-| ---- | --------------- | --------- |
-| `"checkbox"` | yes, multi-select | nothing |
-| `"row"` | no | selects, with the usual modifiers |
-| `"checkboxAndHighlight"` | yes, multi-select | highlights one row |
-| `"highlight"` | no | highlights one row — no selection at all |
-
-The first two write to TanStack's `rowSelection`, so everything downstream —
-the toolbar count, `getSelectedRowModel()`, persistence — is unaffected by
-the choice. Under `"row"` the click follows the desktop-list conventions: a
-plain click makes the selection this row, Ctrl/Cmd toggles it and leaves the
-rest, Shift selects the range from the anchor, Ctrl+Shift adds that range.
-Rows are focusable in this mode and Space or Enter toggles the focused row.
-
-The highlight is state of its own, not a slice of `rowSelection` — which is
-what lets `"checkboxAndHighlight"` run both at once: tick rows for a bulk
-action, click one to open its detail panel. `defaultHighlightedRowId` seeds
-it and `onHighlightedRowChange` follows it, typically into a route for a
-master–detail view.
-
-```tsx
-const grid = useTMDataGrid({ data, columns }); // "checkbox"
-const rows = useTMDataGrid({ data, columns, selectionMode: "row" });
-const master = useTMDataGrid({ data, columns, selectionMode: "highlight" });
-```
-
-`enableRowSelection: false` removes the selection half — the checkbox column
-and row-click selection — whatever the mode; under `"highlight"` there is
-nothing for it to gate. `TMDataGrid.Table`'s `onRowClick` still fires in
-every mode, in addition to whatever the click already does.
-
-### Highlighting selected rows
-
-`showSelectedBackground` follows the mode: on for `"row"`, where the
-background is the only feedback a click gives, off for `"checkbox"`, where
-the box already says so. Set it to override that — checkboxes *and* a
-background, or row selection with no background change.
-
-```tsx
-// Checkbox column, and selected rows take the background too.
-const grid = useTMDataGrid({ data, columns, showSelectedBackground: true });
-```
-
-The colour is the `--dg-row-selected-bg` CSS variable, which defaults to
-`--mantine-primary-color-light`. Change it on the grid element — no need to
-touch the flag:
-
-```tsx
-<TMDataGrid
-  {...grid}
-  style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }}
-/>
-```
-
-Rows carry `data-selected` whenever they are selected, `data-selected-bg`
-when they also take the background, and `data-highlighted` on the highlighted
-row — custom styling can key off any of them.
+| `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Grouping](/docs/grouping) |
+| `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](/docs/row-details) |
 
 ## Pagination
 
@@ -150,7 +58,7 @@ const grid = useTMDataGrid({ data, columns, enablePagination: true });
 
 **Manual pagination** — set the standard TanStack options for server-driven
 paging. `manualPagination: true` implies `enablePagination`, so no extra flag is
-needed; see [server-side](#server-side).
+needed; see [Server-side data](/docs/server-side).
 
 ```tsx
 const grid = useTMDataGrid({
@@ -165,10 +73,10 @@ const grid = useTMDataGrid({
 
 The built-in pager can be replaced through the Footer's `pagination` render
 prop, or bypassed entirely by building on the table API — see
-[components](#components).
+[Components](/docs/components).
 
 > Client pagination is suspended while the rows are grouped, and the pager greys
-> itself out to say so. See [Grouping suspends pagination](#grouping-suspends-pagination).
+> itself out to say so. See [Grouping suspends pagination](/docs/grouping#grouping-suspends-pagination).
 
 ## Capability helpers
 
@@ -220,65 +128,6 @@ The same rule applies to values derived from the table elsewhere in an
 application. Read state through `useSelector(table.store, …)` and options
 through `features`, rather than calling methods on a long-lived object.
 
-## Column pinning
-
-Pin to left and Pin to right are available in each column menu. The current
-position is marked, and selecting it again unpins the column. Pinned columns are
-sticky within the scroll container and the boundary is marked with a divider and
-a short gradient.
-
-Headers, cells and grid tracks are ordered left, centre, right from the same
-source, so pinning does not change a column's position relative to its group.
-
-Pinning is stored in `columnPinning`, one of the slices covered by `settingsKey`
-in [persistence](#use-tm-data-grid).
-
-## Row pinning
-
-Opt-in with `enableRowPinning: true`, or a per-row predicate. Pinned rows leave
-the scrolling order and render in sticky blocks — top-pinned rows under the
-header (and under the entry block while one is open), bottom-pinned rows above
-the summary row. They are real body rows: selection, editing, details, the
-context menu and per-row styling all behave as in the body. What they sit out
-are the statements about scrolling order — striping and the cell range; the
-row-number gutter leaves them unnumbered.
-
-There is no built-in pin gesture. Pin from wherever suits — most naturally the
-row context menu:
-
-```tsx
-<TMDataGrid.Table<Employee>
-  rowContextMenu={({ row }) => (
-    <>
-      {row.getIsPinned() !== "top" && (
-        <Menu.Item onClick={() => row.pin("top")}>Pin to top</Menu.Item>
-      )}
-      {row.getIsPinned() !== false && (
-        <Menu.Item onClick={() => row.pin(false)}>Unpin</Menu.Item>
-      )}
-    </>
-  )}
-/>
-```
-
-`row.pin("top" | "bottom" | false)`, `row.getIsPinned()` and `row.getCanPin()`
-are TanStack's own APIs; the state is `rowPinning: { top: string[], bottom:
-string[] }`, settable wholesale with `table.setRowPinning()` or seeded through
-`initialState`.
-
-Behaviour worth knowing:
-
-- A pinned row stays at its edge even when a filter or the pager would have
-  dropped it from the body — pinning means "always in sight".
-- A pinned id whose row leaves `data` (a delete, a server-side page swap) is
-  simply not shown; it stays in state, harmless, and the row returns to its
-  edge if its data comes back.
-- Group rows never pin — a group row is built on its first child's record, so
-  pinning one would drag an arbitrary data row's identity to the edge. A leaf
-  whose group is collapsed stays hidden while pinned.
-- `rowPinning` is not persisted by `settingsKey`: row ids are data, and a
-  layout store outlives any one data set.
-
 ## Match highlighting
 
 Opt-in with `enableMatchHighlighting: true`: while a `contains` / `starts
@@ -297,276 +146,6 @@ The mark colour is `--dg-match-highlight-bg`, a yellow that follows the
 Mantine colour scheme by default.
 
 While off — the default — the feature costs one flag check per render.
-
-## Column ordering
-
-Enabled by default. Drag a column header sideways to move it: the header being
-dragged dims and a bar marks the edge the column will land against. "Move left"
-and "Move right" in the column menu do the same thing one step at a time, which
-is the path that works without a pointer. Both move the header, its cells and
-its filter entry together.
-
-### Regions
-
-A column can only be moved within its own pinned region, so a header in another
-region never accepts the drop. This follows TanStack's ordering pipeline:
-pinning splits the grid into left, centre and right, then `columnOrder`
-sequences the centre while `columnPinning.left` and `.right` sequence the pinned
-lanes. Unpin a column first to move it out of a pinned region.
-
-A neighbour that cannot be moved acts as a wall rather than being stepped over.
-The checkbox column sets `meta.enableOrdering: false`, so nothing can be placed
-in front of it.
-
-Columns inside a header group are not movable either, in either direction:
-`columnOrder` sequences leaf columns, so moving one would leave the group header
-spanning columns that no longer belong to it.
-
-### State
-
-Ordering writes `columnOrder` as the complete leaf order, including hidden and
-pinned columns, so a column keeps its position when it is later shown or
-unpinned. Moving a pinned column also rewrites its `columnPinning` array.
-
-Both slices are covered by `settingsKey`, so with persistence configured the
-column layout is restored on the next mount alongside widths and visibility. A
-column added to the definitions later is not in the stored order and is appended
-at the end until it is moved.
-
-```tsx
-// Ordering off; everything else as it comes.
-const grid = useTMDataGrid({ data, columns, enableColumnOrdering: false });
-```
-
-To move a column from your own code, use the same helpers the chrome uses:
-
-```tsx
-import { moveColumn, moveColumnByStep } from "./tmdatagrid";
-
-moveColumn({ table, columnId: "salary", targetId: "age", side: "before" });
-moveColumnByStep({ table, columnId: "salary", direction: 1 });
-```
-
-Both are no-ops for a move that is not allowed, including one across regions.
-`getStepTargetColumn({ table, columnId, direction })` returns the column a step
-would swap with, or `null` at the edge of a region — that is what the menu items
-use to disable themselves.
-
-## Row grouping
-
-**Group by X** in any column menu collapses the rows into a tree. On by default;
-nothing changes until a column is picked. Grouping suspends the built-in pager —
-see [below](#grouping-suspends-pagination).
-
-Grouping a column removes it from the grid — its values have moved into the tree
-lane — and a generated **Group** column appears at the front, pinned beside the
-checkbox lane. Each group row shows its value, how many records are under it,
-and a chevron. Group again from a second column's menu to nest.
-
-Because a grouped column is no longer in the grid, **Ungroup** lives on the tree
-column's menu, one item per grouped column. **Expand all groups** and **Collapse
-all groups** are in every column menu while a grouping is active.
-
-```tsx
-// Grouped on mount. `grouping` is a settings slice, so a persisted grid comes
-// back to the same tree; `expanded` is a data slice.
-const grid = useTMDataGrid({
-  data,
-  columns,
-  initialState: { grouping: ["department"] },
-});
-```
-
-### Aggregation
-
-Off unless asked for. A grouped grid is a tree, not a summary: a group row
-leaves every cell blank except the tree lane. Give a column an `aggregationFn`
-and it fills in.
-
-```tsx
-columnHelper.accessor("salary", {
-  header: "Salary",
-  aggregationFn: "sum",
-  meta: { type: "number", align: "right" },
-});
-```
-
-`"sum"`, `"min"`, `"max"`, `"extent"`, `"mean"`, `"median"`, `"unique"`,
-`"uniqueCount"` and `"count"` are registered, as is `"auto"` — which picks `sum`
-for numbers and `extent` for dates. A function is accepted too. Pass
-`aggregatedCell` to render the group row's value differently from the data rows.
-
-> TanStack's grouping feature defaults every column to `aggregationFn: "auto"`.
-> The grid clears that default so grouping does not silently start summing
-> numeric columns. Setting `aggregationFn: "auto"` yourself restores it.
-
-Grouping runs before sorting, so sorting a grouped grid sorts the rows inside
-each group and orders the groups by their aggregated value. A column with no
-aggregation has no value on a group row, so sorting on it reorders the rows
-within each group but leaves the groups where they are.
-
-### Selection
-
-A group row's checkbox selects every record under it, at any depth, including
-records inside collapsed sub-groups. It shows a tick once all of them are
-selected and a dash while only some are. Only the records are written to
-`rowSelection` — a group row is never in it, so `getSelectedRowModel()` and the
-toolbar count are unaffected by how the tree is arranged.
-
-Under `enableMultiRowSelection: false` group rows carry no checkbox: one box
-cannot stand for several rows.
-
-### Group rows and row clicks
-
-A group row does not fire `onRowClick` and cannot be highlighted. TanStack builds
-it on top of its first child's record, so a click would hand you a real-looking
-row that is the wrong one. Rows carry `data-grouped` and `data-depth` for
-styling, and `--dg-row-group-bg` sets their background.
-
-### Grouping suspends pagination
-
-**Grouping and the built-in pager do not work together, and grouping wins.** As
-soon as a column is grouped the grid renders the whole tree and relies on
-virtualization; `TMDataGrid.Footer` greys its pager out, replaces the range with
-`Grouped · all N rows`, and explains itself on hover. Ungroup and paging resumes
-where it left off.
-
-This is deliberate rather than a limitation worked around. A page can only count
-one kind of thing, and once the rows are a tree neither answer is usable:
-
-- Counting **every row** splits a group across a page boundary, so opening one
-  group fills the page with its children and strands every group after it on
-  pages the user has to go looking for.
-- Counting **top-level rows** quietly redefines "rows per page" as groups per
-  page, so a page of 25 can hold thousands of rows and the number in the footer
-  stops meaning anything.
-
-Rendering the whole tree is also the grid's default mode — pagination is the
-opt-in — so nothing is lost but the pager.
-
-If you need both, page on the server: group the rows there and feed the grid one
-page of a tree at a time with `manualPagination` and `manualGrouping`.
-
-`isPagingActive(table, features)` is exported, so a custom pager can grey itself
-out the same way:
-
-```tsx
-import { getTMDataGridPaginationApi, isPagingActive } from "./tmdatagrid";
-
-<TMDataGrid.Footer
-  pagination={(api) => <MyPager {...api} disabled={!isPagingActive(table, features)} />}
-/>
-```
-
-### Server-side grids
-
-`manualPagination: true` turns grouping off, because the client holds one page
-and would build groups out of an arbitrary slice. A grid that groups server-side
-can set `enableGrouping: true` alongside `manualGrouping: true`.
-
-To keep a grouped column in the grid instead of removing it, pass
-`groupedColumnMode: "reorder"` — TanStack's own default, which moves grouped
-columns to the front rather than taking them out.
-
-## Row details
-
-Set `renderDetails` and the grid grows a chevron lane; expanding a row opens a
-panel underneath it, spanning every column:
-
-```tsx
-const grid = useTMDataGrid({
-  data,
-  columns,
-  renderDetails: ({ row }) => <EmployeeCard employee={row.original} />,
-});
-```
-
-The panel is as tall as whatever it renders — the grid measures each one, so
-nothing has to be uniform. `renderDetailsEstHeight` (default `160`) is only what
-the virtualizer assumes for a panel it has not seen yet, which keeps the
-scrollbar honest for rows that open off screen.
-
-### The details lane
-
-Setting `renderDetails` prepends a generated chevron column, `DETAILS_COLUMN_ID`
-(`"__details__"`), pinned to the left after the checkbox and tree columns —
-`[checkbox, tree, details, …]`. It comes last of the three because it acts on
-one record: the checkbox picks rows out and the tree says which group they are
-in, and only then is there a row to open.
-
-Like the other two it is structural: fixed width, and it cannot be hidden,
-moved, resized or unpinned — a toggle that wandered to the far right, or hid
-itself, would leave rows with panels no one can open.
-
-It is a system lane: as wide as the chevron it holds, with no resize handle and
-no column menu — its header is a control rather than a title. The chevron there
-expands and collapses every panel, the way the checkbox column's header selects
-and clears every row.
-
-Group rows get no chevron: they expand into their children from the tree lane.
-
-### The two kinds of expanding
-
-TanStack keeps one `expanded` state, and the grid opens two unrelated things out
-of it — a group row into its children, a data row into its panel. The controls
-are kept apart all the same: the details header only opens and closes panels,
-and "Expand all groups" in the tree menu only unfolds the tree. Neither disturbs
-what the other was showing.
-
-`table.toggleAllRowsExpanded()` is the one that does not distinguish them: it
-writes the state's whole-table form, which is every group and every panel at
-once. `resolveExpandAll` and `areAllRowsExpanded` are exported for anything
-building its own control:
-
-```tsx
-table.setExpanded(
-  resolveExpandAll({
-    rows: table.getPrePaginatedRowModel().flatRows,
-    expanded: table.store.state.expanded,
-    target: "details",
-    expand: true,
-  }),
-);
-```
-
-### Opening a row from elsewhere
-
-Which rows are open is TanStack's own `expanded` state, so anything can open one
-— a context menu item, a double-click, a button in your own cell:
-
-```tsx
-<Menu.Item onClick={() => row.toggleExpanded()}>Show details</Menu.Item>
-```
-
-Anything that *reads* `row.getIsExpanded()` inside a cell has to subscribe to the
-store (`useSelector(row.table.store, () => row.getIsExpanded())`), or the React
-Compiler will cache the call along with the `row` identity and the control will
-never update.
-
-Because it is the standard state, everything around it comes free:
-`table.toggleAllRowsExpanded()`, `initialState.expanded`, and persistence — it is
-one of the `data` slices, so open panels survive a reload where the grid is
-persisted.
-
-### What the panel is and is not
-
-The panel is a cell spanning the row, inside the row element. So it takes the
-row's background, moves with it, and is measured with it — but it is not a row:
-`aria-rowcount` still counts records, and a click or right-click inside it stops
-there rather than selecting or highlighting the row underneath. It carries
-`data-dg-part="details"` with the row's `data-row-id` — see [Testing](#testing).
-
-Group rows have no panel. Expanding one opens its children, and the record a
-group row is built from is an arbitrary one of them — the same reason group rows
-sit out `onRowClick`.
-
-Details and `selectionMode: "highlight"` answer the same question differently.
-A panel keeps the record in place and in context, which suits a handful of
-fields or an action strip; a highlight-driven side panel has more room and stays
-put while the grid scrolls. A grid can do both.
-
-> TanStack resets `expanded` when the row structure changes, so replacing `data`
-> closes open panels. Pass `autoResetExpanded: false` to keep them.
 
 ## Cell selection
 
@@ -691,49 +270,6 @@ What gets written is the cell's *value*, not what it renders: a cell renders
 React, and often a badge or a link rather than the value. Dates come out in the
 `sv-SE` form (`2026-07-31`), which Excel reads as a date.
 
-## Column autosizing
-
-Double-click a column's resize divider and it sizes itself to its widest
-mounted content — the spreadsheet gesture. "Autosize column" in the column
-menu does the same without a pointer, and `meta.autoSize: true` runs it once
-after the first rows render, unless a persisted or user-set width already
-covers the column.
-
-Mounted content only: under virtualization the unmounted rows do not exist to
-be measured, so the width fits the visible window plus overscan — the same
-trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize`
-and written into `columnSizing`, so it persists with the other widths and a
-later drag takes over from it.
-
-`autosizeColumn({ table, columnId, container })` is exported for menus and
-consumer code; `container` is the grid's scroll container (any ancestor of the
-column's cells works).
-
-## Summary row
-
-Give a column a `footer` and the grid grows a sticky row along its bottom edge
-— TanStack's own column option, rendered by the grid the way the header is.
-No flag: the row exists exactly when at least one visible column defines a
-`footer`, and each cell renders that column's renderer with the header
-context.
-
-```tsx
-columnHelper.accessor("salary", {
-  header: "Salary",
-  footer: ({ table }) =>
-    sek(Number(aggregateColumn({ table, columnId: "salary" }))),
-});
-```
-
-`aggregateColumn({ table, columnId, fn })` computes over every *filtered* row
-— all pages, following the filters live — through the registered aggregation
-functions (`fn` defaults to `"sum"`). A `footer` can equally render anything:
-a static label, a count, its own calculation.
-
-Pinned columns keep their lanes in the summary row, and the row sits under
-the pinned-lane gradients on the stacking ladder. The generated lanes define
-no `footer`, so their summary cells stay blank.
-
 ## Scroll edges
 
 Once body rows scroll under the sticky header, a soft shadow appears along
@@ -745,7 +281,7 @@ alone draws the boundary. `--dg-header-shadow-color` recolours it.
 
 `TMDataGrid.Table` also reports edge arrivals — `onScrollToTop`,
 `onScrollToBottom`, `onScrollToLeft`, `onScrollToRight` — each firing once
-when the scroll reaches that edge. See [components](#components).
+when the scroll reaches that edge. See [Components](/docs/components).
 
 ## Pinned column edges
 

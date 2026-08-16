@@ -23,7 +23,7 @@ Root component. Provides `{ table, ui, features }` to its children.
 | `className` | `string` | – | Added to the root element class. |
 | `style` | `CSSProperties` + `--*` variables | – | Root element styles. Set a bounded height. |
 | `id` | `string` | – | Set on the root element. |
-| `data-testid` | `string` | – | Names the grid for tests. The grid's own `data-dg-part` hooks repeat across grids, so scope through this one when a page holds more than one — see [Testing](#testing). |
+| `data-testid` | `string` | – | Names the grid for tests. The grid's own `data-dg-part` hooks repeat across grids, so scope through this one when a page holds more than one — see [Testing](/docs/testing). |
 
 Spread the hook result rather than assigning the first three props individually:
 
@@ -38,7 +38,7 @@ themed. They can equally be set from a stylesheet through `className`.
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `--dg-row-selected-bg` | `--mantine-primary-color-light` | Background of a highlighted row, see [Features](#features) |
+| `--dg-row-selected-bg` | `--mantine-primary-color-light` | Background of a selected row, see [Row selection](/docs/row-selection) |
 | `--dg-row-height` | From `size` | Row height. `meta.rowHeight` is the supported way to change it, since the virtualizer needs the number |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-font-size` | From `size` | Cell and header font size |
@@ -77,16 +77,16 @@ The scrollable grid surface: header row, virtualized body and filter panel.
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Rows show a pointer cursor when set. Runs in addition to whatever the click already does under the `selectionMode` — selection or highlight, never instead of it. |
-| `onCellClick` | `(args: TMDataGridCellEventArgs<TData>) => void` | Cell click handler — `{ cell, row, column, event }`. Composes like `onRowClick`: selection, highlight and the cell cursor still happen. Group rows sit out all three cell handlers. |
+| `onRowClick` | `(row: Row<TMDataGridFeatures, TData>) => void` | Row click handler. Composes with selection and highlight rather than replacing them — see [Clicks and context menus](/docs/row-interaction). |
+| `onCellClick` | `(args: TMDataGridCellEventArgs<TData>) => void` | Cell click handler — `{ cell, row, column, event }`. See [Clicks and context menus](/docs/row-interaction). |
 | `onCellDoubleClick` | `(args: TMDataGridCellEventArgs<TData>) => void` | As `onCellClick`; a double-click that opens an editor still does. |
 | `onCellContextMenu` | `(args: TMDataGridCellEventArgs<TData>) => void` | As `onCellClick`; `rowContextMenu` and the cell-selection menu still open. |
-| `rowClassName` | `string \| (row) => string \| undefined` | Class for a body row, added after the grid's own. |
-| `rowStyle` | `CSSProperties \| (row) => CSSProperties \| undefined` | Inline style for a body row. Colour rows by setting `--row-bg`, not `background` — pinned cells, the range tint and the hover/selection ladder all read the variable. |
-| `striped` | `boolean` | Every second row takes `--dg-row-striped-bg`. Striping follows the row's position in the view, so it survives sorting, filtering and virtualization. |
+| `rowClassName` | `string \| (row) => string \| undefined` | Class for a body row, added after the grid's own. See [Row styling](/docs/row-styling). |
+| `rowStyle` | `CSSProperties \| (row) => CSSProperties \| undefined` | Inline style for a body row. Set `--row-bg`, not `background` — see [Row styling](/docs/row-styling). |
+| `striped` | `boolean` | Every second row takes `--dg-row-striped-bg`. See [Row styling](/docs/row-styling). |
 | `onScrollToTop` / `onScrollToBottom` / `onScrollToLeft` / `onScrollToRight` | `() => void` | Fire once when the scroll *arrives* at that edge — not per scroll event, and not on mount. For loading more rows, prefer `onReachEnd`: it fires rows-early and latches per row count. |
 | `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | Rendered centred in the body when the view is empty, replacing both built-in empty messages. Loading and open entry rows still take precedence — see [Empty states](#empty-states). |
-| `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. |
+| `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the menu a right-click on a row opens. See [Clicks and context menus](/docs/row-interaction). |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` behind `rowContextMenu`. |
 | `cellExport` | `TMDataGridCellExportOptions` | How Ctrl+C and the export item write values, under `cellSelection: "range"`. Nordic Excel defaults — `{ separator: ";", decimalComma: true, includeHeaders: true, fileName: "export" }`. |
 | `aria-label` / `aria-labelledby` | `string` | Accessible name for the grid — what a screen reader announces on entry, and what `getByRole("grid", { name })` matches. Worth setting on any page holding more than one grid. |
@@ -96,90 +96,6 @@ Pass the row type to keep `onRowClick` typed:
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
-
-### rowContextMenu
-
-Right-clicking a row opens a Mantine `Menu` at the pointer. The grid owns the
-`Menu` and its `Menu.Dropdown` — opening it at the cursor, closing it on Escape,
-on an outside click, on a body scroll and after an item is picked. The render
-prop only says what goes inside, so anything valid in a dropdown works:
-`Menu.Item`, `Menu.Label`, `Menu.Divider`, `Menu.Sub`, or your own components.
-
-```tsx
-<TMDataGrid.Table<Employee>
-  rowContextMenu={({ row, cell }) => (
-    <>
-      <Menu.Label>{row.original.firstName}</Menu.Label>
-      <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
-      <Menu.Item
-        onClick={() =>
-          navigator.clipboard.writeText(String(cell?.getValue() ?? ""))
-        }
-      >
-        Copy cell value
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item color="red" onClick={() => remove(row.original.id)}>
-        Delete
-      </Menu.Item>
-    </>
-  )}
-/>
-```
-
-| Argument | Type | Description |
-| --- | --- | --- |
-| `table` | `Table<TMDataGridFeatures, TData>` | The table, for actions that read the wider state — `getSelectedRowModel()`, for instance. |
-| `row` | `Row<TMDataGridFeatures, TData>` | The right-clicked row. |
-| `cell` | `Cell<...> \| null` | The cell under the pointer, so a per-cell action such as "copy value" is possible. `null` only if a custom cell renderer stopped the event. |
-| `close` | `() => void` | Closes the menu. `Menu.Item` already closes on click, so this is for content that is not a menu item. |
-
-Called during render, and only for the row whose menu is open — so keep it a
-pure function of its arguments and do the work in the item handlers.
-
-Return `null` to leave a row without a menu. The browser's own context menu
-stays suppressed over the grid either way:
-
-```tsx
-rowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit</Menu.Item>)}
-```
-
-Right-clicking does not change the selection or the highlighted row — it only
-marks the row with `data-context-menu` while its menu is open, which is what gives
-it the hover background. An action that should apply to a multi-selection can
-read it off `table` and fall back to the clicked row:
-
-```tsx
-rowContextMenu={({ table, row }) => {
-  const selected = table.getSelectedRowModel().rows;
-  const targets = selected.some((r) => r.id === row.id) ? selected : [row];
-  return <Menu.Item onClick={() => archive(targets)}>Archive {targets.length}</Menu.Item>;
-}}
-```
-
-Set the dropdown's own options through `rowContextMenuProps`, which reaches the
-`Menu` untouched apart from its open state:
-
-```tsx
-<TMDataGrid.Table<Employee>
-  rowContextMenu={items}
-  rowContextMenuProps={{ width: 260, shadow: "lg", position: "right-start" }}
-/>
-```
-
-On touch devices a long press (500 ms) opens the same menu. Mantine sets
-`user-select: none` on the element it hangs a context menu off, so body cell
-text is no longer selectable with the mouse in a grid that has one — the trade
-for a long press opening the menu rather than selecting text.
-
-One `Menu` serves the whole body, not one per row: a closed Mantine `Popover`
-still runs its hooks on every render, and the virtualized body re-renders on
-every scroll frame.
-
-With pagination off (the default) rows come from `getPrePaginatedRowModel()`:
-every filtered and sorted row, virtualized. With pagination on they come from
-`getPaginatedRowModel()`, so a table using `manualPagination` renders exactly
-the page returned by the server.
 
 ### Empty states
 
@@ -369,7 +285,7 @@ last filter row by hand.
 The value slot of each row is `meta.filterControl` when the column declares
 one, else the built-in control shaped by the operator: a multi-select for the
 set operators, a From/To pair for `between`, a Yes/No dropdown for booleans,
-a typed input otherwise. See [Custom filter controls](#columns).
+a typed input otherwise. See [Custom filter controls](/docs/columns#custom-filter-controls).
 
 ## TMDataGrid.FilterPills
 
@@ -418,20 +334,20 @@ Search field, column checkboxes, show/hide all and reset. Rendered by
 | --- | --- |
 | `useTMDataGridContext()` | Returns the enclosing grid context. Throws if used outside `TMDataGrid`. |
 | `openColumnFilter(api, columnId)` | Adds an empty filter for a column and opens the panel. |
-| `getGridCapabilities(table, features)` | Grid-level capability checks. See [Features](#features). |
+| `getGridCapabilities(table, features)` | Grid-level capability checks. See [Features](/docs/features#capability-helpers). |
 | `getColumnCapabilities(column, features)` | Column-level capability checks. |
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
 | `formatFilterLabel({ label, type, filter })` | The one-line filter description used on the pills. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
 | `isColumnReorderable(column)` | `meta.enableOrdering`, and not inside a header group. |
-| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See [Features](#features). |
+| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See [Column layout](/docs/column-layout#moving-from-your-own-code). |
 | `moveColumnByStep({ table, columnId, direction })` | Moves a column one position within its region. |
 | `getStepTargetColumn({ table, columnId, direction })` | The column a step would swap with, or `null`. |
 | `getColumnRegion(columnPinning, columnId)` | `"left"`, `"center"` or `"right"`. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |
-| `DETAILS_COLUMN_ID` | Id of the generated details column. See [Features](#features). |
+| `DETAILS_COLUMN_ID` | Id of the generated details column. See [Row details](/docs/row-details). |
 | `isControlColumn(columnId)` | Whether an id is a generated control lane — the checkbox or the details chevron. |
 | `resolveExpandAll({ rows, expanded, target, expand })` | Next `expanded` state after expanding or collapsing every group, or every detail, leaving the other kind alone. |
 | `areAllRowsExpanded({ rows, expanded, target })` | Whether every group, or every detail, is open. |
 | `buildGridCellMatrix({ table, includeHeaders?, decimalComma? })` | The whole grid — every filtered and sorted row, all pages, every visible non-control column — as rows of text. |
-| `exportGridToCsv({ table, options? })` | Downloads the whole grid as a CSV for Excel, same options and Nordic defaults as the cell-range export. No built-in button — wire it to your own toolbar (see [TMDataGrid.Toolbar](#components)). |
+| `exportGridToCsv({ table, options? })` | Downloads the whole grid as a CSV for Excel, same options and Nordic defaults as the cell-range export. No built-in button — wire it to your own toolbar (see [TMDataGrid.Toolbar](/docs/components#tmdatagridtoolbar)). |
