@@ -36,8 +36,8 @@ export function GettingStartedPage() {
             <Button component={Link} to="/playground">
               Open the playground
             </Button>
-            <Button component={Link} to="/examples" variant="default">
-              Browse examples
+            <Button component={Link} to="/docs" variant="default">
+              Browse the docs
             </Button>
             <Button
               component="a"

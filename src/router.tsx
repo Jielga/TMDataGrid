@@ -6,10 +6,9 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppLayout } from "./AppLayout";
+import { DocsIndexPage } from "./docs/DocsIndexPage";
 import { DocsRoutePage } from "./docs/DocsRoutePage";
 import { GettingStartedPage } from "./GettingStartedPage";
-import { ExamplesIndexPage } from "./examples/ExamplesIndexPage";
-import { ExampleTopicPage } from "./examples/ExampleTopicPage";
 import { PlaygroundExample } from "./examples/playground/PlaygroundExample";
 
 const rootRoute = createRootRoute({ component: AppLayout });
@@ -18,6 +17,12 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: GettingStartedPage,
+});
+
+export const docsIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/docs",
+  component: DocsIndexPage,
 });
 
 export const docsRoute = createRoute({
@@ -32,48 +37,48 @@ export const playgroundRoute = createRoute({
   component: PlaygroundExample,
 });
 
-export const examplesIndexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/examples",
-  component: ExamplesIndexPage,
-});
-
-export const exampleTopicRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/examples/$topicId",
-  component: ExampleTopicPage,
-});
-
 /**
- * The routes the site shipped with before the examples became a tree. Kept as
- * redirects because they are in the README, the changelog and anything anyone
- * has already linked.
+ * Every route the site has ever published, pointed at the page that now holds
+ * that material. Docs and examples used to be two trees; a demo now lives
+ * inside the page explaining it, so every `/examples/*` path resolves to a
+ * documentation page.
+ *
+ * These are in the README, the changelog and anything anyone has linked, so
+ * they are kept rather than left to 404.
  */
-const legacyTopicRoutes = [
-  { path: "/editable-grid", topicId: "cell-editing" },
-  { path: "/infinite-scroll", topicId: "infinite-scroll" },
-] as const;
-
-/**
- * Example topics that have become documentation pages, where the demo now
- * stands beside the prose explaining it rather than on a route of its own.
- * The static path outranks `/examples/$topicId`, so these win.
- */
-const migratedTopicRoutes = [
-  { path: "/examples/grouping", docId: "grouping" },
-  { path: "/examples/row-selection", docId: "row-selection" },
-  { path: "/examples/row-details", docId: "row-details" },
-  { path: "/examples/row-pinning", docId: "row-pinning" },
-  // Its two demos split: row styling kept the id, clicks and context menus
-  // became a page of its own, which the styling page links to.
-  { path: "/examples/row-styling", docId: "row-styling" },
+const REDIRECTS: ReadonlyArray<{ path: string; docId: string }> = [
+  // Old example topics.
+  { path: "/examples/basic-grid", docId: "getting-started" },
+  { path: "/examples/column-definitions", docId: "columns" },
+  { path: "/examples/density-and-layout", docId: "styling" },
   { path: "/examples/sorting", docId: "sorting" },
-  // Filtering and its controls were two topics; one page holds both.
   { path: "/examples/filtering", docId: "filtering" },
   { path: "/examples/filter-controls", docId: "filtering" },
   { path: "/examples/column-layout", docId: "column-layout" },
-  { path: "/examples/column-definitions", docId: "columns" },
-] as const;
+  { path: "/examples/row-selection", docId: "row-selection" },
+  { path: "/examples/row-details", docId: "row-details" },
+  { path: "/examples/grouping", docId: "grouping" },
+  { path: "/examples/row-pinning", docId: "row-pinning" },
+  { path: "/examples/row-styling", docId: "row-styling" },
+  { path: "/examples/cell-selection", docId: "cell-selection" },
+  { path: "/examples/pagination", docId: "pagination" },
+  { path: "/examples/quick-search", docId: "quick-search" },
+  { path: "/examples/persistence", docId: "persistence" },
+  { path: "/examples/server-side", docId: "server-side" },
+  { path: "/examples/infinite-scroll", docId: "server-side" },
+  { path: "/examples/loading-empty", docId: "loading-and-empty" },
+  { path: "/examples/cell-editing", docId: "editing" },
+  { path: "/examples/row-batch-editing", docId: "editing" },
+  { path: "/examples/editors-validation", docId: "editors" },
+  { path: "/examples/toolbar-localization", docId: "toolbar" },
+  { path: "/examples/styling", docId: "styling" },
+  // Routes the site shipped with before the examples became a tree.
+  { path: "/editable-grid", docId: "editing" },
+  { path: "/infinite-scroll", docId: "server-side" },
+  // Two pages that were dissolved into the topics they used to collect.
+  { path: "/docs/features", docId: "anatomy" },
+  { path: "/docs/components", docId: "anatomy" },
+];
 
 const redirectRoutes = [
   createRoute({
@@ -83,8 +88,16 @@ const redirectRoutes = [
       throw redirect({ to: "/playground", replace: true });
     },
   }),
-  // Getting started moved to the front page. The static path outranks
-  // `/docs/$docId`, so existing links land on "/" instead of a 404-ish
+  // The examples index became the docs index.
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/examples",
+    beforeLoad: () => {
+      throw redirect({ to: "/docs", replace: true });
+    },
+  }),
+  // Getting started is the front page. The static path outranks
+  // `/docs/$docId`, so existing links land on "/" rather than a 404-ish
   // "no page named" message.
   createRoute({
     getParentRoute: () => rootRoute,
@@ -93,20 +106,7 @@ const redirectRoutes = [
       throw redirect({ to: "/", replace: true });
     },
   }),
-  ...legacyTopicRoutes.map(({ path, topicId }) =>
-    createRoute({
-      getParentRoute: () => rootRoute,
-      path,
-      beforeLoad: () => {
-        throw redirect({
-          to: "/examples/$topicId",
-          params: { topicId },
-          replace: true,
-        });
-      },
-    }),
-  ),
-  ...migratedTopicRoutes.map(({ path, docId }) =>
+  ...REDIRECTS.map(({ path, docId }) =>
     createRoute({
       getParentRoute: () => rootRoute,
       path,
@@ -123,10 +123,9 @@ const redirectRoutes = [
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  docsIndexRoute,
   docsRoute,
   playgroundRoute,
-  examplesIndexRoute,
-  exampleTopicRoute,
   ...redirectRoutes,
 ]);
 

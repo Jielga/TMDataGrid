@@ -5,8 +5,7 @@ from the filter panel or a column menu; you shape what each column offers
 through `meta.type`, and replace the value control when the default input is
 not the right one.
 
-For one box across every column instead, see [Quick
-search](/docs/features#match-highlighting) and `TMDataGrid.Search`.
+For one box across every column instead, see [Quick search](/docs/quick-search).
 
 ```demo
 file: columns/Filtering.tsx
@@ -91,6 +90,36 @@ file: columns/FilterPills.tsx
 `openColumnFilter(api, columnId)` opens the panel on a column, seeding an empty
 row if it has none yet — the same thing "Filter" in the column menu does. That
 is how a chip elsewhere on the page can hand the reader back to the panel.
+
+### The panel and the pills
+
+`TMDataGrid.FilterPanel` is column, operator and value rows, under a "Filters"
+header with a close button and above "Add filter" / "Clear all". Escape and a
+click outside close it — `FilterButton` is exempt from the click-away, so it
+stays a toggle. It is rendered by `TMDataGrid.Table` and positions itself
+against the nearest positioned ancestor.
+
+Closing only hides the panel; the filters stay. **Clear all** drops every
+filter, half-typed ones included, and closes the panel — the same exit as
+removing the last filter row by hand.
+
+`TMDataGrid.FilterPills` renders one pill per active filter —
+`First name: Sofia ✕` — where the ✕ clears that filter and a click on the label
+reopens the panel on its column. Half-typed filters are left out: a filter that
+is not narrowing anything yet has nothing to report. The label spells the
+operator out unless it is the column type's default — `Age is greater than 30`,
+but `First name: Sofia`.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `api` | `TMDataGridApi<TData>` | – | The object returned by `useTMDataGrid`. |
+| `size` | `MantineSize` | `"sm"` | Pill size. |
+| `showClearAll` | `boolean` | `true` | "Clear all", shown once two filters are active. |
+| `onPillClick` | `(columnId) => void` | – | Replaces the default click behaviour. |
+| `className` | `string` | – | Added to the wrapper class. |
+
+It is also exported as `TMDataGridFilterPills`, which is the import to use when
+nothing else in the file touches `TMDataGrid`.
 
 ## Replacing the value control
 
@@ -184,4 +213,6 @@ menu item and its entry in the panel's column list.
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
+| `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
+| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator wants. |
 | `DgRangeSliderFilter` · `DgDateRangeFilter` · `DgAutocompleteFilter` · `DgTriStateFilter` | Exports | components | – | The four ready-made controls. |

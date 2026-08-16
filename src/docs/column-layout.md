@@ -14,6 +14,10 @@ hint: Drag a header to reorder · pin or hide from a column menu · drag a divid
 **Hide column** in any column menu, and **Manage columns** — the
 `ColumnsButton` and the panel behind it — for the whole list at once.
 
+`TMDataGrid.ColumnsPanel` is a search field, the column checkboxes, show/hide
+all, and **Reset layout**. It is rendered by `TMDataGrid.ColumnsButton` and
+exported for custom layouts.
+
 `enableHiding: false` removes all of it; on a column it removes that column's
 menu item and disables its checkbox in the panel. The state is TanStack's
 `columnVisibility`.

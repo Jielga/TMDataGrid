@@ -1,6 +1,7 @@
 # useTMDataGrid
 
-> **Live examples:** [Persistence](/examples/persistence) · [Toolbar and localization](/examples/toolbar-localization)
+The complete option list. Each option is *explained* on the page for the
+feature it belongs to — this page is the lookup, and the links point there.
 
 Creates the table instance and the state used by the grid interface.
 
@@ -41,14 +42,14 @@ rather than forwarded to TanStack.
 | `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. |
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid, see [Column layout](/docs/column-layout#ordering). |
-| `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Features](/docs/features#pagination). |
+| `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Pagination](/docs/pagination). |
 | `enableRowNumbers` | `boolean` | `false` | The row-number gutter, outermost left. Defined by the grid, see [Row pinning and numbering](/docs/row-pinning). |
 | `enableRowPinning` | `boolean \| (row) => boolean` | `false` | Rows can be pinned to sticky edge blocks with `row.pin()`. See [Row pinning and numbering](/docs/row-pinning). |
-| `quickSearchMode` | `"fuzzy" \| "contains"` | `"fuzzy"` | How `Search` matches. Fuzzy forgives typos and orders unsorted results by match quality; `"contains"` is plain substring matching. Defined by the grid, see [Components](/docs/components#tmdatagridsearch). |
-| `enableMatchHighlighting` | `boolean` | `false` | Cells mark the matched text while a contains-family filter or the quick search is active. Defined by the grid, see [Features](/docs/features#match-highlighting). |
+| `quickSearchMode` | `"fuzzy" \| "contains"` | `"fuzzy"` | How `Search` matches. Fuzzy forgives typos and orders unsorted results by match quality; `"contains"` is plain substring matching. Defined by the grid, see [Quick search](/docs/quick-search). |
+| `enableMatchHighlighting` | `boolean` | `false` | Cells mark the matched text while a contains-family filter or the quick search is active. Defined by the grid, see [Quick search](/docs/quick-search#match-highlighting). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it is what turns row details on, and what adds the pinned chevron lane. Defined by the grid, see [Row details](/docs/row-details). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so this only has to be roughly right. |
-| `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Features](/docs/features#cell-selection). |
+| `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Cell selection](/docs/cell-selection). |
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
@@ -225,7 +226,7 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
-| `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Features](/docs/features#the-features-argument). |
+| `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#why-features-is-a-second-argument). |
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
 | `overscan` | `number` | The overscan, resolved to its default when the option was not set. |
@@ -290,7 +291,7 @@ re-render when the value changes.
 | `setCellRange` | `(range: TMDataGridCellRange \| null) => void` |
 
 The last two move the cell cursor and the selected rectangle under
-`cellSelection` — see [Cell selection](/docs/features#cell-selection). DOM focus follows
+`cellSelection` — see [Cell selection](/docs/cell-selection). DOM focus follows
 `focusedCell` while the grid holds it, scrolling the row into view when it is
 off screen.
 
@@ -300,3 +301,38 @@ The last two are called by the header cells while a column is being dragged.
 
 `openColumnFilter(grid, columnId)` combines two steps used by the column menu:
 it adds an empty filter row for the column if none exists, then opens the panel.
+
+## What each switch removes
+
+Almost every control is bound to the TanStack capability check for its feature,
+so setting the standard table or column option removes the corresponding
+interface. Empty menus and inactive buttons are never rendered.
+
+Column ordering and pagination are the two exceptions: TanStack ships state and
+APIs for both but no `enable` option, so the grid defines
+`enableColumnOrdering` (with `meta.enableOrdering`) and `enablePagination`
+itself. Ordering behaves like the options around it; pagination is the one
+switch that defaults to off.
+
+| Option | Level | Interface removed |
+| --- | --- | --- |
+| `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort. See [Sorting](/docs/sorting) |
+| `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel. See [Filtering](/docs/filtering) |
+| `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
+| `enableGlobalFilter: false` | Table, column | `Search` — the whole input at table level, one column's participation at column level |
+| `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton`. See [Column layout](/docs/column-layout) |
+| `enableColumnPinning: false` | Table | Pin and unpin menu items. See [Column layout](/docs/column-layout) |
+| `enablePinning: false` | Column | That column's pin menu items |
+| `enableColumnResizing: false` | Table | Resize dragging, double-click autosize, the Autosize menu item. The divider remains as a separator |
+| `enableResizing: false` | Column | That column's resize dragging and autosize |
+| `enableColumnOrdering: false` | Table | Header dragging and the move menu items. See [Column layout](/docs/column-layout#ordering) |
+| `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
+| `enableRowSelection: false` | Table | The checkbox column |
+| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](/docs/row-selection) |
+| `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
+| `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
+| `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
+| `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](/docs/row-pinning) |
+| `enableMatchHighlighting: true` | Table | Opt-in: cells mark the matched text while a contains-family filter or the quick search is active. See [Quick search](/docs/quick-search#match-highlighting) |
+| `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Grouping](/docs/grouping) |
+| `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](/docs/row-details) |

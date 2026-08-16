@@ -5,23 +5,25 @@
 > That plan fixed the examples; it left them in a tree of their own, beside
 > the docs, which is the problem this one closes.
 >
-> **Landed so far** — mechanism and 11 pages:
+> **Done 2026-08-16.** The docs and examples trees are one tree. All 25
+> pages written, all 35 demos placed, `features.md` and `components.md`
+> dissolved into the topics they used to collect, and the examples tree
+> deleted — `ExampleTopicPage`, `ExamplesIndexPage` and `examplePages.ts` are
+> gone, with every old route redirecting.
 >
-> - The ` ```demo ` fence, so a demo renders inside the page that explains it.
-> - Heading ids and hash-aware links. The renderer emitted **no ids at all**,
->   so every in-page anchor on the site was dead; all 26 now resolve.
-> - A table-of-contents rail with deep links and an active marker.
-> - A site header: brand, live version badge, GitHub, theme — and a working
->   `Ctrl+K` palette over pages, headings and Reference-table symbols.
-> - Pages: grouping · summary-row · row-selection · row-details · row-pinning ·
->   row-interaction · row-styling · columns · sorting · filtering ·
->   column-layout. `features.md` is down from **776 to 312 lines**.
+> **Also built:** the ` ```demo ` fence · heading ids and hash-aware links
+> (the renderer emitted **no ids at all**, so every anchor on the site was
+> dead) · a table-of-contents rail with deep links and an active marker · a
+> site header with the live version · a `Ctrl+K` search over pages, headings
+> and Reference-table symbols · a `/docs` card index.
 >
 > **The generated-API track was dropped** — see [API reference and
 > search](#api-reference-and-search). Reference tables are hand-written
-> markdown, and the search index is built from that markdown, which removed
-> the `.d.ts` parser, the invented `@docsPage` tag and the build-order change
-> along with it.
+> markdown and the search index is built by scanning it, which removed the
+> `.d.ts` parser, the invented `@docsPage` tag and the build-order change.
+>
+> **Still open:** the API explorer as a grid (`/docs/api`), inline symbol
+> hover cards, and repointing the six skills' `sources:` frontmatter.
 
 Costs are complexity, not hours: S (contained, one commit), M (touches a few
 subsystems), L (new subsystem or real design surface).
@@ -102,8 +104,9 @@ Grid-owned (16): `persist` · `labels` · `enableColumnOrdering` ·
 `onFocusedCellChange` · `renderDetails` · `renderDetailsEstHeight` ·
 `overscan`
 
-`editing` (8): `mode` · `getRowId` · `rowValidators` · `isRowEditable` ·
-`onEditCommit` · `newRowDefaults` · `onRowAdd` · `onRowDelete`
+Editing (9), all top-level: `editMode` · `getRowId` · `rowValidators` · `isRowEditable` ·
+`onEditCommit` · `onEditCommitBatch` · `newRowDefaults` · `onRowAdd` ·
+`onRowDelete`
 
 `meta` (4): `loading` · `noResultsLabel` · `rowHeight` · `totalRowCount`
 
@@ -265,8 +268,8 @@ grid on screen would show that a neighbouring page does not.
 | Row interaction | `onRowClick`, `onCellClick`, `onCellDoubleClick`, `onCellContextMenu`, `rowContextMenu`, `rowContextMenuProps` |
 | Row styling | `rowClassName`, `rowStyle`, `striped`, `--row-bg`, `--dg-row-striped-bg`, `--dg-row-height` |
 | Cell selection | `cellSelection`, `onFocusedCellChange`, `ui.state.focusedCell`/`cellRange`, the key map, `useCellControlTabIndex`, `data-focused`/`data-edge-*`, `cellExport`, `exportGridToCsv` and the `cellExport` module, the cell-range menu |
-| Editing | `editing.mode` (4), `editing.getRowId`, `isRowEditable`, `meta.editable`, `meta.editField`, `onEditCommit`, `newRowDefaults`, `onRowAdd`, `onRowDelete`, `EDIT_COLUMN_ID`, `TMDataGridEditActions`, `api.edit`, `--dg-entry-height` |
-| Editors | `meta.editor`, the 6 built-in editors, `TMDataGridEditorArgs`, `meta.validate`, `editing.rowValidators`, `normalizeFieldValidate`, `clearedValueForType` |
+| Editing | `editMode` (4), `getRowId`, `isRowEditable`, `meta.editable`, `meta.editField`, `onEditCommit`, `newRowDefaults`, `onRowAdd`, `onRowDelete`, `EDIT_COLUMN_ID`, `TMDataGridEditActions`, `api.edit`, `--dg-entry-height` |
+| Editors | `meta.editor`, the 6 built-in editors, `TMDataGridEditorArgs`, `meta.validate`, `rowValidators`, `normalizeFieldValidate`, `clearedValueForType` |
 | Pagination | `enablePagination`, `.Footer`, the `pagination` render prop, `getTMDataGridPaginationApi`, `isPagingActive` |
 | Quick search | `.Search`, `enableGlobalFilter`, `quickSearchMode`, `fuzzyGlobalFilterFn`, `enableMatchHighlighting`, `--dg-match-highlight-bg` |
 | Persistence | `persist` and its keys, the settings/data slice lists, storage modes, `PERSIST_PAYLOAD_VERSION`, the `useLocalStorage` comparison |

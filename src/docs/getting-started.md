@@ -1,10 +1,11 @@
 # Getting started
 
-> **Live examples:** [Basic grid](/examples/basic-grid) · [Defining columns](/docs/columns) · [Density and layout](/examples/density-and-layout)
+A React data grid built on TanStack Table v9 and Mantine. Always virtualized,
+with resizable, reorderable, sortable, filterable, hideable and pinnable
+columns.
 
-TMDataGrid is a compound component built on TanStack Table v9. `useTMDataGrid`
-creates the table, `TMDataGrid` provides it through context, and the parts
-rendered inside read what they need from that context.
+`useTMDataGrid` creates the table, `TMDataGrid` provides it through context, and
+the parts you render inside read what they need from that context.
 
 ## Installation
 
@@ -14,16 +15,31 @@ npm install @jielga/tmdatagrid
 
 Peer dependencies: `react` and `react-dom` (19.1 or later), `@mantine/core`,
 `@tanstack/react-table` (v9), `@tanstack/react-store`, `@tanstack/store`,
-`@tanstack/react-virtual` and `@tabler/icons-react`.
+`@tanstack/react-virtual` and `@tabler/icons-react`. Editing adds
+`@tanstack/react-form`.
+
+The grid must be rendered inside a Mantine `MantineProvider`.
+
+```tsx
+import "@jielga/tmdatagrid/styles.css";
+```
+
+One stylesheet, imported once. There is a layered form too —
+see [Styling](/docs/styling#the-stylesheet).
 
 > **TanStack Table v9 is still in beta.** The grid is built against
 > `^9.0.0-beta.21` and uses its feature-registry API, which beta releases may
 > change without a major bump. Pin `@tanstack/react-table` and
 > `@tanstack/table-core` to an exact version if you need reproducible installs.
 
-The grid must be rendered inside a Mantine `MantineProvider`.
+## Your first grid
 
-## Usage
+```demo
+file: getting-started/Minimal.tsx
+extraSources: data/employees.ts
+```
+
+Data, columns, a table. Every row is virtualized without being asked.
 
 ```tsx
 import {
@@ -50,74 +66,65 @@ export function Employees({ data }: { data: Employee[] }) {
     data,
     columns,
     getRowId: (row) => String(row.id),
-    enablePagination: true,
   });
 
   return (
-    <TMDataGrid {...grid} size="md" style={{ flex: 1, minHeight: 0 }}>
-      <TMDataGrid.Toolbar>
-        <TMDataGrid.SummaryCount />
-        <TMDataGrid.Spacer />
-        <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
-      </TMDataGrid.Toolbar>
-
+    <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
       <TMDataGrid.Table<Employee> />
-
-      <TMDataGrid.Footer />
     </TMDataGrid>
   );
 }
 ```
 
-Define `columns` at module scope. A new array on every render rebuilds the
-table's column model.
+Two things to get right from the start:
 
-## Styles
+- **Define `columns` at module scope.** A new array on every render rebuilds the
+  table's column model, and takes the reader's widths and order with it.
+- **Give the grid a bounded height.** `style={{ flex: 1, minHeight: 0 }}` inside
+  a flex parent, or a fixed height. A virtualized grid has no content height to
+  size itself from — see [Layout](/docs/styling#layout).
 
-The package ships one stylesheet, in two forms:
+## What you get for free
 
-```tsx
-import "@jielga/tmdatagrid/styles.css";
-// or, inside a named cascade layer:
-import "@jielga/tmdatagrid/styles.layer.css";
-```
-
-The layered form puts every rule in `@layer tmdatagrid`, so your own
-stylesheet can state the cascade order instead of fighting specificity:
-
-```css
-@layer mantine, tmdatagrid, app;
-```
-
-Mantine ships the same pair (`@mantine/core/styles.layer.css`), so the two
-compose. The layer name `tmdatagrid` is stable API.
-
-## Default behaviour
+Nothing in the table below is switched on. It is what a grid does out of the
+box.
 
 | Behaviour | Notes |
 | --- | --- |
-| Virtualized rows | Always enabled. Only rows in view are mounted. |
-| Resizable columns | Drag the divider on a header's trailing edge. |
-| Reorderable columns | Drag a header sideways, or use the column menu. |
-| Sorting | Click a header, or use the column menu. |
-| Column menu | Appears on hover, or right-click the header: sort, filter, pin, move, hide, manage columns. |
-| Filter panel | Column, operator and value rows. |
-| Column manager | Search, toggle, show/hide all, reset. |
-| Row selection | Checkbox column pinned to the left, or `selectionMode: "row"` (click to select), `"highlight"` / `"checkboxAndHighlight"` (click highlights one row for master–detail). |
-| Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`; `TMDataGrid.Footer` renders the pager. |
-| Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
+| [Virtualized rows](/docs/scrolling) | Always. Only rows in view are mounted, at any row count. |
+| [Sorting](/docs/sorting) | Click a header; Shift+click to sort by a second. |
+| [Filtering](/docs/filtering) | Per-column, with operators chosen by `meta.type`. |
+| [Resizing](/docs/column-layout#sizing) | Drag a divider; double-click to fit the content. |
+| [Reordering](/docs/column-layout#ordering) | Drag a header sideways, or use the column menu. |
+| [Hiding and pinning](/docs/column-layout) | From the column menu, or the columns panel. |
+| [Row selection](/docs/row-selection) | A checkbox column, and three other modes. |
+| [Grouping](/docs/grouping) | **Group by** in any column menu. |
+| The column menu | On hover, or right-click a header. Only ever shows items that apply. |
 
-Each of these is controlled by a capability check. Disabling a feature through
-the standard table options also removes its interface. See
-[Features](/docs/features).
+Everything is bound to a capability check, so switching a feature off through
+the standard TanStack option also removes its interface — no empty menus, no
+dead buttons.
 
-## Layout
+## Adding the chrome
 
-`TMDataGrid` renders a flex column with `overflow: hidden`. Give it a bounded
-height, either `style={{ flex: 1, minHeight: 0 }}` inside a flex parent or a
-fixed height, and the table area fills the remaining space.
+The grid renders only the parts you put in it.
 
-Columns are fluid by default. Each track is `minmax(minSize, flex fr)`, so the
-grid fills the available width. A column takes a fixed pixel width once it is
-resized or pinned.
+```demo
+file: getting-started/ToolbarAndFooter.tsx
+```
+
+`Toolbar` and `Footer` are plain composition — see
+[Grid anatomy](/docs/anatomy) for what each part is, and
+[Toolbar](/docs/toolbar) for putting your own buttons among them.
+
+## Where to go next
+
+- **[Defining columns](/docs/columns)** — accessors, `meta.type`, and what each
+  type decides for you.
+- **[Grid anatomy](/docs/anatomy)** — the hook's return value, and every
+  component you can render.
+- **[Editing](/docs/editing)** — four modes, from single cells to a whole grid.
+- **[Server-side data](/docs/server-side)** — when the server does the work.
+- **[The playground](/playground)** — every feature at once, behind switches.
+
+Press <kbd>Ctrl</kbd> <kbd>K</kbd> to search all of it.

@@ -94,7 +94,7 @@ cannot stand for several rows.
 A group row does not fire `onRowClick` and cannot be highlighted. TanStack
 builds it on top of its first child's record, so a click would hand you a
 real-looking row that is the wrong one. The same reasoning keeps group rows out
-of [row pinning](/docs/features#row-pinning) and gives them no details panel.
+of [row pinning](/docs/row-pinning) and gives them no details panel.
 
 Rows carry `data-grouped` and `data-depth` for styling, and
 `--dg-row-group-bg` sets their background.

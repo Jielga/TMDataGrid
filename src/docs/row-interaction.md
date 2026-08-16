@@ -95,7 +95,7 @@ rowContextMenu={({ table, row }) => {
 
 Under `cellSelection: "range"` a right-click inside the selection opens the
 copy and export items instead, with your items appended below a divider — see
-[Cell selection](/docs/features#copy-and-export).
+[Cell selection](/docs/cell-selection#copy-and-export).
 
 ### Menu options
 

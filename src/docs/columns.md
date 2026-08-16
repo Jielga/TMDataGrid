@@ -55,7 +55,7 @@ is what menus and the columns panel show.
 | `filterControl` | `TMDataGridFilterControlComponent` | By type and operator | Replaces the filter panel's value control. See [Filtering](/docs/filtering#replacing-the-value-control). |
 | `editable` | `boolean \| (row) => boolean` | `true` | Whether cells in this column may be edited. See [Editing](/docs/editing). |
 | `editField` | `string` | The column id | The field an edit writes to, for a computed column. |
-| `validate` | `TMDataGridFieldValidate` | — | Per-cell validation. See [Editing](/docs/editing#validation). |
+| `validate` | `TMDataGridFieldValidate` | — | Per-cell validation. See [Editors and validation](/docs/editors#validation). |
 | `editor` | `TMDataGridEditorComponent` | By type | Replaces the cell editor. |
 
 `enableOrdering` and `autoSize` live in `meta` because they are the two
@@ -152,7 +152,7 @@ and not listed in the columns panel unless noted.
 | `SELECT_COLUMN_ID` | A checkbox selection mode | First, pinned left. Listed as "Checkbox selection" and can be hidden. See [Row selection](/docs/row-selection). |
 | `GROUP_COLUMN_ID` | A column is grouped | Front, beside the checkbox lane. See [Grouping](/docs/grouping). |
 | `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. Cannot be hidden. See [Row details](/docs/row-details). |
-| `EDIT_COLUMN_ID` | `editing.mode: "row"` | Appended, pinned right. See [Editing](/docs/editing). |
+| `EDIT_COLUMN_ID` | `editMode: "row"` | Appended, pinned right. See [Editing](/docs/editing). |
 
 The checkbox lane cannot be moved, which is what anchors the left pinned region:
 no column can be placed in front of it.

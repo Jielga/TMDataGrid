@@ -1,6 +1,7 @@
 # Server-side data
 
-> **Live examples:** [Server-side data](/examples/server-side) · [Infinite scroll](/examples/infinite-scroll)
+When the client holds one page and the server does the work: paging, sorting
+and filtering all become round trips, and the grid stops doing them itself.
 
 The grid reads rows through `getPaginatedRowModel()` and totals through
 `getRowCount()` and `getPageCount()`, all of which respect TanStack's manual
@@ -41,6 +42,12 @@ const grid = useTMDataGrid({
 
   meta: { loading: isFetching, totalRowCount: data?.totalUnfiltered },
 });
+```
+
+```demo
+file: data/ServerSide.tsx
+hint: Sorting, searching and paging are all round trips against a server with 500 ms of latency.
+extraSources: data/orders.ts
 ```
 
 ## Differences from client-side data
@@ -121,6 +128,13 @@ const grid = useTMDataGrid({
 <TMDataGrid.Table onReachEnd={() => void fetchNextPage()} />
 ```
 
+```demo
+file: data/InfiniteScroll.tsx
+hint: Scroll to the bottom and keep going — 100 rows arrive at a time and the scroll position holds.
+extraSources: data/orders.ts
+height: 460
+```
+
 Fetch page zero yourself on mount — `onReachEnd` stays quiet on an empty
 grid, since "the end" of nothing is not a scroll position.
 
@@ -140,5 +154,17 @@ Two rules come with the pattern:
   scroll the callback watches, so the end it reaches is the page's. The grid
   warns once if both are set.
 
-The demo site's *Infinite scroll* page is this pattern end to end, against a
-simulated server.
+## Reference
+
+| Name | Kind | Type | Default | What it does |
+| --- | --- | --- | --- | --- |
+| `manualPagination` | Table option | `boolean` | `false` | The server pages. Implies `enablePagination`. |
+| `manualSorting` | Table option | `boolean` | `false` | The server sorts. |
+| `manualFiltering` | Table option | `boolean` | `false` | The server filters, column filters and quick search alike. |
+| `manualGrouping` | Table option | `boolean` | `false` | The rows arrive grouped. See [Grouping](/docs/grouping#server-side-grids). |
+| `rowCount` | Table option | `number` | – | The true total. `pageCount: -1` when it is unknown. |
+| `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. See [Loading and empty](/docs/loading-and-empty). |
+| `meta.totalRowCount` | Option | `number` | – | The unfiltered total, for `SummaryCount`. |
+| `onReachEnd` | Table prop | `() => void` | – | Fires as the scroll nears the last row. Latches per row count. |
+| `reachEndThreshold` | Table prop | `number` | `10` | How many rows before the end it fires. |
+| `isFilterActive` | Export | `(value) => boolean` | – | Skip filter entries whose value is still empty. |
