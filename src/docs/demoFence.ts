@@ -92,9 +92,16 @@ export function parseDemoFence(body: string): DemoBlockDemo {
   };
 }
 
-/** Every demo fence in a markdown source, in the order they appear. */
+/**
+ * Every demo fence in a markdown source, in the order they appear.
+ *
+ * `\r?` rather than `\n`: a Windows checkout under `core.autocrlf` hands these
+ * pages over with CRLF endings, and an LF-only pattern then finds no fences at
+ * all - which surfaces as demos being orphaned rather than as anything naming
+ * line endings.
+ */
 export function findDemoFences(source: string): Array<DemoBlockDemo> {
-  return [...source.matchAll(/^```demo\n([\s\S]*?)^```/gm)].map((match) =>
+  return [...source.matchAll(/^```demo\r?\n([\s\S]*?)^```/gm)].map((match) =>
     parseDemoFence(match[1]),
   );
 }
