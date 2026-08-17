@@ -2,6 +2,7 @@ import { Box, Button, Collapse, Group, Paper, Stack, Text } from "@mantine/core"
 import { useState } from "react";
 import { CodeBlockTabs, type CodeBlockFile } from "./CodeBlock";
 import { loadDemo, loadSharedSource } from "./demoRegistry";
+import classes from "./DemoBlock.module.css";
 
 /**
  * The frame around one demo: what it is, the thing itself, and the source that
@@ -90,14 +91,12 @@ export function DemoBlock({ demo }: { demo: DemoBlockDemo }) {
         </Text>
       )}
 
-      {/* Fixed height so the page does not resize itself as demos mount, and
-          so every grid on the site is judged at the same size. */}
       <Paper
         withBorder
         radius="sm"
         p="sm"
         h={demo.height ?? DEFAULT_DEMO_HEIGHT}
-        style={{ display: "flex", flexDirection: "column", minHeight: 0 }}
+        className={classes.live}
       >
         <Component />
       </Paper>
