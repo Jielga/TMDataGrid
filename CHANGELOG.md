@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 1.0.1
+
+### Patch Changes
+
+- [#15](https://github.com/Jielga/TMDataGrid/pull/15) [`c83d4eb`](https://github.com/Jielga/TMDataGrid/commit/c83d4ebfd93f021b3c26e959a023ac272281db1f) Thanks [@Psvensso](https://github.com/Psvensso)! - The grid's own labels render as `span` rather than `p`, so a grid placed inside prose - a docs page, a CMS body, Mantine's `Typography` - no longer inherits paragraph margins that pushed the toolbar count and the pager off centre.
+
 ## 1.0.0
 
 ### Major Changes
