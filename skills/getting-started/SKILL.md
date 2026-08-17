@@ -3,17 +3,18 @@ name: getting-started
 description: >
   Set up TMDataGrid, a compound React data grid built on TanStack Table v9 and
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
-  catalog (Table, Footer, Toolbar, Spacer, SummaryCount, FilterButton,
-  ColumnsButton, FilterPanel, FilterPills, ColumnsPanel), the size scale and the
-  bounded-height layout requirement. Load when adding a grid, choosing which
-  parts to render, or when rows do not appear.
+  catalog (Table, Footer, Toolbar, Spacer, SummaryCount, Search,
+  LoadingIndicator, EditActions, FilterButton, ColumnsButton, FilterPanel,
+  FilterPills, ColumnsPanel), the size scale and the bounded-height layout
+  requirement. Load when adding a grid, choosing which parts to render, or when
+  rows do not appear.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
   library_version: '1.0.1'
 sources:
   - 'Jielga/TMDataGrid:src/docs/getting-started.md'
-  - 'Jielga/TMDataGrid:src/docs/components.md'
+  - 'Jielga/TMDataGrid:src/docs/anatomy.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/sizes.ts'
 ---
@@ -103,14 +104,31 @@ Spread the hook result (`{...grid}`) rather than assigning `table`, `ui` and
 | Column menu | On hover: sort, filter, pin, move, hide, manage columns. |
 | Filter panel | Column, operator and value rows. |
 | Column manager | Search, toggle, show/hide all, reset. |
-| Row selection | Checkbox column pinned to the left, or click-to-select rows with `rowSelectionMode: "row"`. |
+| Row selection | Checkbox column pinned to the left, or click-to-select rows with `selectionMode: "row"`. See the `rows` skill. |
 | Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
 Each is bound to a capability check - disabling the standard table or column
-option also removes its interface. Column ordering (`enableColumnOrdering`) and
-pagination (`enablePagination`) are the two switches the grid defines itself.
-See the `features` skill.
+option also removes its interface, and empty menus and inactive buttons are
+never rendered. Column ordering (`enableColumnOrdering`) and pagination
+(`enablePagination`) are the two switches the grid defines itself, because
+TanStack ships state and APIs for both but no `enable` option.
+
+## Which skill covers what
+
+| Need to | Load |
+| --- | --- |
+| Define columns, size, hide, pin, reorder, sort them | `columns` |
+| Filter, or add a search box | `filtering` |
+| Select rows, react to clicks, colour rows, details, pin rows | `rows` |
+| Move a cell cursor, select ranges, copy, export CSV | `cell-selection` |
+| Make cells editable | `editing` |
+| Group rows, aggregate, add a summary row | `grouping` |
+| Page, tune scrolling, handle empty and loading states | `data` |
+| Back the grid with a server | `server-side` |
+| Configure the hook, or persist state | `options` |
+| Theme, size, compose the toolbar, translate | `appearance` |
+| Write tests against a grid | `testing` |
 
 ## Layout
 
@@ -131,11 +149,14 @@ flex column.
 | Component | Props | Notes |
 | --- | --- | --- |
 | `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. `style` also takes CSS variables: `--dg-row-selected-bg`, `--dg-row-height`, `--dg-header-height`, `--dg-font-size`, `--dg-padding`. |
-| `TMDataGrid.Table` | `onRowClick(row)`, `rowContextMenu` render prop, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
+| `TMDataGrid.Table` | `onRowClick(row)`, `rowContextMenu` render prop, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `selectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | - | Pushes later toolbar items right. |
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
+| `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
+| `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
+| `TMDataGrid.EditActions` | - | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
 | `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
 | `TMDataGrid.ColumnsButton` | - | Opens column manager. Renders nothing if no column is hideable. |
 | `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
@@ -229,7 +250,7 @@ mirrors them. Set `meta.rowHeight` for a height outside the scale.
 | `getColumnLabel(column)` | `meta.label`, a string header, or the column id. |
 | `getColumnType(column)` | `meta.type`, defaulting to `"string"`. |
 | `formatFilterLabel({ label, type, filter })` | The one-line filter description used on the pills. |
-| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See the `features` skill. |
+| `moveColumn({ table, columnId, targetId, side })` | Moves a column next to another. See the `columns` skill. |
 | `moveColumnByStep({ table, columnId, direction })` | Moves a column one position within its region. |
 | `SELECT_COLUMN_ID` | Id of the generated checkbox column. |
 

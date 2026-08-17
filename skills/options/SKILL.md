@@ -5,11 +5,12 @@ description: >
   of TanStack TableOptions, the default initialState (pagination, columnPinning,
   globalFilterFn), the meta object (loading, noResultsLabel, rowHeight,
   totalRowCount), the grid's own persist, enableColumnOrdering,
-  enablePagination, rowSelectionMode and highlightSelectedRows options, the
+  enablePagination, selectionMode and showSelectedBackground options, the
   persist option with dataKey/settingsKey slice selection and storageMode, the
-  returned table/ui/features triple, ui panel and column drag actions, and
-  reading grid state with useSelector. Load when configuring the hook,
-  persisting column layout or filters, or reacting to grid state from a parent.
+  returned api (table, ui, edit, features, labels, resetSettings, scrollToRow),
+  ui panel and column drag actions, and reading grid state with useSelector.
+  Load when configuring the hook, persisting column layout or filters, or
+  reacting to grid state from a parent.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -26,7 +27,7 @@ Creates the table instance and the state used by the grid interface.
 
 ```tsx
 const grid = useTMDataGrid<TData>(options);
-// { table, ui, features }
+// { table, ui, edit, features, labels, resetSettings, scrollToRow }
 ```
 
 Spread the result onto `TMDataGrid`.
@@ -38,18 +39,18 @@ All TanStack `TableOptions` are supported and passed through unchanged, includin
 flags and `rowCount`. The `features` option is supplied internally and cannot be
 overridden.
 
-`persist`, `enableColumnOrdering`, `enablePagination`, `rowSelectionMode` and
-`highlightSelectedRows` are the grid's own options and are consumed by the hook
+`persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode` and
+`showSelectedBackground` are the grid's own options and are consumed by the hook
 rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
-| `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
+| `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. Required once `editMode` is set. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
-| `rowSelectionMode` | `"checkbox" \| "row"` | `"checkbox"` | `"row"` drops the checkbox column and selects on row click. Defined by the grid. |
-| `highlightSelectedRows` | `boolean` | Follows the mode | Highlight background on selected rows: off for `"checkbox"`, on for `"row"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid. |
+| `selectionMode` | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a row click does. Defined by the grid - see the `rows` skill. |
+| `showSelectedBackground` | `boolean` | Follows the mode | Background tint on selected rows: off for `"checkbox"`, on for `"row"`. Colour is `--dg-row-selected-bg`. Defined by the grid. |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
@@ -64,6 +65,8 @@ rather than forwarded to TanStack.
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
+| `editMode` | `"cell" \| "cellConfirm" \| "row" \| "batch"` | off | Turns editing on. Brings `rowValidators`, `isRowEditable`, `onEditCommit`, `onEditCommitBatch`, `newRowDefaults`, `onRowAdd` and `onRowDelete` with it - see the `editing` skill. |
+| `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings and `aria-label`s. |
 
 ### Default initial state
 
@@ -127,8 +130,12 @@ const persist = {
 
 | Group | Available slices |
 | --- | --- |
-| `dataKey` | `columnFilters`, `globalFilter`, `sorting`, `pagination` |
-| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning` |
+| `dataKey` | `columnFilters`, `globalFilter`, `sorting`, `pagination`, `expanded` |
+| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning`, `grouping` |
+
+`grouping` is a settings slice because it names columns rather than values, so it
+survives the data changing under it the way the column layout does. `expanded` is
+a data slice for the opposite reason.
 
 `DATA_STATE_SLICES` and `SETTINGS_STATE_SLICES` export the same values. Slice
 names are typed per group, so only valid names are accepted.
@@ -145,7 +152,11 @@ persistence is skipped rather than throwing.
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
+| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editMode` is set. See the `editing` skill. |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read on each render. |
+| `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. |
+| `resetSettings` | `() => void` | Puts the settings state back to a clean first visit. |
+| `scrollToRow` | `({ rowId, align? }) => boolean` | Scrolls a row into view through the virtualizer. `false` when the row is not in the current view. |
 
 Both stores are subscribable, which is how a parent reacts to grid state without
 owning it:
