@@ -1,7 +1,7 @@
 # Scrolling and virtualization
 
 Virtualization is **always on**. There is no flag, no threshold and no "enable
-for large data sets" — only the rows within the viewport, plus a small
+for large data sets" - only the rows within the viewport, plus a small
 overscan, are ever mounted, so the row count stops being a rendering concern.
 
 ```tsx
@@ -24,7 +24,7 @@ to render.
 
 Taken from `meta.rowHeight`, or from the `size` prop when that is not set. Rows
 are **fixed height**, so the virtualizer's estimate is exact and the scrollbar
-is honest — no drift, no jumping as you scroll.
+is honest - no drift, no jumping as you scroll.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns, meta: { rowHeight: 64 } });
@@ -44,7 +44,7 @@ scrollToRow({ rowId: "42", align: "center" });
 ```
 
 Under virtualization the row may not be mounted, which is exactly why this
-exists — `element.scrollIntoView()` cannot find what is not rendered.
+exists - `element.scrollIntoView()` cannot find what is not rendered.
 `align` is `"start"`, `"center"`, `"end"` or `"auto"`, which scrolls only if the
 row is out of view.
 
@@ -69,7 +69,7 @@ so a pending fetch is never asked twice.
 
 ## The depth cues
 
-Two soft shadows, both scroll-driven animations tracked on the compositor —
+Two soft shadows, both scroll-driven animations tracked on the compositor -
 no scroll listener, no state, no React render.
 
 **Under the header.** Once body rows scroll beneath the sticky header, a shadow

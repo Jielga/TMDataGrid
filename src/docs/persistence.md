@@ -19,7 +19,7 @@ const persist = {
 const grid = useTMDataGrid({ data, columns, persist });
 ```
 
-Both keys are optional — pass only `settingsKey` to remember the layout but
+Both keys are optional - pass only `settingsKey` to remember the layout but
 never the filters.
 
 ```demo
@@ -33,7 +33,7 @@ extraSources: data/employeeColumns.tsx
 | Group | Slices | Lifetime |
 | --- | --- | --- |
 | `dataKey` | `columnFilters`, `globalFilter`, `sorting`, `pagination`, `expanded` | As long as the data means the same thing |
-| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning`, `grouping` | Indefinite — this is the reader's layout |
+| `settingsKey` | `columnVisibility`, `columnSizing`, `columnOrder`, `columnPinning`, `grouping` | Indefinite - this is the reader's layout |
 
 `DATA_STATE_SLICES` and `SETTINGS_STATE_SLICES` are exported with the same
 values. Slice names are typed per group, so only valid names compile.
@@ -62,15 +62,15 @@ subscription to the table store, so state changed directly through the table
 API is persisted too.
 
 **A payload from another version is dropped whole**, not migrated. Payloads
-carry the exported `PERSIST_PAYLOAD_VERSION`; anything else — including
-everything written by a 0.x build, which had no stamp — is discarded. The cost
+carry the exported `PERSIST_PAYLOAD_VERSION`; anything else - including
+everything written by a 0.x build, which had no stamp - is discarded. The cost
 is one lost layout, against guessing at a shape the current code no longer
 knows.
 
 **Restored state is realigned against the columns that exist.** Entries naming
 a column removed between deploys are dropped: a ghost id in the order, a width
 for nothing, and above all a sort or filter that would be active with no column
-to show for it. New columns need nothing — TanStack appends columns missing from
+to show for it. New columns need nothing - TanStack appends columns missing from
 `columnOrder` in definition order.
 
 **Storage access is guarded.** If storage is unavailable, disabled or full,
@@ -82,7 +82,7 @@ people can share a browser profile.
 ## Resetting
 
 `resetSettings()` puts the settings state back to what a first visit with clean
-storage would have shown — your `initialState` plus the structural lanes — and,
+storage would have shown (your `initialState` plus the structural lanes), and,
 with persistence configured, writes through to storage like any other change.
 The columns panel's **Reset layout** button calls exactly this.
 
@@ -94,7 +94,7 @@ reset to `initialState`, which the mount built *from* the restored payload.
 Mantine's hook owns a piece of state and returns `[value, setValue]`. Here the
 table already owns the state and storage only mirrors it. Routing writes through
 the hook would keep a second copy and trigger a React state update on every
-change — including every pointer move during a column resize.
+change - including every pointer move during a column resize.
 
 Its defaults conflict too: `getInitialValueInEffect: true` delivers the stored
 value after mount, while `initialState` is only read on the first render, and

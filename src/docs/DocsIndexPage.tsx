@@ -18,7 +18,7 @@ export function DocsIndexPage() {
         <Stack gap={4}>
           <Title order={1}>Documentation</Title>
           <Text c="dimmed">
-            One page per topic — what it is, a live demo, and every option,
+            One page per topic - what it is, a live demo, and every option,
             prop and CSS variable it owns.
           </Text>
         </Stack>

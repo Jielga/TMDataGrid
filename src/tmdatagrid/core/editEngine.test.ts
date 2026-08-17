@@ -32,7 +32,7 @@ const columns = helper.columns([
   // A nested path: Form addresses fields by dot-path, so this edits
   // values.address.city with no extra machinery.
   helper.accessor("address.city", { header: "City", id: "city" }),
-  // No accessorKey and no editField — not editable.
+  // No accessorKey and no editField - not editable.
   helper.accessor((row) => `${row.name} (${String(row.age)})`, {
     id: "display",
     header: "Display",
@@ -194,7 +194,7 @@ describe("edit engine", () => {
 
     expect(edit.state.openRowIds).toEqual(["1"]);
     expect(edit.state.rows["1"]?.hasRowError).toBe(true);
-    // The draft is intact — a slow or failing save never flickers back.
+    // The draft is intact - a slow or failing save never flickers back.
     expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
   });
 
@@ -260,11 +260,11 @@ describe("edit engine", () => {
     edit.begin({ rowId: "1", columnId: null });
     expect(edit.state.active).toEqual({ rowId: "1", columnId: null });
 
-    // Pristine — leaving drops it and opens the next row.
+    // Pristine - leaving drops it and opens the next row.
     edit.begin({ rowId: "2", columnId: null });
     expect(edit.state.openRowIds).toEqual(["2"]);
 
-    // Dirty — the open row keeps the edit until saved or cancelled.
+    // Dirty - the open row keeps the edit until saved or cancelled.
     edit.getForm("2")?.setFieldValue("name", "Erik B");
     edit.begin({ rowId: "1", columnId: null });
     expect(edit.state.openRowIds).toEqual(["2"]);
@@ -466,7 +466,7 @@ describe("edit engine", () => {
 
     edit.cancelAll();
 
-    // Back to a clean slate — the discard-all button's whole promise.
+    // Back to a clean slate - the discard-all button's whole promise.
     expect(edit.state.openRowIds).toEqual([]);
     expect(edit.state.newRows).toEqual([]);
     expect(edit.state.deletedRowIds).toEqual([]);
@@ -477,7 +477,7 @@ describe("edit engine", () => {
   });
 
   it("canDeleteRows follows the handlers the mode can deliver to", () => {
-    // Immediate modes need onRowDelete — there is nowhere else to report.
+    // Immediate modes need onRowDelete - there is nowhere else to report.
     expect(renderEditGrid().current.edit.canDeleteRows()).toBe(false);
     expect(
       renderEditGrid({ onRowDelete: vi.fn() }).current.edit.canDeleteRows(),
@@ -498,7 +498,7 @@ describe("edit engine", () => {
       isRowEditable: (row) => row.original.id !== 2,
     });
     const { edit } = grid.current;
-    // The same erasure the context provider performs — canEditCell is chrome.
+    // The same erasure the context provider performs - canEditCell is chrome.
     const table = grid.current.table as unknown as TMDataGridApi<TMDataGridRowData>["table"];
 
     edit.begin({ rowId: "2", columnId: "name" });

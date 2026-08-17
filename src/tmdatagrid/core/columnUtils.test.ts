@@ -6,8 +6,8 @@ import { getColumnDefaultOperator, isColumnReorderable } from "./columnUtils";
 /**
  * The trivial meta readers (`getColumnLabel`, `getColumnType`,
  * `getColumnAlign`) are exercised all over the component suite; what earns
- * tests here are the two helpers carrying an actual rule — the header-group
- * ordering ban, and the filter-operator fallback chain — asked of real
+ * tests here are the two helpers carrying an actual rule - the header-group
+ * ordering ban, and the filter-operator fallback chain - asked of real
  * TanStack columns, whose `parent` wiring is the thing under test.
  */
 const helper = createTMDataGridColumnHelper<TestRow>();

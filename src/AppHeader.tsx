@@ -19,7 +19,7 @@ import {
 } from "./packageStatus";
 
 /**
- * The site header: what this is, which version, and the way in to everything —
+ * The site header: what this is, which version, and the way in to everything -
  * the shape every library documentation site has settled on.
  *
  * The search button is styled as an input rather than being one. A real input
@@ -34,7 +34,7 @@ const GRID_GLYPH_CELLS = [
   [11, 11],
 ] as const;
 
-/** A four-cell grid — the product, at 22px. */
+/** A four-cell grid - the product, at 22px. */
 function BrandMark() {
   return (
     <svg

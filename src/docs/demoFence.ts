@@ -11,13 +11,13 @@ import type { DemoBlockDemo } from "../examples/DemoBlock";
  * ```
  * ````
  *
- * The single-line form — the whole body being just `rows/Grouping.tsx` — is
- * the common case and means the same thing.
+ * The single-line form (the whole body being just `rows/Grouping.tsx`) is the
+ * common case and means the same thing.
  *
  * A fence rather than MDX because the markdown has to stay markdown: it is
  * what `intent.docs` publishes, what six `SKILL.md` files cite as `sources:`,
  * and what an agent reads as plain text. Anything reading the raw file sees
- * the demo's path and its hint, which is the honest degradation — the demo
+ * the demo's path and its hint, which is the honest degradation - the demo
  * itself is code in a file, exactly where the fence says it is.
  */
 
@@ -45,7 +45,7 @@ export function parseDemoFence(body: string): DemoBlockDemo {
     const separator = line.indexOf(":");
     const key = separator === -1 ? "" : line.slice(0, separator).trim();
 
-    // No `key:` prefix at all — the single-line form, naming the file.
+    // No `key:` prefix at all - the single-line form, naming the file.
     if (!isKey(key)) {
       if (separator !== -1 || fields.has("file")) {
         throw new Error(

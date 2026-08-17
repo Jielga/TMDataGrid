@@ -1,7 +1,7 @@
 # Editing
 
 Set `editMode` and the grid's cells open editors. One TanStack Form is created
-per editing row — *one row, one form* — and **the grid never mutates `data`**:
+per editing row (*one row, one form*), and **the grid never mutates `data`**:
 `onEditCommit` applies the change wherever the data actually lives, and the new
 rows flow back in through `data` as always.
 
@@ -24,7 +24,7 @@ would point a draft at a different record after any sort.
 The editing options travel together, and the types say so: setting any of them
 without `editMode` is a compile error (they would act on nothing), the moment
 `editMode` is set `getRowId` stops being optional, and `onEditCommitBatch` only
-exists under `editMode: "batch"` — the one mode whose `submitAll` calls it.
+exists under `editMode: "batch"` - the one mode whose `submitAll` calls it.
 Batch *without* `onEditCommitBatch` stays legal; `submitAll` falls back to the
 per-row `onEditCommit` loop.
 
@@ -34,18 +34,18 @@ per-row `onEditCommit` loop.
 
 | Mode | Commit | Cancel | Chrome |
 | --- | --- | --- | --- |
-| `"cell"` | Enter, Tab, blur — as in Sheets | Escape | none |
+| `"cell"` | Enter, Tab, blur - as in Sheets | Escape | none |
 | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape | ✓ / ✕ beside the input |
 | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape | generated edit lane |
 | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` | `TMDataGridEditActions` |
 
 ```demo
 file: editing/CellEditing.tsx
-hint: Double-click a cell — or press Enter, F2, or just start typing on it.
+hint: Double-click a cell - or press Enter, F2, or just start typing on it.
 height: 440
 ```
 
-**Opening an editor**: double-click, or with the cell cursor on the cell —
+**Opening an editor**: double-click, or with the cell cursor on the cell -
 Enter, F2, or just typing, where the character replaces the value as it would
 in a spreadsheet. Delete or Backspace clears the value and commits without
 opening anything. Editing brings cell selection along: `cellSelection` defaults
@@ -54,7 +54,7 @@ to `"single"` while `editMode` is set.
 ### Row editing
 
 The pencil opens every cell of the row at once and ✓ saves them as **one
-commit** — which is where a cross-field rule can finally live, because the
+commit** - which is where a cross-field rule can finally live, because the
 whole row is being validated together.
 
 ```demo
@@ -67,7 +67,7 @@ height: 440
 
 Under `"batch"` nothing commits until you say so. Enter and Tab **park** the
 draft (dirty-marked, Tab moving on to the next editable cell), Escape drops the
-one draft, and drafts accumulate across rows — surviving filters, sorts and
+one draft, and drafts accumulate across rows - surviving filters, sorts and
 scrolling, since they live outside the DOM.
 
 `TMDataGridEditActions` in the toolbar is the chrome: Save with the dirty-row
@@ -75,11 +75,11 @@ count, and Discard.
 
 ```demo
 file: editing/BatchEditing.tsx
-hint: Edit cells, add rows in the sticky entry block, mark deletions with the trash — nothing leaves the grid until Save.
+hint: Edit cells, add rows in the sticky entry block, mark deletions with the trash - nothing leaves the grid until Save.
 height: 440
 ```
 
-`edit.submitAll()` commits every open row — through the per-row `onEditCommit`
+`edit.submitAll()` commits every open row - through the per-row `onEditCommit`
 loop by default, or through one `onEditCommitBatch({ rows, added, deleted })`
 call when that is set. Rows failing validation stay open either way, and a
 rejected batch keeps every draft.
@@ -88,7 +88,7 @@ rejected batch keeps every draft.
 
 A column is editable when it maps to a data path: its `accessorKey`, or
 `meta.editField` for a column built on `accessorFn`. Dot paths reach into
-nested records — `accessorKey: "address.city"` edits `values.address.city`, and
+nested records - `accessorKey: "address.city"` edits `values.address.city`, and
 a nested schema's issues land on the right column.
 
 | Gate | Effect |
@@ -116,7 +116,7 @@ validation error.
 
 ## Adding and deleting rows
 
-`edit.addRow()` opens an **entry row** in a sticky block under the header — the
+`edit.addRow()` opens an **entry row** in a sticky block under the header - the
 one place stickiness is genuinely required, since a row being typed into exists
 nowhere else to scroll back to. Entry cells are real editors over a form seeded
 from `newRowDefaults`. Enter, or the lane's ✓, commits the add through
@@ -136,7 +136,7 @@ useTMDataGrid({
 ```
 
 `edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` straight away under
-the immediate modes — confirmation, if you want it, belongs in that callback.
+the immediate modes - confirmation, if you want it, belongs in that callback.
 Under batch it toggles a mark instead: the row renders struck through and inert
 (`data-deleted`), the lane's trash becomes a restore, and `submitAll` reports
 the ids in `deleted`. Setting `onRowDelete` puts the trash can in the edit lane,
@@ -144,16 +144,16 @@ which appears in any mode that has a use for it.
 
 The grid still never mutates `data`: adds and deletes are applied by you, and
 the new rows arrive back through `data`. The engine's `tempId` (`__new__1`, …)
-never needs to become a real id — mint one when you create the record.
+never needs to become a real id - mint one when you create the record.
 
-## The engine — `edit`
+## The engine: `edit`
 
 Everything the chrome does goes through `edit`, which is public.
 
 | Member | Does |
 | --- | --- |
 | `edit.begin({ rowId, columnId })` | Opens an editor |
-| `edit.commit(rowId)` | Commits — resolves `false` if blocked |
+| `edit.commit(rowId)` | Commits - resolves `false` if blocked |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts |
 | `edit.submitAll()` | Commits every open row (batch) |
 | `edit.addRow()` / `edit.deleteRow(rowId)` | Rows in and out |

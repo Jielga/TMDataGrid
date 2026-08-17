@@ -5,8 +5,8 @@ import { useTMDataGridContext } from "../TMDataGridContext";
 /**
  * Batch mode's toolbar chrome: Save with the dirty-row count, and Discard.
  * Both read the edit store, so they grey out while nothing is dirty and the
- * Save spins while a submit is in flight. Works under any `editMode` — a
- * cellConfirm grid accumulating drafts can offer the same pair — and renders
+ * Save spins while a submit is in flight. Works under any `editMode` - a
+ * cellConfirm grid accumulating drafts can offer the same pair - and renders
  * nothing while editing is off.
  *
  * ```tsx

@@ -2,11 +2,11 @@ import { aggregationFns, type RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridTable } from "../useTMDataGrid";
 
-/** The registered aggregation names — the same set `aggregationFn` accepts. */
+/** The registered aggregation names - the same set `aggregationFn` accepts. */
 export type TMDataGridAggregationName = keyof typeof aggregationFns;
 
 /**
- * One column aggregated over every filtered row — the number a summary-row
+ * One column aggregated over every filtered row - the number a summary-row
  * `footer` wants:
  *
  * ```tsx
@@ -16,7 +16,7 @@ export type TMDataGridAggregationName = keyof typeof aggregationFns;
  * ```
  *
  * Filtered rather than paginated rows, so the total covers everything the
- * filters left — all pages — and follows the filters as they change. Reuses
+ * filters left (all pages), and follows the filters as they change. Reuses
  * TanStack's registered aggregation functions; `fn` defaults to `"sum"`.
  */
 export function aggregateColumn<TData extends RowData>({

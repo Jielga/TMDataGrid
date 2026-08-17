@@ -4,7 +4,7 @@
  * Ids, because every other thing the grid does moves cells around: sorting
  * reorders rows, filtering removes them, dragging a header reorders columns. A
  * coordinate pair would silently come to mean a different cell after any of
- * them, while a pair of ids either still resolves or does not resolve at all —
+ * them, while a pair of ids either still resolves or does not resolve at all -
  * and "does not resolve" is a state the grid can handle honestly.
  *
  * Indices are what navigation is actually computed in, so they are resolved
@@ -24,7 +24,7 @@ export type TMDataGridCellCoords = {
 export type ResolveCellMoveArgs = {
   /** `KeyboardEvent.key`. */
   key: string;
-  /** Ctrl or Cmd — Home and End jump to the corner rather than the row end. */
+  /** Ctrl or Cmd - Home and End jump to the corner rather than the row end. */
   ctrlKey: boolean;
   from: TMDataGridCellCoords;
   rowCount: number;
@@ -45,7 +45,7 @@ const clamp = (value: number, max: number) =>
  * Moves clamp at the edges instead of wrapping. Wrapping suits a menu, where
  * the items are a short ring; a grid is a coordinate space, and a Right at the
  * last column that lands on the first column of the next row loses the one
- * thing arrow keys are for — knowing where you will end up without looking.
+ * thing arrow keys are for - knowing where you will end up without looking.
  *
  * A clamped move returns the position it started from rather than `null`. The
  * caller still needs to know the key was handled: an arrow at the last row must
@@ -82,7 +82,7 @@ export function resolveCellMove({
       return at(from.rowIndex + Math.max(pageRows, 1), from.columnIndex);
     case "PageUp":
       return at(from.rowIndex - Math.max(pageRows, 1), from.columnIndex);
-    // Ctrl+Home / Ctrl+End address the grid, plain Home / End the row — the
+    // Ctrl+Home / Ctrl+End address the grid, plain Home / End the row - the
     // convention every spreadsheet and APG's own grid pattern share.
     case "Home":
       return ctrlKey ? at(0, 0) : at(from.rowIndex, 0);
@@ -104,13 +104,13 @@ export type NextEditableCellArgs = {
 };
 
 /**
- * The next editable cell in reading order, wrapping to the next row — and
+ * The next editable cell in reading order, wrapping to the next row - and
  * from the last cell of the grid back to the first. `null` when no other
  * cell is editable.
  *
  * Deliberately wrapping where {@link resolveCellMove} deliberately clamps:
  * arrows are a coordinate space and clamp so the destination is predictable,
- * but Tab mid-edit is the spreadsheet's "next field" — at the end of a row
+ * but Tab mid-edit is the spreadsheet's "next field" - at the end of a row
  * the next field is on the next row, which is a convention, not a surprise.
  */
 export function getNextEditableCell({

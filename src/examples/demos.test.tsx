@@ -26,7 +26,7 @@ function docsFences(): Array<{
  *
  * This is what makes 30-odd example files affordable to keep: the compiler
  * catches an API that was renamed, and this catches one that still typechecks
- * but throws — a required option dropped, a helper that now returns null.
+ * but throws - a required option dropped, a helper that now returns null.
  * Neither cost grows when a demo is added.
  */
 
@@ -88,7 +88,7 @@ describe("docs pages", () => {
     }
   });
 
-  it("page ids are unique — they are the route", () => {
+  it("page ids are unique - they are the route", () => {
     const ids = DOCS_PAGES.map((page) => page.id);
     expect(new Set(ids).size).toBe(ids.length);
   });

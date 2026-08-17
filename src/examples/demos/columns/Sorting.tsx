@@ -38,7 +38,7 @@ export function Sorting() {
     data: EMPLOYEES,
     columns,
     getRowId: (row) => String(row.id),
-    // Where a grid starts sorted. Not state you own — the table takes it from
+    // Where a grid starts sorted. Not state you own - the table takes it from
     // here and manages it thereafter.
     initialState: { sorting: [{ id: "department", desc: false }] },
   });

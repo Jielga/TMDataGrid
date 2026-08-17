@@ -4,14 +4,14 @@ import type { TMDataGridFeatures } from "../useTMDataGrid";
 export const ROW_NUMBER_COLUMN_ID = "__rowNumber__";
 
 /**
- * The generated row-number gutter, prepended under `enableRowNumbers` —
+ * The generated row-number gutter, prepended under `enableRowNumbers` -
  * outermost left, before even the checkbox lane, the way a spreadsheet keeps
  * its gutter outside everything.
  *
  * The def renders nothing itself: a cell cannot know its display position,
- * so the body computes the numbers — one pass over the view, group rows
+ * so the body computes the numbers - one pass over the view, group rows
  * skipped (they are headings over the rows being counted), continuing across
- * pages — and substitutes them in. See `TMDataGridTable`.
+ * pages - and substitutes them in. See `TMDataGridTable`.
  *
  * A system lane: fixed width, no menu, no resize, never exported, and its
  * visibility follows the option rather than the columns panel.
@@ -37,7 +37,7 @@ export function createRowNumberColumn<TData extends RowData>(
     enablePinning: false,
     enableHiding: false,
     header: () => "#",
-    // The body substitutes the number; a row without one — a group row —
+    // The body substitutes the number; a row without one - a group row -
     // falls through to this.
     cell: () => null,
   };

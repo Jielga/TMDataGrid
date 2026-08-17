@@ -10,14 +10,14 @@ const grid = useTMDataGrid({ data, columns });
 
 ```demo
 file: columns/Sorting.tsx
-hint: Click a header to sort, Shift+click a second to append — the badge beside the arrow is its priority.
+hint: Click a header to sort, Shift+click a second to append - the badge beside the arrow is its priority.
 ```
 
 ## Sorting by more than one column
 
 Shift+click a second header to **add** it to the sort rather than replace it.
-While more than one column sorts, each sorted header shows its priority — 1, 2,
-… — beside the arrow, so the order the grid is applying them in is visible
+While more than one column sorts, each sorted header shows its priority - 1, 2,
+… - beside the arrow, so the order the grid is applying them in is visible
 rather than guessed.
 
 A plain click still replaces the whole sort, and the menu's Sort items do the
@@ -47,7 +47,7 @@ columnHelper.accessor("avatar", { header: "", enableSorting: false });
 ```
 
 A column whose menu has no remaining items renders no menu button at all and
-takes no right-click, so the browser's own menu comes up there instead —
+takes no right-click, so the browser's own menu comes up there instead -
 nothing is left as an empty shell.
 
 ## Where the state lives
@@ -68,7 +68,7 @@ grid comes back sorted the way it was left. For a server that does the sorting,
 see [Server-side data](/docs/server-side).
 
 Sorting interacts with grouping: grouping runs first, so a grouped grid sorts
-rows within each group and orders the groups by their aggregated value — see
+rows within each group and orders the groups by their aggregated value - see
 [Grouping](/docs/grouping#sorting-a-grouped-grid).
 
 ## Custom comparators
@@ -86,7 +86,7 @@ columnHelper.accessor("priority", {
 ## The header menu
 
 The menu opens from the ⋮ button on the header, or from a right-click anywhere
-on it — the same items either way, at the pointer for the right-click.
+on it - the same items either way, at the pointer for the right-click.
 Dividers are never left stranded at the end of a menu.
 
 ## Reference

@@ -9,7 +9,7 @@ import type { TMDataGridTable } from "../useTMDataGrid";
 export type TMDataGridMatchRange = { start: number; end: number };
 
 /**
- * The operators whose match is a contiguous substring — the ones highlighting
+ * The operators whose match is a contiguous substring - the ones highlighting
  * can point at. Equality highlights nothing: marking the whole cell says
  * nothing the filter did not already say.
  */
@@ -20,14 +20,14 @@ const HIGHLIGHTABLE_OPERATORS: ReadonlyArray<TMDataGridFilterOperator> = [
 ];
 
 /**
- * Every needle that could highlight in a given column, keyed by column id —
+ * Every needle that could highlight in a given column, keyed by column id -
  * the quick search for the columns it searches, plus any contains-family
  * column filter. `null` while nothing highlightable is active, which is the
  * common case and the cheap one.
  *
  * The fuzzy quick search still contributes its raw text: when the needle
  * occurs contiguously it is highlighted, and a typo-match simply shows no
- * highlight — the honest answer to what a non-contiguous match "is".
+ * highlight - the honest answer to what a non-contiguous match "is".
  */
 export function buildMatchNeedles<TData extends RowData>(
   table: TMDataGridTable<TData>,
@@ -62,7 +62,7 @@ export function buildMatchNeedles<TData extends RowData>(
 
 /**
  * Where the needles occur in the text, case-insensitively, merged where they
- * overlap or touch — so two needles covering "St" and "tock" come back as one
+ * overlap or touch - so two needles covering "St" and "tock" come back as one
  * range rather than nested marks. `null` when nothing matches.
  */
 export function findMatchRanges(

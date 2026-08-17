@@ -17,7 +17,7 @@ export const GROUP_COLUMN_ID = "__group__";
 /** Indent added per level of nesting, in px. */
 const INDENT_STEP = 16;
 
-/** Shown for a group whose value is empty — `String(null)` would read as "null". */
+/** Shown for a group whose value is empty - `String(null)` would read as "null". */
 const BLANK_GROUP_LABEL = "(Blank)";
 
 /**
@@ -42,7 +42,7 @@ export function formatGroupValue(
  * The tree cell: chevron, group value and leaf count, indented by depth.
  *
  * Expansion is read through a subscription rather than from `row.getIsExpanded()`
- * in the component body for the same reason the select checkbox does it — the
+ * in the component body for the same reason the select checkbox does it - the
  * `row` identity survives an expand, so the React Compiler would cache the call
  * along with it and the chevron would never turn. See TMDataGridSelectColumn.
  */
@@ -119,14 +119,14 @@ function GroupHeader<TData extends RowData>({
 
 /**
  * The generated tree column, prepended whenever grouping is enabled and hidden
- * again while `grouping` is empty — see the visibility effect in
+ * again while `grouping` is empty - see the visibility effect in
  * `useTMDataGrid`.
  *
  * It exists because TanStack ships no auto group column: `groupedColumnMode:
  * "remove"` takes the grouped column out of the grid, so something has to hold
  * the tree. Modelled on the checkbox column, which is generated the same way.
  *
- * Not groupable itself, and nothing had to be written to make that true —
+ * Not groupable itself, and nothing had to be written to make that true -
  * `column.getCanGroup()` requires an `accessorFn`, which a display column has
  * no reason to have.
  */
@@ -152,7 +152,7 @@ export function createGroupColumn<TData extends RowData>(
     enablePinning: false,
     cell: ({ row }) => <GroupCell row={row} />,
     // A group row has subRows, so every cell on it that is not the grouped
-    // column reports `getIsAggregated()` — this lane included. Without an
+    // column reports `getIsAggregated()` - this lane included. Without an
     // `aggregatedCell` the body would take that as "nothing to summarise" and
     // render the tree lane blank on exactly the rows it exists for.
     aggregatedCell: ({ row }) => <GroupCell row={row} />,

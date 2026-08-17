@@ -85,7 +85,7 @@ describe("readPinnedRows", () => {
       api.table.setGlobalFilter("Anna");
     });
 
-    // The body shrank to the matches, the pinned row is not one of them —
+    // The body shrank to the matches, the pinned row is not one of them -
     // `keepPinnedRows` semantics say it stays at its edge regardless.
     expect(api.table.getPrePaginatedRowModel().rowsById["2"]).toBeUndefined();
     expect(pinnedIds(api, "top")).toEqual(["2"]);

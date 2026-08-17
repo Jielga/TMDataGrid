@@ -1,8 +1,8 @@
 # Row selection
 
 Picking rows out of the grid, and reading back what was picked. There are two
-different things a grid might mean by "selected" — *these rows are the subject
-of the next bulk action*, and *this row is the one you are looking at* — and
+different things a grid might mean by "selected" - *these rows are the subject
+of the next bulk action*, and *this row is the one you are looking at* - and
 the grid can do either or both.
 
 `selectionMode` decides which. It defaults to `"checkbox"`.
@@ -28,10 +28,10 @@ can either toggle a multi-selection or move a highlight, never both.
 | `"checkbox"` | yes, multi-select | nothing |
 | `"row"` | no | selects, with the usual modifiers |
 | `"checkboxAndHighlight"` | yes, multi-select | highlights one row |
-| `"highlight"` | no | highlights one row — no selection at all |
+| `"highlight"` | no | highlights one row - no selection at all |
 
-The first two write to TanStack's `rowSelection`, so everything downstream —
-the toolbar count, `getSelectedRowModel()`, persistence — is unaffected by the
+The first two write to TanStack's `rowSelection`, so everything downstream -
+the toolbar count, `getSelectedRowModel()`, persistence - is unaffected by the
 choice.
 
 Under `"row"` the click follows the desktop-list conventions: a plain click
@@ -39,13 +39,13 @@ makes the selection this row, Ctrl/Cmd toggles it and leaves the rest, Shift
 selects the range from the anchor, Ctrl+Shift adds that range. Rows are
 focusable in this mode, and Space or Enter toggles the focused row.
 
-`enableRowSelection: false` removes the selection half — the checkbox column
-and row-click selection — whatever the mode. Under `"highlight"` there is
+`enableRowSelection: false` removes the selection half - the checkbox column
+and row-click selection - whatever the mode. Under `"highlight"` there is
 nothing for it to gate.
 
 ## The highlight is not a selection
 
-The highlight is state of its own, not a slice of `rowSelection` — which is
+The highlight is state of its own, not a slice of `rowSelection` - which is
 what lets `"checkboxAndHighlight"` run both at once: tick rows for a bulk
 action, click one to open its detail panel beside the grid.
 
@@ -69,7 +69,7 @@ the grid scrolls. A grid can do both.
 
 ## Acting on a selection
 
-Read the selection through the table store, not by calling a method — the
+Read the selection through the table store, not by calling a method - the
 identity of `table` is stable across renders, so the React Compiler will cache
 a bare `getSelectedRowModel()` call and your toolbar will stop updating.
 
@@ -82,14 +82,14 @@ const selected = useSelector(
 
 ```demo
 file: rows/SelectionState.tsx
-hint: Tick a few rows — the toolbar turns into a bulk-action bar and back.
+hint: Tick a few rows - the toolbar turns into a bulk-action bar and back.
 ```
 
 ## Highlighting selected rows
 
 `showSelectedBackground` follows the mode: on for `"row"`, where the background
 is the only feedback a click gives, off for `"checkbox"`, where the box already
-says so. Set it to override that — checkboxes *and* a background, or row
+says so. Set it to override that - checkboxes *and* a background, or row
 selection with no background change.
 
 ```tsx
@@ -108,7 +108,7 @@ touching the flag:
 ```
 
 Rows carry `data-selected` whenever they are selected, `data-selected-bg` when
-they also take the background, and `data-highlighted` on the highlighted row —
+they also take the background, and `data-highlighted` on the highlighted row -
 [custom styling](/docs/row-styling) can key off any of them.
 
 ## Group rows
@@ -116,7 +116,7 @@ they also take the background, and `data-highlighted` on the highlighted row —
 A group row's checkbox selects every record under it, at any depth, including
 records inside collapsed sub-groups. It shows a tick once all of them are
 selected and a dash while only some are. Only the records are written to
-`rowSelection` — see [Grouping](/docs/grouping#selection).
+`rowSelection` - see [Grouping](/docs/grouping#selection).
 
 ## Reference
 

@@ -31,7 +31,7 @@ describe("fuzzy quick search", () => {
   it("forgives a missing character", () => {
     const grid = renderGrid({ data: searchRows });
 
-    // "Svnsson" — the e dropped. Substring matching finds nothing.
+    // "Svnsson" - the e dropped. Substring matching finds nothing.
     act(() => grid.result.current.table.setGlobalFilter("Svnsson"));
 
     expect(names(grid)).toEqual(["Svensson"]);

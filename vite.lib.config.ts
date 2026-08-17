@@ -8,7 +8,7 @@ import babel from "@rolldown/plugin-babel";
  * Emits `styles.layer.css` beside the built stylesheet: the same rules,
  * wrapped in a named cascade layer so a consumer can state the order
  * (`@layer mantine, tmdatagrid, app;`) instead of fighting specificity.
- * The layer name is public API — never rename it.
+ * The layer name is public API - never rename it.
  */
 function emitLayerStylesheet(): Plugin {
   return {
@@ -28,7 +28,7 @@ function emitLayerStylesheet(): Plugin {
  *
  * Every peer dependency is externalised. Bundling any of them would give the
  * consumer a second copy of React, of the Mantine theme context, or of the
- * TanStack Table feature registry — each of which breaks at runtime rather
+ * TanStack Table feature registry - each of which breaks at runtime rather
  * than at build time.
  */
 const EXTERNAL = [

@@ -5,6 +5,7 @@
 
 # Cheapest first, so an obvious failure comes back fast.
 npm run lint
+node scripts/check-house-style.mjs
 npx tsc -b
 node scripts/check-changeset.mjs
 

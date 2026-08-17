@@ -37,7 +37,7 @@ function buildIndex(): Array<SearchEntry> {
   const entries: Array<SearchEntry> = [];
 
   for (const page of DOCS_PAGES) {
-    // Getting started is served at "/" — the router redirects /docs/….
+    // Getting started is served at "/" - the router redirects /docs/….
     const to = page.id === "getting-started" ? "/" : `/docs/${page.id}`;
 
     entries.push({
@@ -81,7 +81,7 @@ const MAX_RESULTS = 12;
  *
  * The humps matter: `onClickExample` is not a real name, but its parts say
  * plainly what was meant, and splitting lets `click` find `onCellClick`.
- * Whitespace matters for the opposite case — "cell sorting" is two topics, and
+ * Whitespace matters for the opposite case - "cell sorting" is two topics, and
  * as one string it fuzzy-matches neither.
  */
 function tokenize(query: string): Array<string> {
@@ -103,7 +103,7 @@ function literalScore(haystack: string, needle: string): number {
 /**
  * Ranked results for a query.
  *
- * A literal hit on the whole query jumps the queue outright — typing a prop
+ * A literal hit on the whole query jumps the queue outright - typing a prop
  * name should never rank a paragraph that mentions it above the prop itself.
  * Below that, each word is scored separately and matching more of them wins,
  * which is what lets a two-word topic query work at all. Anything still
@@ -120,7 +120,7 @@ export function searchDocs(query: string): Array<SearchEntry> {
   const scored = SEARCH_INDEX.flatMap((entry) => {
     const title = entry.title.toLowerCase();
 
-    // The whole query, weighted heaviest — an exact name beats everything.
+    // The whole query, weighted heaviest - an exact name beats everything.
     let score = literalScore(title, needle) * 2;
 
     let matched = 0;

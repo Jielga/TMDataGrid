@@ -28,7 +28,7 @@ import useTMDataGridDoc from "./use-tm-data-grid.md?raw";
 
 /**
  * One page per topic: the prose, the demos that show it, and the reference
- * table for everything that page owns. There is no second tree — a demo lives
+ * table for everything that page owns. There is no second tree - a demo lives
  * inside the page that explains it, named by a ```demo fence.
  */
 
@@ -54,7 +54,7 @@ export type DocsPageEntry = {
 
 /** Ordered as they appear in the sidebar. */
 export const DOCS_PAGES: DocsPageEntry[] = [
-  // Served at "/" as the front page, not under /docs — the router redirects
+  // Served at "/" as the front page, not under /docs - the router redirects
   // /docs/getting-started there. It stays in this list so the search indexes
   // it and the nav can order it with the rest.
   {
@@ -271,7 +271,7 @@ function group(pages: Array<DocsPageEntry>) {
 }
 
 /**
- * The index page lists everything, Getting started included — it is a
+ * The index page lists everything, Getting started included - it is a
  * directory of the documentation, and leaving out the page people want first
  * would be a strange directory.
  */

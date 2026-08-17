@@ -23,7 +23,7 @@ type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 
 /**
  * Whether an entry cell edits. `edit.canEditCell` asks the main table for
- * the row, and an entry row is precisely not there yet — so the structural
+ * the row, and an entry row is precisely not there yet - so the structural
  * half of the same rule is applied to the entry table's own row.
  */
 function isEntryCellEditable(
@@ -39,13 +39,13 @@ function isEntryCellEditable(
 }
 
 /**
- * The sticky entry block — one row of open editors per `edit.addRow()`,
+ * The sticky entry block - one row of open editors per `edit.addRow()`,
  * pinned under the header. The one place stickiness is genuinely required:
  * an existing row that scrolls away has a place to scroll back to, a row
  * being typed into does not exist anywhere else.
  *
- * A second, tiny table instance over the new rows' seed values — same
- * columns, its own `useTable`, no sorting or filtering ever exercised — so
+ * A second, tiny table instance over the new rows' seed values - same
+ * columns, its own `useTable`, no sorting or filtering ever exercised - so
  * these are real `Cell`s and the editor host, the typed editors and the
  * validators all apply unchanged. The forms live in the same engine map as
  * every other draft, keyed by their temporary ids.
@@ -67,7 +67,7 @@ export function TMDataGridEntryRows({
   const newRows = useSelector(edit.store, (state) => state.newRows);
 
   // The seed values, frozen at addRow: the live values belong to the forms,
-  // which the editors read directly — this table only provides row and cell
+  // which the editors read directly - this table only provides row and cell
   // identity.
   const data = useMemo(
     () =>
@@ -150,7 +150,7 @@ export function TMDataGridEntryRows({
                       onClose={() => {}}
                     />
                   ) : cell !== undefined && column.id === EDIT_COLUMN_ID ? (
-                    // The lane's cell — the entry row's ✓/✕ pair.
+                    // The lane's cell - the entry row's ✓/✕ pair.
                     flexRender(cell.column.columnDef.cell, cell.getContext())
                   ) : null}
                 </div>

@@ -17,7 +17,7 @@ extraSources: data/employeeColumns.tsx
 ## The size scale
 
 `size` drives row height, header height, font size and cell padding together,
-and selects the size of every Mantine control the grid renders — the page-size
+and selects the size of every Mantine control the grid renders - the page-size
 select, the filter inputs, the column checkboxes.
 
 | `size` | Row height | Header height | Font size | Cell padding |
@@ -46,18 +46,18 @@ from a stylesheet.
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `--dg-row-height` | From `size` | Row height. Prefer `meta.rowHeight` — the virtualizer needs the number. |
+| `--dg-row-height` | From `size` | Row height. Prefer `meta.rowHeight` - the virtualizer needs the number. |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-summary-height` | From `size` | [Summary row](/docs/summary-row) height |
 | `--dg-entry-height` | From `size` | The sticky [entry block](/docs/editing#adding-and-deleting-rows) |
 | `--dg-font-size` | From `size` | Cell and header font size |
-| `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are exempt — they are fixed 36px tracks that centre their control. |
+| `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are exempt - they are fixed 36px tracks that centre their control. |
 
 ### Colours
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `--row-bg` | – | One row's own background. Set this, never `background` — see [Row styling](/docs/row-styling#set---row-bg-not-background). |
+| `--row-bg` | – | One row's own background. Set this, never `background` - see [Row styling](/docs/row-styling#set---row-bg-not-background). |
 | `--dg-row-selected-bg` | `--mantine-primary-color-light` | [Selected](/docs/row-selection) rows |
 | `--dg-row-highlight-bg` | Themed | The highlighted row |
 | `--dg-row-striped-bg` | Themed | Every second row under `striped` |
@@ -88,7 +88,7 @@ sit at a known place in that order. Import **one** of the two, never both.
 ## Layout
 
 The grid fills the box you give it and scrolls inside it. It does not size
-itself to its content — a virtualized grid has no content height to measure.
+itself to its content - a virtualized grid has no content height to measure.
 
 ```tsx
 <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>

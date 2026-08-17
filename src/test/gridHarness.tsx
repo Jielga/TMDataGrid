@@ -93,7 +93,7 @@ export type GridResult = ReturnType<typeof renderGrid>;
  * Erases the concrete row type, the way `TMDataGridContext` does at runtime.
  * The chrome and the headless helpers are all written against
  * `TMDataGridRowData`, so a test holding a `TestRow` table has to cross the
- * same boundary the components do — once, here, rather than at every call.
+ * same boundary the components do - once, here, rather than at every call.
  */
 export function erased(
   api: TMDataGridApi<TestRow>,
@@ -118,8 +118,8 @@ export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
 };
 
 /**
- * The full compound grid the component tests render — chrome, table and
- * footer — over the harness rows. Smoke tests for the wiring between the
+ * The full compound grid the component tests render - chrome, table and
+ * footer - over the harness rows. Smoke tests for the wiring between the
  * chrome and the table live on this; TanStack's own behaviour is not
  * re-tested through it.
  */
@@ -158,7 +158,7 @@ export const renderGridUi = (options: GridProps = {}) =>
   renderWithMantine(<Grid {...options} />);
 
 /**
- * Which part of the grid, and — where a part repeats — which row or column of
+ * Which part of the grid, and, where a part repeats, which row or column of
  * it. The `data-dg-part` contract consumers write their own suites against, so
  * the tests reach for it the same way the Testing docs page tells them to.
  */
@@ -174,7 +174,7 @@ export const partSelector = (name: string, key: PartKey = {}) =>
 export const parts = (name: string, key?: PartKey, scope: ParentNode = document) =>
   Array.from(scope.querySelectorAll<HTMLElement>(partSelector(name, key)));
 
-/** The one matching element, or `null` — for `not.toBeInTheDocument()`. */
+/** The one matching element, or `null` - for `not.toBeInTheDocument()`. */
 export const queryPart = (
   name: string,
   key?: PartKey,
@@ -195,8 +195,8 @@ export const bodyRows = () => parts("row");
 
 /**
  * How many rows the grid says it has, mounted or not. Virtualization decides
- * what is in the DOM — and under jsdom, which has no layout, it mounts a
- * handful — so a count of rows has to come off `aria-rowcount`, minus the one
+ * what is in the DOM - and under jsdom, which has no layout, it mounts a
+ * handful - so a count of rows has to come off `aria-rowcount`, minus the one
  * header row it includes.
  */
 export const gridRowCount = () =>

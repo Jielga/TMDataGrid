@@ -79,7 +79,7 @@ export function Employees({ data }: { data: Employee[] }) {
 ```
 
 Only the parts you render exist, and only the features you enable have state.
-Pagination is opt-in via `enablePagination` (implied by `manualPagination`) —
+Pagination is opt-in via `enablePagination` (implied by `manualPagination`) -
 by default every row renders, virtualized. A column that defines no filter
 shows no filter control.
 
@@ -106,7 +106,7 @@ is the demo site that documents it.
 
 | Path                | Contents                                                     |
 | ------------------- | ------------------------------------------------------------ |
-| `index.ts`          | The public API — the only entry point the package exposes     |
+| `index.ts`          | The public API - the only entry point the package exposes     |
 | `useTMDataGrid.tsx` | The hook that builds the table, and the types it is built on  |
 | `core/`             | Headless logic: filtering, ordering, persistence, capabilities |
 | `components/`       | The React chrome and its co-located CSS modules               |
@@ -117,13 +117,13 @@ The demo site's examples live in [`src/examples/`](src/examples):
 
 | Path              | Contents                                                       |
 | ----------------- | -------------------------------------------------------------- |
-| `examplePages.ts` | The tree — categories, topics, and the prose for every demo     |
+| `examplePages.ts` | The tree - categories, topics, and the prose for every demo     |
 | `demos/`          | One file per demo: one idea, no headings, no explanation        |
 | `data/`           | Shared datasets, and the column set for demos about other things |
 | `playground/`     | The kitchen sink, every feature at once behind switches          |
 
 Adding a demo is adding a file under `demos/` and naming it from a topic in
-`examplePages.ts` — the registry pairs each module with its own source through
+`examplePages.ts` - the registry pairs each module with its own source through
 `import.meta.glob`, so the code on screen cannot drift from the code running.
 [`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo,
 so a demo that stops working fails the suite whether or not it still compiles.
@@ -138,8 +138,8 @@ npm run test:watch
 
 ## Testing
 
-For testing an application that *uses* the grid — the test ids, roles and ARIA
-attributes it publishes, and how to drive it from Playwright — see
+For testing an application that *uses* the grid - the test ids, roles and ARIA
+attributes it publishes, and how to drive it from Playwright - see
 [Testing](src/docs/testing.md). What follows is about this repo's own suite.
 
 Vitest with React Testing Library, in jsdom. Tests sit next to the code they
@@ -149,7 +149,7 @@ out of `src/tmdatagrid/` entirely.
 
 Two things worth knowing before adding to them:
 
-- `vitest.setup.ts` installs what jsdom does not provide — an in-memory
+- `vitest.setup.ts` installs what jsdom does not provide - an in-memory
   `Storage`, `matchMedia`, `ResizeObserver`, and element sizes. The last one
   matters: without a measurable box, the virtualizer renders no rows at all.
 - The Mantine provider in the harness runs with `env="test"`, which disables
@@ -180,7 +180,7 @@ works everywhere without putting `.js` extensions in the sources.
 ## Publishing
 
 Releases are managed by [Changesets](https://github.com/changesets/changesets).
-Nothing publishes from an ordinary push — a release happens only when the
+Nothing publishes from an ordinary push - a release happens only when the
 version PR is merged.
 
 Describe your change in the same PR that makes it:

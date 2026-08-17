@@ -35,7 +35,7 @@ const columns = columnHelper.columns([
 export function CellEditing() {
   const [employees, setEmployees] = useState(() => makeEmployees(50));
   const [mode, setMode] = useState<TMDataGridEditMode>("cell");
-  const [lastCommit, setLastCommit] = useState("—");
+  const [lastCommit, setLastCommit] = useState("-");
 
   // Nothing is written until this is called. The grid holds a draft; the data
   // is yours, and stays yours.

@@ -39,7 +39,7 @@ export function Grouping() {
     columns,
     getRowId: (row) => String(row.id),
     enableGrouping: true,
-    // Grouping suspends pagination — a page of group rows would cut a group
+    // Grouping suspends pagination - a page of group rows would cut a group
     // in half, so the grid shows the whole tree and relies on virtualization.
     enablePagination: true,
     initialState: { grouping: ["department"] },

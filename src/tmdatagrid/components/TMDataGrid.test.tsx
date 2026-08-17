@@ -101,7 +101,7 @@ describe("rendering", () => {
 
   it("shows no message while an entry row is open on an empty grid", async () => {
     const user = userEvent.setup();
-    // Referentially stable — an inline `[]` would be a new array every render,
+    // Referentially stable - an inline `[]` would be a new array every render,
     // and TanStack rebuilds the row models whenever `data` identity changes.
     const emptyRows: TestRow[] = [];
     function EmptyEntryGrid() {
@@ -143,7 +143,7 @@ describe("sorting", () => {
     expect(nameHeader).toHaveAttribute("aria-sort", "none");
 
     // The name column repeats values, so the order is asserted on the values
-    // themselves — a stable sort keeps tied rows in place, which means
+    // themselves - a stable sort keeps tied rows in place, which means
     // descending is not the exact reverse of ascending.
     await user.click(nameHeader);
     expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
@@ -243,7 +243,7 @@ describe("match highlighting", () => {
     const user = userEvent.setup();
     renderGridUi({ enableMatchHighlighting: true });
 
-    // The panel seeds on "id", whose "equals" is not a substring match — the
+    // The panel seeds on "id", whose "equals" is not a substring match - the
     // highlight wants the Name column's "contains".
     await user.click(screen.getByRole("button", { name: "Filters" }));
     // Mantine's Select renders a hidden input under the same label, so the
@@ -293,7 +293,7 @@ describe("scroll edge callbacks", () => {
       scrollWidth: { value: 600, configurable: true },
     });
 
-    // Mounting fired nothing — the grid starts at the top edge.
+    // Mounting fired nothing - the grid starts at the top edge.
     expect(events).toEqual([]);
 
     container.scrollTop = 600;
@@ -356,7 +356,7 @@ describe("cell click handlers", () => {
 
     // No checkbox lane under "row" mode, so cell 1 is the name column.
     expect(clicks).toEqual(["1:name"]);
-    // The row click still selected — composed, not suppressed.
+    // The row click still selected - composed, not suppressed.
     expect(bodyRows()[0]!.getAttribute("data-selected")).toBe("true");
   });
 
@@ -442,7 +442,7 @@ describe("column menu", () => {
   it("leaves a control lane's header to the browser's own menu", () => {
     renderGridUi();
 
-    // No column menu on the select-all lane, so nothing to open — the native
+    // No column menu on the select-all lane, so nothing to open - the native
     // menu is the right answer there rather than an empty dropdown.
     fireEvent.contextMenu(header(SELECT_COLUMN_ID));
 
@@ -472,7 +472,7 @@ describe("labels", () => {
     expect(
       screen.getByRole("button", { name: "Kolumner" }),
     ).toBeInTheDocument();
-    // Untouched keys stay English — including the empty state.
+    // Untouched keys stay English - including the empty state.
     expect(screen.getByText("No rows to show")).toBeInTheDocument();
   });
 
@@ -673,7 +673,7 @@ describe("scrollToRow", () => {
    * The offset it asks for is TanStack Virtual's to compute, and jsdom cannot
    * check it: nothing is laid out, the ResizeObserver is a stub, and the
    * virtualizer measures everything as zero. What is testable here is the part
-   * this grid owns — whether a row resolves to a scroll at all. That the rows
+   * this grid owns - whether a row resolves to a scroll at all. That the rows
    * then mount is a browser-level concern; see the Testing docs page.
    */
   function countScrolls(run: () => void): number {
@@ -697,7 +697,7 @@ describe("scrollToRow", () => {
   it("scrolls for a row virtualization left out of the DOM", () => {
     const api = renderScrollGrid();
 
-    // The point of the method: row 400 is real, and has no element — so there
+    // The point of the method: row 400 is real, and has no element - so there
     // is nothing for `scrollIntoView` to be called on.
     expect(queryPart("row", { rowId: "400" })).toBeNull();
 
@@ -723,7 +723,7 @@ describe("scrollToRow", () => {
       api.table.setGlobalFilter("Stockholm");
     });
 
-    // Row 2 is Göteborg — filtered away, so there is nowhere to scroll to.
+    // Row 2 is Göteborg - filtered away, so there is nowhere to scroll to.
     expect(api.scrollToRow({ rowId: "2" })).toBe(false);
     expect(api.scrollToRow({ rowId: "1" })).toBe(true);
   });
@@ -870,7 +870,7 @@ describe("testing contract", () => {
     await user.click(part("filter-panel-close"));
     expect(queryPart("filter-panel")).not.toBeInTheDocument();
 
-    // Clearing takes the panel with it — nothing left in it to show.
+    // Clearing takes the panel with it - nothing left in it to show.
     await user.click(part("filter-button"));
     await user.click(part("filter-clear-all"));
     expect(gridRowCount()).toBe(12);

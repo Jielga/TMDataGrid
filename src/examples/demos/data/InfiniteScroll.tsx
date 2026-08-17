@@ -107,7 +107,7 @@ export function InfiniteScroll() {
         <TMDataGrid.LoadingIndicator />
       </TMDataGrid.Toolbar>
 
-      {/* Fires rows early, and latches per row count — a fetch in flight is
+      {/* Fires rows early, and latches per row count - a fetch in flight is
           not asked for again until it lands. */}
       <TMDataGrid.Table<Order> onReachEnd={() => void loadNextPage()} />
     </TMDataGrid>

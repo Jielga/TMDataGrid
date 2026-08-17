@@ -6,7 +6,7 @@ import { extractHeadings } from "./headings";
 /**
  * The table of contents rail: every `##` and `###` on the page, as deep links.
  *
- * Plain `<a href="#slug">` rather than router links — the target is on this
+ * Plain `<a href="#slug">` rather than router links - the target is on this
  * page, so the browser's own anchor handling scrolls the article and writes
  * the hash, which is exactly the shareable deep link that is wanted. The
  * router only wants to hear about navigation between pages.

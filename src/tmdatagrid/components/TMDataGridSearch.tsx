@@ -10,7 +10,7 @@ export type TMDataGridSearchProps = {
   placeholder?: string;
   /**
    * How long typing pauses before the filter is applied, in ms. Defaults to
-   * 250. `0` writes on every keystroke — what the tests use, and fine for
+   * 250. `0` writes on every keystroke - what the tests use, and fine for
    * small client-side data sets.
    */
   debounce?: number;
@@ -19,7 +19,7 @@ export type TMDataGridSearchProps = {
 };
 
 /**
- * Quick search over every column — a debounced input writing the table's
+ * Quick search over every column - a debounced input writing the table's
  * `globalFilter` state through the `"includesString"` filter the grid
  * configures by default.
  *
@@ -32,12 +32,12 @@ export type TMDataGridSearchProps = {
  * ```
  *
  * Renders nothing under `enableGlobalFilter: false`. Columns opt out with
- * their own `enableGlobalFilter: false` — the generated lanes already do.
+ * their own `enableGlobalFilter: false` - the generated lanes already do.
  *
  * The state is TanStack's `globalFilter`, so everything around it comes free:
  * `manualFiltering` grids forward it to the server, and it is one of the
  * persisted `data` slices. A grid that wants its own input entirely writes
- * `table.setGlobalFilter` itself — this component is only the built-in one.
+ * `table.setGlobalFilter` itself - this component is only the built-in one.
  */
 export function TMDataGridSearch({
   placeholder,
@@ -60,7 +60,7 @@ export function TMDataGridSearch({
   // for an external change that should overwrite what is being typed.
   const lastWrittenRef = useRef(globalFilter);
 
-  // External writes — a consumer's `setGlobalFilter`, a persistence restore —
+  // External writes - a consumer's `setGlobalFilter`, a persistence restore -
   // win over the draft; the input is a mirror, not an owner.
   useEffect(() => {
     if (globalFilter === lastWrittenRef.current) return;

@@ -21,8 +21,8 @@
   justify-content: center;
 }
 
-/* Same as the body cells: a control lane's header — the select-all box, the
-   expand-all chevron — sits in a fixed 36px track, which the text padding would
+/* Same as the body cells: a control lane's header - the select-all box, the
+   expand-all chevron - sits in a fixed 36px track, which the text padding would
    squeeze it out of at the larger sizes. */
 .headerCell[data-control-column="true"] {
   padding: 0;
@@ -30,7 +30,7 @@
 
 /* A filtered column reads as active: its rows are a subset, and nothing else in
    the header says so once the filter panel is closed. A sorted one is not
-   tinted — the arrow, pinned visible for as long as the sort lasts, already
+   tinted - the arrow, pinned visible for as long as the sort lasts, already
    says which column sorts and which way. */
 .headerCellFiltered .headerTitle {
   color: var(--mantine-primary-color-filled);
@@ -71,7 +71,7 @@
   margin-right: auto;
 }
 
-/* Idle actions are removed from layout, not just faded — reserving their width
+/* Idle actions are removed from layout, not just faded - reserving their width
    would truncate header text that otherwise fits. Indicators that must stay
    visible (active sort, active filter, open menu) set data-pinned-visible. */
 .headerAction {
@@ -98,7 +98,7 @@
   opacity: 1;
 }
 
-/* Sort priority under multi-sort — "1", "2", … beside the arrow. Only rendered
+/* Sort priority under multi-sort - "1", "2", … beside the arrow. Only rendered
    while more than one column sorts, so a single sort stays as it always was. */
 .sortIndex {
   font-size: 10px;
@@ -109,8 +109,8 @@
   text-align: center;
 }
 
-/* Column reordering. The dragged header stays in place and dims — the browser
-   already carries a snapshot of it under the pointer — while the header being
+/* Column reordering. The dragged header stays in place and dims - the browser
+   already carries a snapshot of it under the pointer - while the header being
    dragged over draws a bar on the edge the column will land against. */
 .headerCellDragging {
   opacity: 0.4;
@@ -154,7 +154,7 @@
   touch-action: none;
 }
 
-/* The divider is a hover affordance, not permanent chrome — it only appears on
+/* The divider is a hover affordance, not permanent chrome - it only appears on
    the header cell you are pointing at, or on the column being resized. */
 .columnSeparator::after {
   content: "";

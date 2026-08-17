@@ -18,8 +18,8 @@ import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
  */
 describe("cell selection", () => {
   /**
-   * All twelve test rows are mounted under jsdom — the virtualizer falls back
-   * to a 600px viewport, which is more than they need — so a move never has to
+   * All twelve test rows are mounted under jsdom - the virtualizer falls back
+   * to a 600px viewport, which is more than they need - so a move never has to
    * wait for a scroll to mount its target here.
    */
   /** Where the keyboard is, read off the DOM rather than off the store. */
@@ -37,7 +37,7 @@ describe("cell selection", () => {
   it("is off unless asked for", () => {
     renderGridUi();
 
-    // Still a table of cells, and nothing in the body is reachable by Tab —
+    // Still a table of cells, and nothing in the body is reachable by Tab -
     // exactly as it was before the option existed.
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.queryByRole("grid")).not.toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("cell selection", () => {
     renderGridUi({ cellSelection: "single" });
 
     expect(screen.getByRole("grid")).toBeInTheDocument();
-    // 1-based, and in render order — the checkbox lane is column 1.
+    // 1-based, and in render order - the checkbox lane is column 1.
     expect(cellAt(0, 0)).toHaveAttribute("aria-colindex", "1");
     expect(cellAt(0, 4)).toHaveAttribute("aria-colindex", "5");
   });
@@ -64,7 +64,7 @@ describe("cell selection", () => {
       .filter((cell) => cell.getAttribute("tabindex") === "0");
 
     // The first cell stands in until the grid has been entered, so Tab always
-    // has somewhere to land — and only one somewhere.
+    // has somewhere to land - and only one somewhere.
     expect(stops).toHaveLength(1);
     expect(stops[0]).toBe(cellAt(0, 0));
   });
@@ -73,7 +73,7 @@ describe("cell selection", () => {
     renderGridUi({ cellSelection: "single", renderDetails: () => "panel" });
 
     // Every checkbox and chevron in the body. Left tabbable, Tab would walk
-    // through one per mounted row — and how many that is depends on the scroll
+    // through one per mounted row - and how many that is depends on the scroll
     // position, which is no way to build a tab order.
     for (const row of bodyRows()) {
       for (const control of within(row).getAllByRole("checkbox")) {
@@ -106,7 +106,7 @@ describe("cell selection", () => {
     await user.click(cellAt(1, 2));
     await user.tab();
 
-    // Out of the body entirely — not into the next row's checkbox, and not into
+    // Out of the body entirely - not into the next row's checkbox, and not into
     // a control inside the cell just left.
     expect(focused().closest(`[data-dg-part="row"]`)).toBeNull();
   });
@@ -136,7 +136,7 @@ describe("cell selection", () => {
     await user.keyboard("{Enter}");
 
     // `tabindex="-1"` keeps it out of the tab order without putting it out of
-    // reach — which is the whole point of the pair.
+    // reach - which is the whole point of the pair.
     expect(focused()).toBe(within(cellAt(0, 0)).getByRole("checkbox"));
   });
 
@@ -208,7 +208,7 @@ describe("cell selection", () => {
     await user.click(checkboxCell);
     await user.keyboard("{Enter}");
 
-    // Inside the cell now — the arrow keys belong to whatever holds the focus,
+    // Inside the cell now - the arrow keys belong to whatever holds the focus,
     // which is what leaves room for an editor to take the same step later.
     expect(focused()).toBe(within(checkboxCell).getByRole("checkbox"));
     // The ring stays on the cell: that is still where navigation resumes from.
@@ -237,7 +237,7 @@ describe("cell selection", () => {
 
     // The click selects the row it lands on, as a click does in this mode.
     await user.click(cellAt(0, 2));
-    // Moving the cell is not selecting — the keyboard walks the grid freely.
+    // Moving the cell is not selecting - the keyboard walks the grid freely.
     await user.keyboard("{ArrowDown}");
     expect(bodyRows()[1]).toHaveAttribute("data-selected", "false");
 
@@ -255,7 +255,7 @@ describe("cell selection", () => {
     const user = userEvent.setup();
     renderGridUi({ cellSelection: "single" });
 
-    // Row 3 — City "Malmö", the third of the repeating three.
+    // Row 3 - City "Malmö", the third of the repeating three.
     await user.click(cellAt(2, 4));
     expect(focusedCoords()).toEqual({ rowId: "3", columnId: "city" });
 
@@ -295,14 +295,14 @@ describe("cell selection", () => {
   });
 });
 
-describe("cell selection — ranges", () => {
+describe("cell selection - ranges", () => {
   const rangeGrid = () => renderGridUi({ cellSelection: "range" });
 
   it("selects the rectangle a drag covers", async () => {
     const user = userEvent.setup();
     rangeGrid();
 
-    // Name of row 1 down to Age of row 3 — a two-by-three block, dragged from
+    // Name of row 1 down to Age of row 3 - a two-by-three block, dragged from
     // its top-left corner.
     await user.pointer([
       { target: cellAt(0, 2), keys: "[MouseLeft>]" },
@@ -379,7 +379,7 @@ describe("cell selection — ranges", () => {
 
     await user.keyboard("{ArrowDown}");
 
-    // A plain arrow is a move, not an extension — the block comes back to the
+    // A plain arrow is a move, not an extension - the block comes back to the
     // one cell, which is what keeps "what would Ctrl+C take" answerable.
     expect(selectedCells()).toEqual(["3:age"]);
   });
@@ -435,7 +435,7 @@ describe("cell selection — ranges", () => {
     const user = userEvent.setup();
     rangeGrid();
 
-    // The checkbox lane through to Name — the lane holds a control, not data.
+    // The checkbox lane through to Name - the lane holds a control, not data.
     await user.pointer([
       { target: cellAt(0, 0), keys: "[MouseLeft>]" },
       { target: cellAt(0, 2) },

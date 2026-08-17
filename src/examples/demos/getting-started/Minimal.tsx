@@ -26,7 +26,7 @@ export function Minimal() {
   });
 
   // `flex: 1, minHeight: 0` is what lets the grid size itself to the space it
-  // is given — without it a flex child refuses to shrink and the body grows
+  // is given - without it a flex child refuses to shrink and the body grows
   // instead of scrolling.
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>

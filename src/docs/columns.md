@@ -1,8 +1,8 @@
 # Defining columns
 
 A column says where its value comes from, what kind of value it is, and how to
-render it. Everything else — which filter operators it offers, which editor it
-opens, how it sorts — follows from `meta.type` rather than being configured
+render it. Everything else - which filter operators it offers, which editor it
+opens, how it sorts - follows from `meta.type` rather than being configured
 again per feature.
 
 ## The column helper
@@ -37,8 +37,8 @@ file: getting-started/ColumnDefinitions.tsx
 ```
 
 An accessor may be a key of the row or a function over it. A function needs an
-explicit `id`, and — because there is no key to name it — a `meta.label`, which
-is what menus and the columns panel show.
+explicit `id`, and, because there is no key to name it, a `meta.label`, which is
+what menus and the columns panel show.
 
 ## meta
 
@@ -46,7 +46,7 @@ is what menus and the columns panel show.
 | --- | --- | --- | --- |
 | `label` | `string` | String header, or column id | Name used in menus and the column manager. Required when `header` is a component. |
 | `type` | `"string" \| "number" \| "boolean" \| "date" \| "select" \| "multiSelect"` | `"string"` | What the values are. Selects the filter operators, the filter control and the cell editor. |
-| `options` | `TMDataGridOptionsSource` | — | The choices of a `select` / `multiSelect` column. See [Options](#options). |
+| `options` | `TMDataGridOptionsSource` | - | The choices of a `select` / `multiSelect` column. See [Options](#options). |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment, applied to both header and cells. |
 | `autoSize` | `boolean` | `false` | Fit the column to its content once, after the first rows render. |
@@ -55,7 +55,7 @@ is what menus and the columns panel show.
 | `filterControl` | `TMDataGridFilterControlComponent` | By type and operator | Replaces the filter panel's value control. See [Filtering](/docs/filtering#replacing-the-value-control). |
 | `editable` | `boolean \| (row) => boolean` | `true` | Whether cells in this column may be edited. See [Editing](/docs/editing). |
 | `editField` | `string` | The column id | The field an edit writes to, for a computed column. |
-| `validate` | `TMDataGridFieldValidate` | — | Per-cell validation. See [Editors and validation](/docs/editors#validation). |
+| `validate` | `TMDataGridFieldValidate` | - | Per-cell validation. See [Editors and validation](/docs/editors#validation). |
 | `editor` | `TMDataGridEditorComponent` | By type | Replaces the cell editor. |
 
 `enableOrdering` and `autoSize` live in `meta` because they are the two
@@ -64,20 +64,20 @@ behaviours TanStack defines no column option for.
 ## Column types
 
 `meta.type` declares what a column's values are, and the chrome follows: the
-filter panel offers that type's operators and renders a matching value control —
+filter panel offers that type's operators and renders a matching value control -
 a date input for `date`, a Yes/No dropdown for `boolean`, a multi-select of the
 column's options for `select` and `multiSelect`. With editing on, the same
 declaration picks the editor.
 
 Dates may be `Date` instances or ISO `YYYY-MM-DD` strings in the data; the
 comparison is by calendar day either way, and filter values always travel as ISO
-strings. No `@mantine/dates` involved — the date control is the native
+strings. No `@mantine/dates` involved - the date control is the native
 `<input type="date">`.
 
 ### Options
 
 `select` and `multiSelect` columns declare their choices once, in `meta.options`,
-and every consumer of them — the filter panel, the cell editor — reads the same
+and every consumer of them (the filter panel, the cell editor) reads the same
 source:
 
 ```tsx
@@ -93,7 +93,7 @@ meta: {
 // The distinct values present in the data (low-cardinality columns):
 meta: { type: "select", options: "faceted" }
 
-// Computed — `row` is set when a cell editor asks, absent for the filter
+// Computed - `row` is set when a cell editor asks, absent for the filter
 // panel, which is what row-dependent options key off:
 meta: {
   type: "select",
@@ -112,7 +112,7 @@ the function form rather than `"faceted"`.
 ## Header groups
 
 `columnHelper.group` nests columns under a shared header. The group is a header
-row, not a column — the leaves keep all the behaviour.
+row, not a column - the leaves keep all the behaviour.
 
 ```demo
 file: getting-started/HeaderGroups.tsx

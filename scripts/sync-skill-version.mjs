@@ -17,9 +17,9 @@ const { version } = JSON.parse(
 );
 
 // `@tanstack/intent`'s own CLI, by path, rather than the `intent` shim in
-// node_modules/.bin. Two installed packages declare a bin by that name —
+// node_modules/.bin. Two installed packages declare a bin by that name -
 // @tanstack/intent and @tanstack/devtools-event-client, the latter arriving
-// transitively through @tanstack/react-form — and whichever wins the name is
+// transitively through @tanstack/react-form - and whichever wins the name is
 // an install-order accident. When the wrong one won in CI it crashed on an
 // import the other package does not export. A path cannot be ambiguous, and it
 // needs no shell, so Windows and CI take the same route.
@@ -29,7 +29,7 @@ const cli = fileURLToPath(
 
 if (!existsSync(cli)) {
   console.error(
-    `Could not find the intent CLI at ${cli} — is @tanstack/intent installed?`,
+    `Could not find the intent CLI at ${cli} - is @tanstack/intent installed?`,
   );
   process.exit(1);
 }

@@ -1,7 +1,7 @@
 # useTMDataGrid
 
 The complete option list. Each option is *explained* on the page for the
-feature it belongs to — this page is the lookup, and the links point there.
+feature it belongs to - this page is the lookup, and the links point there.
 
 Creates the table instance and the state used by the grid interface.
 
@@ -28,14 +28,14 @@ rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo` — an array rebuilt every render makes TanStack rebuild the row models every render, which at best wastes work and at worst loops the grid forever. |
+| `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo` - an array rebuilt every render makes TanStack rebuild the row models every render, which at best wastes work and at worst loops the grid forever. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
 | `selectionMode` | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a bare row click does. Defined by the grid, see [Row selection](/docs/row-selection). |
 | `showSelectedBackground` | `boolean` | Follows the mode | Highlight background on selected rows: on for `"row"`, off for `"checkbox"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid, see [Row selection](/docs/row-selection). |
 | `defaultHighlightedRowId` | `string \| null` | – | Row highlighted on mount, under a mode with a highlight. Read once, like `initialState`. |
-| `onHighlightedRowChange` | `(rowId: string \| null) => void` | – | Follows the highlighted row — clicks and `ui.actions.setHighlightedRow` both. |
+| `onHighlightedRowChange` | `(rowId: string \| null) => void` | – | Follows the highlighted row - clicks and `ui.actions.setHighlightedRow` both. |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
@@ -62,9 +62,9 @@ rather than forwarded to TanStack.
 
 | Slice | Default |
 | --- | --- |
-| `pagination` | `{ pageIndex: 0, pageSize: 25 }` — inert until pagination is enabled |
+| `pagination` | `{ pageIndex: 0, pageSize: 25 }` - inert until pagination is enabled |
 | `columnPinning.left` | The checkbox, tree and details columns, followed by any columns you provide |
-| `globalFilterFn` | `"tmDataGridFuzzy"` — the fuzzy matcher behind `quickSearchMode`; `"includesString"` under `quickSearchMode: "contains"` |
+| `globalFilterFn` | `"tmDataGridFuzzy"` - the fuzzy matcher behind `quickSearchMode`; `"includesString"` under `quickSearchMode: "contains"` |
 
 ## meta
 
@@ -72,15 +72,15 @@ Grid configuration passed through the `meta` option.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `loading` | `boolean` | – | Displays a loader while the grid is empty — it takes precedence over every empty state. |
+| `loading` | `boolean` | – | Displays a loader while the grid is empty - it takes precedence over every empty state. |
 | `noResultsLabel` | `string` | `"No rows match your filters"` | The filtered-empty message. A grid with no data and no filters says `labels.noRows` instead; `renderEmptyState` on the Table replaces both. |
 | `rowHeight` | `number` | From `size` | Row height in px. Overrides the size scale. |
 | `totalRowCount` | `number` | – | Unfiltered total used by `SummaryCount`. Required for server-side data. |
 
 ## Localization
 
-Every string the grid renders — menu items, panels, tooltips, the pager and the
-`aria-label`s — comes from one labels object, English by default. The `labels`
+Every string the grid renders - menu items, panels, tooltips, the pager and the
+`aria-label`s - comes from one labels object, English by default. The `labels`
 option takes any subset and merges it over the defaults:
 
 ```tsx
@@ -101,7 +101,7 @@ labels: {
 }
 ```
 
-Keep the object referentially stable (module scope or `useMemo`) — the chrome
+Keep the object referentially stable (module scope or `useMemo`) - the chrome
 re-renders when its identity changes.
 
 The full dictionary type is `TMDataGridLabels`; the English defaults are
@@ -182,19 +182,19 @@ was narrowed cannot reintroduce slices you have since opted out of. Unrecognised
 keys are ignored.
 
 Payloads carry a version stamp (the exported `PERSIST_PAYLOAD_VERSION`). A
-payload from a different version — including anything written by a 0.x build,
-which had no stamp — is dropped whole rather than migrated: the cost is one
+payload from a different version - including anything written by a 0.x build,
+which had no stamp - is dropped whole rather than migrated: the cost is one
 lost layout, against guessing at a shape the current code no longer knows.
 
 Restored state is realigned against the columns that actually exist: entries
-naming a column that was removed between deploys are dropped — a ghost id in
+naming a column that was removed between deploys are dropped - a ghost id in
 the order, a width for nothing, and above all a sort or filter that would be
 active with no column to show for itself. New columns need nothing: TanStack
 appends columns missing from `columnOrder` in definition order.
 
 `resetSettings()` on the returned api puts the settings state back to what a
-first visit with clean storage would have shown — your `initialState` plus
-the structural lanes — and, with persistence configured, writes through to
+first visit with clean storage would have shown - your `initialState` plus
+the structural lanes - and, with persistence configured, writes through to
 storage like any other change. The columns panel's **Reset layout** button
 calls exactly this. Note that TanStack's own `resetColumnX()` family cannot
 do it on a persisted grid: those reset to `initialState`, which the mount
@@ -230,7 +230,7 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
 | `overscan` | `number` | The overscan, resolved to its default when the option was not set. |
-| `resetSettings` | `() => void` | Puts the settings state back to a clean first visit — see [persist](#persist). |
+| `resetSettings` | `() => void` | Puts the settings state back to a clean first visit - see [persist](#persist). |
 | `scrollToRow` | `({ rowId, align? }) => boolean` | Scrolls a row into view; see below. |
 
 ### scrollToRow
@@ -244,11 +244,11 @@ grid.scrollToRow({ rowId: "42" });
 grid.scrollToRow({ rowId: "42", align: "center" });
 ```
 
-`align` is TanStack Virtual's — `"auto"` (the default, nearest edge, leaving a
+`align` is TanStack Virtual's - `"auto"` (the default, nearest edge, leaving a
 visible row alone), `"start"`, `"center"` or `"end"`.
 
 It answers whether the row could be reached. `false` means it is not in the
-current view — filtered out, on another page, or an id matching no row — and
+current view (filtered out, on another page, or an id matching no row), and
 nothing scrolled; paging or clearing the filter first is the caller's decision,
 not something a scroll should do behind their back. A pinned row answers `true`
 without scrolling: it is already parked at an edge.
@@ -291,7 +291,7 @@ re-render when the value changes.
 | `setCellRange` | `(range: TMDataGridCellRange \| null) => void` |
 
 The last two move the cell cursor and the selected rectangle under
-`cellSelection` — see [Cell selection](/docs/cell-selection). DOM focus follows
+`cellSelection` - see [Cell selection](/docs/cell-selection). DOM focus follows
 `focusedCell` while the grid holds it, scrolling the row into view when it is
 off screen.
 
@@ -319,7 +319,7 @@ switch that defaults to off.
 | `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort. See [Sorting](/docs/sorting) |
 | `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel. See [Filtering](/docs/filtering) |
 | `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
-| `enableGlobalFilter: false` | Table, column | `Search` — the whole input at table level, one column's participation at column level |
+| `enableGlobalFilter: false` | Table, column | `Search` - the whole input at table level, one column's participation at column level |
 | `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton`. See [Column layout](/docs/column-layout) |
 | `enableColumnPinning: false` | Table | Pin and unpin menu items. See [Column layout](/docs/column-layout) |
 | `enablePinning: false` | Column | That column's pin menu items |
@@ -328,10 +328,10 @@ switch that defaults to off.
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items. See [Column layout](/docs/column-layout#ordering) |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
-| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column — the row click acts instead. See [Row selection](/docs/row-selection) |
+| `selectionMode: "row"` / `"highlight"` | Table | The checkbox column - the row click acts instead. See [Row selection](/docs/row-selection) |
 | `showSelectedBackground: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
-| `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view — sorted, filtered, continuing across pages; group rows take no number |
+| `enableRowNumbers: true` | Table | Opt-in: the row-number gutter, outermost left. Numbers the current view - sorted, filtered, continuing across pages; group rows take no number |
 | `enableRowPinning: true` | Table | Opt-in: rows can be pinned to sticky edge blocks with `row.pin()`. Also takes a per-row predicate. See [Row pinning](/docs/row-pinning) |
 | `enableMatchHighlighting: true` | Table | Opt-in: cells mark the matched text while a contains-family filter or the quick search is active. See [Quick search](/docs/quick-search#match-highlighting) |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Grouping](/docs/grouping) |

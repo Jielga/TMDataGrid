@@ -38,7 +38,7 @@ function asFilterValue(value: unknown): TMDataGridFilterValue {
 
 /**
  * The three value shapes an operator can take. A typed value survives an
- * operator or column change only within its shape — a set is not a range,
+ * operator or column change only within its shape - a set is not a range,
  * even though both are arrays.
  */
 function valueShape(
@@ -53,7 +53,7 @@ function valueShape(
  * The MUI-style filter surface: one row per active column filter, each row a
  * column / operator / value triple. It only ever reads and writes the table's
  * `columnFilters` state, so a `manualFiltering` grid gets the same panel for
- * free — the state is forwarded to the server instead of a row model.
+ * free - the state is forwarded to the server instead of a row model.
  */
 export function TMDataGridFilterPanel() {
   const { table, ui, labels, controlSize } = useTMDataGridContext();
@@ -110,7 +110,7 @@ export function TMDataGridFilterPanel() {
       ? getColumnDefaultOperator(target)
       : getDefaultOperator("string");
     // The typed value only survives the move while it still fits the new
-    // operator — a text needle has no meaning to an `isAnyOf` set, or a set
+    // operator - a text needle has no meaning to an `isAnyOf` set, or a set
     // to a text input.
     const value =
       valueShape(operator) === valueShape(current.operator)
@@ -200,7 +200,7 @@ export function TMDataGridFilterPanel() {
       }}
     >
       <div className={classes.filterPanelHeader}>
-        <Text size={controlSize} fw={600}>
+        <Text span size={controlSize} fw={600}>
           {labels.filters}
         </Text>
         <ActionIcon
@@ -222,7 +222,7 @@ export function TMDataGridFilterPanel() {
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
           const scalarValue = typeof value.value === "string" ? value.value : "";
-          // Pre-resolved only where options mean something out of the box —
+          // Pre-resolved only where options mean something out of the box -
           // a declared set, or a select-shaped column's faceted values. A
           // custom control wanting faceted values elsewhere resolves them
           // itself; resolving here would build the faceted index for every
@@ -293,7 +293,7 @@ export function TMDataGridFilterPanel() {
 
               {column ? (
                 // The value slot: `meta.filterControl` if the column declares
-                // one, the built-in shape-by-operator input otherwise — both
+                // one, the built-in shape-by-operator input otherwise - both
                 // through the same value-only contract.
                 <ValueControl
                   column={column}

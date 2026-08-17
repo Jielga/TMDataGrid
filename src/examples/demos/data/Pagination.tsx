@@ -11,7 +11,7 @@ export function Pagination() {
     data: EMPLOYEES,
     columns: employeeColumns,
     getRowId: (row) => String(row.id),
-    // Opt-in. By default every row renders, virtualized — which for most
+    // Opt-in. By default every row renders, virtualized - which for most
     // grids is both faster and easier to use than paging.
     enablePagination: true,
     initialState: { pagination: { pageIndex: 0, pageSize: 25 } },
@@ -38,7 +38,7 @@ export function Pagination() {
 
         {customPager ? (
           // The render prop replaces the built-in pager with anything built on
-          // the distilled pagination API — page count, index, and the setters.
+          // the distilled pagination API - page count, index, and the setters.
           <TMDataGrid.Footer
             pagination={(api) => (
               <MantinePagination

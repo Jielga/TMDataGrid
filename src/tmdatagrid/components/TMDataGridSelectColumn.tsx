@@ -19,7 +19,7 @@ export const SELECT_COLUMN_ID = "__select__";
  * the selection off the render they were handed.
  *
  * A cell is rendered by `flexRender`, which mounts the cell function as its own
- * component — but the body cell above it keeps the same props across a
+ * component - but the body cell above it keeps the same props across a
  * selection change (row, column and layout identities all survive it), so the
  * React Compiler reuses the memoized element and the subtree never re-renders.
  * The row highlight would update, from state `TMDataGridTable` subscribes to,
@@ -59,7 +59,7 @@ function SelectAllCheckbox<TData extends RowData>({
  * feature flags rather than `table.options.enableMultiRowSelection` directly:
  * the flags are re-derived from a fresh object every render, so the switch
  * cannot be cached along with a `table` identity that survives an options
- * change — the same reason the rest of the chrome reads them. See
+ * change - the same reason the rest of the chrome reads them. See
  * readFeatureFlags.
  */
 function SelectAllHeader<TData extends RowData>({
@@ -78,10 +78,10 @@ function SelectRowCheckbox<TData extends RowData>({
   row: Row<TMDataGridFeatures, TData>;
 }) {
   // Cells render inside the grid's provider, so the checkbox can reach the
-  // chrome store — it needs the shift-click pivot, and the feature flags to know
+  // chrome store - it needs the shift-click pivot, and the feature flags to know
   // which row model a range is measured over.
   const { ui, features, labels } = useTMDataGridContext();
-  // Out of the tab order once the grid has a cell cursor — see
+  // Out of the tab order once the grid has a cell cursor - see
   // useCellControlTabIndex. Enter on the lane still steps in, and Space on any
   // cell of the row ticks it.
   const tabIndex = useCellControlTabIndex();
@@ -90,7 +90,7 @@ function SelectRowCheckbox<TData extends RowData>({
   // A group row is never selected by id: `rowSelection` only ever holds the
   // leaves, and TanStack's `getIsSelected()` is a plain lookup in that map. So
   // a group asks about its descendants instead, which is also the honest
-  // reading — the box means "all of these", and it goes indeterminate as soon
+  // reading - the box means "all of these", and it goes indeterminate as soon
   // as that stops being true.
   const selected = useSelector(row.table.store, () =>
     isGroupRow ? row.getIsAllSubRowsSelected() : row.getIsSelected(),
@@ -117,7 +117,7 @@ function SelectRowCheckbox<TData extends RowData>({
       checked={selected}
       disabled={selectableIds.length === 0}
       indeterminate={someSelected && !selected}
-      // Every tick goes through the resolver, shift held or not — plain becomes
+      // Every tick goes through the resolver, shift held or not - plain becomes
       // a toggle that moves the pivot, so a later shift-click extends from the
       // box the user last touched.
       //
@@ -138,7 +138,7 @@ function SelectRowCheckbox<TData extends RowData>({
             extend: isMouse && native.shiftKey,
           },
           selection: row.table.store.state.rowSelection,
-          // A checkbox is only ever additive — ticking one has never cleared
+          // A checkbox is only ever additive - ticking one has never cleared
           // the others, so `canReplaceSelection` stays false whatever is held.
           canReplaceSelection: false,
         });
@@ -168,7 +168,7 @@ export function createSelectColumn<TData extends RowData>(
       enableOrdering: false,
     },
     // A system lane: as wide as the control it holds and no wider. Fixed at
-    // every scale — the control does not grow with the font size, so neither
+    // every scale - the control does not grow with the font size, so neither
     // should its track.
     size: 36,
     minSize: 36,

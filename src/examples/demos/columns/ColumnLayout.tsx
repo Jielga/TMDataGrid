@@ -31,7 +31,7 @@ const columns = columnHelper.columns([
     meta: { type: "number", align: "right" },
     cell: (info) => sek(info.getValue()),
   }),
-  // Some columns should stay put. This one can still be hidden or pinned —
+  // Some columns should stay put. This one can still be hidden or pinned -
   // only its position is fixed.
   columnHelper.accessor("status", {
     header: "Status",
@@ -53,7 +53,7 @@ export function ColumnLayout() {
     getRowId: (row) => String(row.id),
     persist,
     initialState: {
-      // Pinned columns stop being fluid — sticky offsets are measured in
+      // Pinned columns stop being fluid - sticky offsets are measured in
       // pixels, so the grid freezes the width a column had when it was pinned.
       columnPinning: { left: ["id"], right: ["status"] },
       columnVisibility: { age: false },
@@ -65,8 +65,8 @@ export function ColumnLayout() {
       <TMDataGrid.Toolbar>
         <TMDataGrid.SummaryCount />
         <TMDataGrid.Spacer />
-        {/* One button, honest scope: every settings slice — visibility, order,
-            widths, pinning — back to a first visit. Not TanStack's per-slice
+        {/* One button, honest scope: every settings slice - visibility, order,
+            widths, pinning - back to a first visit. Not TanStack's per-slice
             resets, which would restore the very layout being thrown away once
             persistence has baked it into `initialState`. */}
         <Button

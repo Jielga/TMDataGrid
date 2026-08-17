@@ -10,7 +10,7 @@ import {
 } from "./rowSelection";
 
 /**
- * Grouping is TanStack's; what is tested here is the grid's half of it — that
+ * Grouping is TanStack's; what is tested here is the grid's half of it - that
  * the tree column comes and goes with the grouping state, that grouping a
  * column takes it out of the grid, and that a group row selects the rows it
  * stands for rather than itself.
@@ -34,7 +34,7 @@ describe("the tree column", () => {
   it("stays hidden while nothing is grouped", () => {
     const { result } = renderGrid();
 
-    // Present as a column — it has to hold its place in the leaf order — but
+    // Present as a column (it has to hold its place in the leaf order), but
     // not rendered.
     expect(erased(result.current).table.getColumn(GROUP_COLUMN_ID)).toBeDefined();
     expect(visibleColumnIds(result.current)).not.toContain(GROUP_COLUMN_ID);
@@ -86,7 +86,7 @@ describe("grouped columns", () => {
    * The regression test for the memo workaround in `useTMDataGrid`. Grouping a
    * second column changes nothing else, so without the re-published
    * `columnVisibility` / `columnOrder` the per-region column APIs keep handing
-   * back the list they built for the first grouping — and the second column
+   * back the list they built for the first grouping - and the second column
    * holds its header and its grid track while its cells have gone.
    */
   it("are removed on the second grouping too, not just the first", () => {

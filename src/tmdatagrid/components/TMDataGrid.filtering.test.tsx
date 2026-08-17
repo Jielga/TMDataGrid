@@ -37,7 +37,7 @@ describe("filtering", () => {
     renderGridUi();
     expect(renderedRowIds().length).toBe(testRows.length);
 
-    // The button seeds a filter on the first filterable column — "id", whose
+    // The button seeds a filter on the first filterable column - "id", whose
     // numeric default operator is "equals".
     await user.click(screen.getByRole("button", { name: "Filters" }));
     await user.type(screen.getByLabelText("Value"), "3");
@@ -100,7 +100,7 @@ describe("filtering", () => {
     await user.click(filterButton);
     expect(screen.getByLabelText("Value")).toBeInTheDocument();
 
-    // The click-away handler fires on this button too — if it closed the panel
+    // The click-away handler fires on this button too - if it closed the panel
     // there, the button's own click would open it straight back up.
     await user.click(filterButton);
 
@@ -254,7 +254,7 @@ describe("typed columns in the filter panel", () => {
     });
     return (
       <>
-        {/* Seeds the column's default operator and opens the panel on it —
+        {/* Seeds the column's default operator and opens the panel on it -
             the same path the header menu's Filter item takes. */}
         <button
           type="button"
@@ -456,7 +456,7 @@ describe("filter controls", () => {
     await user.click(screen.getByRole("radio", { name: "No" }));
     expect(gridRowCount()).toBe(2);
 
-    // All clears the value — an inactive filter matches every row.
+    // All clears the value - an inactive filter matches every row.
     await user.click(screen.getByRole("radio", { name: "All" }));
     expect(gridRowCount()).toBe(controlRows.length);
   });
@@ -471,7 +471,7 @@ describe("filter controls", () => {
     expect(fromThumb).toHaveAttribute("aria-valuemax", "4");
 
     fireEvent.keyDown(fromThumb, { key: "ArrowRight" });
-    // The pair became ["2", "4"] — ids 2, 3 and 4 remain.
+    // The pair became ["2", "4"] - ids 2, 3 and 4 remain.
     expect(gridRowCount()).toBe(3);
   });
 
@@ -507,7 +507,7 @@ describe("filter controls", () => {
 });
 
 /**
- * The attributes a consumer's own suite is written against — see the Testing
+ * The attributes a consumer's own suite is written against - see the Testing
  * docs page. They are a published contract, so they get tests of their own
  * rather than being covered incidentally by whatever else queries them.
  */

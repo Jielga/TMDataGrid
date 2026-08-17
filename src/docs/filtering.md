@@ -9,7 +9,7 @@ For one box across every column instead, see [Quick search](/docs/quick-search).
 
 ```demo
 file: columns/Filtering.tsx
-hint: Every column type offers its own operators — Salary opens on “between” because its meta says so.
+hint: Every column type offers its own operators - Salary opens on “between” because its meta says so.
 ```
 
 ## How a filter is stored
@@ -25,7 +25,7 @@ type TMDataGridFilterValue = {
 ```
 
 So the filter model is plain JSON, and can be forwarded to a server without
-transformation — dates as ISO strings, booleans as `"true"` / `"false"`, and an
+transformation - dates as ISO strings, booleans as `"true"` / `"false"`, and an
 array only under `isAnyOf` / `isNoneOf` (the set the cell is tested against) and
 `between` (a `[min, max]` pair, an empty string leaving that end open). See
 [Server-side data](/docs/server-side#sending-filters).
@@ -61,12 +61,12 @@ indicator, and gets no pill. `isFilterActive(value)` is the test for that state.
 
 String comparisons are case-insensitive. Date comparisons are by calendar day,
 and `equals` on a `date` column plays the role of "is". On a `multiSelect`
-column — whose cells hold arrays — `isAnyOf` is an intersection test and
+column, whose cells hold arrays, `isAnyOf` is an intersection test and
 `isNoneOf` its complement, and an empty cell array counts as empty for
 `isEmpty`. `between` is inclusive at both ends; the panel renders a From/To
 pair and either end may stay empty to leave the interval open on that side.
 
-`meta.defaultFilterOperator` sets which one a fresh filter opens on — a salary
+`meta.defaultFilterOperator` sets which one a fresh filter opens on - a salary
 column can start on `between` rather than `equals`. It must be one of the
 type's own operators.
 
@@ -88,26 +88,26 @@ file: columns/FilterPills.tsx
 ```
 
 `openColumnFilter(api, columnId)` opens the panel on a column, seeding an empty
-row if it has none yet — the same thing "Filter" in the column menu does. That
+row if it has none yet - the same thing "Filter" in the column menu does. That
 is how a chip elsewhere on the page can hand the reader back to the panel.
 
 ### The panel and the pills
 
 `TMDataGrid.FilterPanel` is column, operator and value rows, under a "Filters"
 header with a close button and above "Add filter" / "Clear all". Escape and a
-click outside close it — `FilterButton` is exempt from the click-away, so it
+click outside close it - `FilterButton` is exempt from the click-away, so it
 stays a toggle. It is rendered by `TMDataGrid.Table` and positions itself
 against the nearest positioned ancestor.
 
 Closing only hides the panel; the filters stay. **Clear all** drops every
-filter, half-typed ones included, and closes the panel — the same exit as
+filter, half-typed ones included, and closes the panel - the same exit as
 removing the last filter row by hand.
 
-`TMDataGrid.FilterPills` renders one pill per active filter —
-`First name: Sofia ✕` — where the ✕ clears that filter and a click on the label
+`TMDataGrid.FilterPills` renders one pill per active filter -
+`First name: Sofia ✕` - where the ✕ clears that filter and a click on the label
 reopens the panel on its column. Half-typed filters are left out: a filter that
 is not narrowing anything yet has nothing to report. The label spells the
-operator out unless it is the column type's default — `Age is greater than 30`,
+operator out unless it is the column type's default - `Age is greater than 30`,
 but `First name: Sofia`.
 
 | Prop | Type | Default | Description |
@@ -134,7 +134,7 @@ Four ready-made alternatives ship as named exports:
 | `DgRangeSliderFilter` | `number` | A range slider seeded from the data's min/max, writing the `between` pair. |
 | `DgDateRangeFilter` | `date` | A From/To pair of native date inputs, writing the `between` pair. |
 | `DgAutocompleteFilter` | `string` | Free text with the faceted (or declared) values as suggestions. |
-| `DgTriStateFilter` | `boolean` | All / Yes / No segments — All clears the filter. |
+| `DgTriStateFilter` | `boolean` | All / Yes / No segments - All clears the filter. |
 
 ```tsx
 meta: { type: "number", filterControl: DgRangeSliderFilter, defaultFilterOperator: "between" }
@@ -152,8 +152,8 @@ hint: Open the filter panel and compare each row's control with the plain input 
 
 ### Writing your own
 
-`meta.filterControl` is a **component** — rendered as JSX, so hooks are legal
-inside — receiving `TMDataGridFilterControlArgs`. It is a **value-only
+`meta.filterControl` is a **component** - rendered as JSX, so hooks are legal
+inside - receiving `TMDataGridFilterControlArgs`. It is a **value-only
 contract**: the control reads `operator` to shape itself and writes the bare
 value through `onChange`, and the grid composes the stored `{ operator, value }`
 around it. The column and operator dropdowns stay the panel's.
@@ -180,7 +180,7 @@ rare control that must reach further.
 
 ```demo
 file: columns/CustomFilterControl.tsx
-hint: Open the filter panel — Status offers chips, every other column the built-in control.
+hint: Open the filter panel - Status offers chips, every other column the built-in control.
 ```
 
 ## Custom matching

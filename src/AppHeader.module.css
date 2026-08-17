@@ -44,7 +44,7 @@
   cursor: pointer;
 }
 
-/* The wordmark and version give way before the search box does — the box is
+/* The wordmark and version give way before the search box does - the box is
    the thing people are reaching for. */
 @media (max-width: 640px) {
   .wordmark,
@@ -58,7 +58,7 @@
   align-items: center;
   gap: var(--mantine-spacing-xs);
   /* Centred in the header, and capped so it does not sprawl on a wide
-     window — the same measure the article uses. */
+     window - the same measure the article uses. */
   margin: 0 auto;
   width: 100%;
   max-width: 420px;

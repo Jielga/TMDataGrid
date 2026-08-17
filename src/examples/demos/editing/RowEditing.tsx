@@ -72,7 +72,7 @@ export function RowEditing() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    // The edit lane — pencil, ✓, ✕ — is generated and pinned right.
+    // The edit lane (pencil, ✓, ✕) is generated and pinned right.
     editMode: "row",
     rowValidators,
     onEditCommit,

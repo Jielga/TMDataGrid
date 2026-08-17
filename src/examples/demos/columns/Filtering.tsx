@@ -62,7 +62,7 @@ export function Filtering() {
         <TMDataGrid.SummaryCount />
         <TMDataGrid.Spacer />
         {/* The operator travels inside the value, so setting a filter from
-            your own UI is one call — and opening the panel shows what just
+            your own UI is one call - and opening the panel shows what just
             happened rather than leaving it a mystery. */}
         <Button
           size="compact-xs"

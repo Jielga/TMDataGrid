@@ -45,7 +45,7 @@ const truncate = (value: string, max = 20) =>
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
-/** Filler so the panels differ in height — the grid measures each one. */
+/** Filler so the panels differ in height - the grid measures each one. */
 const NOTES = [
   "Joined through the Stockholm office and has been with the team since.",
   "Currently on a rotation with Product; reviews land in the shared queue.",
@@ -142,10 +142,10 @@ const columns = columnHelper.columns([
     minSize: 130,
     cell: (info) => sek(info.getValue()),
     // The one column told how to summarise itself. Group by Department and this
-    // fills in per group while the others stay blank — aggregation is opt-in.
+    // fills in per group while the others stay blank - aggregation is opt-in.
     aggregationFn: "sum",
     aggregatedCell: (info) => sek(Number(info.getValue() ?? 0)),
-    // A `footer` is what summons the sticky summary row along the bottom —
+    // A `footer` is what summons the sticky summary row along the bottom -
     // here the salary total over every filtered row, all pages.
     footer: ({ table }) =>
       sek(Number(aggregateColumn({ table, columnId: "salary" }))),
@@ -176,7 +176,7 @@ const persist = {
 
 /**
  * Grouped by what they affect, so the panel reads as sections rather than one
- * long row of switches. `key` is the real option name — each switch is passed
+ * long row of switches. `key` is the real option name - each switch is passed
  * straight through to `useTMDataGrid`.
  */
 const COLUMN_TOGGLES = [
@@ -201,7 +201,7 @@ const SELECTION_TOGGLES = [
   {
     key: "enableRowSelection",
     label: "Selectable",
-    hint: "TanStack's gate — off, no row can be selected at all",
+    hint: "TanStack's gate - off, no row can be selected at all",
   },
   {
     key: "enableMultiRowSelection",
@@ -230,7 +230,7 @@ const SELECTION_MODES = [
 
 /**
  * Enough room for three rows of switches *and* a grid worth looking at. Below
- * it the switches start eating the thing they configure, so they fold away —
+ * it the switches start eating the thing they configure, so they fold away -
  * which is what makes the page usable in a side-by-side editor pane.
  */
 const ROOMY_VIEWPORT = "(min-width: 1100px) and (min-height: 820px)";
@@ -293,7 +293,7 @@ function FeatureSwitches({
         label={label}
         checked={features[key]}
         onChange={(event) => {
-          // Read before the updater runs — React clears currentTarget once the
+          // Read before the updater runs - React clears currentTarget once the
           // handler returns.
           const { checked } = event.currentTarget;
           setFeatures((prev) => ({ ...prev, [key]: checked }));
@@ -305,7 +305,7 @@ function FeatureSwitches({
 
 /**
  * The kitchen sink. Every feature at once behind switches, so the way they
- * compose can be seen — and so a configuration can be dialled in and taken as
+ * compose can be seen - and so a configuration can be dialled in and taken as
  * code. It is deliberately not a starting point: for that, the examples under
  * `/examples` show one thing at a time.
  */
@@ -359,7 +359,7 @@ export function PlaygroundExample() {
     data,
     columns,
     getRowId: (row) => String(row.id),
-    // No rowHeight — let the `size` prop drive it.
+    // No rowHeight - let the `size` prop drive it.
     meta: { loading: false },
     labels: locale === "sv" ? TMDATAGRID_LABELS_SV : undefined,
     persist,
@@ -383,7 +383,7 @@ export function PlaygroundExample() {
     },
   });
 
-  // The chrome store and the table store are both subscribable — this is how a
+  // The chrome store and the table store are both subscribable - this is how a
   // consumer reacts to grid state without owning it.
   const selectedCount = useSelector(
     grid.table.store,
@@ -401,7 +401,7 @@ export function PlaygroundExample() {
 
   return (
     // The app shell hands out exactly one viewport and clips the rest, so the
-    // page scrolls itself once its own minimum heights stop fitting — which is
+    // page scrolls itself once its own minimum heights stop fitting - which is
     // what keeps the grid a grid in a narrow editor pane rather than a header
     // with a scrollbar under it.
     <Flex
@@ -416,7 +416,7 @@ export function PlaygroundExample() {
           <Text fw={600} size="lg">
             Employees{" "}
             <Text component="span" size="sm" c="dimmed" fw={400}>
-              — 5 000 rows · virtualized · state persisted to localStorage
+              - 5 000 rows · virtualized · state persisted to localStorage
             </Text>
           </Text>
           {/* Outside the grid, which is the point of the `api` prop: the pills
@@ -424,7 +424,7 @@ export function PlaygroundExample() {
           <TMDataGrid.FilterPills api={grid} />
         </Group>
         <Group gap="xs" wrap="nowrap">
-          {/* Swaps every string in the grid — labels: TMDATAGRID_LABELS_SV. */}
+          {/* Swaps every string in the grid - labels: TMDATAGRID_LABELS_SV. */}
           <SegmentedControl
             size="xs"
             value={locale}
@@ -518,7 +518,7 @@ export function PlaygroundExample() {
           </Fieldset>
 
           <Fieldset legend="Columns" p="xs" pt={4}>
-            {/* Capped so six switches wrap to 3 × 2 rather than one long line —
+            {/* Capped so six switches wrap to 3 × 2 rather than one long line -
                 which is what pushes the other groups off the row. */}
             <Group gap="md" maw={260}>
               <FeatureSwitches
@@ -529,7 +529,7 @@ export function PlaygroundExample() {
             </Group>
           </Fieldset>
 
-          {/* Size lives here because it drives row height and font size — it is
+          {/* Size lives here because it drives row height and font size - it is
               row density, not a category of its own. */}
           <Fieldset legend="Rows" p="xs" pt={4}>
             <Stack gap={6}>
@@ -553,7 +553,7 @@ export function PlaygroundExample() {
                   onChange={(event) => setCustomPager(event.currentTarget.checked)}
                 />
                 <Tooltip
-                  label="Right-click any row — the grid owns the Menu, you fill the dropdown"
+                  label="Right-click any row - the grid owns the Menu, you fill the dropdown"
                   withArrow
                   multiline
                   w={240}
@@ -568,7 +568,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="Chevron in the first column opens a panel under the row — panels vary in height and are measured"
+                  label="Chevron in the first column opens a panel under the row - panels vary in height and are measured"
                   withArrow
                   multiline
                   w={240}
@@ -594,7 +594,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="A gutter outermost left numbering the current view — continues across pages, group rows unnumbered"
+                  label="A gutter outermost left numbering the current view - continues across pages, group rows unnumbered"
                   withArrow
                   multiline
                   w={240}
@@ -607,7 +607,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="Pin rows to sticky edge blocks from the context menu — the body scrolls beneath them"
+                  label="Pin rows to sticky edge blocks from the context menu - the body scrolls beneath them"
                   withArrow
                   multiline
                   w={240}
@@ -622,7 +622,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="renderEmptyState replaces the built-in empty messages — filter to no matches to see it"
+                  label="renderEmptyState replaces the built-in empty messages - filter to no matches to see it"
                   withArrow
                   multiline
                   w={240}
@@ -637,7 +637,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="Fuzzy quick search: typos forgiven, unsorted results ordered by match quality — try “Stckholm”"
+                  label="Fuzzy quick search: typos forgiven, unsorted results ordered by match quality - try “Stckholm”"
                   withArrow
                   multiline
                   w={240}
@@ -652,7 +652,7 @@ export function PlaygroundExample() {
                   />
                 </Tooltip>
                 <Tooltip
-                  label="Cells mark the matched text while a filter or the search narrows — default-rendered columns only"
+                  label="Cells mark the matched text while a filter or the search narrows - default-rendered columns only"
                   withArrow
                   multiline
                   w={240}
@@ -693,7 +693,7 @@ export function PlaygroundExample() {
                 {selectedCount} selected
               </Badge>
             )}
-            {/* Quick search over every column — writes `globalFilter`. */}
+            {/* Quick search over every column - writes `globalFilter`. */}
             <TMDataGrid.Search />
             <TMDataGrid.Spacer />
             {/* The toolbar is plain composition, so an app's own actions sit
@@ -802,7 +802,7 @@ export function PlaygroundExample() {
                           onClick={() => {
                             if (!cell) return;
                             // The operator travels inside the filter value, so
-                            // adding a filter is one `setFilterValue` call —
+                            // adding a filter is one `setFilterValue` call -
                             // and opening the panel shows what just happened.
                             cell.column.setFilterValue({
                               operator: "equals",
@@ -829,7 +829,7 @@ export function PlaygroundExample() {
 
           {customPager ? (
             // The render prop replaces the built-in pager with any UI built on
-            // the distilled pagination API — here Mantine's Pagination.
+            // the distilled pagination API - here Mantine's Pagination.
             <TMDataGrid.Footer
               pagination={(api) => (
                 <Pagination
@@ -856,7 +856,7 @@ export function PlaygroundExample() {
               </Text>
               <Text size="sm">{highlightedEmployee.location}</Text>
               <Text size="sm">{sek(highlightedEmployee.salary)}</Text>
-              {/* Clearing the highlight is the consumer's job — the grid only
+              {/* Clearing the highlight is the consumer's job - the grid only
                   ever sets it, so a second click cannot close this panel. */}
               <Button
                 size="xs"

@@ -6,7 +6,7 @@ import { useTMDataGridContext } from "../../TMDataGridContext";
 import { useFieldError, useFieldValue } from "./editorShared";
 
 /**
- * The built-in editor for `meta.type: "date"` — the native
+ * The built-in editor for `meta.type: "date"` - the native
  * `<input type="date">` styled by Mantine, no `@mantine/dates` involved. A
  * consumer wanting a real picker plugs one in through `meta.editor`.
  */
@@ -20,7 +20,7 @@ export function TMDataGridDateEditor({
   const value = useFieldValue(field);
   const error = useFieldError(field);
   // The cell's original shape decides what the editor writes back: a `Date`
-  // cell keeps getting Dates, an ISO-string cell keeps getting strings —
+  // cell keeps getting Dates, an ISO-string cell keeps getting strings -
   // decided once at open, so clearing and retyping cannot flip the type.
   const writesDates = useRef(value instanceof Date);
 

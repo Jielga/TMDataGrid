@@ -7,7 +7,7 @@ import { loadDemo, loadSharedSource } from "./demoRegistry";
  * The frame around one demo: what it is, the thing itself, and the source that
  * produced it.
  *
- * Deliberately dumb. Controls a demo needs — a mode switch, a toggle — live
+ * Deliberately dumb. Controls a demo needs (a mode switch, a toggle) live
  * inside the demo component, so they appear in the source the reader copies
  * rather than in a frame that quietly makes the demo work.
  */
@@ -26,12 +26,12 @@ export type DemoBlockDemo = {
   title?: string;
   description?: string;
   /**
-   * What to *do* — "Shift+click a second header", "try Stckholm". Lives beside
+   * What to *do* - "Shift+click a second header", "try Stckholm". Lives beside
    * the demo rather than in it, so the source stays code you would paste.
    */
   hint?: string;
   /**
-   * Further files to show as tabs beside the demo — the shared modules it
+   * Further files to show as tabs beside the demo - the shared modules it
    * imports, so nothing it depends on is hidden. Paths under `src/examples/`.
    */
   extraSources?: Array<string>;

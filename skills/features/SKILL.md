@@ -25,7 +25,7 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnOrdering.ts'
 ---
 
-# TMDataGrid — Features and capabilities
+# TMDataGrid - Features and capabilities
 
 Almost every control is bound to the TanStack capability check for that feature,
 so setting the standard table or column option removes the corresponding
@@ -51,7 +51,7 @@ like the options around it; pagination is the one switch that defaults to off.
 | `enableColumnOrdering: false` | Table | Header dragging and the move menu items |
 | `meta.enableOrdering: false` | Column | That column's header dragging and move menu items |
 | `enableRowSelection: false` | Table | The checkbox column |
-| `rowSelectionMode: "row"` | Table | The checkbox column — the row itself selects instead. See Row selection |
+| `rowSelectionMode: "row"` | Table | The checkbox column - the row itself selects instead. See Row selection |
 | `highlightSelectedRows: false` | Table | The highlight background on selected rows. Follows the selection mode by default |
 | `enablePagination: true` | Table | Opt-in: adds paging and the `Footer` pager. Off by default |
 
@@ -73,10 +73,10 @@ const grid = useTMDataGrid({
 ## Row selection
 
 On by default, in two modes. Both write to the same `rowSelection` state, so
-everything downstream — the toolbar count, `getSelectedRowModel()`, persistence
-— is unaffected by the choice.
+everything downstream (the toolbar count, `getSelectedRowModel()`, persistence)
+is unaffected by the choice.
 
-**Checkbox** — the default. A checkbox column is added as the first column, with
+**Checkbox** - the default. A checkbox column is added as the first column, with
 a select-all box in its header. Clicking a row elsewhere does not select it, and
 a selected row is not highlighted: the checkbox already says so.
 
@@ -84,8 +84,8 @@ a selected row is not highlighted: the checkbox already says so.
 const grid = useTMDataGrid({ data, columns });
 ```
 
-**Row** — no checkbox column. Clicking a row toggles it, and the row takes the
-highlight background — the only feedback a click gives. Other rows keep their
+**Row** - no checkbox column. Clicking a row toggles it, and the row takes the
+highlight background - the only feedback a click gives. Other rows keep their
 state, so a click never clears the rest of the selection. Rows are focusable in
 this mode and Space or Enter toggles the focused row.
 
@@ -94,11 +94,11 @@ const grid = useTMDataGrid({ data, columns, rowSelectionMode: "row" });
 ```
 
 `enableRowSelection: false` removes both, and `rowSelectionMode` is then
-ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode — under
+ignored. `TMDataGrid.Table`'s `onRowClick` still fires in either mode - under
 `"row"` it runs in addition to the selection, not instead of it.
 
-`highlightSelectedRows` follows the mode — on for `"row"`, off for
-`"checkbox"` — and can be set to override either way. The colour is the
+`highlightSelectedRows` follows the mode - on for `"row"`, off for
+`"checkbox"` - and can be set to override either way. The colour is the
 `--dg-row-selected-bg` CSS variable (default `--mantine-primary-color-light`);
 change it on the grid element without touching the flag:
 
@@ -121,13 +121,13 @@ Off by default: the grid renders every filtered and sorted row and relies on
 virtualization. Three modes:
 
 ```tsx
-// No pagination (default) — TMDataGrid.Footer renders nothing.
+// No pagination (default) - TMDataGrid.Footer renders nothing.
 const grid = useTMDataGrid({ data, columns });
 
-// Client pagination — pages locally, Footer renders its pager.
+// Client pagination - pages locally, Footer renders its pager.
 const grid = useTMDataGrid({ data, columns, enablePagination: true });
 
-// Manual pagination — manualPagination implies enablePagination.
+// Manual pagination - manualPagination implies enablePagination.
 const grid = useTMDataGrid({
   data: page.rows,
   columns,
@@ -215,8 +215,8 @@ grid into left, centre and right, then `columnOrder` sequences the centre while
 `columnPinning.left` / `.right` sequence the pinned lanes. Unpin first to move a
 column out of a pinned region.
 
-Ordering writes `columnOrder` as the complete leaf order — hidden and pinned
-columns included — so a column keeps its position when it is later shown or
+Ordering writes `columnOrder` as the complete leaf order - hidden and pinned
+columns included - so a column keeps its position when it is later shown or
 unpinned; moving a pinned column also rewrites its `columnPinning` array. Both
 slices are covered by `settingsKey`.
 
@@ -236,7 +236,7 @@ import {
 moveColumn({ table, columnId: "salary", targetId: "age", side: "before" });
 moveColumnByStep({ table, columnId: "salary", direction: 1 });
 
-// null at the edge of a region — what the move menu items disable themselves on.
+// null at the edge of a region - what the move menu items disable themselves on.
 const next = getStepTargetColumn({ table, columnId: "salary", direction: 1 });
 ```
 
@@ -269,11 +269,11 @@ carry `data-focused` / `data-selected` / `data-edge-*`.
 The body is one tab stop: controls inside body cells take `tabindex="-1"` while
 cell selection is on, so Tab leaves the grid instead of walking one control per
 mounted row. Enter/F2 steps in, Escape steps out, Space ticks the row from any
-cell. Custom cell controls should do the same —
+cell. Custom cell controls should do the same -
 `tabIndex={useCellControlTabIndex()}`. Header controls are untouched.
 
-The generated lanes (checkbox, tree, details) are selectable and navigable —
-they take the tint and the outline — but never exported; a block covering only
+The generated lanes (checkbox, tree, details) are selectable and navigable -
+they take the tint and the outline - but never exported; a block covering only
 those disables Copy and Export.
 
 Drag across cells to select a rectangle; Shift+click extends one. The state is
@@ -284,8 +284,8 @@ Move them with `ui.actions.setFocusedCell` / `setCellRange`, follow them with
 
 Right-clicking inside the selection offers Copy, "Export as CSV for Excel" and
 an Include headers toggle; a consumer's `rowContextMenu` items follow a divider.
-The CSV is Nordic-Excel shaped — `sep=;` line, UTF-8 BOM, CRLF, semicolons,
-decimal comma — and `cellExport` on `TMDataGrid.Table` changes any of that.
+The CSV is Nordic-Excel shaped - `sep=;` line, UTF-8 BOM, CRLF, semicolons,
+decimal comma - and `cellExport` on `TMDataGrid.Table` changes any of that.
 Generated lanes (checkbox, tree, details) are never exported, and what is
 written is the cell's value rather than what it renders.
 
@@ -295,7 +295,7 @@ Always enabled. Only rows within the viewport, plus a small overscan, are
 mounted, so page size does not affect how much is rendered.
 
 `overscan` on `useTMDataGrid` (default `6`) sets how many rows are kept mounted
-on each side of the viewport — the one configurable part.
+on each side of the viewport - the one configurable part.
 
 Row height comes from `meta.rowHeight`, or from the `size` prop when unset. Rows
 are fixed height; an accurate value keeps scrolling precise.
@@ -305,12 +305,12 @@ are fixed height; an accurate value keeps scrolling precise.
 ### Calling getCanX() in a custom component
 
 ```tsx
-// Wrong — memoized under the React Compiler, so the button
+// Wrong - memoized under the React Compiler, so the button
 // never reappears when enableColumnFilters flips back to true.
 const { table } = useTMDataGridContext();
 if (!table.getAllLeafColumns().some((c) => c.getCanFilter())) return null;
 
-// Right — features is a value that changes.
+// Right - features is a value that changes.
 const { table, features } = useTMDataGridContext();
 const { canFilterAny } = getGridCapabilities(table, features);
 if (!canFilterAny) return null;
@@ -325,28 +325,28 @@ overlap or leave gaps as you scroll. Set `meta.rowHeight` instead.
 ### Reordering a pinned column through columnOrder
 
 ```tsx
-// Wrong — the left and right regions are sequenced by columnPinning,
+// Wrong - the left and right regions are sequenced by columnPinning,
 // so this moves nothing on screen.
 table.setColumnOrder(["__select__", "department", "id", …]);
 
-// Right — moveColumn writes whichever slice the column's region uses.
+// Right - moveColumn writes whichever slice the column's region uses.
 moveColumn({ table, columnId: "department", targetId: "id", side: "before" });
 ```
 
 ### Rendering the Footer without enabling pagination
 
 ```tsx
-// Wrong — pagination defaults to off, so the Footer renders nothing.
+// Wrong - pagination defaults to off, so the Footer renders nothing.
 const grid = useTMDataGrid({ data, columns });
 <TMDataGrid.Footer />
 
-// Right — opt in (manualPagination: true also counts).
+// Right - opt in (manualPagination: true also counts).
 const grid = useTMDataGrid({ data, columns, enablePagination: true });
 <TMDataGrid.Footer />
 ```
 
 ### Expecting a table-level flag to override a column
 
-Table and column options compose — the table flag gates the feature, and the
+Table and column options compose - the table flag gates the feature, and the
 column flag narrows it further. `enableSorting: true` on a column does not
 re-enable sorting for a table that set `enableSorting: false`.

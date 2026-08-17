@@ -65,7 +65,7 @@ export type OrdersQuery = {
 
 export type OrdersResponse = {
   rows: Array<Order>;
-  /** What the grid needs for `meta.totalRowCount` — the count *after* filtering. */
+  /** What the grid needs for `meta.totalRowCount` - the count *after* filtering. */
   totalRowCount: number;
 };
 
@@ -91,7 +91,7 @@ export function fetchOrders(query: OrdersQuery): Promise<OrdersResponse> {
       }
 
       // A real server queries an index. This one is a demo, so it scans a
-      // bounded slice — enough rows to be convincing, few enough to stay fast.
+      // bounded slice - enough rows to be convincing, few enough to stay fast.
       const SCAN = 10_000;
       let rows = Array.from({ length: SCAN }, (_, i) => makeOrder(i + 1));
 
@@ -123,7 +123,7 @@ export function fetchOrders(query: OrdersQuery): Promise<OrdersResponse> {
   });
 }
 
-/** The page-at-a-time reader infinite scroll uses — no filtering, no sorting. */
+/** The page-at-a-time reader infinite scroll uses - no filtering, no sorting. */
 export function fetchOrderPage(
   pageIndex: number,
   pageSize: number,

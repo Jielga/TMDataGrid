@@ -39,7 +39,7 @@ const columns = columnHelper.columns([
     },
   }),
 
-  // Still free text — anything can be typed — but the values present in the
+  // Still free text (anything can be typed), but the values present in the
   // data are offered as suggestions.
   columnHelper.accessor("location", {
     header: "Location",
@@ -56,7 +56,7 @@ const columns = columnHelper.columns([
       align: "center",
       filterControl: DgTriStateFilter,
     },
-    cell: (info) => (info.getValue() ? "✓" : "—"),
+    cell: (info) => (info.getValue() ? "✓" : "-"),
   }),
 ]);
 

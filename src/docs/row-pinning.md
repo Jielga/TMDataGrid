@@ -11,11 +11,11 @@ Opt in with `enableRowPinning: true`, or a per-row predicate.
 const grid = useTMDataGrid({ data, columns, enableRowPinning: true });
 ```
 
-Pinned rows leave the scrolling order and render in sticky blocks —
+Pinned rows leave the scrolling order and render in sticky blocks -
 top-pinned rows under the header (and under the entry block while one is
 open), bottom-pinned rows above the summary row.
 
-There is no built-in pin gesture. Pin from wherever suits — most naturally the
+There is no built-in pin gesture. Pin from wherever suits - most naturally the
 row context menu:
 
 ```tsx
@@ -47,14 +47,14 @@ string[] }`, settable wholesale with `table.setRowPinning()` or seeded through
 
 Selection, editing, details, the context menu and per-row styling all behave as
 they do in the body. What pinned rows sit out are the statements about
-scrolling *order* — striping and the cell range — and the row-number gutter
+scrolling *order* (striping and the cell range), and the row-number gutter
 leaves them unnumbered.
 
 Worth knowing:
 
 - A pinned row stays at its edge even when a filter or the pager would have
   dropped it from the body. Pinning means "always in sight".
-- A pinned id whose row leaves `data` — a delete, a server-side page swap — is
+- A pinned id whose row leaves `data` (a delete, a server-side page swap) is
   simply not shown. It stays in state, harmless, and the row returns to its
   edge if its data comes back.
 - **Group rows never pin.** A group row is built on its first child's record,
@@ -72,7 +72,7 @@ lane.
 const grid = useTMDataGrid({ data, columns, enableRowNumbers: true });
 ```
 
-It numbers **the current view** — sorted, filtered, and continuing across pages
+It numbers **the current view** - sorted, filtered, and continuing across pages
 rather than restarting at each one. So the number answers "where am I in what I
 am looking at", not "which record is this". Group rows take no number, and
 neither do pinned rows.

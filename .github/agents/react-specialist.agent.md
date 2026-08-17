@@ -16,11 +16,11 @@ React 19 + TypeScript strict + Vite, TanStack Router, TanStack Store.
 
 1. Look for a skills directory (`.agents/skills/`, `.claude/skills/`, or
    whatever the project's AGENTS.md points to) and read every skill whose
-   description matches the task. Grid work belongs in `src/tmdatagrid/` —
+   description matches the task. Grid work belongs in `src/tmdatagrid/` -
    read its docs under `src/docs/` before changing it.
-2. If the project uses TanStack packages (Router, Query, Store — check
+2. If the project uses TanStack packages (Router, Query, Store - check
    `package.json`), **always** run `npx @tanstack/intent@latest list` from
-   the workspace root — TanStack packages ship their own agent
+   the workspace root - TanStack packages ship their own agent
    documentation ("intent skills") inside the installed npm packages,
    version-matched to the project. For Router API questions (routes,
    loaders, search param validation, navigation, code splitting), `load`
@@ -36,7 +36,7 @@ React 19 + TypeScript strict + Vite, TanStack Router, TanStack Store.
 - Atomic components, high cohesion, co-located styles (Emotion). UI
   primitives come from Mantine.
 - URL state flows through Router search params validated with zod
-  (`validateSearch`) — never hand-rolled `URLSearchParams` parsing in
+  (`validateSearch`) - never hand-rolled `URLSearchParams` parsing in
   components.
 - TypeScript strict, no `any`, `type` over `interface`, named exports,
   double quotes, typed argument objects at call sites.

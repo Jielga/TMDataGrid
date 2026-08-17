@@ -1,7 +1,7 @@
 # Quick search
 
 One box over every column. `TMDataGrid.Search` is a debounced input writing
-TanStack's `globalFilter` state — no option turns it on, you render it or you
+TanStack's `globalFilter` state - no option turns it on, you render it or you
 do not.
 
 ```tsx
@@ -12,14 +12,14 @@ do not.
 
 ```demo
 file: data/QuickSearch.tsx
-hint: Try “Stckholm” — fuzzy finds it, contains does not.
+hint: Try “Stckholm” - fuzzy finds it, contains does not.
 extraSources: data/employeeColumns.tsx
 ```
 
 ## Fuzzy by default
 
 Typos and skipped characters are forgiven, and while the search is the only
-thing narrowing the grid — no sort, no grouping — the rows order by **match
+thing narrowing the grid (no sort, no grouping) the rows order by **match
 quality**, best first.
 
 That ordering is derived, never written into `sorting`: no column claims
@@ -31,7 +31,7 @@ const grid = useTMDataGrid({ data, columns, quickSearchMode: "contains" });
 ```
 
 `"contains"` restores plain substring matching. An explicit `globalFilterFn`
-overrides both — and switches the rank ordering off with it, since the grid can
+overrides both - and switches the rank ordering off with it, since the grid can
 no longer say what a match is worth.
 
 `fuzzyGlobalFilterFn` is exported for anyone building their own input over the
@@ -40,7 +40,7 @@ same matching.
 ## Match highlighting
 
 Opt in with `enableMatchHighlighting: true` and cells mark the matched slice of
-their text — while the quick search is active, or a `contains` / `starts with` /
+their text - while the quick search is active, or a `contains` / `starts with` /
 `ends with` column filter.
 
 ```tsx
@@ -54,11 +54,11 @@ shows no highlight, which is the honest answer to what a non-contiguous match
 the filter did not already say.
 
 **Default-rendered cells only.** A column with its own `cell` renderer opts out
-by existing — the grid replicates the default value-to-string render with the
+by existing - the grid replicates the default value-to-string render with the
 marks added, and never rummages inside a custom renderer's output.
 
 The mark colour is `--dg-match-highlight-bg`, a yellow that follows the Mantine
-colour scheme. While the feature is off — the default — it costs one flag check
+colour scheme. While the feature is off (the default) it costs one flag check
 per render.
 
 ## Opting columns out

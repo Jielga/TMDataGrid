@@ -18,7 +18,7 @@ function languageFromClassName(className: string | undefined): string {
 
 /**
  * Headings carry their slug as an id. Without this every `#anchor` on the
- * site is dead — react-markdown emits no ids of its own, which is how the
+ * site is dead - react-markdown emits no ids of its own, which is how the
  * docs accumulated 18 links pointing at nothing.
  */
 function heading(level: 2 | 3 | 4) {
@@ -31,9 +31,9 @@ function heading(level: 2 | 3 | 4) {
 }
 
 /**
- * The markdown renderer every prose page shares — the docs routes and the
+ * The markdown renderer every prose page shares - the docs routes and the
  * getting-started front page. Mantine's `Typography` styles the raw HTML that
- * react-markdown emits, so the markdown stays plain — no MDX, no component
+ * react-markdown emits, so the markdown stays plain - no MDX, no component
  * imports in the content.
  */
 export function DocsMarkdown({ source }: { source: string }) {
@@ -50,7 +50,7 @@ export function DocsMarkdown({ source }: { source: string }) {
             </Table.ScrollContainer>
           ),
           // Fenced blocks go through the same highlighter the examples
-          // use, so docs and demos show code identically — and every
+          // use, so docs and demos show code identically - and every
           // snippet in the docs gets a copy button.
           code: ({
             className,
@@ -65,7 +65,7 @@ export function DocsMarkdown({ source }: { source: string }) {
             // explains it is, rather than on a page of its own.
             //
             // Typography margins reach its own elements, not a component, so
-            // the demo sets its own — without it the Code button rides up
+            // the demo sets its own - without it the Code button rides up
             // against the snippet above and reads as belonging to it.
             if (className === "language-demo") {
               return (
@@ -93,7 +93,7 @@ export function DocsMarkdown({ source }: { source: string }) {
           // goes through the router: client-side navigation, and the
           // deploy base path (the site lives under /TMDataGrid/ on GitHub
           // Pages) handled by the router rather than by hand. Anything
-          // else — an external URL, an in-page anchor — is left alone.
+          // else (an external URL, an in-page anchor) is left alone.
           a: ({ href, children, ...props }: ComponentPropsWithoutRef<"a">) => {
             if (!href?.startsWith("/")) {
               return (
@@ -102,7 +102,7 @@ export function DocsMarkdown({ source }: { source: string }) {
                 </a>
               );
             }
-            // `/docs/grouping#aggregation` — the router wants the two halves
+            // `/docs/grouping#aggregation` - the router wants the two halves
             // apart, and passing the whole string as `to` would look for a
             // route with a hash in its path.
             const [to, hash] = href.split("#");
@@ -125,7 +125,7 @@ export function DocsMarkdown({ source }: { source: string }) {
  * table of contents beside it where the viewport is wide enough.
  *
  * The rail is inside the scroller rather than outside it so that `position:
- * sticky` has this scroll container to stick within — and so an anchor jump
+ * sticky` has this scroll container to stick within - and so an anchor jump
  * scrolls the article under a rail that stays put.
  */
 export function DocsPage({ source }: { source: string }) {

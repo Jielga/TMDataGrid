@@ -223,7 +223,7 @@ describe("isFilterActive", () => {
 });
 
 describe("formatFilterLabel", () => {
-  // This is the text on a filter pill — the one place the filter model is
+  // This is the text on a filter pill - the one place the filter model is
   // read back to the user in words.
   it("leaves the type's default operator implicit", () => {
     expect(

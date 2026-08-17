@@ -49,7 +49,7 @@ export function ToolbarComposition() {
           checked={refetching}
           onChange={(event) => setRefetching(event.currentTarget.checked)}
         />
-        {/* A small spinner for refetches that keep rows on screen — the full
+        {/* A small spinner for refetches that keep rows on screen - the full
             loader would blank a grid the user is still reading. */}
         {refetching && <TMDataGrid.LoadingIndicator />}
 

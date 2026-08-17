@@ -36,8 +36,8 @@ export function CopyAndExport() {
       </TMDataGrid.Toolbar>
 
       <TMDataGrid.Table<Employee>
-        // How Ctrl+C writes values. These *are* the defaults — the Nordic
-        // Excel conventions — spelled out here to show what is adjustable.
+        // How Ctrl+C writes values. These *are* the defaults - the Nordic
+        // Excel conventions - spelled out here to show what is adjustable.
         cellExport={{ separator: ";", decimalComma: true }}
       />
     </TMDataGrid>

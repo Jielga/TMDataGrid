@@ -24,7 +24,7 @@ The grid must be rendered inside a Mantine `MantineProvider`.
 import "@jielga/tmdatagrid/styles.css";
 ```
 
-One stylesheet, imported once. There is a layered form too —
+One stylesheet, imported once. There is a layered form too -
 see [Styling](/docs/styling#the-stylesheet).
 
 > **TanStack Table v9 is still in beta.** The grid is built against
@@ -82,7 +82,7 @@ Two things to get right from the start:
   table's column model, and takes the reader's widths and order with it.
 - **Give the grid a bounded height.** `style={{ flex: 1, minHeight: 0 }}` inside
   a flex parent, or a fixed height. A virtualized grid has no content height to
-  size itself from — see [Layout](/docs/styling#layout).
+  size itself from - see [Layout](/docs/styling#layout).
 
 ## What you get for free
 
@@ -102,7 +102,7 @@ box.
 | The column menu | On hover, or right-click a header. Only ever shows items that apply. |
 
 Everything is bound to a capability check, so switching a feature off through
-the standard TanStack option also removes its interface — no empty menus, no
+the standard TanStack option also removes its interface - no empty menus, no
 dead buttons.
 
 ## Adding the chrome
@@ -113,18 +113,18 @@ The grid renders only the parts you put in it.
 file: getting-started/ToolbarAndFooter.tsx
 ```
 
-`Toolbar` and `Footer` are plain composition — see
+`Toolbar` and `Footer` are plain composition - see
 [Grid anatomy](/docs/anatomy) for what each part is, and
 [Toolbar](/docs/toolbar) for putting your own buttons among them.
 
 ## Where to go next
 
-- **[Defining columns](/docs/columns)** — accessors, `meta.type`, and what each
+- **[Defining columns](/docs/columns)** - accessors, `meta.type`, and what each
   type decides for you.
-- **[Grid anatomy](/docs/anatomy)** — the hook's return value, and every
+- **[Grid anatomy](/docs/anatomy)** - the hook's return value, and every
   component you can render.
-- **[Editing](/docs/editing)** — four modes, from single cells to a whole grid.
-- **[Server-side data](/docs/server-side)** — when the server does the work.
-- **[The playground](/playground)** — every feature at once, behind switches.
+- **[Editing](/docs/editing)** - four modes, from single cells to a whole grid.
+- **[Server-side data](/docs/server-side)** - when the server does the work.
+- **[The playground](/playground)** - every feature at once, behind switches.
 
 Press <kbd>Ctrl</kbd> <kbd>K</kbd> to search all of it.

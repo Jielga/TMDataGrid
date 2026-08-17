@@ -6,7 +6,7 @@ import type {
 
 /**
  * Builds the smallest file that reproduces what the example page is currently
- * showing — the "I want these features, give me the code" path.
+ * showing - the "I want these features, give me the code" path.
  *
  * Kept honest by only emitting what differs from a default. A grid with every
  * switch left alone comes out as `data` + `columns` + `getRowId` and nothing
@@ -32,7 +32,7 @@ export type StarterSnippetOption = keyof typeof OPTION_DEFAULTS;
 const OPTION_NOTES: Partial<Record<StarterSnippetOption, string>> = {
   enableMultiRowSelection: "one row at a time; drops the select-all box",
   enableRowSelection: "no row can be selected",
-  enablePagination: "off by default — all rows render, virtualized",
+  enablePagination: "off by default - all rows render, virtualized",
 };
 
 const SELECTION_MODE_NOTES: Record<TMDataGridSelectionMode, string> = {
@@ -40,7 +40,7 @@ const SELECTION_MODE_NOTES: Record<TMDataGridSelectionMode, string> = {
   row: "no checkbox column; click a row, Ctrl/Shift to extend",
   checkboxAndHighlight:
     "checkboxes multi-select, and a click highlights one row",
-  highlight: "no selection — a click only highlights, for a detail panel",
+  highlight: "no selection - a click only highlights, for a detail panel",
 };
 
 export type StarterSnippetConfig = {
@@ -81,7 +81,7 @@ export function buildStarterSnippet({
   const paginated = options.enablePagination;
 
   // Only the lines that say something. Anything omitted is a default, which is
-  // the whole point — a shorter snippet is a more readable starting point.
+  // the whole point - a shorter snippet is a more readable starting point.
   const gridOptions: Array<string> = [];
 
   if (selectionMode !== DEFAULT_SELECTION_MODE) {
@@ -91,7 +91,7 @@ export function buildStarterSnippet({
     );
   }
 
-  // Nothing can be selected, so every other selection option is inert — and an
+  // Nothing can be selected, so every other selection option is inert - and an
   // inert line in a starter file is worse than a missing one.
   const selectionOff =
     selectionMode === "highlight" || !options.enableRowSelection;
@@ -223,7 +223,7 @@ export function buildStarterSnippet({
     : [];
 
   const gridElement = [
-    // A grid with no height collapses to nothing — the one layout gotcha.
+    // A grid with no height collapses to nothing - the one layout gotcha.
     `      <TMDataGrid {...grid}${sizeProp} style={{ height: 480 }}>`,
     ...toolbar,
     "",
@@ -248,7 +248,7 @@ export function buildStarterSnippet({
     : gridElement.map((line) => (line === "" ? "" : line.slice(2)));
 
   return [
-    "// Everything not listed below is a default — this is the whole setup.",
+    "// Everything not listed below is a default - this is the whole setup.",
     "",
     ...imports,
     "",
@@ -258,7 +258,7 @@ export function buildStarterSnippet({
     "  name: string;",
     "};",
     "",
-    "// 2 · Columns at module scope — a new array every render rebuilds the",
+    "// 2 · Columns at module scope - a new array every render rebuilds the",
     "//     column model. `meta.type` decides which filter operators appear.",
     "const columnHelper = createTMDataGridColumnHelper<MyRow>();",
     "",

@@ -6,7 +6,7 @@ import { afterEach, beforeEach } from "vitest";
  * Web storage under test.
  *
  * Vitest's jsdom environment leaves `window.localStorage` as a bare object
- * here — jsdom's own Storage never reaches the window — so the grid's
+ * here - jsdom's own Storage never reaches the window - so the grid's
  * `window.localStorage` lookups would fail on a missing method rather than on
  * anything the test meant to exercise. An in-memory Storage is installed
  * instead: same contract, and each test starts from a known empty state.

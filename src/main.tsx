@@ -12,7 +12,7 @@ import { router } from "./router";
 import "./index.css";
 
 /**
- * Shiki is loaded on demand — the first code block on screen pays for it, and
+ * Shiki is loaded on demand - the first code block on screen pays for it, and
  * a visitor who only ever looks at grids never downloads it at all.
  *
  * Built from `shiki/core` rather than the `shiki` entry point, which would
@@ -22,7 +22,7 @@ import "./index.css";
  *
  * Both GitHub themes are registered so `CodeBlock` can ask for them by name.
  * Mantine's adapter only substitutes its own bundled theme objects for the
- * literal strings "light" and "dark" — any other value is passed through to
+ * literal strings "light" and "dark" - any other value is passed through to
  * shiki as a theme name. That matters: the bundled dark theme renders
  * comments at #676867 on a #2e2e2e background, a contrast ratio of 2.4:1.
  */

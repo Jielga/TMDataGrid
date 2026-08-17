@@ -1,6 +1,6 @@
 # Row styling
 
-Colouring rows by what is in them — an overdue invoice red, a draft greyed, a
+Colouring rows by what is in them - an overdue invoice red, a draft greyed, a
 terminated employee struck through.
 
 ```tsx
@@ -13,13 +13,13 @@ terminated employee struck through.
 
 ```demo
 file: rows/RowStyling.tsx
-hint: Select and hover a coloured row — both still read through the row background.
+hint: Select and hover a coloured row - both still read through the row background.
 ```
 
 ## Set `--row-bg`, not `background`
 
-This is the one rule worth knowing. A row is not a single element — it is a
-strip of cells, some of them sticky in pinned lanes — and several things paint
+This is the one rule worth knowing. A row is not a single element - it is a
+strip of cells, some of them sticky in pinned lanes - and several things paint
 on top of it: hover, selection, the highlight, the cell range, striping.
 
 Setting `background` wins over all of them, so a coloured row stops responding
@@ -32,7 +32,7 @@ rowStyle={() => ({ background: "pink" })}          // hover and selection die
 rowStyle={() => ({ "--row-bg": "pink" })}          // both still read
 ```
 
-`rowStyle` accepts `CSSProperties` or an object of custom properties — the type
+`rowStyle` accepts `CSSProperties` or an object of custom properties - the type
 is a union, so a callback returning either compiles.
 
 ## Classes instead
@@ -63,7 +63,7 @@ virtualization rather than sticking to particular records.
 <TMDataGrid.Table striped />
 ```
 
-Pinned rows sit striping out — they have left the scrolling order, so there is
+Pinned rows sit striping out - they have left the scrolling order, so there is
 no "every second" for them to be part of.
 
 ## Styling by state
@@ -77,9 +77,9 @@ stylesheet can reach any of it without a callback:
 | `data-selected-bg` | Selected rows that also take the background |
 | `data-highlighted` | The highlighted row |
 | `data-grouped` | Group rows |
-| `data-depth` | Every row — the nesting level |
+| `data-depth` | Every row - the nesting level |
 | `data-context-menu` | The row whose context menu is open |
-| `data-row-id` | Every row — its id, which is what [tests](/docs/testing) key off |
+| `data-row-id` | Every row - its id, which is what [tests](/docs/testing) key off |
 
 ```css
 [data-dg-part="row"][data-grouped] {

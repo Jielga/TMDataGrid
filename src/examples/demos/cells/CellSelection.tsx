@@ -11,7 +11,7 @@ import { EMPLOYEES, type Employee } from "../../data/employees";
 
 const MODES = [
   { value: "none", label: "none" },
-  // One cell at a time — a cursor, not a selection.
+  // One cell at a time - a cursor, not a selection.
   { value: "single", label: "single" },
   // Drag, or Shift+arrows, to take a block.
   { value: "range", label: "range" },

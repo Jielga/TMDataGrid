@@ -61,11 +61,11 @@ export type TMDataGridFooterProps = {
  * MUI-style pager: "Rows per page · from–to of total · ‹ ›".
  *
  * Renders nothing unless pagination is enabled (`enablePagination` or
- * `manualPagination`) — the footer is a pager; extra footer content belongs in
+ * `manualPagination`) - the footer is a pager; extra footer content belongs in
  * your own layout.
  *
  * Row totals come from `table.getRowCount()`, which prefers `options.rowCount`
- * — so a server-paged grid shows the server's total without changes here.
+ * - so a server-paged grid shows the server's total without changes here.
  */
 export function TMDataGridFooter({
   pageSizeOptions = [10, 25, 50, 100],
@@ -84,7 +84,7 @@ export function TMDataGridFooter({
     );
   }
 
-  // Grouping suspends paging — see isPagingActive. The pager is greyed out
+  // Grouping suspends paging - see isPagingActive. The pager is greyed out
   // rather than dropped, so that a footer going quiet reads as a state the grid
   // is in rather than as something that broke.
   const paging = isPagingActive(table, features);
@@ -114,7 +114,13 @@ export function TMDataGridFooter({
         data-paging-suspended={!paging}
       >
         <Group gap="xs" wrap="nowrap">
-          <Text size={controlSize} c="dimmed">
+          {/* `span`, here and in every other label the grid renders: Mantine's
+              Text is a `<p>` by default, and a grid dropped into prose - a
+              docs page, a CMS body, Mantine's own Typography - picks up that
+              context's `p` margins. A bottom margin on a flex item shifts its
+              border box up off centre, which is how the pager came to sit a
+              half-line below its own label. Chrome labels are not prose. */}
+          <Text span size={controlSize} c="dimmed">
             {labels.rowsPerPage}
           </Text>
           <Select
@@ -133,11 +139,11 @@ export function TMDataGridFooter({
           />
         </Group>
 
-        <Text size={controlSize} c="dimmed" data-dg-part="page-range">
+        <Text span size={controlSize} c="dimmed" data-dg-part="page-range">
           {paging
             ? labels.pageRange({ from, to, total })
             : // Not a range: nothing is being sliced, so a range would be a lie.
-              // Counted before grouping too — `getRowCount()` would be counting
+              // Counted before grouping too - `getRowCount()` would be counting
               // the tree, so a collapsed grid would claim to hold eight rows.
               labels.groupedAllRows(table.getFilteredRowModel().rows.length)}
         </Text>

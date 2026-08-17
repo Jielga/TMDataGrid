@@ -10,11 +10,11 @@ import { EMPLOYEES, type Employee } from "../../data/employees";
 /**
  * Two keys because there are two lifetimes.
  *
- * *Settings* are the user's arrangement of the grid — visibility, order,
+ * *Settings* are the user's arrangement of the grid - visibility, order,
  * widths, pinning. They should outlive everything, so the key persists every
  * slice in its group.
  *
- * *Data* state is what is being looked at — filters, sorting, page. Narrowing
+ * *Data* state is what is being looked at - filters, sorting, page. Narrowing
  * the key to the slices worth restoring is how a reload comes back to the same
  * filters without also coming back to page 7 of a list you have since changed.
  *

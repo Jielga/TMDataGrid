@@ -12,7 +12,7 @@ type GridTable = TMDataGridTable<TMDataGridRowData>;
  * Pinning splits the grid into three, and TanStack sequences them from two
  * different state slices: `columnPinning.left` / `.right` order the pinned
  * lanes, `columnOrder` orders the centre. A move therefore always stays inside
- * one lane — moving a column into another one would be a pin, not a reorder.
+ * one lane - moving a column into another one would be a pin, not a reorder.
  */
 export type TMDataGridColumnRegion = "left" | "center" | "right";
 
@@ -104,7 +104,7 @@ export type ColumnStepArgs = {
  * The column a single step would swap with, or `null` when there is none.
  *
  * A neighbour that cannot be reordered acts as a wall rather than being skipped
- * — that is what keeps the checkbox column anchored at the start of the left
+ * - that is what keeps the checkbox column anchored at the start of the left
  * lane. Use it to enable or disable a "move" control.
  */
 export function getStepTargetColumn({

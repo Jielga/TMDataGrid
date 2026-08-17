@@ -5,7 +5,7 @@ import { useTMDataGrid } from "../useTMDataGrid";
 /**
  * Compile-time contracts for the option unions. Nothing here runs: the hook
  * calls live in a function that is never invoked, and `tsc` is the assertion
- * — it fails the build on a missing error exactly as it does on a real one,
+ * - it fails the build on a missing error exactly as it does on a real one,
  * because an `@ts-expect-error` with nothing to swallow is itself an error.
  */
 
@@ -23,7 +23,7 @@ export function useCompileTimeContracts() {
     editMode: "batch",
     onEditCommitBatch: async () => {},
   });
-  // Legal: batch without it — `submitAll` falls back to the per-row loop.
+  // Legal: batch without it - `submitAll` falls back to the per-row loop.
   useTMDataGrid<Person>({ data, columns, getRowId, editMode: "batch" });
   // Legal: an immediate mode with the per-row commit.
   useTMDataGrid<Person>({

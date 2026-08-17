@@ -13,7 +13,7 @@ import {
 
 /**
  * `resolveRowSelectionClick` is the whole click-to-select convention in one
- * pure function — the table in its doc comment is the contract tested here.
+ * pure function - the table in its doc comment is the contract tested here.
  * `getDisplayedRows` and `getSelectableRowIds` have their grouping behaviour
  * covered in `grouping.test.ts`; what this file adds for them is the row
  * pinning exclusion.
@@ -200,7 +200,7 @@ describe("a ctrl+shift click", () => {
 });
 
 describe("a checkbox gesture", () => {
-  // `canReplaceSelection: false` — ticking one box never clears the others.
+  // `canReplaceSelection: false` - ticking one box never clears the others.
   it("adds without clearing the rest, even unmodified", () => {
     const { rows } = displayedRows();
 

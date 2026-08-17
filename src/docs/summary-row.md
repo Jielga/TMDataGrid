@@ -1,6 +1,6 @@
 # Summary row
 
-A sticky row along the bottom edge holding totals for the whole grid — the
+A sticky row along the bottom edge holding totals for the whole grid - the
 count, the sum, whatever the column is worth saying one number about. It is
 independent of [grouping](/docs/grouping): grouping totals each category,
 the summary row totals everything.
@@ -22,12 +22,12 @@ file: rows/SummaryRow.tsx
 
 `footer` is TanStack's own column option, rendered by the grid the way the
 header is: each cell renders that column's renderer with the header context.
-It can equally render anything — a static label, a count, its own calculation.
+It can equally render anything - a static label, a count, its own calculation.
 
 ## Totalling a column
 
 `aggregateColumn({ table, columnId, fn })` computes over every **filtered** row
-— all pages, following the filters live — through the registered aggregation
+(all pages, following the filters live) through the registered aggregation
 functions. `fn` defaults to `"sum"`.
 
 ```tsx
@@ -43,8 +43,8 @@ like it is answering the question in front of them.
 ## Layout
 
 Pinned columns keep their lanes in the summary row, and the row sits under the
-pinned-lane gradients on the stacking ladder. The generated lanes — checkbox,
-tree, details, row numbers — define no `footer`, so their summary cells stay
+pinned-lane gradients on the stacking ladder. The generated lanes - checkbox,
+tree, details, row numbers - define no `footer`, so their summary cells stay
 blank.
 
 The row is sticky, so it stays put while the body scrolls, and its height is
@@ -56,5 +56,5 @@ The row is sticky, so it stays put while the body scrolls, and its height is
 | --- | --- | --- | --- | --- |
 | `footer` | Column option | `(ctx) => ReactNode` | – | Renders this column's summary cell. Any column defining one summons the row. |
 | `aggregateColumn` | Export | `({ table, columnId, fn }) => unknown` | `fn: "sum"` | Aggregates a column over every filtered row, all pages. |
-| `TMDataGridAggregationName` | Export | type | – | The registered function names — `sum`, `mean`, `count`, `uniqueCount`, … |
+| `TMDataGridAggregationName` | Export | type | – | The registered function names - `sum`, `mean`, `count`, `uniqueCount`, … |
 | `--dg-summary-height` | CSS variable | length | From `size` | Height of the summary row. |

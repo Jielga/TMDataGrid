@@ -6,8 +6,8 @@ import type { TMDataGridFeatures } from "../useTMDataGrid";
  *
  * TanStack keeps one `expanded` state, and the grid opens two unrelated things
  * out of it: a group row opens into its children, a data row opens into its
- * detail panel. So `toggleAllRowsExpanded` — which writes the state's
- * whole-table form — is the wrong verb for either control. "Expand all groups"
+ * detail panel. So `toggleAllRowsExpanded` - which writes the state's
+ * whole-table form - is the wrong verb for either control. "Expand all groups"
  * in the tree menu would open every panel in the grid, and the details lane's
  * chevron would unfold the whole tree.
  *
@@ -25,7 +25,7 @@ function isTarget<TData extends RowData>(
 
 /**
  * The state as a map. `true` is the whole-table form, which has to be written
- * out before one kind of row can be taken back out of it — the same thing
+ * out before one kind of row can be taken back out of it - the same thing
  * TanStack does before toggling a single row.
  */
 function toExpandedMap<TData extends RowData>(
@@ -40,7 +40,7 @@ function toExpandedMap<TData extends RowData>(
 
 export type TMDataGridExpandAllArgs<TData extends RowData> = {
   /**
-   * Every row in the model, groups and records alike — `flatRows` off any of
+   * Every row in the model, groups and records alike - `flatRows` off any of
    * them. A grouped model lists its leaves both under their group and in the
    * flat list, so this may repeat rows; both helpers are written so that a
    * repeat costs nothing.
@@ -51,7 +51,7 @@ export type TMDataGridExpandAllArgs<TData extends RowData> = {
 };
 
 /**
- * Whether every row of this kind is open — what the control shows, and what a
+ * Whether every row of this kind is open - what the control shows, and what a
  * bare toggle inverts.
  *
  * `false` when there are none of them, matching TanStack's own

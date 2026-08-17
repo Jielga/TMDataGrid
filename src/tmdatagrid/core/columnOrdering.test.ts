@@ -75,7 +75,7 @@ describe("moveColumn", () => {
     });
     const before = visibleColumnIds(result.current);
 
-    // "name" is centre, "id" is pinned left — a move between them would be a
+    // "name" is centre, "id" is pinned left - a move between them would be a
     // pin, not a reorder.
     act(() => {
       moveColumn({ table, columnId: "name", targetId: "id", side: "after" });

@@ -4,13 +4,13 @@ import type { TMDataGridCellPosition } from "./cellNavigation";
  * A selected rectangle of cells, held as the two cells that span it.
  *
  * Two corners rather than a list of cells, because a range is a gesture, not a
- * set: dragging over 40 columns of a 100k-row grid would otherwise build — and
- * rebuild, on every mouse move — a list with millions of entries in it. Two
+ * set: dragging over 40 columns of a 100k-row grid would otherwise build - and
+ * rebuild, on every mouse move - a list with millions of entries in it. Two
  * positions describe the same thing and cost nothing to extend.
  *
  * `anchor` is where the gesture started and stays put; `focus` is the end that
  * moves. Which of the two is top-left depends on the direction it was dragged,
- * so nothing here assumes an order — see {@link resolveRangeBounds}.
+ * so nothing here assumes an order - see {@link resolveRangeBounds}.
  */
 export type TMDataGridCellRange = {
   anchor: TMDataGridCellPosition;
@@ -37,7 +37,7 @@ export type ResolveRangeBoundsArgs = {
  * corner no longer exists.
  *
  * A corner goes missing whenever a filter drops its row or a column is hidden,
- * and the honest answer then is that there is no rectangle — better than
+ * and the honest answer then is that there is no rectangle - better than
  * guessing at a replacement corner and quietly copying cells the user never
  * selected. The range itself is left alone: clearing it here would throw away
  * a selection that comes straight back when the filter is lifted.

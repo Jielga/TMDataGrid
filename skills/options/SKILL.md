@@ -20,7 +20,7 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/persistence.ts'
 ---
 
-# TMDataGrid — useTMDataGrid
+# TMDataGrid - useTMDataGrid
 
 Creates the table instance and the state used by the grid interface.
 
@@ -69,7 +69,7 @@ rather than forwarded to TanStack.
 
 | Slice | Default |
 | --- | --- |
-| `pagination` | `{ pageIndex: 0, pageSize: 25 }` — inert until pagination is enabled |
+| `pagination` | `{ pageIndex: 0, pageSize: 25 }` - inert until pagination is enabled |
 | `columnPinning.left` | The checkbox column, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
 
@@ -136,7 +136,7 @@ names are typed per group, so only valid names are accepted.
 Restoring happens once on mount through `initialState`. Writing is a subscription
 to the table store, so state changed directly through the table API is persisted
 too. Only selected slices are read back, and unrecognised keys are ignored. All
-storage access is guarded — if storage is unavailable, disabled or full,
+storage access is guarded - if storage is unavailable, disabled or full,
 persistence is skipped rather than throwing.
 
 ## Return value
@@ -180,7 +180,7 @@ The last two move the cell cursor and the selected rectangle under
 `cellSelection`; DOM focus follows `focusedCell` and scrolls its row into view.
 
 `startColumnDrag` / `endColumnDrag` are called by the header cells while a column is being dragged, and
-`ui.draggedColumnId` holds the column being moved — browsers keep `dataTransfer`
+`ui.draggedColumnId` holds the column being moved - browsers keep `dataTransfer`
 unreadable until the drop.
 
 `openColumnFilter(grid, columnId)` combines the two steps the column menu uses:
@@ -190,11 +190,11 @@ add an empty filter row for the column if none exists, then open the panel.
 
 ### Reading store state during render
 
-`grid.table.store.state` is a plain read — it does not subscribe the component,
+`grid.table.store.state` is a plain read - it does not subscribe the component,
 so the value is correct on first render and then never updates.
 
 ```tsx
-// Wrong — never re-renders when the selection changes.
+// Wrong - never re-renders when the selection changes.
 const count = Object.keys(grid.table.store.state.rowSelection).length;
 
 // Right.
@@ -219,5 +219,5 @@ Include a tenant or user identifier in the key.
 ### Unstable data reference
 
 A new array identity on each render re-runs the row model. `data={rows ?? []}`
-allocates a fresh `[]` every render when `rows` is undefined — hoist the empty
+allocates a fresh `[]` every render when `rows` is undefined - hoist the empty
 array to a module-scope constant or `useMemo` the expression.

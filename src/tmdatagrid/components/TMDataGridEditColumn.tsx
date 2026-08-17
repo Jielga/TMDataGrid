@@ -21,7 +21,7 @@ export const EDIT_COLUMN_ID = "__edit__";
  * One row's slot in the edit lane. Three states, driven off the edit store:
  * a pencil while idle, Save/Cancel while the row's form is open, a loader
  * while its commit is in flight. A row error turns the Save red and puts the
- * message in its tooltip — the pathless `.refine()` has nowhere else to land.
+ * message in its tooltip - the pathless `.refine()` has nowhere else to land.
  */
 function EditLaneCell<TData extends RowData>({
   row,
@@ -79,7 +79,7 @@ function EditLaneCell<TData extends RowData>({
     );
   }
 
-  // A batch deletion mark is a draft like any other — restorable in place.
+  // A batch deletion mark is a draft like any other - restorable in place.
   if (isMarkedDeleted) {
     return (
       <ActionIcon
@@ -204,7 +204,7 @@ function EditLaneCell<TData extends RowData>({
 
 /**
  * The generated edit lane, appended and pinned right under
- * `editMode: "row"` — the row's Save at the end of the row, mirroring the
+ * `editMode: "row"` - the row's Save at the end of the row, mirroring the
  * checkbox lane's build on the left.
  */
 export function createEditColumn<TData extends RowData>(
@@ -229,7 +229,7 @@ export function createEditColumn<TData extends RowData>(
     enablePinning: false,
     header: () => null,
     cell: ({ row }) => <EditLaneCell row={row} />,
-    // Group rows: same reasoning as the checkbox lane — without this the
+    // Group rows: same reasoning as the checkbox lane - without this the
     // cell renders blank on aggregated rows, but here blank is also correct,
     // so the aggregated cell renders the same (null for groups).
     aggregatedCell: ({ row }) => <EditLaneCell row={row} />,

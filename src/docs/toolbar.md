@@ -1,7 +1,7 @@
 # Toolbar composition
 
 The toolbar is a flex row and nothing more. There is no slots API, no
-`actions` prop and no configuration object — your buttons sit beside the
+`actions` prop and no configuration object - your buttons sit beside the
 built-in ones because they are all just children.
 
 ```tsx
@@ -41,7 +41,7 @@ toolbar with only `Search` has only a search box.
 | `TMDataGridEditActions` | Save and Discard under [batch editing](/docs/editing#batch-editing) |
 
 Each renders nothing when its feature is off, so a read-only grid needs no
-conditionals in your toolbar — `FilterButton` under
+conditionals in your toolbar - `FilterButton` under
 `enableColumnFilters: false` is simply absent.
 
 ## Buttons of your own
@@ -61,7 +61,7 @@ function ExportButton() {
 }
 ```
 
-Anything rendered inside `TMDataGrid` can call it —
+Anything rendered inside `TMDataGrid` can call it -
 `{ table, ui, features, labels, controlSize, resetSettings }`.
 
 ### Hiding a button the same way the built-ins do
@@ -90,7 +90,7 @@ function ExportButton() {
 | `canReorderAny` | At least one leaf column can be moved |
 | `canGroupAny` | At least one leaf column can be grouped on |
 | `canSelectRows` | `enableRowSelection` is not `false` and the mode is not `"highlight"` |
-| `canPaginate` | Paging is configured — see [`isPagingActive`](/docs/pagination#grouping-suspends-it) for whether it is doing anything |
+| `canPaginate` | Paging is configured - see [`isPagingActive`](/docs/pagination#grouping-suspends-it) for whether it is doing anything |
 | `canSearch` | At least one leaf column takes part in the quick search |
 
 `getColumnCapabilities(column, features)` answers the same for one column, as
@@ -105,7 +105,7 @@ methods because it is what makes the result reactive.
 
 `column.getCanSort()` is a method call on a column object whose identity is
 preserved across an options change. Under the React Compiler that call is
-memoized — so a grid whose `enableSorting` flipped to `false` would carry on
+memoized - so a grid whose `enableSorting` flipped to `false` would carry on
 rendering sort indicators. Passing `features` supplies a value that *changes*,
 while `getCanX()` still decides the outcome and applies per-column overrides.
 

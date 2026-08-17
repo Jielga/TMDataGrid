@@ -1,18 +1,18 @@
 # Pagination
 
 **Off by default.** The grid renders every filtered and sorted row and relies
-on [virtualization](/docs/scrolling), which handles any row count — so paging
+on [virtualization](/docs/scrolling), which handles any row count - so paging
 is a choice about how the reader navigates, not a performance workaround.
 
 There are three modes.
 
-**No pagination** — the default. `TMDataGrid.Footer` renders nothing.
+**No pagination** - the default. `TMDataGrid.Footer` renders nothing.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });
 ```
 
-**Client pagination** — the table pages the data itself, and the Footer renders
+**Client pagination** - the table pages the data itself, and the Footer renders
 its pager. Initial page size is 25, configurable through
 `initialState.pagination`.
 
@@ -20,7 +20,7 @@ its pager. Initial page size is 25, configurable through
 const grid = useTMDataGrid({ data, columns, enablePagination: true });
 ```
 
-**Manual pagination** — the server pages, and the grid stops.
+**Manual pagination** - the server pages, and the grid stops.
 `manualPagination: true` implies `enablePagination`, so no extra flag is
 needed. See [Server-side data](/docs/server-side).
 
@@ -40,8 +40,8 @@ file: data/Pagination.tsx
 extraSources: data/employeeColumns.tsx
 ```
 
-`enablePagination` is one of the two switches the grid defines itself —
-TanStack ships the state and the APIs but no `enable` option — and it is the
+`enablePagination` is one of the two switches the grid defines itself -
+TanStack ships the state and the APIs but no `enable` option - and it is the
 one switch that defaults to **off**.
 
 ## Replacing the pager
@@ -74,7 +74,7 @@ for a pager that lives somewhere else on the page entirely.
 
 **Grouping and the built-in pager do not work together, and grouping wins.**
 The pager greys itself out and the range is replaced with `Grouped · all N
-rows`. The reasoning — and what to do if you need both — is on
+rows`. The reasoning, and what to do if you need both, is on
 [Grouping](/docs/grouping#grouping-suspends-pagination).
 
 A custom pager can grey itself out the same way:
@@ -89,7 +89,7 @@ import { isPagingActive } from "@jielga/tmdatagrid";
 />
 ```
 
-`isPagingActive` is live state — whether the pager is currently slicing
+`isPagingActive` is live state - whether the pager is currently slicing
 anything. `getGridCapabilities(...).canPaginate` is the *configuration*: whether
 paging is switched on at all. The two differ exactly while a grouping is
 active.

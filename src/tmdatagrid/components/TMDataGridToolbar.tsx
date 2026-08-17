@@ -26,7 +26,7 @@ export function TMDataGridToolbarSpacer() {
 /**
  * A small spinner shown while `meta.loading` is true, and nothing otherwise.
  *
- * The body only shows its loading state while the grid is *empty* — a
+ * The body only shows its loading state while the grid is *empty* - a
  * server-driven grid refetching with rows on screen keeps showing them, which
  * is right, but leaves nothing saying a fetch is running. This is that signal,
  * and the consumer decides where it sits by placing it in the toolbar:
@@ -48,7 +48,7 @@ export function TMDataGridLoadingIndicator() {
 
 /**
  * Visible rows over total rows. On a server-driven grid, set
- * `meta.totalRowCount` for the denominator — the client never sees every row.
+ * `meta.totalRowCount` for the denominator - the client never sees every row.
  */
 export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
   const { table, controlSize } = useTMDataGridContext();
@@ -56,7 +56,7 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
 
   if (children !== undefined) {
     return (
-      <Text size={controlSize} c="dimmed" data-dg-part="summary-count">
+      <Text span size={controlSize} c="dimmed" data-dg-part="summary-count">
         {children}
       </Text>
     );
@@ -68,14 +68,14 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
     table.getPreFilteredRowModel().rows.length;
 
   return (
-    <Text size={controlSize} c="dimmed" data-dg-part="summary-count">
+    <Text span size={controlSize} c="dimmed" data-dg-part="summary-count">
       {shown} / {total}
     </Text>
   );
 }
 
 /**
- * Burger menu in the grid's top-right corner — opens "Manage columns".
+ * Burger menu in the grid's top-right corner - opens "Manage columns".
  * Renders nothing when no column can be hidden (`enableHiding: false`).
  */
 export function TMDataGridColumnsButton() {

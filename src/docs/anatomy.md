@@ -18,7 +18,7 @@ const grid = useTMDataGrid({ data, columns });
 </TMDataGrid>
 ```
 
-**Only the parts you render exist.** There is no chrome to switch off — a grid
+**Only the parts you render exist.** There is no chrome to switch off - a grid
 that is just `<TMDataGrid.Table />` has no toolbar, no footer and no search,
 because you did not put them there.
 
@@ -39,7 +39,7 @@ supported shape.
 | `features` | `TMDataGridFeatureFlags` | From `useTMDataGrid`. |
 | `size` | `MantineSize` | The [size scale](/docs/styling#the-size-scale). Defaults to `"md"`. |
 | `children` | `ReactNode` | The grid's parts, in the order you want them. |
-| `className` · `style` · `id` | – | On the root element. Set a bounded height — see [Layout](/docs/styling#layout). |
+| `className` · `style` · `id` | – | On the root element. Set a bounded height - see [Layout](/docs/styling#layout). |
 | `data-testid` | `string` | Names the grid for [tests](/docs/testing). Worth setting when a page holds more than one. |
 
 ## The parts
@@ -54,7 +54,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.Footer` | The pager bar below it | [Pagination](/docs/pagination) |
 | `TMDataGrid.Search` | Quick search input | [Quick search](/docs/quick-search) |
 | `TMDataGrid.FilterButton` · `.FilterPanel` | The filter UI | [Filtering](/docs/filtering) |
-| `TMDataGrid.FilterPills` | Active filters as pills — **takes the grid as an `api` prop**, so it can live anywhere on the page | [Filtering](/docs/filtering#filters-outside-the-grid) |
+| `TMDataGrid.FilterPills` | Active filters as pills - **takes the grid as an `api` prop**, so it can live anywhere on the page | [Filtering](/docs/filtering#filters-outside-the-grid) |
 | `TMDataGrid.ColumnsButton` · `.ColumnsPanel` | Manage columns, and Reset layout | [Column layout](/docs/column-layout#hiding) |
 | `TMDataGrid.Spacer` | Pushes following toolbar items right | [Toolbar](/docs/toolbar) |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count | [Loading and empty](/docs/loading-and-empty) |
@@ -85,13 +85,13 @@ Pass the row type so the handlers are typed:
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-`aria-label` is the accessible name — what a screen reader announces on entry,
+`aria-label` is the accessible name - what a screen reader announces on entry,
 and what `getByRole("grid", { name })` matches. Worth setting on any page
 holding more than one grid.
 
 ### Which rows it renders
 
-With pagination off — the default — rows come from
+With pagination off (the default) rows come from
 `getPrePaginatedRowModel()`: every filtered and sorted row, virtualized. With
 pagination on they come from `getPaginatedRowModel()`, so a
 [`manualPagination`](/docs/server-side) grid renders exactly the page the server
@@ -102,7 +102,7 @@ returned.
 | Field | What it is |
 | --- | --- |
 | `table` | The TanStack table instance. State lives in `table.store`. |
-| `ui` | The grid's own UI store — panels, drag state, focused cell, cell range. |
+| `ui` | The grid's own UI store - panels, drag state, focused cell, cell range. |
 | `edit` | The [editing engine](/docs/editing#the-engine-edit). Inert until `editMode` is set. |
 | `features` | Feature flags, re-derived each render. See [why](/docs/toolbar#why-features-is-a-second-argument). |
 | `labels` | The resolved [dictionary](/docs/localization). |
@@ -111,7 +111,7 @@ returned.
 | `renderDetails` · `renderDetailsEstHeight` · `overscan` | Passed through to the Table. |
 
 Read state through `useSelector(table.store, …)` rather than calling methods on
-`table` — the instance identity is stable across renders, so the React Compiler
+`table` - the instance identity is stable across renders, so the React Compiler
 will cache a bare method call and your component will stop updating.
 
 ## Reference

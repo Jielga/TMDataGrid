@@ -15,7 +15,7 @@ import { EMPLOYEES, sek, type Employee } from "../../data/employees";
  * `options` arrives pre-resolved for any column that declares `meta.options`,
  * so a control like this one never has to know where the choices came from.
  *
- * Module scope, and a component rather than a render function — so hooks are
+ * Module scope, and a component rather than a render function - so hooks are
  * legal inside and its identity is stable across renders.
  */
 const StatusChips: TMDataGridFilterControlComponent = ({

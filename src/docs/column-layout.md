@@ -11,8 +11,8 @@ hint: Drag a header to reorder · pin or hide from a column menu · drag a divid
 
 ## Hiding
 
-**Hide column** in any column menu, and **Manage columns** — the
-`ColumnsButton` and the panel behind it — for the whole list at once.
+**Hide column** in any column menu, and **Manage columns** - the
+`ColumnsButton` and the panel behind it - for the whole list at once.
 
 `TMDataGrid.ColumnsPanel` is a search field, the column checkboxes, show/hide
 all, and **Reset layout**. It is rendered by `TMDataGrid.ColumnsButton` and
@@ -48,7 +48,7 @@ filter entry together.
 const grid = useTMDataGrid({ data, columns, enableColumnOrdering: false });
 ```
 
-`enableColumnOrdering` is one of two switches the grid defines itself —
+`enableColumnOrdering` is one of two switches the grid defines itself -
 TanStack ships the state and the APIs for ordering but no `enable` option,
 since reordering is entirely a matter of interface. The per-column form is
 `meta.enableOrdering`, for the same reason.
@@ -80,7 +80,7 @@ moveColumnByStep({ table, columnId: "salary", direction: 1 });
 
 Both are no-ops for a move that is not allowed, including one across regions.
 `getStepTargetColumn({ table, columnId, direction })` returns the column a step
-would swap with, or `null` at the edge of a region — that is what the menu items
+would swap with, or `null` at the edge of a region - that is what the menu items
 use to disable themselves.
 
 ### State
@@ -108,13 +108,13 @@ it is resized or pinned, and the width is stored in `columnSizing`.
 ### Autosizing
 
 Double-click a column's resize divider and it sizes itself to its widest
-mounted content — the spreadsheet gesture. **Autosize column** in the column
+mounted content - the spreadsheet gesture. **Autosize column** in the column
 menu does the same without a pointer, and `meta.autoSize: true` runs it once
 after the first rows render, unless a persisted or user-set width already covers
 the column.
 
 **Mounted content only.** Under virtualization the unmounted rows do not exist
-to be measured, so the width fits the visible window plus overscan — the same
+to be measured, so the width fits the visible window plus overscan - the same
 trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize` and
 written into `columnSizing`, so it persists with the other widths and a later
 drag takes over from it.
@@ -126,7 +126,7 @@ the column's cells.
 ## Putting it back
 
 `resetSettings()` from the hook clears visibility, order, pinning and widths in
-one go — and the columns panel offers it as **Reset layout**, so the reader
+one go - and the columns panel offers it as **Reset layout**, so the reader
 never has to undo four things by hand.
 
 ```tsx

@@ -12,11 +12,11 @@ import {
   type TableFeatures,
 } from "@tanstack/react-table";
 
-/** How the quick search matches — see `quickSearchMode` on the hook options. */
+/** How the quick search matches - see `quickSearchMode` on the hook options. */
 export type TMDataGridQuickSearchMode = "fuzzy" | "contains";
 
 /**
- * The fuzzy filter's registry name — what `globalFilterFn` resolves to while
+ * The fuzzy filter's registry name - what `globalFilterFn` resolves to while
  * `quickSearchMode` is `"fuzzy"`. The rank ordering keys off this name, so an
  * explicit `globalFilterFn` override switches the ordering off with it.
  */
@@ -37,8 +37,8 @@ function isFuzzyFilterMeta(value: unknown): value is FuzzyFilterMeta {
 
 /**
  * Match-sorter ranking as the global filter: a row passes when a globally
- * filterable column ranks above match-sorter's threshold — typos and skipped
- * characters forgiven — and the rank is recorded for the ordering to read.
+ * filterable column ranks above match-sorter's threshold - typos and skipped
+ * characters forgiven - and the rank is recorded for the ordering to read.
  *
  * TanStack stops probing a row's columns at the first passing one, so the
  * recorded ranks cover the columns up to and including it; the best of those
@@ -81,7 +81,7 @@ function bestRank<TFeatures extends TableFeatures, TData extends RowData>(
 
 /**
  * Whether the ranked ordering applies: the fuzzy quick search is narrowing
- * the grid, and nothing else claims an order — no sort, no grouping.
+ * the grid, and nothing else claims an order - no sort, no grouping.
  */
 function isRankingActive<TFeatures extends TableFeatures, TData extends RowData>(
   table: Table<TFeatures, TData>,
@@ -106,7 +106,7 @@ function isRankingActive<TFeatures extends TableFeatures, TData extends RowData>
 
 /**
  * The sorted row model, with one addition: while {@link isRankingActive},
- * rows order by match quality, best first. Declarative — the ordering is
+ * rows order by match quality, best first. Declarative - the ordering is
  * derived from filter state, never written into `sorting`, so no column
  * claims `aria-sort`, the persisted slice stays untouched, and the user's
  * next sort click suspends it just by existing.
@@ -121,8 +121,8 @@ export function createFuzzyRankedSortedRowModel<
   const base = createSortedRowModel<TFeatures, TData>();
   return (table) => {
     const getSorted = base(table);
-    // One-slot memo: every input of the ordering — filter text, data, the
-    // sorting and grouping states — changes the sorted model's identity, so
+    // One-slot memo: every input of the ordering - filter text, data, the
+    // sorting and grouping states - changes the sorted model's identity, so
     // the model alone is the cache key.
     let lastModel: RowModel<TFeatures, TData> | null = null;
     let ranked: RowModel<TFeatures, TData> | null = null;

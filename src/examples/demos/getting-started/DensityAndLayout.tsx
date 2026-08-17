@@ -37,7 +37,7 @@ export function DensityAndLayout() {
 
       {/* The grid fills whatever box it is given. In a flex column that means
           `flex: 1` to take the leftover space and `minHeight: 0` to be allowed
-          to shrink below its content — without the second, the virtualizer's
+          to shrink below its content - without the second, the virtualizer's
           scroller never gets a bounded height and the page scrolls instead. */}
       <TMDataGrid {...grid} size={size} style={{ flex: 1, minHeight: 0 }}>
         <TMDataGrid.Toolbar>

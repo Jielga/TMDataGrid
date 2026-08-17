@@ -39,7 +39,7 @@ export function LoadingAndEmpty() {
         data={[
           { value: "empty", label: "no data" },
           { value: "loading", label: "loading" },
-          { value: "loaded", label: "loaded — now filter to nothing" },
+          { value: "loaded", label: "loaded - now filter to nothing" },
         ]}
       />
 
@@ -53,7 +53,7 @@ export function LoadingAndEmpty() {
 
         <TMDataGrid.Table<Employee>
           // Replaces both built-in empty messages. `hasActiveFilters` says
-          // which emptiness this is — a filter that matched nothing wants a
+          // which emptiness this is - a filter that matched nothing wants a
           // way out, a grid with no data at all wants a way in.
           renderEmptyState={({ hasActiveFilters, table }) => (
             <Stack align="center" gap="xs">

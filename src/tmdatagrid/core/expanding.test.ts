@@ -120,7 +120,7 @@ describe("areAllRowsExpanded", () => {
     ).toBe(true);
   });
 
-  it("is false when there are none of that kind — nothing to collapse", () => {
+  it("is false when there are none of that kind - nothing to collapse", () => {
     const { result } = renderGrid({ renderDetails: () => null });
     const rows = erased(result.current).table.getPrePaginatedRowModel().flatRows;
 

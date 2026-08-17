@@ -1,7 +1,7 @@
 /**
  * The dataset behind nearly every demo. One type wide enough to cover every
- * `meta.type` the grid knows — string, number, date, boolean, select and
- * multiSelect — so a reader who has met it once reads every later demo faster.
+ * `meta.type` the grid knows - string, number, date, boolean, select and
+ * multiSelect - so a reader who has met it once reads every later demo faster.
  *
  * Generation is deterministic: the same index always produces the same row, so
  * nothing shifts between reloads, screenshots or test runs.
@@ -14,18 +14,18 @@ export type Employee = {
   firstName: string;
   lastName: string;
   email: string;
-  /** `meta.type: "select"` — one of {@link DEPARTMENTS}. */
+  /** `meta.type: "select"` - one of {@link DEPARTMENTS}. */
   department: string;
   location: string;
   /** `meta.type: "number"`, formatted with {@link sek}. */
   salary: number;
   age: number;
-  /** `meta.type: "date"` — ISO `YYYY-MM-DD`, which is what the date editor writes. */
+  /** `meta.type: "date"` - ISO `YYYY-MM-DD`, which is what the date editor writes. */
   hired: string;
   /** `meta.type: "boolean"`. */
   active: boolean;
   status: EmployeeStatus;
-  /** `meta.type: "multiSelect"` — a subset of {@link SKILLS}. */
+  /** `meta.type: "multiSelect"` - a subset of {@link SKILLS}. */
   skills: Array<string>;
 };
 
@@ -73,7 +73,7 @@ const asciiFold = (value: string) =>
     .replace(/é/g, "e");
 
 /**
- * Row `index` of the sequence — a pure function, so any slice of the data is
+ * Row `index` of the sequence - a pure function, so any slice of the data is
  * reproducible without generating what comes before it.
  */
 export function makeEmployee(index: number): Employee {
@@ -102,7 +102,7 @@ export function makeEmployee(index: number): Employee {
 }
 
 /**
- * `count` rows, optionally starting further into the sequence — `idOffset`
+ * `count` rows, optionally starting further into the sequence - `idOffset`
  * keeps two grids on one page from sharing row ids.
  */
 export function makeEmployees(count: number, idOffset = 0): Array<Employee> {

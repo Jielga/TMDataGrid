@@ -1,7 +1,7 @@
 # Localization
 
-Every string the grid renders — menu items, panels, tooltips, the pager, and
-every `aria-label` — comes from one labels object. English by default.
+Every string the grid renders - menu items, panels, tooltips, the pager, and
+every `aria-label` - comes from one labels object. English by default.
 
 ```tsx
 const grid = useTMDataGrid({
@@ -30,7 +30,7 @@ const grid = useTMDataGrid({ data, columns, labels: TMDATAGRID_LABELS_SV });
 ```
 
 `TMDATAGRID_LABELS_EN` is the English base, and `TMDataGridLabels` is the full
-dictionary type — which is what makes a new translation a typed exercise rather
+dictionary type - which is what makes a new translation a typed exercise rather
 than a guess at what needs covering.
 
 ## Labels that carry a value
@@ -57,7 +57,7 @@ const labels = { noResults: "Inga träffar" } satisfies TMDataGridLabelsOverride
 ## Reading them yourself
 
 The resolved dictionary comes back from the hook as `grid.labels`, and from
-context as `useTMDataGridContext().labels` — so a
+context as `useTMDataGridContext().labels` - so a
 [toolbar component of your own](/docs/toolbar) uses the same strings the
 built-in chrome does, in whatever language is configured.
 
@@ -76,7 +76,7 @@ empty message than the rest.
 | `grid.labels` | Hook return | `TMDataGridLabels` | – | The resolved dictionary. |
 | `TMDATAGRID_LABELS_EN` | Export | `TMDataGridLabels` | – | The English base. |
 | `TMDATAGRID_LABELS_SV` | Export | `TMDataGridLabels` | – | A complete Swedish dictionary. |
-| `TMDataGridLabels` | Export | type | – | The full dictionary — what a new translation must cover. |
+| `TMDataGridLabels` | Export | type | – | The full dictionary - what a new translation must cover. |
 | `TMDataGridLabelsOverride` | Export | type | – | A partial dictionary. |
 | `mergeLabels` | Export | `(base, override) => TMDataGridLabels` | – | The merge, for composing dictionaries. |
 | `meta.noResultsLabel` | Option | `string` | `labels.noResults` | Per-instance override of the filtered-empty message. |

@@ -7,7 +7,7 @@
   gap: var(--mantine-spacing-xs);
 }
 
-/* Mantine's dark-scheme pill is `dark-7` — the same colour as the body — so a
+/* Mantine's dark-scheme pill is `dark-7` - the same colour as the body - so a
    pill sitting on the page rather than inside a `PillsInput` disappears. Both
    schemes are restated here so the two stay a pair, with a border to keep the
    shape readable against any surface. Scoped through `.filterPills` for the
@@ -23,7 +23,7 @@
 }
 
 /* The label is a button so a pill can be clicked back open, but it must read as
-   part of the pill — Mantine's own label styles carry the font. */
+   part of the pill - Mantine's own label styles carry the font. */
 .pillLabel {
   font: inherit;
   color: inherit;

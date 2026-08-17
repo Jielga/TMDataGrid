@@ -30,7 +30,7 @@ const NAV_LINK_STYLE = { borderRadius: "var(--mantine-radius-sm)" };
 
 /**
  * The router marks the active link with `aria-current`, which is what Mantine's
- * NavLink styles — so no link needs an `active` prop of its own. Exact, because
+ * NavLink styles - so no link needs an `active` prop of its own. Exact, because
  * the default is a prefix match: without it `/docs` reads as active on every
  * page under it.
  */
@@ -38,7 +38,7 @@ const EXACT = { exact: true } as const;
 
 /**
  * One tree: the front page, the playground, then the documentation grouped by
- * section. Child links carry no description — at two dozen entries the second
+ * section. Child links carry no description - at two dozen entries the second
  * line stops being context and starts being noise, and the index page at
  * `/docs` is where each page gets its sentence.
  */
@@ -81,7 +81,7 @@ function DocsNav({ pathname }: { pathname: string }) {
 const WIDE_VIEWPORT = "(min-width: 1000px)";
 
 /**
- * Collapsed, the nav keeps a rail wide enough for the burger that reopens it —
+ * Collapsed, the nav keeps a rail wide enough for the burger that reopens it -
  * 260px is a quarter of a narrow window, and a page squeezed into what is left
  * is not a page anyone can judge a grid by.
  */
@@ -106,7 +106,7 @@ function useWideViewport(): boolean {
 
 export function AppLayout() {
   const wide = useWideViewport();
-  // The viewport decides until someone clicks, and then it is their call — see
+  // The viewport decides until someone clicks, and then it is their call - see
   // the same pattern on the playground's options panel.
   const [navOpen, setNavOpen] = useState<boolean | null>(null);
   const open = navOpen ?? wide;

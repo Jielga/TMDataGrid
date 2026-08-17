@@ -14,20 +14,20 @@ extraSources: data/employeeColumns.tsx
 
 An empty body shows exactly one thing, decided in this order:
 
-1. **Loading** — `meta.loading` is true: a centred loader. A grid that is
+1. **Loading** - `meta.loading` is true: a centred loader. A grid that is
    fetching never claims to be empty.
-2. **Entry rows** — an open entry row from `edit.addRow()`: only the entry
+2. **Entry rows** - an open entry row from `edit.addRow()`: only the entry
    block, with no message competing with the form.
-3. **`renderEmptyState`** — your node, centred where the message would be.
-4. **Filtered-empty** — a filter or search is active: a search icon and
+3. **`renderEmptyState`** - your node, centred where the message would be.
+4. **Filtered-empty** - a filter or search is active: a search icon and
    `labels.noResults` ("No rows match your filters"), because this emptiness is
    the reader's own doing and clearing the filter will fix it.
-5. **Truly-empty** — no data at all: `labels.noRows` ("No rows to show").
+5. **Truly-empty** - no data at all: `labels.noRows` ("No rows to show").
 
 ## Replacing the message
 
 `renderEmptyState` replaces states 4 and 5 with one render prop, and
-`hasActiveFilters` tells it which of the two it is standing in for — which is
+`hasActiveFilters` tells it which of the two it is standing in for - which is
 what lets one prop give two genuinely different answers:
 
 ```tsx
@@ -56,7 +56,7 @@ giving them the action that unsticks them rather than a full stop.
 ## Loading with rows on screen
 
 The body's loading state only appears while the grid is **empty**. A
-server-driven grid refetching with rows still on screen keeps showing them —
+server-driven grid refetching with rows still on screen keeps showing them -
 blanking the body on every page change would be worse than a moment of stale
 data.
 
@@ -75,8 +75,8 @@ typically after `Spacer`.
 ## Counting what is there
 
 `TMDataGrid.SummaryCount` shows visible rows out of total. The total is
-`meta.totalRowCount` when you provide it — which is what a
-[server-side](/docs/server-side) grid must do, since the client cannot know —
+`meta.totalRowCount` when you provide it - which is what a
+[server-side](/docs/server-side) grid must do, since the client cannot know -
 and the pre-filtered row count otherwise.
 
 ```tsx

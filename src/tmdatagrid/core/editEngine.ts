@@ -15,15 +15,15 @@ import type { TMDataGridColumnType } from "./filterOperators";
 import type { TMDataGridSize } from "./sizes";
 
 /**
- * How commits happen — one axis, each mode a thin policy over the same
+ * How commits happen - one axis, each mode a thin policy over the same
  * engine. See `editMode` on `UseTMDataGridOptions`.
  */
 export type TMDataGridEditMode = "cell" | "cellConfirm" | "row" | "batch";
 
 /**
  * One editing row's live form. TanStack Form's `FormApi`, not a wrapper: the
- * engine is a form library, and everything mid-edit — values, dirty state,
- * errors, async validation, submit lifecycle — is form state, read off
+ * engine is a form library, and everything mid-edit - values, dirty state,
+ * errors, async validation, submit lifecycle - is form state, read off
  * `form.store` with the same selector idiom as the rest of the grid.
  *
  * The alias erases Form's validator generics the way `TMDataGridRowData`
@@ -31,20 +31,20 @@ export type TMDataGridEditMode = "cell" | "cellConfirm" | "row" | "batch";
  */
 export type TMDataGridRowEditForm = AnyFormApi;
 
-/** The live field a cell editor binds to — TanStack Form's own `FieldApi`. */
+/** The live field a cell editor binds to - TanStack Form's own `FieldApi`. */
 export type TMDataGridEditField = AnyFieldApi;
 
 /**
  * A validator as TanStack Form takes it: a Standard Schema (Zod, Valibot,
  * ArkType…) or a plain function returning an error or nothing. Forwarded
- * untouched — the vocabulary is Form's, not a grid re-implementation.
+ * untouched - the vocabulary is Form's, not a grid re-implementation.
  */
 export type TMDataGridValidator =
   | StandardSchemaV1<unknown, unknown>
   | ((args: { value: never; fieldApi: never }) => unknown);
 
 /**
- * `meta.validate` — per-column field validators. A bare schema or function is
+ * `meta.validate` - per-column field validators. A bare schema or function is
  * shorthand for `{ onChange: it }`; the object form takes every trigger
  * TanStack Form defines, `Async` variants and debounce included.
  */
@@ -62,7 +62,7 @@ export type TMDataGridFieldValidate =
     };
 
 /**
- * `rowValidators` — form-level validators for the whole row, where
+ * `rowValidators` - form-level validators for the whole row, where
  * cross-field rules live. Passed into each row form's `validators` untouched;
  * pathed issues land on the matching fields, pathless ones on the row.
  */
@@ -82,7 +82,7 @@ export type TMDataGridRowValidators = {
 export type TMDataGridEditChange = {
   /** Column the field maps back to, for consumers thinking in columns. */
   columnId: string;
-  /** The data path — `getEditFieldName` of the column. */
+  /** The data path - `getEditFieldName` of the column. */
   field: string;
   previous: unknown;
   next: unknown;
@@ -90,23 +90,23 @@ export type TMDataGridEditChange = {
 
 export type TMDataGridEditCommitArgs<TData extends RowData> = {
   rowId: string;
-  /** The whole row as edited — for the consumer who saves records. */
+  /** The whole row as edited - for the consumer who saves records. */
   value: TData;
   /** The row as it was when editing began. */
   original: TData;
-  /** Per-field diff — for the consumer who PATCHes. One entry in cell mode. */
+  /** Per-field diff - for the consumer who PATCHes. One entry in cell mode. */
   changes: Array<TMDataGridEditChange>;
   /** Which policy committed. */
   source: TMDataGridEditMode;
 };
 
-/** What one open row's form looks like from outside — the cell markers. */
+/** What one open row's form looks like from outside - the cell markers. */
 export type TMDataGridEditRowProjection = {
   /** Field names whose value differs from the original. */
   dirtyFields: ReadonlyArray<string>;
   /** Field names carrying a validation error. */
   errorFields: ReadonlyArray<string>;
-  /** A row-level error — a pathless `.refine()`, or a rejected commit. */
+  /** A row-level error - a pathless `.refine()`, or a rejected commit. */
   hasRowError: boolean;
   isSubmitting: boolean;
 };
@@ -115,7 +115,7 @@ export type TMDataGridEditRowProjection = {
  * The grid-facing index of everything mid-edit. A projection synced from the
  * open forms' stores, so body cells subscribe to this one store for their
  * dirty/error markers instead of one store per form. Only the editor host
- * reads a form's store directly — it is mounted for one cell at a time.
+ * reads a form's store directly - it is mounted for one cell at a time.
  */
 export type TMDataGridEditState = {
   /** The cell whose editor is open; `columnId: null` is a whole row (row mode). */
@@ -123,9 +123,9 @@ export type TMDataGridEditState = {
   /** Rows with a live form. In cell mode at most one; in batch, many. */
   openRowIds: ReadonlyArray<string>;
   rows: Record<string, TMDataGridEditRowProjection>;
-  /** Phase 4 — rows being created, not yet in `data`. */
+  /** Phase 4 - rows being created, not yet in `data`. */
   newRows: ReadonlyArray<{ tempId: string }>;
-  /** Phase 4 — rows marked deleted under batch mode. */
+  /** Phase 4 - rows marked deleted under batch mode. */
   deletedRowIds: ReadonlyArray<string>;
 };
 
@@ -141,14 +141,14 @@ type ErasedRow = Row<TMDataGridFeatures, TMDataGridRowData>;
 type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 
 /**
- * What a cell editor is handed — deliberately both vocabularies at once. The
+ * What a cell editor is handed - deliberately both vocabularies at once. The
  * form side is TanStack Form's real `field` API (`field.state.value`,
  * `field.state.meta.errors`, `field.handleChange`, `field.handleBlur`), so a
  * custom calendar, slider or async combobox binds to it exactly as it would
  * inside any TanStack Form. The table side is where the editor is standing.
  *
  * The built-ins are implemented against this same contract, so
- * `meta.editor` is not a special case — it is the slot the defaults
+ * `meta.editor` is not a special case - it is the slot the defaults
  * fill, and the exported built-ins can be wrapped instead of replaced.
  */
 export type TMDataGridEditorArgs = {
@@ -160,9 +160,9 @@ export type TMDataGridEditorArgs = {
   row: ErasedRow;
   column: ErasedColumn;
   table: TMDataGridTable<TMDataGridRowData>;
-  /** What Enter would do — commit the edit. For the editor's own UI. */
+  /** What Enter would do - commit the edit. For the editor's own UI. */
   commit: () => Promise<boolean>;
-  /** What Escape would do — drop the draft. */
+  /** What Escape would do - drop the draft. */
   cancel: () => void;
   size: TMDataGridSize;
   /**
@@ -171,33 +171,33 @@ export type TMDataGridEditorArgs = {
    */
   autoFocus: boolean;
   /**
-   * Set when typing opened the editor (the Sheets gesture) — the built-ins
+   * Set when typing opened the editor (the Sheets gesture) - the built-ins
    * replace the value with it and keep typing. A custom editor may ignore it.
    */
   seedText?: string;
 };
 
 /**
- * `meta.editor` — replaces the built-in editor for this column. Rendered as
+ * `meta.editor` - replaces the built-in editor for this column. Rendered as
  * JSX, never invoked as a bare function, so hooks are legal inside. Define it
  * at module scope: a new identity per render remounts the editor mid-edit.
  */
 export type TMDataGridEditorComponent = ComponentType<TMDataGridEditorArgs>;
 
-/** A new row being committed — `onRowAdd`, and `submitAll`'s `added`. */
+/** A new row being committed - `onRowAdd`, and `submitAll`'s `added`. */
 export type TMDataGridRowAddArgs<TData extends RowData> = {
   /** The engine's placeholder id; the real id is the consumer's to mint. */
   tempId: string;
   value: TData;
 };
 
-/** A deletion — `onRowDelete`. */
+/** A deletion - `onRowDelete`. */
 export type TMDataGridRowDeleteArgs<TData extends RowData> = {
   rowId: string;
   row: Row<TMDataGridFeatures, TData>;
 };
 
-/** What `submitAll` hands `onEditCommitBatch` — everything pending at once. */
+/** What `submitAll` hands `onEditCommitBatch` - everything pending at once. */
 export type TMDataGridEditCommitBatchArgs<TData extends RowData> = {
   /** Every valid dirty existing row. */
   rows: Array<TMDataGridEditCommitArgs<TData>>;
@@ -207,7 +207,7 @@ export type TMDataGridEditCommitBatchArgs<TData extends RowData> = {
   deleted: Array<string>;
 };
 
-/** What the engine reads fresh on every call — see `createEditEngine`. */
+/** What the engine reads fresh on every call - see `createEditEngine`. */
 export type TMDataGridEditEngineContext = {
   table: TMDataGridTable<TMDataGridRowData>;
   editMode: TMDataGridEditMode;
@@ -236,7 +236,7 @@ export type TMDataGridEditEngineContext = {
  * nested rows work for free: `accessorKey: "address.city"` edits
  * `values.address.city`. A column built on `accessorFn` has no path and is
  * not editable unless `meta.editField` names one. TanStack's default column
- * id turns dots into underscores — which is why this starts from
+ * id turns dots into underscores - which is why this starts from
  * `accessorKey`, never from `id`.
  */
 export function getEditFieldName(column: {
@@ -250,7 +250,7 @@ export function getEditFieldName(column: {
   return typeof accessorKey === "string" ? accessorKey : null;
 }
 
-/** What Delete writes into a cell — the type's honest empty value. */
+/** What Delete writes into a cell - the type's honest empty value. */
 export function clearedValueForType(type: TMDataGridColumnType): unknown {
   switch (type) {
     case "string":
@@ -265,14 +265,14 @@ export function clearedValueForType(type: TMDataGridColumnType): unknown {
 }
 
 /**
- * The engine plus its store — `api.edit`.
+ * The engine plus its store - `api.edit`.
  *
  * "One row, one form": `getForm` hands out the same `FormApi` the inline
  * editors write through, so a consumer can render it in a drawer or a detail
  * panel and share values, dirty state and errors with the cells.
  */
 export type TMDataGridEditApi = {
-  /** The projection store — subscribe with `useSelector(edit.store, …)`. */
+  /** The projection store - subscribe with `useSelector(edit.store, …)`. */
   store: Store<TMDataGridEditState>;
   /** Current snapshot, for reads outside React. */
   readonly state: TMDataGridEditState;
@@ -283,12 +283,12 @@ export type TMDataGridEditApi = {
    * switched it off, and the row takes edits at all.
    */
   canEditCell: (row: ErasedRow, column: ErasedColumn) => boolean;
-  /** Whether the row takes edits at all — the edit lane's pencil gate. */
+  /** Whether the row takes edits at all - the edit lane's pencil gate. */
   canEditRow: (row: ErasedRow) => boolean;
   /** Opens an editor. `columnId: null` opens the whole row (row mode). */
   begin: (target: { rowId: string; columnId: string | null }) => void;
   /**
-   * Commits one row — `form.handleSubmit` under the hood. Resolves `true`
+   * Commits one row - `form.handleSubmit` under the hood. Resolves `true`
    * when the form is gone: validation passed and `onEditCommit` resolved, or
    * there was nothing to save. `false` keeps the form open with its errors.
    */
@@ -296,31 +296,31 @@ export type TMDataGridEditApi = {
   /** Drops one row's draft. */
   cancel: (rowId: string) => void;
   /**
-   * Closes the editor without touching the draft — what blur does under
+   * Closes the editor without touching the draft - what blur does under
    * `"cellConfirm"`, where the dirty cell keeps waiting for its ✓.
    */
   deactivate: () => void;
   /** Drops every draft. */
   cancelAll: () => void;
-  /** Commits every open row — batch mode's save. `true` when all landed. */
+  /** Commits every open row - batch mode's save. `true` when all landed. */
   submitAll: () => Promise<boolean>;
-  /** Writes the type's empty value into a cell and commits it — Delete. */
+  /** Writes the type's empty value into a cell and commits it - Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
   /**
    * Opens a new entry row (the sticky block under the header) seeded from
-   * `newRowDefaults`. Returns its temporary id — a form with no backing row
+   * `newRowDefaults`. Returns its temporary id - a form with no backing row
    * yet. Committing it calls `onRowAdd` (immediate modes) or joins
    * `submitAll`'s `added` (batch).
    */
   addRow: () => string;
   /**
    * Deletes a row: `onRowDelete` straight away under the immediate modes;
-   * under batch it toggles the id in `deletedRowIds` — the row renders
+   * under batch it toggles the id in `deletedRowIds` - the row renders
    * struck through until `submitAll` reports it. On an uncommitted entry
    * row it just discards the entry.
    */
   deleteRow: (rowId: string) => void;
-  /** Whether delete chrome makes sense — the lane's trash gate. */
+  /** Whether delete chrome makes sense - the lane's trash gate. */
   canDeleteRows: () => boolean;
 };
 
@@ -366,7 +366,7 @@ function hasAnyError(errors: ReadonlyArray<unknown>): boolean {
  * sees the latest table, mode and consumer callbacks without being rebuilt.
  *
  * Virtualization, per the plan: nothing here is DOM. A form is a plain object
- * in a map keyed by rowId — scroll its row away and the editor unmounts, the
+ * in a map keyed by rowId - scroll its row away and the editor unmounts, the
  * form keeps its values, meta and errors; scroll back and the editor
  * re-mounts over the same form.
  */
@@ -378,11 +378,11 @@ export function createEditEngine(
   type FormEntry = {
     form: TMDataGridRowEditForm;
     original: TMDataGridRowData;
-    /** An entry-block row — a form with no backing row yet. */
+    /** An entry-block row - a form with no backing row yet. */
     isNew: boolean;
     /** Set by the wrapped onSubmit when the consumer's commit resolved. */
     lastSubmitOk: boolean;
-    /** A commit already running — Enter and blur race on the same edit. */
+    /** A commit already running - Enter and blur race on the same edit. */
     pendingCommit: Promise<boolean> | null;
     unsubscribe: () => void;
     unmount: () => void;
@@ -392,7 +392,7 @@ export function createEditEngine(
 
   /**
    * While `submitAll` runs with an `onEditCommitBatch`, each row's wrapped
-   * onSubmit contributes its args here instead of calling `onEditCommit` —
+   * onSubmit contributes its args here instead of calling `onEditCommit` -
    * validation stays per row (Form's), the consumer call becomes one.
    */
   let batchCollector: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> | null =
@@ -432,7 +432,7 @@ export function createEditEngine(
     const errorFields = Object.entries(state.fieldMeta)
       .filter(
         ([name, meta]) =>
-          // The empty path is a pathless (row-level) issue's landing spot —
+          // The empty path is a pathless (row-level) issue's landing spot -
           // it belongs to `hasRowError`, not to any cell's marker.
           name !== "" &&
           hasAnyError((meta as { errors: ReadonlyArray<unknown> }).errors),
@@ -593,7 +593,7 @@ export function createEditEngine(
     // Enter and blur race on the same edit; the second caller joins the
     // first's commit instead of submitting the row twice.
     if (entry.pendingCommit !== null) return entry.pendingCommit;
-    // A pristine form has nothing to say — drop it without a consumer call.
+    // A pristine form has nothing to say - drop it without a consumer call.
     // Not for a new row: adding an untouched entry is still an add.
     if (
       !entry.isNew &&
@@ -641,8 +641,8 @@ export function createEditEngine(
     //
     // | Mode | Another row open |
     // | ---- | ---------------- |
-    // | cell | committed — Sheets; a failed commit keeps holding the edit |
-    // | row  | dropped if pristine, otherwise the pencil is refused — a
+    // | cell | committed - Sheets; a failed commit keeps holding the edit |
+    // | row  | dropped if pristine, otherwise the pencil is refused - a
     //          row edit saves explicitly, so leaving must not save quietly |
     // | cellConfirm, batch | accumulates; every draft waits for its ✓ |
     if (openElsewhere !== undefined) {
@@ -702,7 +702,7 @@ export function createEditEngine(
     }
     const context = getContext();
     if (context.editMode === "batch") {
-      // A toggle: the second press unmarks — the mark is a draft too.
+      // A toggle: the second press unmarks - the mark is a draft too.
       store.setState((prev) => ({
         ...prev,
         deletedRowIds: prev.deletedRowIds.includes(rowId)
@@ -739,7 +739,7 @@ export function createEditEngine(
 
   const submitAll = async (): Promise<boolean> => {
     if (getContext().onEditCommitBatch === undefined) {
-      // The default: the per-row loop — edits through `onEditCommit`, entry
+      // The default: the per-row loop - edits through `onEditCommit`, entry
       // rows through `onRowAdd`, marked deletions through `onRowDelete`.
       const results = await Promise.all(
         [...forms.keys()].map((rowId) => commit(rowId)),
@@ -755,7 +755,7 @@ export function createEditEngine(
 
     // One consumer call for the lot. Validation stays Form's, per row: rows
     // that fail keep their forms and markers; the valid ones travel
-    // together, and only a resolved batch drops them — a rejected save keeps
+    // together, and only a resolved batch drops them - a rejected save keeps
     // every draft, deletions included.
     const collected: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> = [];
     const added: Array<TMDataGridRowAddArgs<TMDataGridRowData>> = [];
@@ -844,7 +844,7 @@ export function createEditEngine(
 
 /**
  * `meta.validate` normalised to the object TanStack Form's `validators`
- * option takes — a bare schema or function is shorthand for `{ onChange }`.
+ * option takes - a bare schema or function is shorthand for `{ onChange }`.
  */
 export function normalizeFieldValidate(
   validate: TMDataGridFieldValidate | undefined,

@@ -55,7 +55,7 @@ const newEmployee = (): Employee => ({
 export function BatchEditing() {
   const [employees, setEmployees] = useState(() => makeEmployees(20, 2000));
 
-  // Everything pending — edits, additions, deletions — arrives here at once,
+  // Everything pending (edits, additions, deletions) arrives here at once,
   // which is what makes a single transaction possible on the server too.
   const onEditCommitBatch = useCallback(
     ({ rows, added, deleted }: TMDataGridEditCommitBatchArgs<Employee>) => {

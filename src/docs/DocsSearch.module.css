@@ -22,7 +22,7 @@
   font: inherit;
 }
 
-/* One highlight, driven by the cursor rather than by :hover — the keyboard and
+/* One highlight, driven by the cursor rather than by :hover - the keyboard and
    the pointer both move the cursor, so two rows can never look selected. */
 .result[data-active] {
   background: var(--mantine-color-default-hover);

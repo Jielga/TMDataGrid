@@ -18,12 +18,12 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/sizes.ts'
 ---
 
-# TMDataGrid — Getting started
+# TMDataGrid - Getting started
 
 `useTMDataGrid` creates the table, `TMDataGrid` provides it through context, and
 the parts rendered inside read what they need from that context. Only the parts
 you render exist, and only the features you enable have state: pagination is
-opt-in via `enablePagination` — by default every row renders, virtualized.
+opt-in via `enablePagination` - by default every row renders, virtualized.
 
 ## Install
 
@@ -107,7 +107,7 @@ Spread the hook result (`{...grid}`) rather than assigning `table`, `ui` and
 | Pagination | Off by default: all rows render, virtualized. Opt in with `enablePagination: true`. |
 | Sizing | `size="xs"` to `size="xl"` scales rows, type and controls. |
 
-Each is bound to a capability check — disabling the standard table or column
+Each is bound to a capability check - disabling the standard table or column
 option also removes its interface. Column ordering (`enableColumnOrdering`) and
 pagination (`enablePagination`) are the two switches the grid defines itself.
 See the `features` skill.
@@ -125,7 +125,7 @@ takes a fixed pixel width once resized or pinned.
 
 All read the grid from context and must be rendered inside `TMDataGrid`, except
 `TMDataGrid.FilterPills`, which takes the grid as an `api` prop and can live
-anywhere on the page. Order and presence are up to you — the root is a plain
+anywhere on the page. Order and presence are up to you - the root is a plain
 flex column.
 
 | Component | Props | Notes |
@@ -134,12 +134,12 @@ flex column.
 | `TMDataGrid.Table` | `onRowClick(row)`, `rowContextMenu` render prop, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `rowSelectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
-| `TMDataGrid.Spacer` | — | Pushes later toolbar items right. |
+| `TMDataGrid.Spacer` | - | Pushes later toolbar items right. |
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
-| `TMDataGrid.FilterButton` | — | Toggles filter panel. Renders nothing if no column is filterable. |
-| `TMDataGrid.ColumnsButton` | — | Opens column manager. Renders nothing if no column is hideable. |
-| `TMDataGrid.FilterPanel` | — | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
-| `TMDataGrid.ColumnsPanel` | — | Rendered by `.ColumnsButton`; exported for custom layouts. |
+| `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
+| `TMDataGrid.ColumnsButton` | - | Opens column manager. Renders nothing if no column is hideable. |
+| `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
+| `TMDataGrid.ColumnsPanel` | - | Rendered by `.ColumnsButton`; exported for custom layouts. |
 | `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
 
 Pass the row type so `onRowClick` stays typed:
@@ -149,8 +149,8 @@ Pass the row type so `onRowClick` stays typed:
 ```
 
 `rowContextMenu` fills the dropdown of a Mantine `Menu` the grid opens at the
-pointer on a right-click (or a long press). The grid owns the `Menu` — opening,
-positioning, and closing on Escape, outside click, body scroll or an item pick —
+pointer on a right-click (or a long press). The grid owns the `Menu` - opening,
+positioning, and closing on Escape, outside click, body scroll or an item pick -
 so the render prop only says what goes in it:
 
 ```tsx
@@ -174,7 +174,7 @@ so the render prop only says what goes in it:
 `cell` is the one that was right-clicked, `table` is there for actions that read
 the selection, and `close` is for dropdown content that is not a `Menu.Item`
 (those close themselves). Return `null` to leave a row without a menu. It is
-called during render, and only for the open row, so it must stay pure — put the
+called during render, and only for the open row, so it must stay pure - put the
 work in the item handlers. Right-clicking does not change the selection or the
 highlight; the row carries `data-context-menu` while its menu is open. Pass
 `rowContextMenuProps` for `width`, `shadow`, `position` and the rest.
@@ -241,7 +241,7 @@ A new array on every render rebuilds the table's column model. Define `columns`
 at module scope; keep `data` stable with `useMemo`.
 
 ```tsx
-// Wrong — rebuilds the column model every render.
+// Wrong - rebuilds the column model every render.
 export function Employees({ data }: { data: Employee[] }) {
   const columns = columnHelper.columns([...]);
   const grid = useTMDataGrid({ data, columns });
@@ -251,7 +251,7 @@ export function Employees({ data }: { data: Employee[] }) {
 ### Root with no bounded height
 
 The root is `overflow: hidden`. Without `flex: 1; minHeight: 0` in a flex parent
-or an explicit height, the table area collapses and no rows are visible — there
+or an explicit height, the table area collapses and no rows are visible - there
 is no error.
 
 ### Assigning the hook result field by field
@@ -261,7 +261,7 @@ and feature toggles stop being reactive. Spread instead: `<TMDataGrid {...grid}>
 
 ### Expecting Footer to enable pagination
 
-Rendering `TMDataGrid.Footer` does not switch pagination on — the option does.
+Rendering `TMDataGrid.Footer` does not switch pagination on - the option does.
 With pagination off (the default) the Footer renders nothing and every row is
 rendered, virtualized. Set `enablePagination: true` (or `manualPagination:
 true` for server paging) to page the data and show the pager.
