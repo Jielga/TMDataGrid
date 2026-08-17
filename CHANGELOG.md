@@ -1,5 +1,67 @@
 # @jielga/tmdatagrid
 
+## 1.0.0
+
+### Major Changes
+
+- [`14f4c4d`](https://github.com/Jielga/TMDataGrid/commit/14f4c4d351b73ad983fe314333c18b54de0bc922) Thanks [@Psvensso](https://github.com/Psvensso)! - Types: the editing options are now a discriminated union. BREAKING for TypeScript consumers who passed an editing callback without `editMode`, `onEditCommitBatch` outside `editMode: "batch"`, or `editMode` without `getRowId` — all previously broken at runtime, now compile errors.
+
+- [`3f5269c`](https://github.com/Jielga/TMDataGrid/commit/3f5269c3cefd6b7c19856a8120d93dc5547a2a19) Thanks [@Psvensso](https://github.com/Psvensso)! - Fuzzy quick search by default: `TMDataGrid.Search` now forgives typos and skipped characters, and while it is the only thing narrowing the grid the rows order by match quality. `quickSearchMode: "contains"` restores the old substring matching; an explicit `globalFilterFn` overrides both. Adds `@tanstack/match-sorter-utils` as a dependency.
+
+- [`9f83cbc`](https://github.com/Jielga/TMDataGrid/commit/9f83cbc554b96b8bca1365414e8ff35e4a4aee6f) Thanks [@Psvensso](https://github.com/Psvensso)! - Persisted payloads gain a version stamp and are realigned against the current column set on restore. BREAKING: layouts stored by 0.x builds carry no stamp and are dropped once — users start from the default layout after upgrading.
+
+- [`b2f3207`](https://github.com/Jielga/TMDataGrid/commit/b2f3207b9d40ecc5375c925b3cfb7fdc3f631cfa) Thanks [@Psvensso](https://github.com/Psvensso)! - The 1.0 wave opens. Beta releases may break API between versions; every break is named in its changeset. First changes: persisted layouts written by 0.x are dropped once (the payload gains a version field).
+
+### Minor Changes
+
+- [`6f1b4db`](https://github.com/Jielga/TMDataGrid/commit/6f1b4dbdf548f22a47937443d278309ee9564379) Thanks [@Psvensso](https://github.com/Psvensso)! - Adding and deleting rows: `edit.addRow()` opens a sticky entry block of editors under the header, `edit.deleteRow` reports immediately or marks for batch; `newRowDefaults`, `onRowAdd`, `onRowDelete`, and `submitAll` batches carrying `added`/`deleted`.
+
+- [`5bcde97`](https://github.com/Jielga/TMDataGrid/commit/5bcde97ddafd6db915dcfe9d16659dadee570c26) Thanks [@Psvensso](https://github.com/Psvensso)! - Batch editing: drafts accumulate until `edit.submitAll()`, `TMDataGrid.EditActions` toolbar chrome, optional `onEditCommitBatch` for one save call covering every dirty row.
+
+- [`7a8c056`](https://github.com/Jielga/TMDataGrid/commit/7a8c056535d2c97979cfbdc1b1077470f8e66d6e) Thanks [@Psvensso](https://github.com/Psvensso)! - `between` filter operator for `number` and `date` columns — an inclusive `[min, max]` pair, either end open when empty; the panel renders a From/To pair. `meta.defaultFilterOperator` picks the operator a fresh filter starts with. New labels: `filterFrom`, `filterTo`, `operators.between`.
+
+- [`4b1985f`](https://github.com/Jielga/TMDataGrid/commit/4b1985ff8b1da5b0ddf2d33d23b99ede424f2e25) Thanks [@Psvensso](https://github.com/Psvensso)! - `onCellClick`, `onCellDoubleClick` and `onCellContextMenu` on `TMDataGrid.Table` — `{ cell, row, column, event }`, composing with selection, editing and the context menu rather than replacing them.
+
+- [`abaa3dc`](https://github.com/Jielga/TMDataGrid/commit/abaa3dc8e534763ded5ba31780c89b895c67667b) Thanks [@Psvensso](https://github.com/Psvensso)! - Cell editing (`editMode: "cell"`): one TanStack Form per editing row, built-in editors per column type, `meta.validate` / `rowValidators` with Standard Schema support, `meta.editor` for a custom editor, keyboard entry and `onEditCommit`. Adds `@tanstack/react-form` as a peer dependency.
+
+- [`b39eece`](https://github.com/Jielga/TMDataGrid/commit/b39eece6d8a31b5dd6529137f4a16b2b502ae7ff) Thanks [@Psvensso](https://github.com/Psvensso)! - `@jielga/tmdatagrid/styles.layer.css`: the stylesheet wrapped in `@layer tmdatagrid`, for consumers who state their cascade order.
+
+- [`ce9a3f8`](https://github.com/Jielga/TMDataGrid/commit/ce9a3f83c92295511c4df6bda197b20a2fa4199d) Thanks [@Psvensso](https://github.com/Psvensso)! - Editing modes `cellConfirm` (✓/✕ beside the input, drafts survive blur) and `row` (generated edit lane pinned right, whole-row commit, cross-field `rowValidators` errors on the Save).
+
+- [`c8acb31`](https://github.com/Jielga/TMDataGrid/commit/c8acb312ffeaf19867e8a5c4db644cde7d0c1a9c) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.editor` takes a component, rendered as JSX so hooks are legal inside it. It receives the live TanStack Form field alongside the table context (`TMDataGridEditorComponent`, `TMDataGridEditorArgs`); define one at module scope so its identity is stable across renders.
+
+- [`da28796`](https://github.com/Jielga/TMDataGrid/commit/da2879624129d65683ced7e2c3c11b9eaf75ebaf) Thanks [@Psvensso](https://github.com/Psvensso)! - Empty states: `renderEmptyState` on `TMDataGrid.Table` replaces the built-in empty messages, with `hasActiveFilters` distinguishing filtered-empty from truly-empty. A grid with no data and no filters now says `labels.noRows` ("No rows to show") instead of claiming filters matched nothing.
+
+- [`9984dcd`](https://github.com/Jielga/TMDataGrid/commit/9984dcd44f850a692242bb4b015e000e85c22731) Thanks [@Psvensso](https://github.com/Psvensso)! - Custom filter controls: `meta.filterControl` replaces the filter panel's value slot with a component receiving the value-only `TMDataGridFilterControlArgs` contract — it reads the operator, writes the bare value, and the grid composes the stored filter. Four built-ins ship as named exports (`DgRangeSliderFilter`, `DgDateRangeFilter`, `DgAutocompleteFilter`, `DgTriStateFilter`), plus `TMDataGridFilterValueInput`, the default control, for fallbacks. New label: `filterAll`.
+
+- [`992b7c1`](https://github.com/Jielga/TMDataGrid/commit/992b7c16544db4590ff18dd2563866b444c5596b) Thanks [@Psvensso](https://github.com/Psvensso)! - Match highlighting: `enableMatchHighlighting` marks the matched text in default-rendered cells while a contains-family filter or the quick search is active. Contiguous occurrences only — a fuzzy typo-match shows no highlight — and columns with their own `cell` renderer opt out by existing. Colour via `--dg-match-highlight-bg`.
+
+- [`2f105bf`](https://github.com/Jielga/TMDataGrid/commit/2f105bf7336c7d4860c0304b218f8049320b5294) Thanks [@Psvensso](https://github.com/Psvensso)! - Per-row styling on `TMDataGrid.Table`: `rowClassName` and `rowStyle` (value or function of the row), and `striped` — stripes computed from view position so virtualization cannot shift them. Row colours go through `--row-bg`, keeping hover, selection and pinned cells intact.
+
+- [`59d63ab`](https://github.com/Jielga/TMDataGrid/commit/59d63abbce1d33a6e3c451b8a2a004f43c187c0f) Thanks [@Psvensso](https://github.com/Psvensso)! - `resetSettings()` on the api resets visibility, order, widths, pinning and grouping to a clean first visit; the columns panel's Reset button becomes "Reset layout" and calls it, scope stated in its tooltip.
+
+- [`a5a0daf`](https://github.com/Jielga/TMDataGrid/commit/a5a0dafd5376979e64256d866ec613914aeeb1e7) Thanks [@Psvensso](https://github.com/Psvensso)! - `enableRowNumbers`: a generated row-number gutter, outermost left — numbers the current view, continues across pages, leaves group rows unnumbered, never exports.
+
+- [`64eece3`](https://github.com/Jielga/TMDataGrid/commit/64eece393bf886cbe7edb21b427637b32bfe5283) Thanks [@Psvensso](https://github.com/Psvensso)! - Row pinning: `enableRowPinning` (boolean or per-row predicate) lets `row.pin("top" | "bottom" | false)` hold rows in sticky edge blocks — top under the header, bottom above the summary row — outside the scrolling order. Pinned rows survive filtering and paging, stale pinned ids are skipped rather than thrown on, and group rows never pin.
+
+- [`db99330`](https://github.com/Jielga/TMDataGrid/commit/db9933015a68a7e9b2e5ef4ec30530ab9c9915ad) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.Table`'s `rowStyle` accepts CSS custom properties, and the type behind it is exported as `TMDataGridRowStyle`. Setting `--row-bg` is the documented way to colour a row, but the prop was typed as plain `CSSProperties`, so the documented usage did not compile.
+
+- [`9d15d5e`](https://github.com/Jielga/TMDataGrid/commit/9d15d5eda4b763c91cbf903e04dcb7064f3c9f8a) Thanks [@Psvensso](https://github.com/Psvensso)! - Scroll edges: a scroll-driven shadow under the sticky header while rows are beneath it (`--dg-header-shadow-color`), and `onScrollToTop/Bottom/Left/Right` on `TMDataGrid.Table`, firing once per edge arrival.
+
+- [#13](https://github.com/Jielga/TMDataGrid/pull/13) [`64f48cd`](https://github.com/Jielga/TMDataGrid/commit/64f48cddfe3f95cbaebd2968901ff88f04942b3f) Thanks [@Psvensso](https://github.com/Psvensso)! - `scrollToRow({ rowId, align })` on the api returned by `useTMDataGrid`. The grid is always virtualized, so a row far down the list has no element to scroll to — this moves the virtualizer instead. Answers `false` when the row is not in the current view (filtered out, on another page, or an unknown id) and scrolls nothing; a pinned row answers `true` without scrolling.
+
+- [#13](https://github.com/Jielga/TMDataGrid/pull/13) [`f48a8cc`](https://github.com/Jielga/TMDataGrid/commit/f48a8cca13e5b48d90445899211399a4fc5a087d) Thanks [@Psvensso](https://github.com/Psvensso)! - A published testing contract, so a suite is written against structure rather than translated `aria-label`s. Every named piece of the grid carries `data-dg-part` — the chrome, panels, generated lanes and editors — narrowed by `data-row-id` / `data-column-id` where a part repeats. `data-testid` and `id` on `<TMDataGrid>` and `aria-label` on `TMDataGrid.Table` name a grid when a page holds several. Body cells always carry `data-row-id`, headers now carry `data-column-id`, and the grid publishes `aria-busy` and `data-dg-row-count` for tests to wait on. New Testing docs page covers the parts, the roles and Playwright.
+
+### Patch Changes
+
+- [#13](https://github.com/Jielga/TMDataGrid/pull/13) [`573bea5`](https://github.com/Jielga/TMDataGrid/commit/573bea54022fd3b5d62573db8487b0ceafb64500) Thanks [@Psvensso](https://github.com/Psvensso)! - Center the empty/loading state in the visible scrollport, not the full column-track width, so it stays centered under horizontal scroll.
+
+- [#13](https://github.com/Jielga/TMDataGrid/pull/13) [`184b1e8`](https://github.com/Jielga/TMDataGrid/commit/184b1e847a7ef41f62f0ac558138f1d8a293dcfd) Thanks [@Psvensso](https://github.com/Psvensso)! - Getting started docs: add installation (peer deps, beta pin note, MantineProvider) and import from the package name. The demo site now opens on it as a front page.
+
+- [`6c7b71c`](https://github.com/Jielga/TMDataGrid/commit/6c7b71c35bfc808cd849ff039c381bf8eff2f232) Thanks [@Psvensso](https://github.com/Psvensso)! - Docs: `rowSelectionMode`/`highlightSelectedRows` corrected to the shipped `selectionMode` (four modes) and `showSelectedBackground`.
+
+- [`e85772e`](https://github.com/Jielga/TMDataGrid/commit/e85772e8fb151ff0853816bb6969964a0c327728) Thanks [@Psvensso](https://github.com/Psvensso)! - A sorted column's header no longer tints — the sort arrow carries it, in the primary colour while the sort holds and faded grey as the hover affordance on an unsorted column. Filtered headers still tint; `data-active` still means sorted-or-filtered.
+
 ## 1.0.0-beta.0
 
 ### Major Changes
