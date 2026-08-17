@@ -1,18 +1,20 @@
 import { Badge, Group } from "@mantine/core";
-import { NPM_PAGE, useDistTags } from "./packageStatus";
+import { betaIsAhead, NPM_PAGE, useDistTags } from "./packageStatus";
 
 /**
  * The published versions, for the front page.
  *
- * While the package is in prerelease the `beta` tag is ahead of `latest`, and
- * both are worth showing here: `latest` alone reads as abandoned, `beta` alone
- * hides what `npm install` actually gives you. The header shows only the
+ * While the package is in prerelease both are worth showing: `latest` alone
+ * reads as abandoned, `beta` alone hides what `npm install` actually gives
+ * you. Once `latest` overtakes the beta tag the beta badge is dropped - a
+ * stale prerelease left on the registry is not news, and shown beside a newer
+ * `latest` it reads as the current version. The header shows only the
  * headline one.
  */
 export function ProjectStatus() {
   const tags = useDistTags();
 
-  const showBeta = tags?.beta && tags.beta !== tags.latest;
+  const beta = betaIsAhead(tags) ? tags?.beta : undefined;
 
   return (
     <Group gap="xs">
@@ -27,15 +29,15 @@ export function ProjectStatus() {
           npm {tags.latest}
         </Badge>
       )}
-      {showBeta && (
+      {beta && (
         <Badge
           component="a"
-          href={`${NPM_PAGE}/v/${tags.beta}`}
+          href={`${NPM_PAGE}/v/${beta}`}
           variant="light"
           color="grape"
           style={{ cursor: "pointer" }}
         >
-          beta {tags.beta}
+          beta {beta}
         </Badge>
       )}
     </Group>
