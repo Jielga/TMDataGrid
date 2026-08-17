@@ -226,7 +226,9 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
+| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editMode` is set. See [Editing](/docs/editing). |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#why-features-is-a-second-argument). |
+| `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
 | `overscan` | `number` | The overscan, resolved to its default when the option was not set. |

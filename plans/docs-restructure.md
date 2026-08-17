@@ -22,8 +22,9 @@
 > markdown and the search index is built by scanning it, which removed the
 > `.d.ts` parser, the invented `@docsPage` tag and the build-order change.
 >
-> **Still open:** the API explorer as a grid (`/docs/api`), inline symbol
-> hover cards, and repointing the six skills' `sources:` frontmatter.
+> **Still open:** the API explorer as a grid (`/docs/api`) and inline symbol
+> hover cards. The skills' `sources:` frontmatter was repointed 2026-08-17,
+> alongside a new `editing` skill.
 
 Costs are complexity, not hours: S (contained, one commit), M (touches a few
 subsystems), L (new subsystem or real design surface).

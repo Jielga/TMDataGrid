@@ -63,8 +63,9 @@ const grid = useTMDataGrid({
 });
 ```
 
-It is a **settings** slice, so a [persisted](/docs/use-tm-data-grid#persist)
-grid comes back sorted the way it was left. For a server that does the sorting,
+It is a **data** slice - it names a column and a direction over the data in
+front of the reader - so a [persisted](/docs/use-tm-data-grid#persist) grid
+comes back sorted the way it was left, under `dataKey`. For a server that does the sorting,
 see [Server-side data](/docs/server-side).
 
 Sorting interacts with grouping: grouping runs first, so a grouped grid sorts
@@ -73,13 +74,14 @@ rows within each group and orders the groups by their aggregated value - see
 
 ## Custom comparators
 
-`sortingFn` on the column takes any of TanStack's registered names, or a
-function:
+`sortFn` on the column takes any of TanStack's registered names, or a function
+of two rows and the column id. It is `sortFn` in v9, not v8's `sortingFn`.
 
 ```tsx
 columnHelper.accessor("priority", {
   header: "Priority",
-  sortingFn: (a, b) => RANK[a.original.priority] - RANK[b.original.priority],
+  sortFn: (rowA, rowB) =>
+    RANK[rowA.original.priority] - RANK[rowB.original.priority],
 });
 ```
 
@@ -97,6 +99,6 @@ Dividers are never left stranded at the end of a menu.
 | `enableMultiSort` | Table option | `boolean` | `true` | Whether Shift+click appends instead of replacing. |
 | `maxMultiSortColCount` | Table option | `number` | `Infinity` | How many columns may sort at once. |
 | `isMultiSortEvent` | Table option | `(event) => boolean` | Shift held | What counts as "append to the sort". |
-| `sortingFn` | Column option | name \| `(a, b) => number` | By value type | The comparator for one column. |
+| `sortFn` | Column option | name \| `(rowA, rowB, columnId) => number` | `"auto"` | The comparator for one column. v9's name for v8's `sortingFn`. |
 | `initialState.sorting` | Table option | `Array<{ id, desc }>` | `[]` | Sort at mount. A settings slice, so it persists. |
 | `manualSorting` | Table option | `boolean` | `false` | The server sorts; the grid stops. |
