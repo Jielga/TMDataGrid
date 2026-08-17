@@ -6,7 +6,7 @@ import {
 } from "./starterSnippet";
 
 /**
- * "Give me this table as code" — renders the current switch positions as the
+ * "Give me this table as code" - renders the current switch positions as the
  * smallest file that reproduces them, ready to paste. The copy button is the
  * one every code block on the site has.
  */

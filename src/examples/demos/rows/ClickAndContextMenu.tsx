@@ -9,7 +9,7 @@ const truncate = (value: string, max = 20) =>
   value.length > max ? `${value.slice(0, max - 1)}…` : value;
 
 export function ClickAndContextMenu() {
-  const [lastEvent, setLastEvent] = useState("—");
+  const [lastEvent, setLastEvent] = useState("-");
 
   const grid = useTMDataGrid({
     data: EMPLOYEES,
@@ -63,7 +63,7 @@ export function ClickAndContextMenu() {
                   {row.getIsSelected() ? "Deselect" : "Select"} row
                 </Menu.Item>
                 <Menu.Divider />
-                {/* `close` is there for actions that open something else — a
+                {/* `close` is there for actions that open something else - a
                     modal wants the menu gone before it appears. */}
                 <Menu.Item color="red" onClick={close}>
                   Delete…

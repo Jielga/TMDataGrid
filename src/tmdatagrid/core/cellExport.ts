@@ -71,7 +71,7 @@ export function formatExportValue(
       .map((entry) => formatExportValue(entry, { decimalComma }))
       .join(", ");
   }
-  // `sv-SE` is ISO-shaped — 2026-07-31, 2026-07-31 14:05:00 — which is both the
+  // `sv-SE` is ISO-shaped (2026-07-31, 2026-07-31 14:05:00), which is both the
   // Nordic form and the one Excel parses as a date rather than as text.
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? "" : value.toLocaleString("sv-SE");
@@ -90,7 +90,7 @@ export function formatExportValue(
 
 export type BuildCellMatrixArgs = {
   rows: ReadonlyArray<Row<TMDataGridFeatures, TMDataGridRowData>>;
-  /** Every visible column, in render order — the same list the bounds index into. */
+  /** Every visible column, in render order - the same list the bounds index into. */
   columns: ReadonlyArray<Column<TMDataGridFeatures, TMDataGridRowData, unknown>>;
   bounds: TMDataGridRangeBounds;
   includeHeaders: boolean;
@@ -100,7 +100,7 @@ export type BuildCellMatrixArgs = {
 /**
  * The selected rectangle as rows of text.
  *
- * The generated lanes — the checkbox, the tree chevron, the details chevron —
+ * The generated lanes - the checkbox, the tree chevron, the details chevron -
  * are dropped even when the rectangle covers them. They hold controls rather
  * than data, so a column of empty strings is all they could contribute, and
  * pasting one into a spreadsheet only shifts everything to its right.
@@ -135,13 +135,13 @@ export function buildCellMatrix({
 }
 
 /**
- * The whole grid as rows of text: every filtered and sorted data row — all
- * pages, not the one on screen — by every visible non-control column, in
+ * The whole grid as rows of text: every filtered and sorted data row - all
+ * pages, not the one on screen - by every visible non-control column, in
  * render order.
  *
  * The values are the same ones a cell-range export writes; only the bounds
  * differ. Group rows are left out (their records are the rows themselves),
- * and hidden columns are not exported — what you see is what you get, minus
+ * and hidden columns are not exported - what you see is what you get, minus
  * paging.
  */
 export function buildGridCellMatrix<TData extends RowData>({
@@ -162,7 +162,7 @@ export function buildGridCellMatrix<TData extends RowData>({
     ...erased.getRightVisibleLeafColumns(),
   ];
   // The sorted model: after filtering, grouping and sorting, before expansion
-  // and paging — so a paged grid exports the whole filtered set, and a grouped
+  // and paging - so a paged grid exports the whole filtered set, and a grouped
   // grid exports the records under every group whether or not it is open.
   //
   // Walked by hand rather than taken from `flatRows`: in table-core
@@ -195,7 +195,7 @@ export function buildGridCellMatrix<TData extends RowData>({
 }
 
 /**
- * Downloads the whole grid as a CSV for Excel — {@link buildGridCellMatrix}
+ * Downloads the whole grid as a CSV for Excel - {@link buildGridCellMatrix}
  * through {@link toExcelCsv}, with the same Nordic defaults and overrides as
  * the cell-range export.
  *
@@ -243,7 +243,7 @@ function escapeField(value: string, separator: string): string {
  * The clipboard format spreadsheets read: tab between cells, CRLF between rows.
  *
  * Tabs rather than commas because that is what Excel, Sheets and Numbers all
- * put on the clipboard themselves — paste it and the cells land in cells. A
+ * put on the clipboard themselves - paste it and the cells land in cells. A
  * comma-separated string pastes into a single column, which is the thing this
  * exists to avoid.
  */
@@ -260,12 +260,12 @@ export function toClipboardText(matrix: TMDataGridCellMatrix): string {
  *
  * | Part | Why |
  * | ---- | --- |
- * | `sep=;` first line | Excel's own directive — it stops guessing and uses this |
+ * | `sep=;` first line | Excel's own directive - it stops guessing and uses this |
  * | UTF-8 BOM | without it Excel reads the file as ANSI, and å ä ö arrive broken |
  * | CRLF line endings | what Excel writes, and what its importer is happiest with |
  *
  * The `sep=` line is Excel's alone; other readers show it as a first row. That
- * is the trade this makes — the file is for Excel, and "it just opens" is worth
+ * is the trade this makes - the file is for Excel, and "it just opens" is worth
  * more than being a well-behaved CSV nobody was going to feed to a parser.
  */
 export function toExcelCsv(
@@ -282,7 +282,7 @@ export function toExcelCsv(
  * Puts text on the clipboard, reporting whether it landed.
  *
  * The async clipboard API only resolves for a document that has the focus and a
- * user gesture behind it — both true when this runs off Ctrl+C or a menu item.
+ * user gesture behind it - both true when this runs off Ctrl+C or a menu item.
  * It is still allowed to reject (a permissions policy, a page that lost focus
  * mid-copy), so the result is a boolean rather than a promise nobody checks.
  */
@@ -297,7 +297,7 @@ export async function writeClipboardText(text: string): Promise<boolean> {
 
 /**
  * Downloads text as a file, through the one mechanism a library can use: an
- * anchor with an object URL behind it, clicked. Revoked on the next frame —
+ * anchor with an object URL behind it, clicked. Revoked on the next frame -
  * immediately would race the browser's own read of it.
  */
 export function downloadTextFile({

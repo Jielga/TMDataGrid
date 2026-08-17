@@ -20,7 +20,7 @@ export function SelectionState() {
     selectionMode: "checkbox",
   });
 
-  // Re-renders only when the selection actually changes — the selector is what
+  // Re-renders only when the selection actually changes - the selector is what
   // keeps every other table update from touching this component.
   const selectedIds = useSelector(grid.table.store, (state) =>
     Object.keys(state.rowSelection),

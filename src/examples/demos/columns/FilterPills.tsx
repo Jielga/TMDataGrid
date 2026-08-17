@@ -7,7 +7,7 @@ import { EMPLOYEES, type Employee } from "../../data/employees";
  * Nearly every part reads the grid from React context, which is why it has to
  * be rendered inside `<TMDataGrid>`. `FilterPills` is the exception: it takes
  * the grid as an `api` prop, so what is filtered can be shown wherever the
- * page wants it — a header, a sidebar, a summary bar above three grids.
+ * page wants it - a header, a sidebar, a summary bar above three grids.
  */
 export function FilterPills() {
   const grid = useTMDataGrid({
@@ -24,7 +24,7 @@ export function FilterPills() {
 
   return (
     <>
-      {/* Outside the grid entirely — this Paper is the page, not the chrome. */}
+      {/* Outside the grid entirely - this Paper is the page, not the chrome. */}
       <Paper withBorder p="xs" mb="sm" radius="sm">
         <Group gap="sm">
           <Text size="sm" fw={600}>

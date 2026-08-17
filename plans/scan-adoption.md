@@ -1,14 +1,14 @@
-# Scan adoption plan — the 1.0 wave
+# Scan adoption plan - the 1.0 wave
 
 > **Status: batches A–D done 2026-08-01; H batch started 2026-08-09.**
-> P1 approved 2026-08-09 as amended (registry dropped — direct component
+> P1 approved 2026-08-09 as amended (registry dropped - direct component
 > references; amends Q1). P2–P4 still awaiting stakeholder approval. U1 and
 > full-screen parked by delegated call. Work lands on branch `feature/next`,
 > merged to `main` when `1.0.0` ships.
 
 **This file is the tracker for the wave.** The [execution
 tracker](#execution-tracker) is the running order *and the only place item
-status is recorded* — the sections below it carry design notes, one per
+status is recorded* - the sections below it carry design notes, one per
 item, and no second ordering. Raw findings live in
 [competitor-scan.md](competitor-scan.md); the gating proposals in
 [proposals.md](proposals.md). Reference implementations are the local
@@ -18,21 +18,21 @@ cited as `[md]` and `[mrt]`.
 Costs are complexity, not hours: S (contained, one commit), M (touches a
 few subsystems), L (new subsystem or real design surface).
 
-## Current status — 2026-08-01
+## Current status - 2026-08-01
 
 | What | Where it stands |
 | --- | --- |
 | Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
-| Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). P2–P4 pending — [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
-| Batches A–D | **Done 2026-08-01** — all items landed on `feature/next`. |
-| Held items | H1 `done 2026-08-09`; H2–H5 blocked on approval — see [Held](#held--waiting-on-approval). |
+| Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). P2–P4 pending - [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
+| Batches A–D | **Done 2026-08-01** - all items landed on `feature/next`. |
+| Held items | H1 `done 2026-08-09`; H2–H5 blocked on approval - see [Held](#held--waiting-on-approval). |
 | Implementation | A–D and H1 shipped. |
 | Branch | `feature/next`. Merged to `main` at `1.0.0`. |
 | Release | Changesets pre-mode `beta`; first release `1.0.0-beta.1` (A2 opens it). Breaks are free until `1.0.0`, each named in its changeset. |
 
-**Waiting on the stakeholder** — nothing else is waiting on anybody:
+**Waiting on the stakeholder** - nothing else is waiting on anybody:
 
-1. Approve P2–P4 — [proposals.md](proposals.md). Unblocks H2–H5. (P2's
+1. Approve P2–P4 - [proposals.md](proposals.md). Unblocks H2–H5. (P2's
    rename table returns for a second yes/no.) P1 approved 2026-08-09.
 
 ## Execution tracker
@@ -41,38 +41,38 @@ Status vocabulary: `ready` (cleared, not started) · `in progress` ·
 `done <date>` · `held <what it waits on>` · `unassigned` (no batch yet,
 needs a call) · `parked`.
 
-Batch A runs in the numbered order — each step depends on the one before
+Batch A runs in the numbered order - each step depends on the one before
 it in the ways noted. Batches B, C and D are internally free; D's two
 tracks are freely reorderable. Run the batches in order A → B → C → D.
 
 | # | Item | Size | Status | Gate / depends on |
 | --- | --- | --- | --- | --- |
-| **A** | **Trivial & foundation — strict order** | | | |
-| A1 | Docs repair: stale selection options | S | `done 2026-08-01` | — |
+| **A** | **Trivial & foundation - strict order** | | | |
+| A1 | Docs repair: stale selection options | S | `done 2026-08-01` | - |
 | A2 | Changesets pre-mode beta + major changeset | S | `done 2026-08-01` | Q5 |
 | A3 | Persistence version marker → slice realignment → one-time drop | M | `done 2026-08-01` | Q3; after A2 (the drop is a named break) |
 | A4 | Reset layout | S | `done 2026-08-01` | A3 |
-| A5 | CSS layer packaging | S | `done 2026-08-01` | — |
-| A6 | `keyof T` typing feasibility check | S | `done 2026-08-01 — closed void` | — |
-| **B** | **Small features — order free** | | | |
-| B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `done 2026-08-01` | — |
-| B2 | Cell click handlers | S | `done 2026-08-01` | — |
-| B3 | Row numbers lane | S | `done 2026-08-01` | — |
-| **C** | **Medium, conflict-free — order free** | | | |
+| A5 | CSS layer packaging | S | `done 2026-08-01` | - |
+| A6 | `keyof T` typing feasibility check | S | `done 2026-08-01 - closed void` | - |
+| **B** | **Small features - order free** | | | |
+| B1 | Per-row styling hooks (`rowClassName`/`rowStyle`/`striped`) | S | `done 2026-08-01` | - |
+| B2 | Cell click handlers | S | `done 2026-08-01` | - |
+| B3 | Row numbers lane | S | `done 2026-08-01` | - |
+| **C** | **Medium, conflict-free - order free** | | | |
 | C1 | `?: never` prop unions | M | `done 2026-08-01` | Q5 |
-| C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `done 2026-08-01` | — |
+| C2 | Scroll-edge shadows + `onScrollTo*` callbacks | M | `done 2026-08-01` | - |
 | C3 | Empty-state slot | M | `done 2026-08-01` | state matrix written first |
-| **D** | **Big, independent — order free** | | | |
-| D1 | Row pinning | L | `done 2026-08-01` | — |
+| **D** | **Big, independent - order free** | | | |
+| D1 | Row pinning | L | `done 2026-08-01` | - |
 | D2 | Fuzzy quick search (default) | M | `done 2026-08-01` | Q4 |
 | D3 | Filter match highlighting | M | `done 2026-08-01` | D2 |
-| **H** | **Held — waiting on approval** | | | |
+| **H** | **Held - waiting on approval** | | | |
 | H1 | Custom controls (direct refs) + built-in filter controls | L | `done 2026-08-09` | P1 approved 2026-08-09 |
 | H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
 | H3 | Bad-UX warning framework | M | `held P3` | P3 approved |
 | H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
 | H5 | Density recipe + demo toggle | S | `held P4` | P4 approved |
-| **—** | **Unassigned / final** | | | |
+| **-** | **Unassigned / final** | | | |
 | U1 | Container-based column visibility (`meta.hideBelow`) | M | `parked` | past 1.0.0 (called 2026-08-01, delegated) |
 | F1 | Styling contract docs page | S | `ready after A–D + H` | Q6; publish once the surface stops moving |
 
@@ -82,26 +82,26 @@ the refactor rebases over finished work instead of the two colliding
 mid-flight.
 
 **When an item ships:** set its Status cell to `done <date>`, and add a
-one-line `> Shipped <date> — <commit>. <deviations>` blockquote to its
+one-line `> Shipped <date> - <commit>. <deviations>` blockquote to its
 section below, the way [cell-editing.md](cell-editing.md) records its
 deviations. Status lives in the table and nowhere else.
 
-## Stakeholder decisions — Q1–Q7, settled 2026-08-01
+## Stakeholder decisions - Q1–Q7, settled 2026-08-01
 
 - **Q1 Custom editors:** both doors stay. The registry (`meta.editor:
   "name"`) is the register-once reuse path; `meta.renderEditor` stays as the
   inline one-off and, being the more specific statement, wins when both are
   set on a column.
   > **Amended 2026-08-09 with P1 approval:** the registry is dropped
-  > (column defs are never serialized) and the two doors collapse to one —
+  > (column defs are never serialized) and the two doors collapse to one -
   > `meta.editor` takes a component directly, rendered as JSX;
   > `meta.renderEditor` is removed as a named break.
-- **Q2 Slots:** not a point fix — a whole-API coherence refactor under the
+- **Q2 Slots:** not a point fix - a whole-API coherence refactor under the
   1.0.0-beta umbrella so the render/slot/override conventions come
   together. P2 is that proposal; the Footer `pagination` render prop breaks
   as part of it.
 - **Q3 Persisted state:** the version field ships first; unversioned ≤0.4.0
-  payloads are dropped once — stakeholder accepts the one-time layout loss.
+  payloads are dropped once - stakeholder accepts the one-time layout loss.
 - **Q4 Quick search:** fuzzy is the default; contains stays as a mode.
 - **Q5 Versioning:** this wave *is* the 1.0 line. Changesets pre-mode
   (`changeset pre enter beta`), first release `1.0.0-beta.1`. Breaking
@@ -116,76 +116,76 @@ deviations. Status lives in the table and nowhere else.
 Ordering rationale for the wave as a whole: independent no-conflict work
 first (nothing to rebase), small features next, the medium items that share
 ground with the pending refactor before that refactor starts, the two big
-independent features last, and the styling contract last of all — published
+independent features last, and the styling contract last of all - published
 only once the phases before it stop adding surface.
 
-## Batch A — trivial & foundation
+## Batch A - trivial & foundation
 
 Strict order. A3's marker must precede anything that rewrites stored data,
 and A4 must know the payload shape it clears.
 
-### A1 — Docs repair
+### A1 - Docs repair
 
 Three docs pages (`features.md`, `use-tm-data-grid.md`, `components.md`)
 still document the removed `rowSelectionMode` / `highlightSelectedRows`
 options; the code ships `selectionMode: "checkbox" | "row" |
 "checkboxAndHighlight" | "highlight"` plus `showSelectedBackground`.
-Standing bug, and every later item's docs build on these pages — fix first.
+Standing bug, and every later item's docs build on these pages - fix first.
 
-### A2 — Changesets pre-mode
+### A2 - Changesets pre-mode
 
 `changeset pre enter beta`, then a major changeset opening `1.0.0-beta.1`
 (Q5). Everything after this point names its breaks in its own changeset.
 `changeset pre exit` happens when the wave ends and `1.0.0` ships.
 
-### A3 — Persistence: version marker, then realignment
+### A3 - Persistence: version marker, then realignment
 
 Re-scoped by PM review: sanitizing reads (`SLICE_GUARDS` in
 `core/persistence.ts`) and drag-time write throttling
 (`PERSIST_DEBOUNCE_MS`, trailing flush) already ship, and cross-tab sync was
-deliberately rejected — two tabs would overwrite each other's layout,
+deliberately rejected - two tabs would overwrite each other's layout,
 documented in `use-tm-data-grid.md`. What is genuinely new, in this order:
 
 1. A version field in the stored payload. One-way door: v0.4.0 payloads are
    already on users' machines unversioned, so this ships before anything
    else touches storage.
-2. Unversioned payloads are dropped once (Q3) — one-time layout loss,
+2. Unversioned payloads are dropped once (Q3) - one-time layout loss,
    accepted, named in the changeset.
 3. Realigning stored slices when the column set changes between deploys
-   (drop removed ids, append new — in an effect, never during render).
+   (drop removed ids, append new - in an effect, never during render).
    Reference: `[md] package/hooks/useDataTableColumns.ts` aligned-memo.
 
-### A4 — Reset layout
+### A4 - Reset layout
 
 `resetSettings({ table })` (or per-slice variants) clearing the persisted
 settings slices back to definition defaults. Per Q7 the ColumnsPanel's
 Reset becomes a single **Reset layout** covering all settings slices, scope
-in the tooltip. No menu consolidation — that stays parked.
+in the tooltip. No menu consolidation - that stays parked.
 
-### A5 — CSS layer packaging
+### A5 - CSS layer packaging
 
 Ship `styles.layer.css` (`@import './styles.css' layer(tmdatagrid);`)
 alongside the plain file; additive exports-map entry. The layer name is a
-one-way door — consumers write it into their own `@layer` order — so
+one-way door - consumers write it into their own `@layer` order - so
 `tmdatagrid` is chosen deliberately and never renamed.
 Reference: `[md] package.json` exports map + `app/styling/examples/`.
 
-### A6 — `keyof T | (string & {})` typing
+### A6 - `keyof T | (string & {})` typing
 
 > Closed void 2026-08-01. Confirmed: `TMDataGridColumnMeta` registers via
 > the module-scope `metaHelper<TMDataGridColumnMeta>()` in the shared v9
 > feature registry (consumed by the main *and* entry-row tables), so `keyof
-> TData` cannot reach `editField` without building the registry per grid —
+> TData` cannot reach `editField` without building the registry per grid -
 > the shared registry and its stable identity are worth more than
 > autocomplete on one field. No other accessor-shaped option exists: helper
 > `columnId` params take column ids, which are not row keys (dots become
 > underscores in TanStack's derivation).
 
-## Batch B — small features
+## Batch B - small features
 
 Order free.
 
-### B1 — Per-row styling hooks
+### B1 - Per-row styling hooks
 
 `rowClassName` / `rowStyle` as `T | ((row) => T)` on the Table component,
 plus a `striped` option, resolved by one helper
@@ -195,35 +195,35 @@ plus a `striped` option, resolved by one helper
   context-menu < selected < highlighted). Sticky pinned cells need an opaque
   background and the cell-range tint `color-mix`es over `--row-bg`, so a raw
   `background` bypass breaks both.
-- `striped` computes from the row index, never `:nth-child` — mounted rows
+- `striped` computes from the row index, never `:nth-child` - mounted rows
   are a moving window under virtualization. The reference library has no
   virtualization, so its approach does not port.
 
-### B2 — Cell click handlers
+### B2 - Cell click handlers
 
 `onCellClick` / `onCellDoubleClick` / `onCellContextMenu` with
 `{ cell, row, column, event }`. Policy stated up front, following the
-`onRowClick` precedent: handlers **compose, never suppress** — double-click
+`onRowClick` precedent: handlers **compose, never suppress** - double-click
 still edits, right-click still opens `rowContextMenu` and still moves the
 cell-range selection; consumer handlers run in addition.
 
-### B3 — Row numbers lane
+### B3 - Row numbers lane
 
 Opt-in generated lane, static index over the current sorted/filtered view.
 The control-lane machinery makes this small.
 
-## Batch C — medium, conflict-free
+## Batch C - medium, conflict-free
 
 Order free. These land before the P2 refactor so it rebases over finished
 work.
 
-### C1 — `?: never` prop unions
+### C1 - `?: never` prop unions
 
 > Shipped 2026-08-01. Deviations from the sketch, both because the audit
 > found the sketch wrong: (a) batch **without** `onEditCommitBatch` is legal
-> — `submitAll` falls back to the per-row loop — so the union forbids the
+> - `submitAll` falls back to the per-row loop - so the union forbids the
 > callback *outside* batch instead of requiring it inside; (b)
-> `manualPagination` + `rowCount` is NOT enforced — `pageCount` is a valid
+> `manualPagination` + `rowCount` is NOT enforced - `pageCount` is a valid
 > alternative and infinite-scroll grids legitimately run `manual*` without
 > either. What shipped: editing callbacks without `editMode` are compile
 > errors, `editMode` makes `getRowId` required (upgrading the runtime
@@ -233,40 +233,40 @@ work.
 Reference: `[md] package/types/DataTablePaginationProps.ts`,
 `DataTableSelectionProps.ts`.
 
-### C2 — Scroll-edge shadows + callbacks
+### C2 - Scroll-edge shadows + callbacks
 
 Shadow under the sticky header (optionally the other three edges) driven by
 scroll position through CSS custom properties, no re-renders;
 `onScrollToTop` / `onScrollToLeft` / `onScrollToRight` firing on edge
-transitions only. Check whether `animation-timeline: scroll()` — already
-used for the pinned-lane gradients — covers the header shadow with no JS at
+transitions only. Check whether `animation-timeline: scroll()` - already
+used for the pinned-lane gradients - covers the header shadow with no JS at
 all; prefer that. **Naming:** `--dg-edge-*` already means cell-range outline
 edges. The scroll-edge variables must not collide, and the clash is resolved
 here, before F1 documents anything.
 Reference: `[md] package/hooks/useDataTableInjectCssVariables.ts`.
 
-### C3 — Empty-state slot
+### C3 - Empty-state slot
 
 `renderEmptyState({ hasActiveFilters })` ReactNode overlay. Write the state
-matrix first — loading with no rows vs empty data vs filters-removed-
-everything vs entry rows present — so exactly one message wins, and document
+matrix first - loading with no rows vs empty data vs filters-removed-
+everything vs entry rows present - so exactly one message wins, and document
 it. Builds on the existing `.messageRow`.
 
-> Deviation: shipped `renderEmptyState({ hasActiveFilters, table })` — the
+> Deviation: shipped `renderEmptyState({ hasActiveFilters, table })` - the
 > table came along so a blank slate can offer "clear filters". Truly-empty got
 > its own label (`labels.noRows`) instead of borrowing `noResults`.
 >
 > Found while testing: a `data` array rebuilt every render makes the v9 beta
-> loop forever, not just recompute — core model recompute → grouped model
+> loop forever, not just recompute - core model recompute → grouped model
 > `onAfterUpdate` → `autoResetExpanded` writes a fresh `expanded` identity →
 > whole-store subscription re-renders → repeat. Documented on the `data` row
 > in use-tm-data-grid.md; a dev-only unstable-data warning is a P3 candidate.
 
-## Batch D — big, independent
+## Batch D - big, independent
 
 Freely reorderable; D3 wants D2 first.
 
-### D1 — Row pinning
+### D1 - Row pinning
 
 User-pinned rows sticky under the header / above the summary row, reusing
 the entry-block CSS mechanics (single sticky block, nested subgrid). Use
@@ -274,9 +274,9 @@ TanStack's rowPinning state if the v9 feature exists in our beta; otherwise
 a thin slice in the edit-store style. Pin via context menu, plus a lane icon
 where the edit lane already exists. Interactions to design:
 
-- Virtualization — pinned rows leave the virtual flow.
+- Virtualization - pinned rows leave the virtual flow.
 - Selection, and grouping (likely pin data rows only).
-- Persistence — probably a data slice, not settings.
+- Persistence - probably a data slice, not settings.
 - The sticky ladder: the entry block and pinned rows are both sticky under
   the header (ordering between them; `--dg-z-pinned-row: 4` currently serves
   both roles), and pinned-bottom rows meet the summary row at equal z.
@@ -286,21 +286,21 @@ where the edit lane already exists. Interactions to design:
 Scope: sticky mode only (`[mrt] rowPinningDisplayMode` for what we are *not*
 shipping).
 
-> Deviations (2026-08-01): v9's `rowPinningFeature` exists and is used —
+> Deviations (2026-08-01): v9's `rowPinningFeature` exists and is used -
 > state, `row.pin()`, `getCanPin` are TanStack's own. No lane icon shipped:
 > there is no built-in pin gesture at all; the context-menu recipe is the
 > documented affordance (revisit if H2's slot reshapes create a natural lane).
 > TanStack's `getTopRows()` throws on a stale pinned id (`getRow` throws once
 > the data row is gone), so the body reads pins through `core/rowPinning.ts`'s
-> `readPinnedRows` — safe lookups, keepPinnedRows-true semantics. Pinned rows
+> `readPinnedRows` - safe lookups, keepPinnedRows-true semantics. Pinned rows
 > sit out striping, the cell range and the row-number gutter (statements about
-> scrolling order), and `rowPinning` is not persisted — ids are data.
+> scrolling order), and `rowPinning` is not persisted - ids are data.
 > The body-row renderer is shared with the pinned blocks via a scoped
 > function inside the JSX; a proper extraction rides with H2. Entry block
 > ordering: top-pinned rows stack *under* the entry block via a measured
 > `--dg-entry-height`. The file rename landed as its own commit.
 
-### D2 — Fuzzy quick search
+### D2 - Fuzzy quick search
 
 Match-sorter-style fuzzy matching as the **default** `Search` mode (Q4),
 with contains kept as a mode. While ranking is active and the user has no
@@ -308,13 +308,13 @@ explicit sort, rows order by match quality. Specify before building:
 interaction with grouping (grouping runs before sorting), with the persisted
 `sorting` slice, with `aria-sort`, and with the multi-sort priority badges.
 Reference: `[mrt] src/fns/sortingFns.ts` (`rankGlobalFuzzy`),
-`src/hooks/useMRT_Effects.ts` (sort suspension — do it declaratively, not
+`src/hooks/useMRT_Effects.ts` (sort suspension - do it declaratively, not
 their stash-and-restore effect).
 
 > Deviations (2026-08-01): shipped as `quickSearchMode: "fuzzy" | "contains"`
 > (fuzzy default), `@tanstack/match-sorter-utils` as a dependency. The rank
 > ordering is a *sorted-row-model wrapper* (`createFuzzyRankedSortedRowModel`
-> in core/quickSearch.ts), never written into `sorting` — so `aria-sort`, the
+> in core/quickSearch.ts), never written into `sorting` - so `aria-sort`, the
 > persisted slice and the multi-sort badges are untouched by construction,
 > and an explicit sort or grouping suspends it just by existing. Upstream of
 > pagination, so a ranked page one is the best of the whole set. Known
@@ -323,16 +323,16 @@ their stash-and-restore effect).
 > An explicit `globalFilterFn` disables both fuzzy and ranking (keyed off the
 > registry name).
 
-### D3 — Filter match highlighting
+### D3 - Filter match highlighting
 
 Opt-in: matched substrings highlighted while a text filter or quick search
-is active. Plain string renders only — a custom `cell` renderer opts out by
+is active. Plain string renders only - a custom `cell` renderer opts out by
 existing. Define what highlighting means under fuzzy matching (matches are
 non-contiguous); plausibly highlight only under contains-style matching and
 skip fuzzy. Perf gate: no measurable cost while off, bounded while on.
 
 > Deviations (2026-08-01): `enableMatchHighlighting`. "Custom renderer opts
-> out" is enforced by renderer *identity* — a cell whose resolved
+> out" is enforced by renderer *identity* - a cell whose resolved
 > `columnDef.cell` is TanStack's default gets the value-to-string render
 > replicated with `<mark>`s; anything else renders untouched (`flexRender`
 > returns elements even for the default, so output-type sniffing was not an
@@ -341,71 +341,71 @@ skip fuzzy. Perf gate: no measurable cost while off, bounded while on.
 > startsWith and endsWith highlight; equals does not. Colour:
 > `--dg-match-highlight-bg`. Off = one flag check per render.
 
-## Held — waiting on approval
+## Held - waiting on approval
 
 Nothing here starts until its proposal is approved. Details live in
 [proposals.md](proposals.md); only the build-side scope is repeated here.
 
-### H1 — Custom controls + built-in filter controls (needs P1)
+### H1 - Custom controls + built-in filter controls (needs P1)
 
 Per P1 as amended: no registry. `meta.editor` and `meta.filterControl` take
-components directly, rendered as JSX. Built-in richer controls — range
+components directly, rendered as JSX. Built-in richer controls - range
 slider seeded from faceted min/max, date-range, autocomplete, tri-state
-boolean — ship as named exports built against the same public args
+boolean - ship as named exports built against the same public args
 contracts consumers use. The filter panel picks by column type/operator as
 today; `meta.filterControl` overrides. The editor half lands here too:
 `meta.renderEditor` → `meta.editor` (component) is a named break.
 
-> Shipped 2026-08-09 — `7a8c056`, `c8acb31`, `9984dcd` (three commits, three
+> Shipped 2026-08-09 - `7a8c056`, `c8acb31`, `9984dcd` (three commits, three
 > changesets: between-operator minor, editor-component major,
 > filter-controls minor). Deviations/discoveries: the plan's range controls
 > needed an interval the filter model lacked, so a `between` operator landed
 > first (number + date, inclusive `[min, max]` pair, empty end = open, panel
 > renders From/To) along with `meta.defaultFilterOperator` so a column can
-> *open* on `between` — without it the range controls were unreachable UX.
+> *open* on `between` - without it the range controls were unreachable UX.
 > The filter panel's value slot was extracted into
 > `TMDataGridFilterValueInput` (exported), which is also every built-in
 > control's fallback for operators outside its shape. Built-ins:
-> `DgRangeSliderFilter` (bounds via the faceted index — no new row model),
+> `DgRangeSliderFilter` (bounds via the faceted index - no new row model),
 > `DgDateRangeFilter` (native date inputs, no `@mantine/dates`),
 > `DgAutocompleteFilter`, `DgTriStateFilter` (new label `filterAll`).
 > `args.options` is pre-resolved only for declared or select-shaped columns
-> — resolving faceted values for every column would build indexes the panel
+> - resolving faceted values for every column would build indexes the panel
 > never shows.
 
-### H2 — API coherence refactor (needs P2 + rename table)
+### H2 - API coherence refactor (needs P2 + rename table)
 
 Two gates: P2's conventions, then the rename/reshape table back for yes/no
 before execution. Executed as one commit series, each break named in a beta
 changeset.
 
-### H3 — Bad-UX warning framework (needs P3)
+### H3 - Bad-UX warning framework (needs P3)
 
 Dev-only detector, one idiom for legal-but-unwise option combinations, plus
 folding in the ad-hoc `onReachEnd`+pagination warning. Silencing keys are
 forever. H4's rule is its first new consumer.
 
-### H4 — Details ergonomics (needs P3, then H3)
+### H4 - Details ergonomics (needs P3, then H3)
 
 `detailsTrigger: "chevron" | "rowClick"` and `detailsMode: "multiple" |
 "single"` (accordion). Ships with the bad-UX rule for row-click expansion
 under the selection modes where a row click already acts (`"row"`,
-`"highlight"`, `"checkboxAndHighlight"` — the highlight modes are the
+`"highlight"`, `"checkboxAndHighlight"` - the highlight modes are the
 likelier collision, since a click there already drives a detail panel).
 
-### H5 — Density recipe (needs P4)
+### H5 - Density recipe (needs P4)
 
 P4 recommends no built-in density: a docs recipe plus a size toggle on the
 demo page, and a test pinning that a runtime `size` change re-estimates
 virtualized row heights.
 
-## Unassigned — needs a call
+## Unassigned - needs a call
 
-### U1 — Container-based column visibility (`meta.hideBelow`)
+### U1 - Container-based column visibility (`meta.hideBelow`)
 
 > **Called 2026-08-01 (delegated): parked past 1.0.0.** Riskiest M in the
 > wave, touches the visibility subsystem with a known desync history, and is
-> purely additive — it loses nothing by shipping in 1.1.
+> purely additive - it loses nothing by shipping in 1.1.
 
 Accepted in the scan, reshaped to container-driven rather than media
 queries. Requirements already hardened, whenever it runs:
@@ -417,7 +417,7 @@ queries. Requirements already hardened, whenever it runs:
   never fight, and a narrow-then-wide round trip restores exactly what the
   user had.
 - The derived layer must be applied identically at every visible-columns
-  call site — headers, cells, grid tracks, export, autosize, cell
+  call site - headers, cells, grid tracks, export, autosize, cell
   navigation, ColumnsPanel, filter panel. The codebase already carries a
   workaround for header/cell visibility desync; do not add a second source
   of it.
@@ -427,37 +427,37 @@ queries. Requirements already hardened, whenever it runs:
 
 ## Final gate
 
-### F1 — Styling contract
+### F1 - Styling contract
 
 A `styling.md` docs page listing every `--dg-*` variable and `data-*`
 attribute, with the stability promise per Q6: provisional during the beta,
-frozen at `1.0.0`. Includes the layer story from A5. Deliberately last —
+frozen at `1.0.0`. Includes the layer story from A5. Deliberately last -
 batches C and D each add surface (scroll-edge vars, row-numbers lane, pinned
 rows), and publishing earlier means a stale page or a re-issued promise. The
 `--dg-edge-*` naming clash must be resolved by C2 before this page exists.
 
 ## Deliberately parked
 
-- **Loading vocabulary** (skeletons, progress bars, `isSaving`) — needs
+- **Loading vocabulary** (skeletons, progress bars, `isSaving`) - needs
   hands-on play, not a spec. BACKLOG holds it.
-- **Full-screen mode** — *park confirmed 2026-08-01 (delegated).* The
+- **Full-screen mode** - *park confirmed 2026-08-01 (delegated).* The
   scan acceptance was conditional on "if it stays easy"; PM review showed
   it isn't (sticky z-ladder, portalled menus, measured details panels), so
   the condition fails. Revisit on real demand.
-- **Menu consolidation** (one grid menu vs today's buttons) — open question,
+- **Menu consolidation** (one grid menu vs today's buttons) - open question,
   no design; A4 deliberately avoids forcing it.
-- **Per-locale subpath packages** — when we grow past EN/SV.
-- **Click-to-copy** — rejected: cell selection already covers copy.
-- **Row drag-reordering** — rejected: DnD is for small lists and trees.
+- **Per-locale subpath packages** - when we grow past EN/SV.
+- **Click-to-copy** - rejected: cell selection already covers copy.
+- **Row drag-reordering** - rejected: DnD is for small lists and trees.
 
 ## Release mechanics
 
 Branch `feature/next` for the whole wave; merged to `main` when `1.0.0`
 ships. A2 enters Changesets pre-mode `beta` and opens `1.0.0-beta.1`; every
-breaking change — refactor renames, the `?: never` type breaks, the
-persisted-payload drop — is named in its changeset. `changeset pre exit`
+breaking change - refactor renames, the `?: never` type breaks, the
+persisted-payload drop - is named in its changeset. `changeset pre exit`
 when the wave is done, and `1.0.0` ships with the styling contract frozen
 (Q6).
 
 Each item lands green by itself: tests, docs, a changeset per user-facing
-change, lint, commit — the same discipline as the cell-editing plan.
+change, lint, commit - the same discipline as the cell-editing plan.

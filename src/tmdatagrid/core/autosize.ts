@@ -18,7 +18,7 @@ const CONTENT_ALLOWANCE = 2;
  * A Range over the children rather than the span's `scrollWidth`, because the
  * two disagree in opposite directions: a left-aligned cell stretches its
  * content span to fill the cell (`flex: 1 1 auto`), so `scrollWidth` reports
- * the stretched box and autosize could never *shrink* a column — while for
+ * the stretched box and autosize could never *shrink* a column - while for
  * clipped content both see past the `overflow: hidden`. The Range measures
  * the laid-out text and elements themselves, whatever box they sit in.
  *
@@ -41,14 +41,14 @@ function contentSpanWidth(content: HTMLElement): number {
  * Widest rendered content of one column, in px, measured from the DOM.
  *
  * Mounted cells only: under virtualization the unmounted rows do not exist to
- * be measured, so this reads the visible window plus overscan — the same
+ * be measured, so this reads the visible window plus overscan - the same
  * trade AG Grid's autosize makes by default.
  */
 export function measureColumnContentWidth({
   container,
   columnId,
 }: {
-  /** The grid's scroll container — anything enclosing the column's cells. */
+  /** The grid's scroll container - anything enclosing the column's cells. */
   container: HTMLElement;
   columnId: string;
 }): number {
@@ -91,7 +91,7 @@ export function measureColumnContentWidth({
 }
 
 /**
- * Sizes a column to its widest mounted content — what double-clicking the
+ * Sizes a column to its widest mounted content - what double-clicking the
  * resize divider does, exported so a menu item or consumer code can trigger
  * the same thing.
  *

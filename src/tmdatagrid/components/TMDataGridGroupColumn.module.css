@@ -39,7 +39,7 @@
   font-weight: 600;
 }
 
-/* Never squeezed out by a long group value — the count is the part that tells
+/* Never squeezed out by a long group value - the count is the part that tells
    you whether the group is worth opening. */
 .groupCount {
   flex: 0 0 auto;

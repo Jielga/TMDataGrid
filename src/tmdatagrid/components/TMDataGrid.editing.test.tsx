@@ -87,7 +87,7 @@ describe("cell editing", () => {
     expect(commit.changes).toEqual([
       { columnId: "name", field: "name", previous: "Anna", next: "Annika" },
     ]);
-    // The editor is gone; the cell shows content again (still the old data —
+    // The editor is gone; the cell shows content again (still the old data -
     // the grid never mutates `data`).
     expect(
       screen.queryByRole("textbox", { name: "Edit Name" }),
@@ -123,12 +123,12 @@ describe("cell editing", () => {
     await user.click(cellAt(0, 0));
     await user.keyboard("Z");
 
-    // The seed replaced the value — the Sheets gesture.
+    // The seed replaced the value - the Sheets gesture.
     expect(editorInput()).toHaveValue("Z");
   });
 
   it("renders meta.editor as a component, hooks included", async () => {
-    // A stateful custom editor — legal exactly because the grid renders it
+    // A stateful custom editor - legal exactly because the grid renders it
     // as JSX instead of calling it.
     const StampEditor: TMDataGridEditorComponent = ({ field }) => {
       const [touches, setTouches] = useState(0);
@@ -164,7 +164,7 @@ describe("cell editing", () => {
     const input = screen.getByRole("textbox", { name: "Stamp name" });
     await user.clear(input);
     await user.type(input, "Ann");
-    // The editor's own state survived every keystroke — it is a component.
+    // The editor's own state survived every keystroke - it is a component.
     expect(screen.getByTestId("touch-count").textContent).not.toBe("0");
     await user.keyboard("{Enter}");
 
@@ -188,7 +188,7 @@ describe("cell editing", () => {
 
     expect(await screen.findByText("Too short")).toBeInTheDocument();
     expect(commits.length).toBe(0);
-    // Still editing — the invalid cell holds the edit.
+    // Still editing - the invalid cell holds the edit.
     expect(editorInput()).toBeInTheDocument();
   });
 

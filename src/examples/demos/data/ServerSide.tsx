@@ -109,7 +109,7 @@ export function ServerSide() {
     columns,
     getRowId: (row) => String(row.id),
 
-    // Each of the three says "I have already done this — do not do it again".
+    // Each of the three says "I have already done this - do not do it again".
     // `manualPagination` also switches the pagination flag on, so the footer
     // gets its pager without `enablePagination`.
     manualPagination: true,

@@ -16,7 +16,7 @@ import {
 } from "../../data/employees";
 
 /**
- * A custom editor is a component over the live TanStack Form field — not a
+ * A custom editor is a component over the live TanStack Form field - not a
  * render function, so hooks are legal inside. Module scope keeps its identity
  * stable across renders.
  *
@@ -38,7 +38,7 @@ const SalarySliderEditor: TMDataGridEditorComponent = ({ field }) => (
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
 const columns = columnHelper.columns([
-  // Each type opens its own editor. No wiring — `meta.type` is the whole
+  // Each type opens its own editor. No wiring - `meta.type` is the whole
   // declaration, and the same one the filter panel reads.
   columnHelper.accessor("firstName", {
     header: "String",
@@ -63,7 +63,7 @@ const columns = columnHelper.columns([
     header: "Boolean",
     minSize: 100,
     meta: { type: "boolean", align: "center" },
-    cell: (info) => (info.getValue() ? "✓" : "—"),
+    cell: (info) => (info.getValue() ? "✓" : "-"),
   }),
   columnHelper.accessor("hired", {
     header: "Date",

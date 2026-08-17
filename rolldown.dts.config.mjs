@@ -6,7 +6,7 @@ import { dts } from "rolldown-plugin-dts";
  *
  * This keeps relative imports out of the published types entirely. TypeScript
  * emits relative specifiers verbatim, so an extensionless `./TMDataGrid` only
- * resolves under `moduleResolution: bundler` — a flat file has no relative
+ * resolves under `moduleResolution: bundler` - a flat file has no relative
  * specifiers to resolve, so it works under every resolution mode without
  * putting `.js` extensions in the source.
  *

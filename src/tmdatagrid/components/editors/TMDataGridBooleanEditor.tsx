@@ -4,7 +4,7 @@ import { getColumnLabel } from "../../core/columnUtils";
 import { useTMDataGridContext } from "../../TMDataGridContext";
 import { useFieldError, useFieldValue } from "./editorShared";
 
-/** The built-in editor for `meta.type: "boolean"` — a focused checkbox. */
+/** The built-in editor for `meta.type: "boolean"` - a focused checkbox. */
 export function TMDataGridBooleanEditor({
   field,
   autoFocus,

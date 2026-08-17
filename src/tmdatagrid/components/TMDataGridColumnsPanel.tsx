@@ -82,7 +82,7 @@ export function TMDataGridColumnsPanel() {
             />
           ))}
           {visibleInPanel.length === 0 && (
-            <Text size={controlSize} c="dimmed">
+            <Text span size={controlSize} c="dimmed">
               {labels.columnsNoMatch(search)}
             </Text>
           )}
@@ -102,7 +102,7 @@ export function TMDataGridColumnsPanel() {
         />
         {/* The whole layout, not only visibility: one reset with an honest
             scope, stated in the tooltip. `table.resetColumnVisibility()` would
-            also be wrong under persistence — it resets to `initialState`,
+            also be wrong under persistence - it resets to `initialState`,
             which the mount built *from* the persisted payload. */}
         <Tooltip label={labels.columnsResetHint} withArrow>
           <Button

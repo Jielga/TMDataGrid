@@ -1,7 +1,7 @@
 ---
 name: server-side
 description: >
-  Drive TMDataGrid from a server with TanStack manual modes — manualPagination,
+  Drive TMDataGrid from a server with TanStack manual modes - manualPagination,
   manualSorting, manualFiltering, rowCount, controlled state and onXChange
   callbacks. Covers the loading and totalRowCount meta fields, forwarding the
   plain-JSON columnFilters model to an API with isFilterActive, persistence
@@ -16,12 +16,12 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
 ---
 
-# TMDataGrid — Server-side data
+# TMDataGrid - Server-side data
 
 The grid reads rows through `getPaginatedRowModel()` and totals through
 `getRowCount()` and `getPageCount()`, all of which respect TanStack's manual
 modes. A server-driven grid therefore needs only the standard `manual*`
-configuration — no grid-specific options. `manualPagination: true` also
+configuration - no grid-specific options. `manualPagination: true` also
 switches the grid's pagination flag on, so `TMDataGrid.Footer` renders its
 pager without `enablePagination`. Declare `pageCount: -1` when the total is
 unknown; the next button then stays enabled.
@@ -85,7 +85,7 @@ Filter values are plain JSON, so `columnFilters` forwards without transformation
 ]
 ```
 
-Translate at the API boundary, and skip entries whose value is still empty —
+Translate at the API boundary, and skip entries whose value is still empty -
 those match all rows:
 
 ```ts
@@ -122,8 +122,8 @@ const selectedIds = useSelector(grid.table.store, (state) =>
 
 ### Omitting rowCount under manualPagination
 
-Without `rowCount` the table derives the total from the rows it was handed —
-one page — so `getPageCount()` returns 1. The footer shows "1–25 of 25" and the
+Without `rowCount` the table derives the total from the rows it was handed -
+one page - so `getPageCount()` returns 1. The footer shows "1–25 of 25" and the
 next-page button is disabled, with no error. Pass the server total.
 
 ### Filters sent without isFilterActive

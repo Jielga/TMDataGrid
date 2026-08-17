@@ -13,7 +13,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("firstName", { header: "First name", minSize: 120 }),
 
   // A computed accessor needs its own `id`, and a `meta.label` for the menus
-  // — there is no key for them to fall back on.
+  // - there is no key for them to fall back on.
   columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
     id: "fullName",
     header: "Full name",
@@ -42,7 +42,7 @@ const columns = columnHelper.columns([
     header: "Active",
     minSize: 90,
     meta: { type: "boolean", align: "center" },
-    cell: (info) => (info.getValue() ? "✓" : "—"),
+    cell: (info) => (info.getValue() ? "✓" : "-"),
   }),
 
   // `options: "faceted"` reads the choices out of the data itself; an array

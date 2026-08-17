@@ -6,7 +6,7 @@ import { autosizeColumn, measureColumnContentWidth } from "./autosize";
 
 /**
  * jsdom lays nothing out, so `scrollWidth` is always 0 there. The tests stub
- * it to a deterministic proxy — text length × a chosen px width — which is
+ * it to a deterministic proxy (text length × a chosen px width), which is
  * enough to prove the measurement is read, clamped and written. The width is
  * per test: wide enough to clear the column's `minSize` when the measurement
  * itself is under test, narrow when the clamp is.
@@ -38,7 +38,7 @@ function renderTable(grid: ReturnType<typeof renderGrid>["result"]) {
 describe("autosizeColumn", () => {
   it("writes the measured width of the widest mounted content", () => {
     // 16px/char puts "Stockholm" well past the column's 120px minSize, so
-    // the measurement itself has to carry the result — a broken measurement
+    // the measurement itself has to carry the result - a broken measurement
     // could not hide behind the clamp.
     stubScrollWidth(16);
     const { result } = renderGrid();

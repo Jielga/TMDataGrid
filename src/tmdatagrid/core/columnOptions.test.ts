@@ -45,7 +45,7 @@ const columns = helper.columns([
         row === undefined ? ["for-filter"] : [`for-row-${String(row.id)}`],
     },
   }),
-  // A select column that never declared options — what the resolver's
+  // A select column that never declared options - what the resolver's
   // fallback parameter exists for.
   helper.accessor("city", {
     id: "bareCity",

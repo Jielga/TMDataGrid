@@ -37,7 +37,7 @@ const columns = columnHelper.columns([
     meta: { type: "select", options: "faceted" },
   }),
 
-  // A computed column has no field to write back to — `editField` names one.
+  // A computed column has no field to write back to - `editField` names one.
   columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
     id: "fullName",
     header: "Full name → edits last name",

@@ -11,7 +11,7 @@ import {
 } from "../index";
 
 /**
- * The built-in typed editors, opened and driven the way a user does it —
+ * The built-in typed editors, opened and driven the way a user does it -
  * through the grid, not the components in isolation. Each editor's one
  * distinctive behaviour is the thing under test: what it writes back, and
  * when it commits. The string editor's open/commit/cancel/seed flows live in
@@ -80,7 +80,7 @@ function EditorGrid({
   );
 }
 
-/** By the published coordinates — the way a consumer's test would. */
+/** By the published coordinates - the way a consumer's test would. */
 function cell(container: HTMLElement, columnId: string) {
   const found = container.querySelector<HTMLElement>(
     `[role="gridcell"][data-row-id="1"][data-column-id="${columnId}"]`,
@@ -169,7 +169,7 @@ describe("the date editor", () => {
 });
 
 describe("the select editor", () => {
-  it("commits on pick under cell mode — the pick is the edit", async () => {
+  it("commits on pick under cell mode - the pick is the edit", async () => {
     const user = userEvent.setup();
     const { container, commits } = renderEditorGrid();
 
@@ -177,7 +177,7 @@ describe("the select editor", () => {
     await user.click(screen.getByRole("combobox", { name: "Edit Status" }));
     await user.click(await screen.findByRole("option", { name: "Paid" }));
 
-    // No Enter — picking committed and closed the editor.
+    // No Enter - picking committed and closed the editor.
     await waitFor(() => expect(commits.length).toBe(1));
     expect(commits[0]?.changes).toEqual([
       { columnId: "status", field: "status", previous: "Pending", next: "Paid" },

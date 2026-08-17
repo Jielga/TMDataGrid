@@ -15,13 +15,13 @@ const columns = columnHelper.columns([
     header: "Department",
     minSize: 140,
     meta: { type: "select", options: "faceted" },
-    // A footer need not aggregate anything — it is a cell like any other.
+    // A footer need not aggregate anything - it is a cell like any other.
     footer: "Total",
   }),
 
   // Defining a `footer` on any column is what summons the sticky summary row
   // along the bottom. `aggregateColumn` runs over every *filtered* row, all
-  // pages — not just the page on screen. Filter the grid and watch it move.
+  // pages - not just the page on screen. Filter the grid and watch it move.
   columnHelper.accessor("salary", {
     header: "Salary",
     minSize: 140,

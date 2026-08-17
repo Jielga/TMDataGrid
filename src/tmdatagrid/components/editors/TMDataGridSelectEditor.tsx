@@ -10,7 +10,7 @@ import { useFieldError, useFieldValue } from "./editorShared";
 
 /**
  * The built-in editor for `meta.type: "select"`. Options come from the same
- * `meta.options` the filter panel reads — with the row in hand, so a
+ * `meta.options` the filter panel reads - with the row in hand, so a
  * function source can depend on the record being edited.
  */
 export function TMDataGridSelectEditor({
@@ -31,7 +31,7 @@ export function TMDataGridSelectEditor({
       w="100%"
       autoFocus={autoFocus}
       searchable
-      // Inside the cell, so picking an option is not a click-away — the same
+      // Inside the cell, so picking an option is not a click-away - the same
       // reason the filter panel keeps its dropdowns unportalled.
       comboboxProps={{ withinPortal: false }}
       aria-label={labels.editCell(getColumnLabel(column))}

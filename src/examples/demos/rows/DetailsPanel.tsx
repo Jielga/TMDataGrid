@@ -3,7 +3,7 @@ import { TMDataGrid, useTMDataGrid } from "../../../tmdatagrid";
 import { compactEmployeeColumns } from "../../data/employeeColumns";
 import { EMPLOYEES, sek, type Employee } from "../../data/employees";
 
-/** Filler so the panels differ in height — the grid measures each one. */
+/** Filler so the panels differ in height - the grid measures each one. */
 const NOTES = [
   "Joined through the Stockholm office and has been with the team since.",
   "Currently on a rotation with Product; reviews land in the shared queue.",
@@ -11,7 +11,7 @@ const NOTES = [
 ];
 
 /**
- * Whatever `renderDetails` returns. Nothing here is the grid's — it renders
+ * Whatever `renderDetails` returns. Nothing here is the grid's - it renders
  * what comes back, at whatever height it comes back at, and measures the
  * result. The estimate below only has to be in the right region.
  */

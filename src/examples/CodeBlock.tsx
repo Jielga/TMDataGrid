@@ -8,8 +8,8 @@ import { useComputedColorScheme } from "@mantine/core";
 import type { CSSProperties } from "react";
 
 /**
- * Every piece of code the site shows goes through here — demo sources, the
- * starter snippet, and the fenced blocks in the markdown docs — so they are
+ * Every piece of code the site shows goes through here - demo sources, the
+ * starter snippet, and the fenced blocks in the markdown docs - so they are
  * highlighted, copyable and themed the same way everywhere.
  *
  * The highlighter itself is registered once in `main.tsx`; this is only the
@@ -25,8 +25,8 @@ const MAX_COLLAPSED_HEIGHT = 320;
  * The docs render these blocks inside Mantine's `Typography`, which styles bare
  * `pre` and `pre code`. Both of its rules carry the same specificity as the
  * component's own part styles and its stylesheet loads later, so they win: the
- * `pre` picks up a border and a radius of its own — stacking a second, rounder
- * outline inside the one `withBorder` already draws — while the `code` loses
+ * `pre` picks up a border and a radius of its own - stacking a second, rounder
+ * outline inside the one `withBorder` already draws - while the `code` loses
  * the shiki background to Typography's `background-color: transparent`.
  *
  * Restating the component's own values as inline styles outranks any sheet, so
@@ -53,17 +53,17 @@ const PART_STYLES: Partial<Record<CodeHighlightStylesNames, CSSProperties>> = {
  *
  * The theme is named rather than left to Mantine's `light`/`dark` shorthand:
  * the shorthand selects Mantine's own bundled themes, which render comments at
- * #676867 on a #2e2e2e background — 2.4:1, where normal text wants 4.5:1. The
+ * #676867 on a #2e2e2e background - 2.4:1, where normal text wants 4.5:1. The
  * adapter only substitutes a bundled theme for the literal strings "light" and
  * "dark", so any other value reaches shiki as a theme name; both are
  * registered in `main.tsx`.
  *
  * The `-default` variants are GitHub's current themes. The older `github-dark`
- * puts comments at #6a737d, 3.9:1 even on its own background — and these demo
+ * puts comments at #6a737d, 3.9:1 even on its own background - and these demo
  * files are largely comments.
  *
  * The surface goes on twice, because two elements paint one. `bg` covers the
- * root — the tabs variant paints nothing of its own and would let the page show
+ * root - the tabs variant paints nothing of its own and would let the page show
  * through, which is how a token designed for #0d1117 ended up at 3.2:1 on the
  * page's #242424. `background` sets `--ch-background`, which is what the `code`
  * element and the line-number gutter paint; left at Mantine's gray-0/dark-8
@@ -121,7 +121,7 @@ export function CodeBlock({
 
 /**
  * The multi-file variant a demo uses when what it imports is worth reading
- * too — the shared data module, usually. The demo file is always first.
+ * too - the shared data module, usually. The demo file is always first.
  */
 export function CodeBlockTabs({ files }: { files: Array<CodeBlockFile> }) {
   const theme = useCodeTheme();

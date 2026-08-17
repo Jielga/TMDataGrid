@@ -31,14 +31,14 @@ export type TMDataGridOptionsArgs = {
 };
 
 /**
- * Where a column's options come from — `meta.options`. One declaration feeds
+ * Where a column's options come from - `meta.options`. One declaration feeds
  * both the filter panel's value control and the cell editor.
  *
  * | Form | For |
  * | --- | --- |
  * | array | a known, fixed set |
  * | `"faceted"` | low-cardinality data columns: the distinct values present, via `getFacetedUniqueValues` |
- * | function | large or contextual sets — `row` is set when an editor asks, so options can depend on the record (city given country) |
+ * | function | large or contextual sets - `row` is set when an editor asks, so options can depend on the record (city given country) |
  */
 export type TMDataGridOptionsSource =
   | ReadonlyArray<TMDataGridOption | string>

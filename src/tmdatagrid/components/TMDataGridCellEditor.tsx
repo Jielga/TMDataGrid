@@ -42,11 +42,11 @@ const BUILT_IN_EDITORS: Record<
 export type TMDataGridCellEditorClose =
   | { committed: true; via: "enter" | "tab" | "shift-tab" | "pick" }
   | { committed: false; via: "escape" }
-  /** Batch: the editor closed, the draft stays — Enter parks, Tab moves on. */
+  /** Batch: the editor closed, the draft stays - Enter parks, Tab moves on. */
   | { committed: false; via: "defer" | "defer-tab" | "defer-shift-tab" };
 
 /**
- * The host an editing cell mounts — it owns the field, the keys and the blur
+ * The host an editing cell mounts - it owns the field, the keys and the blur
  * policy; the editor inside it (a built-in picked by `meta.type`, or the
  * column's `meta.editor`) owns the input.
  *
@@ -66,7 +66,7 @@ export function TMDataGridCellEditor({
   takeSeedText: () => string | undefined;
   /** In row mode only the first editable cell takes the focus. */
   autoFocus?: boolean;
-  /** After the editor closed itself — the table moves the focus. */
+  /** After the editor closed itself - the table moves the focus. */
   onClose: (args: TMDataGridCellEditorClose) => void;
 }) {
   const { table, edit, features, labels, controlSize } = useTMDataGridContext();
@@ -164,7 +164,7 @@ export function TMDataGridCellEditor({
   };
 
   /**
-   * Focus left the editor entirely — a click somewhere else. Under `"cell"`
+   * Focus left the editor entirely - a click somewhere else. Under `"cell"`
    * that commits (Sheets); a commit blocked by validation keeps the form and
    * its invalid marker, with the editor closed. The confirming modes keep
    * the draft open-but-inactive, waiting for their explicit ✓.

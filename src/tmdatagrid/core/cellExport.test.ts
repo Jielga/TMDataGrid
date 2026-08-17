@@ -88,7 +88,7 @@ describe("buildCellMatrix", () => {
       decimalComma: true,
     });
 
-    // The checkbox lane holds a control, not a value — exporting it would
+    // The checkbox lane holds a control, not a value - exporting it would
     // paste an empty column that shifts everything to its right.
     expect(matrix).toEqual([["1"]]);
   });
@@ -226,7 +226,7 @@ describe("buildGridCellMatrix", () => {
       includeHeaders: false,
     });
 
-    // Every record, collapsed groups included — and only records.
+    // Every record, collapsed groups included - and only records.
     expect(matrix.length).toBe(testRows.length);
   });
 });

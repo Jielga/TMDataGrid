@@ -1,4 +1,4 @@
-# check-skills.yml — Drop this into your library repo's .github/workflows/
+# check-skills.yml - Drop this into your library repo's .github/workflows/
 #
 # Validates intent skills on PRs. After a release or manual run, opens or
 # updates one review PR when existing skills, artifact coverage, or workspace

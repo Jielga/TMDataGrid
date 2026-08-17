@@ -4,7 +4,7 @@ import {
 } from "./filterOperators";
 
 /**
- * Every user-facing string in the grid — menu items, panels, tooltips, the
+ * Every user-facing string in the grid - menu items, panels, tooltips, the
  * pager, and the `aria-label`s a screen reader speaks. One flat object, so an
  * override is a spread rather than a deep merge; `operators` is the single
  * nested record and {@link mergeLabels} folds it separately.
@@ -17,9 +17,9 @@ export type TMDataGridLabels = {
   operators: Record<TMDataGridFilterOperator, string>;
 
   // Toolbar
-  /** "Manage columns" — the burger button and the header menu item. */
+  /** "Manage columns" - the burger button and the header menu item. */
   manageColumns: string;
-  /** "Filters" — the funnel button and the filter panel's title. */
+  /** "Filters" - the funnel button and the filter panel's title. */
   filters: string;
   searchPlaceholder: string;
   searchLabel: string;
@@ -35,7 +35,7 @@ export type TMDataGridLabels = {
   /** Menu/panel name of the generated row-number gutter. */
   rowNumberColumnLabel: string;
   /**
-   * The truly-empty message — no data and no filters. Filtered-empty says
+   * The truly-empty message - no data and no filters. Filtered-empty says
    * {@link noResults} instead; only one of the two is the user's own doing.
    */
   noRows: string;
@@ -51,7 +51,7 @@ export type TMDataGridLabels = {
   filterTo: string;
   /** `DgTriStateFilter`'s no-filter segment. */
   filterAll: string;
-  /** What a boolean column's `true` reads as — its filter choice and cell text. */
+  /** What a boolean column's `true` reads as - its filter choice and cell text. */
   booleanTrue: string;
   booleanFalse: string;
   addFilter: string;
@@ -115,9 +115,9 @@ export type TMDataGridLabels = {
   saveAllEdits: (rows: number) => string;
   /** `EditActions`' Discard. */
   discardAllEdits: string;
-  /** The entry row's ✓ — commit the add. */
+  /** The entry row's ✓ - commit the add. */
   confirmNewRow: string;
-  /** The entry row's ✕ — drop the entry. */
+  /** The entry row's ✕ - drop the entry. */
   discardNewRow: string;
   /** The lane's trash can. */
   deleteRow: string;
@@ -152,7 +152,7 @@ export type TMDataGridLabels = {
 
 /**
  * What the `labels` option accepts: any subset, merged over the English
- * defaults — so `{ noResults: "Inga rader" }` is a complete configuration.
+ * defaults - so `{ noResults: "Inga rader" }` is a complete configuration.
  */
 export type TMDataGridLabelsOverride = Partial<
   Omit<TMDataGridLabels, "operators">

@@ -26,7 +26,7 @@ export function TMDataGridNumberEditor({
       value={typeof value === "number" ? value : ""}
       onChange={(next) =>
         // Mantine reports a number once one can be parsed, and a string while
-        // it cannot. An empty cell is `null` — the honest "no value".
+        // it cannot. An empty cell is `null` - the honest "no value".
         field.handleChange(
           typeof next === "number" ? next : next === "" ? null : Number(next),
         )

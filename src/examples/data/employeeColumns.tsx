@@ -4,11 +4,11 @@ import { sek, type Employee, type EmployeeStatus } from "./employees";
 
 /**
  * A ready-made column set for the demos whose subject is *not* the column
- * definition — pagination, persistence, search, cell selection, export. Those
+ * definition - pagination, persistence, search, cell selection, export. Those
  * demos import from here so the file you read is the feature and nothing else.
  *
- * Where the column definition *is* the lesson — types, sizing, filter
- * controls, editors, aggregation — the demo defines its own columns inline.
+ * Where the column definition *is* the lesson - types, sizing, filter
+ * controls, editors, aggregation - the demo defines its own columns inline.
  */
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
@@ -40,7 +40,7 @@ export const salaryColumn = columnHelper.accessor("salary", {
   cell: (info) => sek(info.getValue()),
 });
 
-/** Seven columns — wide enough to need horizontal scroll on a narrow demo. */
+/** Seven columns - wide enough to need horizontal scroll on a narrow demo. */
 export const employeeColumns = columnHelper.columns([
   columnHelper.accessor("id", {
     header: "ID",

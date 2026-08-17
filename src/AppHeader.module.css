@@ -1,0 +1,100 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-md);
+  height: 52px;
+  flex-shrink: 0;
+  padding: 0 var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  /* Sits over the nav and the article, both of which scroll under it. */
+  background: var(--mantine-color-body);
+}
+
+.brand {
+  flex-shrink: 0;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mark {
+  color: var(--mantine-primary-color-filled);
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* The outline is the grid's border; the four cells inside are solid. */
+.markFrame {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.45;
+}
+
+.wordmark {
+  letter-spacing: -0.01em;
+}
+
+.version {
+  cursor: pointer;
+}
+
+/* The wordmark and version give way before the search box does - the box is
+   the thing people are reaching for. */
+@media (max-width: 640px) {
+  .wordmark,
+  .version {
+    display: none;
+  }
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  /* Centred in the header, and capped so it does not sprawl on a wide
+     window - the same measure the article uses. */
+  margin: 0 auto;
+  width: 100%;
+  max-width: 420px;
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-default);
+  color: var(--mantine-color-dimmed);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.search:hover {
+  border-color: var(--mantine-primary-color-filled);
+  background: var(--mantine-color-default-hover);
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.searchLabel {
+  flex: 1;
+  text-align: left;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.shortcut {
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .shortcut {
+    display: none;
+  }
+}

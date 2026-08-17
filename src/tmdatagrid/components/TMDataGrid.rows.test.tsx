@@ -36,7 +36,7 @@ import { useTMDataGrid, type TMDataGridDetailsArgs } from "../useTMDataGrid";
  * parallelism; the shared scaffolding lives in the harness.
  */
 describe("row pinning", () => {
-  // Referentially stable — see the entry-row test's note on data identity.
+  // Referentially stable - see the entry-row test's note on data identity.
   const pinTestRows = testRows;
 
   function PinGrid() {
@@ -116,7 +116,7 @@ describe("row pinning", () => {
 
   it("survives the pinned row's data being deleted", async () => {
     // TanStack's own getTopRows() throws over a stale pinned id; the grid's
-    // reader skips it instead — see readPinnedRows.
+    // reader skips it instead - see readPinnedRows.
     const user = userEvent.setup();
     renderWithMantine(<PinGrid />);
 
@@ -327,7 +327,7 @@ describe("pagination", () => {
       initialState: { pagination: { pageIndex: 0, pageSize: 7 } },
     });
 
-    // 7 is not in the default [10, 25, 50, 100] — the Select must still show it
+    // 7 is not in the default [10, 25, 50, 100] - the Select must still show it
     // rather than render blank. Mantine's Select renders a visible input and a
     // hidden one, so both carry the value.
     expect(screen.getAllByDisplayValue("7").length).toBeGreaterThan(0);
@@ -427,13 +427,13 @@ describe("grouping", () => {
     await clickMenuItem(user, "City", "Group by City");
 
     // Cell 0 is the checkbox lane, 1 the tree, then ID / Name / Age. A plain
-    // "group by" is a tree, not a summary — nothing was told how to aggregate.
+    // "group by" is a tree, not a summary - nothing was told how to aggregate.
     expect(renderedColumn(2)).toEqual(["", "", ""]);
     expect(renderedColumn(4)).toEqual(["", "", ""]);
   });
 });
 
-describe("grouping — rendering stays in step", () => {
+describe("grouping - rendering stays in step", () => {
   /** Header ids in render order. */
   const headerIds = () =>
     screen
@@ -484,7 +484,7 @@ describe("grouping and the pager", () => {
 
     await groupIt(user);
 
-    // Still there — a footer that vanished would read as a bug rather than as a
+    // Still there - a footer that vanished would read as a bug rather than as a
     // mode the grid is in.
     expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
@@ -606,7 +606,7 @@ describe("row details", () => {
     const api = renderGrid({ renderDetails }).result.current;
 
     // The tree lane is pinned between them, and hidden until something is
-    // grouped — so it holds its place without taking a track.
+    // grouped - so it holds its place without taking a track.
     expect(api.table.store.state.columnPinning.left).toEqual([
       SELECT_COLUMN_ID,
       GROUP_COLUMN_ID,
@@ -737,7 +737,7 @@ describe("row details", () => {
     await user.click(detailsToggle());
 
     // One `expanded` state holds both, so the whole-table form TanStack's
-    // `toggleAllRowsExpanded` writes would have opened all three groups too —
+    // `toggleAllRowsExpanded` writes would have opened all three groups too -
     // and the grid would be showing fifteen rows rather than three.
     expect(gridRowCount()).toBe(3);
     expect(bodyRows().every((row) => row.dataset.grouped === "true")).toBe(true);

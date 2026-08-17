@@ -7,7 +7,7 @@ export const DEFAULT_TMDATAGRID_SIZE: TMDataGridSize = "md";
 /**
  * Row height per size, in px.
  *
- * The virtualizer needs this as a number — it cannot read the CSS variable —
+ * The virtualizer needs this as a number - it cannot read the CSS variable -
  * so the scale lives here and `TMDataGrid.module.css` mirrors it. `meta.rowHeight`
  * overrides it when a grid needs a height the scale doesn't offer.
  */

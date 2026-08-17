@@ -4,7 +4,7 @@ name: Release
 # Packages" PR that bumps package.json, writes CHANGELOG.md and syncs the
 # skills' library_version. Merging that PR publishes to npm.
 #
-# Nothing publishes from a normal push — the release only happens when the
+# Nothing publishes from a normal push - the release only happens when the
 # version PR is merged, which is itself just another push to main.
 on:
   push:

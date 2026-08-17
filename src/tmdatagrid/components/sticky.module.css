@@ -1,9 +1,9 @@
 /* Boundary of a pinned column group. Shared, because the edge is cast by both
-   the header cell and every body cell in the same column — the two have to draw
+   the header cell and every body cell in the same column - the two have to draw
    an identical band or the seam shows at the header.
 
    A box-shadow is drawn per cell, and its blur fades in at each cell's own top
-   and bottom edge — stacked down a column that reads as banding at every row
+   and bottom edge - stacked down a column that reads as banding at every row
    seam. Instead: a gradient pseudo element pinned to `top: 0; bottom: 0` so
    consecutive cells butt together into one unbroken band. Mantine sets
    `color-scheme` on the root, so light-dark() resolves without a second
@@ -11,7 +11,7 @@
 
    No border. A 1px line the colour of the grid's own borders drew a hard rule
    between the pinned lanes and the data, so the pinned columns read as a
-   separate table rather than as part of this one — and at the system lanes,
+   separate table rather than as part of this one - and at the system lanes,
    which are only a control wide, it framed them like a sidebar. */
 .stickyLeft::after,
 .stickyRight::after {
@@ -24,7 +24,7 @@
 }
 
 /* Three stops rather than two. A straight linear ramp to `transparent` fades
-   fastest at the start, so its own outer edge stays visible as a faint line —
+   fastest at the start, so its own outer edge stays visible as a faint line -
    the sharpness a hard border was blamed for. Front-loading the falloff puts
    the density against the pinned cell and lets the tail reach zero unnoticed. */
 .stickyLeft::after {
@@ -53,12 +53,12 @@
 
    Driven by the scroll position itself rather than by a listener writing a
    class. A scroll-driven animation is evaluated on the compositor, so the band
-   tracks the scroll frame for frame without a single React render — and the
+   tracks the scroll frame for frame without a single React render - and the
    body re-renders on every scroll frame already, from virtualization.
 
    `scroll(nearest inline)` resolves to `.scrollContainer`, the one horizontal
-   scroller above these cells. An inactive timeline — which is what a container
-   with nothing to scroll gives — leaves the base style in place, so `opacity:
+   scroller above these cells. An inactive timeline - which is what a container
+   with nothing to scroll gives - leaves the base style in place, so `opacity:
    0` inside this block is also the answer for a grid that does not scroll. */
 @supports (animation-timeline: scroll()) {
   .stickyLeft::after,
@@ -79,7 +79,7 @@
 
   /* The mirror: on at rest, gone as the last column arrives. The range is
      measured from the end, and `both` holds the first value everywhere before
-     it — so the band stays fully on until the scroller is within 20px of home.
+     it - so the band stays fully on until the scroller is within 20px of home.
    */
   .stickyRight::after {
     animation-name: stickyEdgeOut;

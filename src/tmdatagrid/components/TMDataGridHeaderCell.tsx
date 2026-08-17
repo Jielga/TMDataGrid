@@ -67,7 +67,7 @@ export function TMDataGridHeaderCell({
   const [contextMenuOpened, setContextMenuOpened] = useState(false);
   const [dropSide, setDropSide] = useState<TMDataGridDropSide | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
-  // A resize drag ends with a click that bubbles to the header — without this
+  // A resize drag ends with a click that bubbles to the header - without this
   // every resize would also toggle the column's sort order.
   const suppressSortRef = useRef(false);
 
@@ -96,7 +96,7 @@ export function TMDataGridHeaderCell({
   const sortDirection = sorting.find((sort) => sort.id === column.id)?.desc;
   const isSorted = sortDirection !== undefined;
   // 1-based position in a multi-sort, shown only while more than one column
-  // sorts — under a single sort the arrow already says everything.
+  // sorts - under a single sort the arrow already says everything.
   const sortIndex =
     isSorted && sorting.length > 1
       ? sorting.findIndex((sort) => sort.id === column.id) + 1
@@ -184,7 +184,7 @@ export function TMDataGridHeaderCell({
 
   /**
    * Sizes the column to its widest mounted content. The container is found
-   * from the cell rather than passed down — the header always renders inside
+   * from the cell rather than passed down - the header always renders inside
    * the grid's scroll container, and that is the subtree autosize measures.
    */
   function autosize() {
@@ -197,7 +197,7 @@ export function TMDataGridHeaderCell({
   /**
    * Pinned columns are positioned with `getStart()` / `getAfter()`, which sum
    * `column.getSize()`. Fluid (`fr`) columns don't report their rendered width
-   * there, so freeze the measured width into `columnSizing` as we pin — that
+   * there, so freeze the measured width into `columnSizing` as we pin - that
    * keeps the column looking the same and keeps the offsets exact.
    */
   function setPinned(position: "left" | "right" | false) {
@@ -265,7 +265,7 @@ export function TMDataGridHeaderCell({
   }
   if (isGroupingActive) {
     // Under the default `groupedColumnMode: "remove"` a grouped column is taken
-    // out of the grid, so its own header — and the Ungroup item on it — is no
+    // out of the grid, so its own header (and the Ungroup item on it) is no
     // longer reachable. The tree column that replaced it carries them instead,
     // which is also where someone would look for them.
     if (column.id === GROUP_COLUMN_ID) {
@@ -284,7 +284,7 @@ export function TMDataGridHeaderCell({
       }
     }
     // Groups only, though `expanded` also holds which rows have their detail
-    // panel open — `toggleAllRowsExpanded` would open every one of them from an
+    // panel open - `toggleAllRowsExpanded` would open every one of them from an
     // item that says "groups". See resolveExpandAll.
     const expandAllGroups = (expand: boolean) =>
       table.setExpanded(
@@ -349,7 +349,7 @@ export function TMDataGridHeaderCell({
     menuItems.push(<Menu.Divider key="pin-divider" />);
   }
   if (canReorder) {
-    // The keyboard path to reordering, and the discoverable one — a header you
+    // The keyboard path to reordering, and the discoverable one - a header you
     // can drag looks no different from one you cannot.
     const previous = getStepTargetColumn({
       table,
@@ -421,12 +421,12 @@ export function TMDataGridHeaderCell({
       </Menu.Item>,
     );
   }
-  // A trailing divider reads as a dropped item — drop the divider instead.
+  // A trailing divider reads as a dropped item - drop the divider instead.
   while (menuItems.length > 0 && isDivider(menuItems.at(-1))) {
     menuItems.pop();
   }
 
-  // One gate for both ways into the menu — the button and the right-click —
+  // One gate for both ways into the menu - the button and the right-click -
   // so the two can never disagree about which headers have one. A control
   // lane's header is itself a control (select-all, expand-all), so it carries
   // no column menu, and a right-click there falls through to the browser's.
@@ -436,7 +436,7 @@ export function TMDataGridHeaderCell({
     classes.headerCell,
     canSort ? classes.headerCellSortable : "",
     // Only the filter tints the title. `data-active` below stays
-    // sorted-or-filtered — it is the queryable state, not the styling hook.
+    // sorted-or-filtered - it is the queryable state, not the styling hook.
     isFiltered ? classes.headerCellFiltered : "",
     isDragged ? classes.headerCellDragging : "",
     dropSide === "before" ? classes.headerCellDropBefore : "",
@@ -615,7 +615,7 @@ export function TMDataGridHeaderCell({
       )}
 
       {/* A system lane has no separator at all: it cannot be resized, and the
-          hover line reads as a handle that does nothing — the one place the
+          hover line reads as a handle that does nothing - the one place the
           separator stops being a divider and starts being a lie. */}
       {!isControlColumn(column.id) && (
         <div
@@ -659,7 +659,7 @@ export function TMDataGridHeaderCell({
   // A second Menu for the same items, rather than one Menu serving both ways
   // in: the button's dropdown hangs off the button, while a context menu
   // belongs at the pointer, and a Mantine Menu has one target. `menuItems` is
-  // built once and rendered by whichever dropdown is open — never both — so
+  // built once and rendered by whichever dropdown is open (never both), so
   // the two can't drift apart.
   //
   // The per-header Popover this adds is not the cost the body pays for one per

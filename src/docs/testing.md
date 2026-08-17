@@ -11,17 +11,17 @@ else in the DOM is internal plumbing and may change without notice.
 ## Why not `data-testid`
 
 The grid does not mint `data-testid` of its own, and neither do its
-dependencies — `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
+dependencies - `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
 testing-framework convention that belongs to your app: Playwright's
 `testIdAttribute` is configurable, so a codebase standardised on `data-qa` or
 `data-cy` could not use `getByTestId()` on our nodes without breaking its own.
 
-Instead the grid names its pieces the way MUI X and AG Grid do — with semantic
+Instead the grid names its pieces the way MUI X and AG Grid do - with semantic
 attributes it owns:
 
-- **`data-dg-part`** — *what* an element is (`"row"`, `"filter-button"`)
-- **`data-row-id` / `data-column-id`** — *which* one, using your own ids
-- **roles and ARIA** — framework-neutral, and the same thing a screen reader reads
+- **`data-dg-part`** - *what* an element is (`"row"`, `"filter-button"`)
+- **`data-row-id` / `data-column-id`** - *which* one, using your own ids
+- **roles and ARIA** - framework-neutral, and the same thing a screen reader reads
 
 `<TMDataGrid data-testid>` is the one exception, because that value is yours,
 not ours.
@@ -42,7 +42,7 @@ await expect(orders.locator('[data-dg-part="row"][data-row-id="42"]')).toBeVisib
 ```
 
 `data-testid` and `id` go on the root element (which also carries
-`data-dg-root`); `aria-label` — or `aria-labelledby` — goes on
+`data-dg-root`); `aria-label` (or `aria-labelledby`) goes on
 `TMDataGrid.Table`, because the accessible name belongs to the element carrying
 the `grid` role.
 
@@ -50,7 +50,7 @@ the `grid` role.
 
 | Element | Role | Attributes |
 | --- | --- | --- |
-| Root | — | `data-dg-root`, `data-size` |
+| Root | - | `data-dg-root`, `data-size` |
 | Grid | `table`, or `grid` under cell selection | `aria-rowcount`, `aria-colcount`, `aria-busy`, `data-dg-row-count` |
 | Header row | `row` | `aria-rowindex` |
 | Header cell | `columnheader` | `data-dg-part="header"`, `data-column-id`, `aria-sort`, `data-active` |
@@ -58,7 +58,7 @@ the `grid` role.
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
 
 **The role flips with cell selection.** `enableCellSelection` turns the grid's
-`table` into a `grid` and every `cell` into a `gridcell` — a widget with a
+`table` into a `grid` and every `cell` into a `gridcell` - a widget with a
 keyboard cursor is not the same thing as a table of content, and saying `grid`
 without one would promise arrow keys that do nothing. A suite written on
 `getByRole("cell")` therefore breaks when the feature is switched on. Query
@@ -74,8 +74,8 @@ is worth counting.
 
 ## Parts
 
-Row and column ids come from your data — `getRowId` and the column definitions
-— so a part that repeats is addressed by adding the coordinate.
+Row and column ids come from your data (`getRowId` and the column definitions),
+so a part that repeats is addressed by adding the coordinate.
 
 ### Whole-grid
 
@@ -139,7 +139,7 @@ Within a filter row the three controls are `filter-column`,
 
 A column declaring `meta.filterControl` or `meta.editor` renders your component
 in that slot, so `filter-value` and `editor-input` cover the built-ins only.
-`filter-row` and `editor` still hold — scope your own queries through them.
+`filter-row` and `editor` still hold - scope your own queries through them.
 
 Every icon-only control also carries an `aria-label` drawn from `labels`. Those
 are yours to translate, so they make brittle selectors; prefer the parts above
@@ -152,7 +152,7 @@ in the DOM. A row at index 500 has no element, and Playwright cannot scroll to
 what it cannot find. Two things follow.
 
 **Count rows off the grid, not off the DOM.** `aria-rowcount` includes the
-header and summary rows; `data-dg-row-count` is the body rows alone — the
+header and summary rows; `data-dg-row-count` is the body rows alone - the
 current page under pagination, everything the filters left otherwise.
 
 ```ts
@@ -168,16 +168,16 @@ await orders.locator('[data-dg-part="search"]').fill("Nordkvist");
 await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 ```
 
-**Or scroll to it.** When the row has to be reached where it is — testing the
-scroll itself, or a grid with no search — `scrollToRow` moves the virtualizer,
+**Or scroll to it.** When the row has to be reached where it is - testing the
+scroll itself, or a grid with no search - `scrollToRow` moves the virtualizer,
 which is the only thing that can put an element there:
 
 ```ts
 const found = grid.scrollToRow({ rowId: "42", align: "center" });
 ```
 
-It answers `false` when the row is not in the current view — filtered out, on
-another page, or an unknown id — and scrolls nothing. From a Playwright test
+It answers `false` when the row is not in the current view - filtered out, on
+another page, or an unknown id - and scrolls nothing. From a Playwright test
 that means going through the page, since the api lives in React:
 
 ```ts
@@ -198,7 +198,7 @@ await expect(grid).not.toHaveAttribute("aria-busy");
 ```
 
 Quick search debounces (250 ms by default, `debounce` on `TMDataGrid.Search`).
-Assert on `data-dg-row-count` rather than adding a timeout — Playwright retries
+Assert on `data-dg-row-count` rather than adding a timeout - Playwright retries
 the assertion until the debounce lands.
 
 ## A page object
@@ -301,5 +301,5 @@ expect(rowCount).toBe(3);
 ```
 
 Mantine's transitions never settle under jsdom, so a Popover's dropdown mounts
-empty — the filter and column panels among them. Render inside
+empty - the filter and column panels among them. Render inside
 `<MantineProvider env="test">`.

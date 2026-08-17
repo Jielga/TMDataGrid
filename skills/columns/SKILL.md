@@ -18,7 +18,7 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnUtils.ts'
 ---
 
-# TMDataGrid — Columns
+# TMDataGrid - Columns
 
 `createTMDataGridColumnHelper<TData>()` returns a TanStack column helper bound to
 the grid feature set, which gives `meta` and `filterFn` their correct types.
@@ -160,7 +160,7 @@ When `header` is a component there is no string to fall back to, so the column
 manager and column menus show the raw id (`"fullName"`) instead of a name.
 
 ```tsx
-// Wrong — menus show "fullName".
+// Wrong - menus show "fullName".
 columnHelper.accessor("fullName", { header: () => <Icon /> });
 
 // Right.
@@ -185,7 +185,7 @@ const active = columnFilters.filter((filter) => isFilterActive(filter.value));
 ### Numeric operators on a column without meta.type
 
 `getColumnType(column)` defaults to `"string"`, so a numeric column that omits
-`meta: { type: "number" }` offers only the string operators — `greaterThan` and
+`meta: { type: "number" }` offers only the string operators - `greaterThan` and
 the other comparisons never appear in the panel, and comparisons run as text.
 
 ### Setting size to control width

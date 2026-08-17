@@ -21,10 +21,10 @@ import type {
  * what applies the per-column overrides.
  */
 /**
- * How rows are selected — see `selectionMode` on {@link UseTMDataGridOptions}.
+ * How rows are selected - see `selectionMode` on {@link UseTMDataGridOptions}.
  *
- * One axis, because the two things a config could set independently — which
- * chrome selects, and what a bare row click does — cannot both be free: a click
+ * One axis, because the two things a config could set independently - which
+ * chrome selects, and what a bare row click does - cannot both be free: a click
  * can either toggle a multi-selection or move the highlight, never both. Folding
  * them into one value makes that conflict unrepresentable rather than something
  * to warn about.
@@ -36,11 +36,11 @@ export type TMDataGridSelectionMode =
   | "row"
   /** Checkbox column multi-selects, and a row click highlights one row. */
   | "checkboxAndHighlight"
-  /** No selection at all — a row click only highlights. Master-detail. */
+  /** No selection at all - a row click only highlights. Master-detail. */
   | "highlight";
 
 /**
- * How cells are selected — see `cellSelection` on {@link UseTMDataGridOptions}.
+ * How cells are selected - see `cellSelection` on {@link UseTMDataGridOptions}.
  *
  * A mode rather than a pair of booleans, for the reason
  * {@link TMDataGridSelectionMode} is one: "cells can be selected" and "more
@@ -58,7 +58,7 @@ export type TMDataGridCellSelectionMode =
 export type TMDataGridFeatureFlags = {
   sorting: boolean;
   filtering: boolean;
-  /** Whether the quick search may filter — `enableGlobalFilter`. */
+  /** Whether the quick search may filter - `enableGlobalFilter`. */
   globalFiltering: boolean;
   hiding: boolean;
   pinning: boolean;
@@ -73,7 +73,7 @@ export type TMDataGridFeatureFlags = {
   /** Whether a bare row click toggles the selection. Only under `"row"`. */
   rowClickSelects: boolean;
   /**
-   * Whether more than one row can be selected at once — TanStack's
+   * Whether more than one row can be selected at once - TanStack's
    * `enableMultiRowSelection`. Off, the grid drops the select-all header
    * checkbox: TanStack's `toggleAllRowsSelected` only consults `getCanSelect`,
    * so that control would select every row and walk straight past the limit.
@@ -84,14 +84,14 @@ export type TMDataGridFeatureFlags = {
   /** Whether a selected row takes the highlight colour. Follows the mode. */
   showSelectedBackground: boolean;
   /**
-   * The single highlighted row — clicking a row highlights it, for a detail
+   * The single highlighted row - clicking a row highlights it, for a detail
    * panel to follow. State of its own, not a slice of `rowSelection`, which is
    * what lets it coexist with a checkbox multi-selection.
    */
   highlightRow: boolean;
   /**
    * Whether cells can be selected at all. Off unless `cellSelection` asks for
-   * it — it takes the body's tab stop off the row and puts it on a cell, and
+   * it - it takes the body's tab stop off the row and puts it on a cell, and
    * reports the grid to assistive technology as a `grid` rather than a `table`,
    * which is a different promise about what the keyboard does.
    */
@@ -109,7 +109,7 @@ export type TMDataGridFeatureFlags = {
   /**
    * Row grouping: the "Group by" items in the header menu and the generated
    * tree column. On unless `enableGrouping: false`, since an ungrouped grid
-   * looks and behaves exactly as it did before — `grouping` starts empty, and
+   * looks and behaves exactly as it did before - `grouping` starts empty, and
    * an empty grouping state passes straight through the row model.
    *
    * The exception is `manualPagination`, where the client holds one page rather
@@ -118,14 +118,14 @@ export type TMDataGridFeatureFlags = {
    * its own grouping can still say `enableGrouping: true` to override.
    */
   grouping: boolean;
-  /** Whether cells can be edited at all — `editMode` was set. */
+  /** Whether cells can be edited at all - `editMode` was set. */
   editing: boolean;
   /** The commit policy, or `null` while editing is off. */
   editMode: TMDataGridEditMode | null;
-  /** The generated row-number gutter — `enableRowNumbers`. Off by default. */
+  /** The generated row-number gutter - `enableRowNumbers`. Off by default. */
   rowNumbers: boolean;
   /**
-   * Whether rows can be pinned to the top or bottom edge — `enableRowPinning`,
+   * Whether rows can be pinned to the top or bottom edge - `enableRowPinning`,
    * boolean or per-row predicate. Off by default: pinning has no built-in
    * gesture, so a grid that never calls `row.pin()` has nothing to gain from
    * the body watching the state.
@@ -133,7 +133,7 @@ export type TMDataGridFeatureFlags = {
   rowPinning: boolean;
   /**
    * Whether cells highlight the matched text while a contains-family filter
-   * or the quick search is active — `enableMatchHighlighting`. Off by
+   * or the quick search is active - `enableMatchHighlighting`. Off by
    * default, so a grid that has not asked pays nothing per cell.
    */
   matchHighlighting: boolean;
@@ -205,7 +205,7 @@ export function readFeatureFlags<TData extends RowData>(
     editing: options.editMode !== undefined,
     editMode: options.editMode ?? null,
     rowNumbers: options.enableRowNumbers === true,
-    // A predicate counts as on — some rows may still pin.
+    // A predicate counts as on - some rows may still pin.
     rowPinning:
       options.enableRowPinning === true ||
       typeof options.enableRowPinning === "function",
@@ -246,7 +246,7 @@ export function getColumnCapabilities(
     canHide: features.hiding && column.getCanHide(),
     canPin: features.pinning && column.getCanPin(),
     canResize: features.resizing && column.getCanResize(),
-    // Ordering has no TanStack capability method — see isColumnReorderable.
+    // Ordering has no TanStack capability method - see isColumnReorderable.
     canReorder: features.ordering && isColumnReorderable(column),
     // `getCanGroup()` also insists on an accessor, which is what keeps the
     // generated checkbox and tree columns from offering to group on themselves.
@@ -254,7 +254,7 @@ export function getColumnCapabilities(
   };
 }
 
-/** The same questions, asked of the whole grid — used to hide toolbar buttons. */
+/** The same questions, asked of the whole grid - used to hide toolbar buttons. */
 export type TMDataGridCapabilities = {
   canSortAny: boolean;
   canFilterAny: boolean;

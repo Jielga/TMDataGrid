@@ -9,7 +9,7 @@ import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
  * A built-in `meta.filterControl` for `boolean` columns: an All / Yes / No
- * segmented control — All clears the value, which deactivates the filter.
+ * segmented control - All clears the value, which deactivates the filter.
  * Set or range operators fall back to the standard input.
  */
 export function DgTriStateFilter(args: TMDataGridFilterControlArgs) {

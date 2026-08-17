@@ -134,10 +134,10 @@ export type TMDataGridColumnMeta = {
    */
   type?: TMDataGridColumnType;
   /**
-   * The choices of a `select` / `multiSelect` column — one declaration feeding
+   * The choices of a `select` / `multiSelect` column - one declaration feeding
    * the filter panel's value control and the cell editor alike. A static
    * array, `"faceted"` (the distinct values present in the data), or a
-   * function of the table, column and — for editors — the row. See
+   * function of the table, column and, for editors, the row. See
    * {@link TMDataGridOptionsSource}.
    */
   options?: TMDataGridOptionsSource;
@@ -146,7 +146,7 @@ export type TMDataGridColumnMeta = {
   align?: "left" | "right" | "center";
   /**
    * Size the column to its widest mounted content once, after the first rows
-   * render — unless a persisted or user-set width already covers it. The same
+   * render - unless a persisted or user-set width already covers it. The same
    * measurement as double-clicking the resize divider; see `autosizeColumn`.
    */
   autoSize?: boolean;
@@ -158,13 +158,13 @@ export type TMDataGridColumnMeta = {
   enableOrdering?: boolean;
   /**
    * The operator a fresh filter on this column starts with, instead of the
-   * type's default — a salary column can open on `"between"`. Must be one of
+   * type's default - a salary column can open on `"between"`. Must be one of
    * the type's own operators.
    */
   defaultFilterOperator?: TMDataGridFilterOperator;
   /**
    * Replaces the built-in value control in this column's filter-panel row. A
-   * component rendered as JSX — hooks are legal inside — receiving the
+   * component rendered as JSX (hooks are legal inside), receiving the
    * value-only contract: it reads the current operator, writes the bare
    * value, and the grid composes the stored filter around it. Define it at
    * module scope. See {@link TMDataGridFilterControlArgs}.
@@ -173,13 +173,13 @@ export type TMDataGridColumnMeta = {
   /**
    * Whether this column's cells take edits, once `editMode` is on. `false`
    * switches the column off outright; a predicate decides per row. Defaults
-   * to editable for any column that maps to a field — see {@link editField}.
+   * to editable for any column that maps to a field - see {@link editField}.
    */
   editable?:
     | boolean
     | ((row: Row<TMDataGridFeatures, TMDataGridRowData>) => boolean);
   /**
-   * The data path this column edits, when it is not the `accessorKey` — the
+   * The data path this column edits, when it is not the `accessorKey` - the
    * only way a column built on `accessorFn` becomes editable. Dot paths reach
    * into nested records: `"address.city"`.
    */
@@ -197,7 +197,7 @@ export type TMDataGridColumnMeta = {
   validate?: TMDataGridFieldValidate;
   /**
    * Replaces the built-in editor for this column. A component rendered as
-   * JSX — hooks are legal inside — receiving the live TanStack Form `field`
+   * JSX (hooks are legal inside), receiving the live TanStack Form `field`
    * API plus the table context, the same contract the built-ins fill. Define
    * it at module scope so its identity is stable across renders. See
    * {@link TMDataGridEditorArgs}.
@@ -213,7 +213,7 @@ export type TMDataGridTableMeta = {
   rowHeight?: number;
   /**
    * Unfiltered row total. Only needed for server-driven grids, where the client
-   * never holds the full data set — `TMDataGrid.SummaryCount` uses it as denominator.
+   * never holds the full data set - `TMDataGrid.SummaryCount` uses it as denominator.
    */
   totalRowCount?: number;
 };
@@ -243,7 +243,7 @@ export const tmDataGridFeatures = tableFeatures({
 
   filteredRowModel: createFilteredRowModel(),
   groupedRowModel: createGroupedRowModel(),
-  // The sorted model plus the fuzzy quick search's rank ordering — see
+  // The sorted model plus the fuzzy quick search's rank ordering - see
   // core/quickSearch.ts for when the ordering applies.
   sortedRowModel: createFuzzyRankedSortedRowModel(),
   expandedRowModel: createExpandedRowModel(),
@@ -259,7 +259,7 @@ export const tmDataGridFeatures = tableFeatures({
   },
   sortFns,
   // The names `columnDef.aggregationFn` accepts. Only consulted for columns
-  // that ask for one — a column with no `aggregationFn` reports `undefined` on
+  // that ask for one - a column with no `aggregationFn` reports `undefined` on
   // a group row, which is what keeps a plain "group by" free of aggregates.
   aggregationFns,
 
@@ -291,7 +291,7 @@ export type TMDataGridDetailsRenderer<TData extends RowData> = (
 
 /**
  * What the virtualizer assumes a detail panel it has not measured yet is worth.
- * Only a seed — every mounted row is measured, so the real height replaces it.
+ * Only a seed - every mounted row is measured, so the real height replaces it.
  */
 const DEFAULT_DETAILS_EST_HEIGHT = 160;
 
@@ -314,13 +314,13 @@ export type TMDataGridUiState = {
    */
   draggedColumnId: string | null;
   /**
-   * The single highlighted row — the one a detail panel would be showing. Its
+   * The single highlighted row - the one a detail panel would be showing. Its
    * own concept, not a slice of `rowSelection`: under
    * `selectionMode: "checkboxAndHighlight"` the two coexist, and TanStack's one
    * selection map cannot hold both.
    *
    * Not pruned when the row is filtered out, paged away or dropped from `data`,
-   * matching how TanStack treats `rowSelection` — nothing there resets it
+   * matching how TanStack treats `rowSelection` - nothing there resets it
    * either. The row simply renders unhighlighted, and highlights again if it
    * comes back.
    */
@@ -329,17 +329,17 @@ export type TMDataGridUiState = {
   selectionAnchorRowId: string | null;
   /**
    * The cell the keyboard is on, under `enableCellSelection`. `null` until the
-   * grid is first entered — and again whenever a consumer clears it.
+   * grid is first entered - and again whenever a consumer clears it.
    *
    * The state is the source of truth and DOM focus follows it, not the other
    * way around: under virtualization the cell it names is often not mounted,
    * which is exactly what a coordinate has to survive. Held as ids for the
-   * same reason — see {@link TMDataGridCellPosition}.
+   * same reason - see {@link TMDataGridCellPosition}.
    */
   focusedCell: TMDataGridCellPosition | null;
   /**
    * The selected rectangle, under `cellSelection: "range"`. Held as the two
-   * cells that span it — see {@link TMDataGridCellRange}.
+   * cells that span it - see {@link TMDataGridCellRange}.
    *
    * Always covers the focused cell: every gesture that moves the focus either
    * extends the rectangle or collapses it onto the new cell, so the two never
@@ -356,21 +356,21 @@ export type TMDataGridUiActions = {
   startColumnDrag: (columnId: string) => void;
   endColumnDrag: () => void;
   /**
-   * Moves the active row, or clears it with `null` — which is how a consumer
+   * Moves the active row, or clears it with `null` - which is how a consumer
    * closing its detail panel puts the grid back in step.
    */
   setHighlightedRow: (rowId: string | null) => void;
   setSelectionAnchor: (rowId: string | null) => void;
   /**
    * Moves the focused cell, or clears it with `null`. DOM focus follows while
-   * the grid holds it — so this both moves the keyboard and, when the row is
+   * the grid holds it - so this both moves the keyboard and, when the row is
    * off screen, scrolls it into view. Called for every arrow key, and available
    * for a consumer putting the keyboard somewhere itself.
    */
   setFocusedCell: (cell: TMDataGridCellPosition | null) => void;
   /**
    * Sets the selected rectangle, or clears it with `null`. Does not move the
-   * focused cell — the two are set together by the gestures that change both,
+   * focused cell - the two are set together by the gestures that change both,
    * which is what keeps "extend the selection" and "move the cursor" separable.
    */
   setCellRange: (range: TMDataGridCellRange | null) => void;
@@ -384,19 +384,19 @@ export type TMDataGridScrollAlign = "auto" | "start" | "center" | "end";
 export type TMDataGridScrollToRowArgs = {
   /** The row's id, as `getRowId` produced it. */
   rowId: string;
-  /** Defaults to `"auto"` — the nearest edge, leaving a visible row alone. */
+  /** Defaults to `"auto"` - the nearest edge, leaving a visible row alone. */
   align?: TMDataGridScrollAlign;
 };
 
 /** @internal The body's scroll implementation. See `scrollToRow`. */
 export type TMDataGridScroller = (args: TMDataGridScrollToRowArgs) => boolean;
 
-/** What `useTMDataGrid` returns — spread straight onto `<TMDataGrid />`. */
+/** What `useTMDataGrid` returns - spread straight onto `<TMDataGrid />`. */
 export type TMDataGridApi<TData extends RowData> = {
   table: TMDataGridTable<TData>;
   ui: TMDataGridUiStore;
   /**
-   * The edit engine — open forms, dirty/error projections, and the verbs
+   * The edit engine - open forms, dirty/error projections, and the verbs
    * (`begin`, `commit`, `cancel`, `submitAll`). `edit.getForm(rowId)` hands
    * out the same TanStack Form the inline editors write through, so a drawer
    * or detail panel can share a row's draft. Inert until `editMode` is set.
@@ -413,20 +413,20 @@ export type TMDataGridApi<TData extends RowData> = {
   /** Virtualizer overscan: the option, or {@link DEFAULT_OVERSCAN}. */
   overscan: number;
   /**
-   * Puts the settings state — visibility, order, widths, pinning, grouping —
+   * Puts the settings state - visibility, order, widths, pinning, grouping -
    * back to what a first visit with clean storage would have shown: the
    * consumer's `initialState` plus the structural lanes. With persistence
    * configured the reset writes through to storage like any other change.
    *
    * This, not TanStack's `resetColumnX()` family, is the reset for a
    * persisted grid: those reset to `initialState`, and the grid bakes the
-   * restored payload into `initialState` at mount — they would "reset" to
+   * restored payload into `initialState` at mount - they would "reset" to
    * the very layout being discarded.
    */
   resetSettings: () => void;
   /**
    * Scrolls a row into view. The grid is always virtualized, so a row far down
-   * the list has no element to scroll to — this moves the virtualizer instead,
+   * the list has no element to scroll to - this moves the virtualizer instead,
    * which is the only thing that can put one there.
    *
    * ```ts
@@ -434,8 +434,8 @@ export type TMDataGridApi<TData extends RowData> = {
    * ```
    *
    * Answers whether the row could be reached. `false` means it is not in the
-   * current view at all — filtered out, on another page, or an id that matches
-   * no row — and nothing scrolled. A pinned row answers `true` without
+   * current view at all - filtered out, on another page, or an id that matches
+   * no row - and nothing scrolled. A pinned row answers `true` without
    * scrolling: it is already parked at an edge.
    *
    * Identity is stable, so it is safe in a dependency array.
@@ -457,7 +457,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    */
   getRowId: NonNullable<TableOptions<TMDataGridFeatures, TData>["getRowId"]>;
   /**
-   * Form-level validators for the whole editing row — where cross-field
+   * Form-level validators for the whole editing row - where cross-field
    * rules live. TanStack Form's own vocabulary, Standard Schema included:
    *
    * ```tsx
@@ -472,13 +472,13 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    * Pathed issues land on the matching columns; pathless ones on the row.
    */
   rowValidators?: TMDataGridRowValidators;
-  /** Rows the pencil skips — `false` keeps a row read-only in every mode. */
+  /** Rows the pencil skips - `false` keeps a row read-only in every mode. */
   isRowEditable?: (row: Row<TMDataGridFeatures, TData>) => boolean;
   /**
    * Called when an edit commits. The grid never mutates `data`: apply the
    * change and let the new data arrive back through `data` as always. The
-   * engine drops the draft only when this resolves — a slow save keeps the
-   * draft visible with a busy marker — and a rejection keeps the form open
+   * engine drops the draft only when this resolves - a slow save keeps the
+   * draft visible with a busy marker - and a rejection keeps the form open
    * with the error on the row.
    *
    * `changes` is the per-field diff (one entry in cell mode) for consumers
@@ -488,7 +488,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
     args: TMDataGridEditCommitArgs<TData>,
   ) => void | Promise<void>;
   /**
-   * Seed values for `edit.addRow()` — the entry row's starting point. A
+   * Seed values for `edit.addRow()` - the entry row's starting point. A
    * function is called per added row (fresh timestamps, empty arrays).
    */
   newRowDefaults?: TData | (() => TData);
@@ -499,7 +499,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    */
   onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
   /**
-   * Called by `edit.deleteRow` under the immediate modes — confirmation, if
+   * Called by `edit.deleteRow` under the immediate modes - confirmation, if
    * any, belongs in here. Under batch, deletions accumulate in
    * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
    * Setting this also puts the trash can in the edit lane.
@@ -511,7 +511,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * The editing options travel together, and the type states it: without
  * `editMode` none of them has anything to act on, so passing one is a
  * compile error rather than a dead option; with it, `getRowId` becomes
- * required; and `onEditCommitBatch` exists only under `"batch"` — the one
+ * required; and `onEditCommitBatch` exists only under `"batch"` - the one
  * mode whose `submitAll` calls it.
  *
  * `editMode` itself turns cell editing on and picks how commits happen. Off
@@ -519,7 +519,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  *
  * | Mode | Commit | Cancel |
  * | ---- | ------ | ------ |
- * | `"cell"` | Enter, Tab, blur — Sheets | Escape |
+ * | `"cell"` | Enter, Tab, blur - Sheets | Escape |
  * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
  * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
  * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
@@ -545,7 +545,7 @@ export type TMDataGridEditingOptions<TData extends RowData> =
     })
   | (TMDataGridEditingCallbacks<TData> & {
       editMode: Exclude<TMDataGridEditMode, "batch">;
-      /** Only `"batch"`'s `submitAll` ever calls it — see the other branch. */
+      /** Only `"batch"`'s `submitAll` ever calls it - see the other branch. */
       onEditCommitBatch?: never;
     })
   | {
@@ -566,14 +566,14 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
   TMDataGridEditingOptions<TData> & {
   /**
    * Restore and persist table state across mounts. Two keys, because the two
-   * kinds of state have different lifetimes — see {@link TMDataGridPersistence}.
+   * kinds of state have different lifetimes - see {@link TMDataGridPersistence}.
    *
    * Keep the object referentially stable (module scope or `useMemo`); it is a
    * dependency of the subscription that writes back.
    */
   persist?: TMDataGridPersistence;
   /**
-   * Overrides for the grid's strings — menu items, panels, the pager, and
+   * Overrides for the grid's strings - menu items, panels, the pager, and
    * every `aria-label`. Any subset, merged over the English defaults; a full
    * Swedish dictionary ships as `TMDATAGRID_LABELS_SV`.
    *
@@ -582,7 +582,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * useTMDataGrid({ data, columns, labels: { noResults: "Inga rader" } });
    * ```
    *
-   * Keep the object referentially stable (module scope or `useMemo`) — the
+   * Keep the object referentially stable (module scope or `useMemo`) - the
    * chrome re-renders when its identity changes.
    */
   labels?: TMDataGridLabelsOverride;
@@ -601,19 +601,19 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * virtualization.
    *
    * The second grid-defined switch (TanStack defines no `enablePagination`
-   * option). `manualPagination: true` implies it — a server-paged grid needs
+   * option). `manualPagination: true` implies it - a server-paged grid needs
    * no extra flag.
    */
   enablePagination?: boolean;
   /**
    * The row-number gutter: a generated lane, outermost left, numbering the
-   * rows of the current view — sorted, filtered, continuing across pages,
+   * rows of the current view - sorted, filtered, continuing across pages,
    * with group rows unnumbered. Off by default.
    */
   enableRowNumbers?: boolean;
   /**
-   * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` — the
-   * default — forgives typos and skipped characters, and while it is the
+   * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` - the
+   * default - forgives typos and skipped characters, and while it is the
    * only thing narrowing the grid (no sort, no grouping) the rows order by
    * match quality, best first. `"contains"` is plain substring matching.
    * An explicit `globalFilterFn` overrides both.
@@ -621,7 +621,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
   quickSearchMode?: TMDataGridQuickSearchMode;
   /**
    * Highlights the matched text in cells while a contains-family column
-   * filter or the quick search is active. Default-rendered cells only — a
+   * filter or the quick search is active. Default-rendered cells only - a
    * column with its own `cell` renderer opts out by existing; a fuzzy
    * typo-match with no contiguous occurrence shows no highlight. Off by
    * default.
@@ -637,8 +637,8 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * | `"checkboxAndHighlight"` | yes, multi-select | highlights one row |
    * | `"highlight"` | no | highlights one row, no selection at all |
    *
-   * One option rather than two, so the combination that cannot work — a click
-   * that both toggles a multi-selection and moves the highlight — is not
+   * One option rather than two, so the combination that cannot work - a click
+   * that both toggles a multi-selection and moves the highlight - is not
    * expressible.
    *
    * The first two write to TanStack's `rowSelection`. The highlight is separate
@@ -671,7 +671,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * highlight. Read once on mount, like `initialState`.
    *
    * The grid never persists the highlighted row. Pair this with
-   * {@link onHighlightedRowChange} and keep it wherever it belongs — for a
+   * {@link onHighlightedRowChange} and keep it wherever it belongs - for a
    * detail panel that is usually the route, which gets you a shareable link and
    * a working back button as well as surviving a reload:
    *
@@ -707,7 +707,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * | PageUp / PageDown | one viewport of rows |
    * | Home / End | first / last cell of the row |
    * | Ctrl+Home / Ctrl+End | first / last cell of the grid |
-   * | Enter or F2 | into the cell — the checkbox, link or button it holds |
+   * | Enter or F2 | into the cell - the checkbox, link or button it holds |
    * | Escape | back out to the cell |
    * | Space | selects the row, as it does in row-selection mode |
    *
@@ -717,7 +717,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * | ------- | ---- |
    * | Drag across cells | selects the rectangle they span |
    * | Shift+click, Shift+arrows | extends the rectangle from its anchor |
-   * | Ctrl+C | copies it as tab-separated text — paste lands in Excel's cells |
+   * | Ctrl+C | copies it as tab-separated text - paste lands in Excel's cells |
    * | Right-click inside it | offers the CSV export, headers optional |
    *
    * Off, nothing about the body changes. On, three things do: the body's tab
@@ -727,7 +727,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * the cells take `data-focused` / `data-selected` for the ring and the tint.
    *
    * The state is `ui.state.focusedCell` and `ui.state.cellRange`, and moving it
-   * is `ui.actions.setFocusedCell` / `setCellRange` — so a consumer can put the
+   * is `ui.actions.setFocusedCell` / `setCellRange` - so a consumer can put the
    * keyboard on a cell, or follow it:
    *
    * ```tsx
@@ -754,7 +754,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * it is what turns row details on.
    *
    * Which rows are open is TanStack's own `expanded` state, so opening one is
-   * `row.toggleExpanded()` from wherever suits — a chevron in a cell, a button
+   * `row.toggleExpanded()` from wherever suits - a chevron in a cell, a button
    * in the context menu, a double-click:
    *
    * ```tsx
@@ -765,7 +765,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * });
    * ```
    *
-   * The panel is as tall as what it renders — see {@link renderDetailsEstHeight}
+   * The panel is as tall as what it renders - see {@link renderDetailsEstHeight}
    * for what the virtualizer assumes before it has measured one.
    *
    * Group rows are left out: expanding one opens its children, and a panel there
@@ -784,7 +784,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    *
    * An estimate, not a height: every mounted row is measured, so the real one
    * takes over as soon as the panel is on screen. It keeps the scrollbar honest
-   * for panels that open off screen — restored `expanded` state, say — and being
+   * for panels that open off screen (restored `expanded` state, say), and being
    * roughly right is enough.
    */
   renderDetailsEstHeight?: number;
@@ -792,7 +792,7 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * Rows the virtualizer keeps mounted above and below the viewport. Defaults
    * to 6.
    *
-   * Raise it to trade memory for a scroll that stays painted — fast wheel or
+   * Raise it to trade memory for a scroll that stays painted - fast wheel or
    * touch flings can outrun the virtualizer and flash blank rows, and a larger
    * buffer covers the gap. Lower it when rows are expensive to render.
    */
@@ -808,7 +808,7 @@ type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
 /**
  * Point every column at the operator-dispatching filter function, and take
  * grouping's aggregation defaults back off, unless the column opted into its
- * own. Anything the consumer set wins — it is spread over these.
+ * own. Anything the consumer set wins - it is spread over these.
  *
  * The aggregation pair needs explaining. TanStack's grouping feature hands
  * every column `aggregationFn: "auto"` and an `aggregatedCell` that stringifies
@@ -816,7 +816,7 @@ type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
  * numeric column silently sum itself and every date column show a range the
  * moment anything is grouped. That is a summary table, and "group by" is not a
  * request for one. Cleared here, so a grouped grid is a tree until a column
- * says otherwise — `aggregationFn: "sum"` on the column that wants it.
+ * says otherwise - `aggregationFn: "sum"` on the column that wants it.
  */
 function withTMDataGridDefaults<TData extends RowData>(
   columns: ReadonlyArray<TMDataGridColumnDef<TData>>,
@@ -842,7 +842,7 @@ function withTMDataGridDefaults<TData extends RowData>(
  *
  * Every `TableOptions` field passes straight through, so a server-driven grid
  * only needs `manualPagination` / `manualFiltering` / `manualSorting`,
- * `rowCount` and the matching `onXChange` callbacks — the chrome reads
+ * `rowCount` and the matching `onXChange` callbacks - the chrome reads
  * `getRowCount()` / `getPageCount()` / `getPaginatedRowModel()`, all of which
  * already respect manual mode. `manualPagination` also switches the pagination
  * flag on, so `<TMDataGrid.Footer />` renders its pager without further
@@ -875,7 +875,7 @@ export function useTMDataGrid<TData extends RowData>({
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
   // Derived up here, rather than just before the return, because the rest of the
-  // hook needs `selectColumn` — one place decides what each mode means.
+  // hook needs `selectColumn` - one place decides what each mode means.
   //
   // Deliberately not memoized on `table`: the flags must re-derive whenever the
   // caller passes different options, and `table` keeps the same identity when
@@ -901,7 +901,7 @@ export function useTMDataGrid<TData extends RowData>({
   // The lane that opens the panels. Nothing to switch on: a grid with no
   // `renderDetails` has nothing for it to open.
   const detailsColumnEnabled = renderDetails !== undefined;
-  // Row mode's Save sits at the end of the row — the lane is its chrome. It
+  // Row mode's Save sits at the end of the row - the lane is its chrome. It
   // also appears wherever the trash can has somewhere to report to.
   const editColumnEnabled =
     editMode !== undefined &&
@@ -910,7 +910,7 @@ export function useTMDataGrid<TData extends RowData>({
       (editMode === "batch" && onEditCommitBatch !== undefined));
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
-  // depends on the strings rather than on the labels object — a fresh
+  // depends on the strings rather than on the labels object - a fresh
   // inline `labels` must not rebuild the table's columns.
   const selectColumnLabel = labels.selectColumnLabel;
   const groupColumnLabel = labels.groupColumnLabel;
@@ -927,7 +927,7 @@ export function useTMDataGrid<TData extends RowData>({
     // tree column hides itself while nothing is grouped. Adding it to the array
     // only once a column is grouped would make the column list depend on table
     // state, which is the one thing that cannot be a `useMemo` dependency here
-    // — the table is built from these columns.
+    // - the table is built from these columns.
     //
     // The order is the order they are pinned in, and it follows what each one
     // is about: tick a row, find it in the tree the user grouped it into, then
@@ -946,7 +946,7 @@ export function useTMDataGrid<TData extends RowData>({
         ? [createDetailsColumn<TData>(detailsColumnLabel)]
         : []),
       ...base,
-      // Last and pinned right — the row's Save belongs at the end of the row.
+      // Last and pinned right - the row's Save belongs at the end of the row.
       ...(editColumnEnabled ? [createEditColumn<TData>(editColumnLabel)] : []),
     ];
   }, [
@@ -965,8 +965,8 @@ export function useTMDataGrid<TData extends RowData>({
 
   // Read once on mount: `initialState` is only consumed on the first render,
   // and re-reading later would fight the user's live edits.
-  // Realigned against the ids this render is about to construct — lanes
-  // included — so a column removed between deploys does not leave a ghost
+  // Realigned against the ids this render is about to construct - lanes
+  // included - so a column removed between deploys does not leave a ghost
   // sort, filter or width behind.
   const [persistedState] = useState(() =>
     readPersistedState(persist, collectLeafColumnIds(columns)),
@@ -983,7 +983,7 @@ export function useTMDataGrid<TData extends RowData>({
     enableColumnResizing: true,
     // The quick search's matcher. Fuzzy by default (Q4); `"contains"` keeps
     // plain substring matching, and an explicit `globalFilterFn` in the
-    // options below overrides both — which also switches the rank ordering
+    // options below overrides both - which also switches the rank ordering
     // off, since it keys off this exact name.
     globalFilterFn:
       options.quickSearchMode === "contains"
@@ -991,11 +991,11 @@ export function useTMDataGrid<TData extends RowData>({
         : "tmDataGridFuzzy",
     // Grouping by a column takes it out of the grid, the way AG Grid does it:
     // its values have moved into the tree column, so leaving it in place would
-    // show every row the same value it was grouped under. Overridable — pass
+    // show every row the same value it was grouped under. Overridable - pass
     // `"reorder"` to keep the column and have it moved to the front instead.
     groupedColumnMode: "remove",
     ...options,
-    // Row details ride on `expanded`, the same state the tree uses — but a data
+    // Row details ride on `expanded`, the same state the tree uses - but a data
     // row answers `getCanExpand()` false, since TanStack's fallback is
     // `subRows.length > 0`. `() => true` is the right answer for a group row
     // too, so nothing here has to tell the two apart, and a consumer passing
@@ -1005,7 +1005,7 @@ export function useTMDataGrid<TData extends RowData>({
       : {}),
     // Always a predicate, never the passthrough: TanStack defaults the option
     // to `true` once the feature is registered, and the grid's default is off.
-    // Group rows never pin — TanStack builds one on its first child's record,
+    // Group rows never pin - TanStack builds one on its first child's record,
     // so a pinned group would drag an arbitrary data row's identity to the
     // edge. The consumer's own predicate still decides the data rows.
     enableRowPinning: (row: Row<TMDataGridFeatures, TData>) =>
@@ -1022,7 +1022,7 @@ export function useTMDataGrid<TData extends RowData>({
         ...options.initialState?.columnVisibility,
         ...persistedState.columnVisibility,
         // Last word, because the tree column's visibility is not a user setting
-        // — it tracks the grouping state. See the effect below.
+        // - it tracks the grouping state. See the effect below.
         ...(groupColumnEnabled
           ? { [GROUP_COLUMN_ID]: initialGrouping.length > 0 }
           : {}),
@@ -1067,8 +1067,8 @@ export function useTMDataGrid<TData extends RowData>({
     },
   });
 
-  // The edit engine. Built once per mount; everything it needs later — the
-  // table, the mode, the consumer's callbacks — is read through a ref updated
+  // The edit engine. Built once per mount; everything it needs later - the
+  // table, the mode, the consumer's callbacks - is read through a ref updated
   // every render, so forms created at `begin()` always call the latest
   // `onEditCommit` (the onHighlightedRowChangeRef pattern, applied wholesale).
   const editContextRef = useRef<TMDataGridEditEngineContext>(null as never);
@@ -1105,7 +1105,7 @@ export function useTMDataGrid<TData extends RowData>({
   useEffect(() => {
     if (editMode !== undefined && options.getRowId === undefined) {
       console.error(
-        "TMDataGrid: editMode requires getRowId — drafts are keyed by row id, and the index fallback names a different record after any sort or filter.",
+        "TMDataGrid: editMode requires getRowId - drafts are keyed by row id, and the index fallback names a different record after any sort or filter.",
       );
     }
     // The check is a mount-time contract, not something to re-run per render.
@@ -1117,7 +1117,7 @@ export function useTMDataGrid<TData extends RowData>({
   // One: the tree column appears with the first grouped column and goes away
   // with the last, so an ungrouped grid looks exactly as it did before grouping
   // existed. Driven from a subscription rather than by rebuilding the column
-  // array, because the array is what the table is built from — deriving it from
+  // array, because the array is what the table is built from - deriving it from
   // table state would close the loop. Visibility is the one column property
   // that can be changed after the fact without touching the definitions.
   //
@@ -1138,8 +1138,8 @@ export function useTMDataGrid<TData extends RowData>({
   // appears to work only because the visibility write above happens to touch a
   // dependency they share.
   //
-  // Re-publishing `columnVisibility` and `columnOrder` — same contents, new
-  // identity — invalidates all three families. `columnOrder` is the only
+  // Re-publishing `columnVisibility` and `columnOrder` - same contents, new
+  // identity - invalidates all three families. `columnOrder` is the only
   // dependency the header groups declare, and `columnVisibility` the only one
   // the cells do, so both are needed. Remove this once the deps are fixed
   // upstream; the test that fails without it groups two columns and asserts the
@@ -1263,7 +1263,7 @@ export function useTMDataGrid<TData extends RowData>({
   );
 
   // `onHighlightedRowChange` is fired from a subscription rather than from the store
-  // action, so it covers every route to a new active row — a row click, and a
+  // action, so it covers every route to a new active row - a row click, and a
   // consumer calling `setHighlightedRow` itself. Held in a ref because the store is
   // built once and its actions would otherwise close over the first render's
   // callback.
@@ -1304,7 +1304,7 @@ export function useTMDataGrid<TData extends RowData>({
   }, [ui]);
 
   // The same recipe the mount uses for `initialState`, minus the persisted
-  // layer — see the api's JSDoc for why TanStack's own resets cannot do this.
+  // layer - see the api's JSDoc for why TanStack's own resets cannot do this.
   // Ref-and-stable-wrapper, like the edit engine's context: the recipe reads
   // this render's flags, the callback identity never changes.
   const resetSettingsRef = useRef<() => void>(() => {});
@@ -1369,7 +1369,7 @@ export function useTMDataGrid<TData extends RowData>({
 
 /**
  * Opens the filter panel for a column, seeding an empty filter row when the
- * column has none yet — mirrors "Filter" in the column header menu.
+ * column has none yet - mirrors "Filter" in the column header menu.
  */
 export function openColumnFilter<TData extends RowData>(
   api: TMDataGridApi<TData>,

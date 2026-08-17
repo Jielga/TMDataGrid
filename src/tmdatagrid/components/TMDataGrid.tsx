@@ -35,7 +35,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
   className?: string;
   /**
    * Inline styles. Widened to accept CSS variables, which is how the grid's
-   * colours are themed — `--dg-row-selected-bg` for the selected row
+   * colours are themed - `--dg-row-selected-bg` for the selected row
    * background. Plain `CSSProperties` rejects `--*` keys.
    */
   style?: CSSProperties & Record<`--${string}`, string | number>;
@@ -44,7 +44,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
   /**
    * Names this grid for tests. The grid names its own pieces with
    * `data-dg-part` rather than minting test ids, and those repeat across
-   * grids — scope through this one and they stop colliding:
+   * grids - scope through this one and they stop colliding:
    *
    * ```ts
    * page.getByTestId("orders").locator('[data-dg-part="row"][data-row-id="42"]')
@@ -56,7 +56,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
 };
 
 /**
- * Root of the grid. Takes the object returned by `useTMDataGrid` — spread it —
+ * Root of the grid. Takes the object returned by `useTMDataGrid` - spread it -
  * and publishes it to the compound components below it:
  *
  * ```tsx
@@ -133,7 +133,7 @@ function TMDataGridRoot<TData extends RowData>({
       <div
         id={id}
         data-testid={testId}
-        // The handle everything else scopes off — see the `data-testid` prop.
+        // The handle everything else scopes off - see the `data-testid` prop.
         data-dg-root
         data-size={size}
         className={[classes.root, className].filter(Boolean).join(" ")}
@@ -160,7 +160,7 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
   FilterPanel: TMDataGridFilterPanel,
   /**
    * Takes the grid as an `api` prop rather than from context, so it can be
-   * rendered outside `<TMDataGrid>` — a page header, for instance.
+   * rendered outside `<TMDataGrid>` - a page header, for instance.
    */
   FilterPills: TMDataGridFilterPills,
   /** Rendered by `TMDataGrid.ColumnsButton`; exported for custom layouts. */

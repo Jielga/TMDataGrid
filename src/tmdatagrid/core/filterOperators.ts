@@ -5,12 +5,12 @@ import type { Row, RowData, TableFeatures } from "@tanstack/react-table";
  *
  * TanStack resolves `filterFn` statically per column, so the operator travels
  * inside the filter *value* instead. That keeps the whole filter model plain,
- * serialisable JSON — which is what makes it portable to a server-side
+ * serialisable JSON - which is what makes it portable to a server-side
  * `manualFiltering` table (just forward `columnFilters` to the API).
  *
  * `value` is a string array under `isAnyOf` / `isNoneOf` (the set the cell is
  * tested against), a `[min, max]` pair under `between` (an empty string means
- * that end is open), and a single string everywhere else — dates travel as
+ * that end is open), and a single string everywhere else - dates travel as
  * ISO `YYYY-MM-DD` strings, booleans as `"true"` / `"false"`. Still plain
  * JSON.
  */
@@ -176,21 +176,21 @@ export function operatorNeedsValue(operator: TMDataGridFilterOperator): boolean 
   return !VALUELESS_OPERATORS.includes(operator);
 }
 
-/** Whether the operator's value is a string array — `isAnyOf` / `isNoneOf`. */
+/** Whether the operator's value is a string array - `isAnyOf` / `isNoneOf`. */
 export function operatorTakesArrayValue(
   operator: TMDataGridFilterOperator,
 ): boolean {
   return ARRAY_OPERATORS.includes(operator);
 }
 
-/** Whether the operator's value is a `[min, max]` pair — `between`. */
+/** Whether the operator's value is a `[min, max]` pair - `between`. */
 export function operatorTakesRangeValue(
   operator: TMDataGridFilterOperator,
 ): boolean {
   return RANGE_OPERATORS.includes(operator);
 }
 
-/** The untouched value a fresh filter starts with — the operator's shape, empty. */
+/** The untouched value a fresh filter starts with - the operator's shape, empty. */
 export function emptyValueForOperator(
   operator: TMDataGridFilterOperator,
 ): string | ReadonlyArray<string> {
@@ -228,8 +228,8 @@ export function isFilterActive(value: unknown): boolean {
 /**
  * One-line description of a single filter, as shown on a filter pill.
  *
- * The type's default operator is left implicit — "First name: Sofia" reads the
- * way a person would say it — while any other operator is spelled out, since
+ * The type's default operator is left implicit - "First name: Sofia" reads the
+ * way a person would say it - while any other operator is spelled out, since
  * that is the part a reader cannot guess.
  */
 export function formatFilterLabel({
@@ -241,7 +241,7 @@ export function formatFilterLabel({
   label: string;
   type: TMDataGridColumnType;
   filter: TMDataGridFilterValue;
-  /** Localized operator names — `labels.operators`. Defaults to English. */
+  /** Localized operator names - `labels.operators`. Defaults to English. */
   operatorLabels?: Record<TMDataGridFilterOperator, string>;
 }): string {
   const { operator, value } = filter;
@@ -260,8 +260,8 @@ export function formatFilterLabel({
 
 /**
  * A value's calendar day as `YYYY-MM-DD`, or `null` for anything that has no
- * day to speak of. A `Date` is read in local time — `sv-SE` formats as ISO,
- * which is the shape `<input type="date">` produced on the other side — and a
+ * day to speak of. A `Date` is read in local time - `sv-SE` formats as ISO,
+ * which is the shape `<input type="date">` produced on the other side - and a
  * string contributes its leading ISO day, so both `2026-07-31` and a full
  * timestamp compare by day.
  */
@@ -317,8 +317,8 @@ export function matchesFilter(
   if (operator === "isEmpty") return isEmptyCell(cellValue);
   if (operator === "isNotEmpty") return !isEmptyCell(cellValue);
 
-  // Set membership. The cell side is also a list — a multiSelect cell holds an
-  // array — so "any of" is an intersection test and "none of" its complement.
+  // Set membership. The cell side is also a list - a multiSelect cell holds an
+  // array - so "any of" is an intersection test and "none of" its complement.
   if (operator === "isAnyOf" || operator === "isNoneOf") {
     const set = (Array.isArray(value) ? value : [value])
       .map((entry) => String(entry).toLowerCase())
@@ -332,7 +332,7 @@ export function matchesFilter(
   }
 
   // A closed or half-open interval. Each present end must hold; an empty end
-  // is open — and a fully empty pair matches everything, the same way a blank
+  // is open - and a fully empty pair matches everything, the same way a blank
   // needle does. Ends compare the way the single-ended operators would:
   // numerically when both sides are numbers, by calendar day otherwise.
   if (operator === "between") {
@@ -349,7 +349,7 @@ export function matchesFilter(
   if (filterText === "") return true;
 
   // Day ordering. ISO days compare correctly as strings, which keeps this
-  // free of timezone arithmetic — the whole comparison lives in local days.
+  // free of timezone arithmetic - the whole comparison lives in local days.
   switch (operator) {
     case "before":
     case "after":

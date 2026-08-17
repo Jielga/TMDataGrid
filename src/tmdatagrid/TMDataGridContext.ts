@@ -5,7 +5,7 @@ import type { TMDataGridApi } from "./useTMDataGrid";
 /**
  * Row shape the chrome components work against. They only ever touch columns,
  * rows and cells generically, so the concrete row type is erased at the context
- * boundary — the same trick Mantine uses for its compound components.
+ * boundary - the same trick Mantine uses for its compound components.
  */
 export type TMDataGridRowData = Record<string, unknown>;
 
@@ -36,7 +36,7 @@ export function useTMDataGridContext(): TMDataGridContextValue {
  *
  * `-1` once cell selection is on, and this is what makes the promise of one tab
  * stop true. Without it the browser walks Tab into the checkbox of every
- * mounted row — a grid showing twenty rows would be twenty tab stops, and
+ * mounted row - a grid showing twenty rows would be twenty tab stops, and
  * scrolling would change how many. Enter or F2 steps into the cell instead,
  * which reaches a `-1` control perfectly well.
  *

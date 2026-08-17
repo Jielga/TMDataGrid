@@ -9,7 +9,7 @@ import { useTMDataGridContext } from "../../TMDataGridContext";
 import { useFieldError, useFieldValue } from "./editorShared";
 
 /**
- * The built-in editor for `meta.type: "multiSelect"` — cells holding string
+ * The built-in editor for `meta.type: "multiSelect"` - cells holding string
  * arrays. Never commits on pick: building a set takes several, so the commit
  * stays on Enter/blur like a text edit.
  */

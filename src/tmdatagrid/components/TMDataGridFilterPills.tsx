@@ -27,7 +27,7 @@ export type TMDataGridFilterPillsProps<TData extends RowData> = {
 };
 
 /**
- * One pill per active filter — `First name: Sofia ✕` — with the ✕ clearing that
+ * One pill per active filter (`First name: Sofia ✕`), with the ✕ clearing that
  * filter and a click on the label opening the filter panel on its column.
  *
  * The one grid component that takes the api as a prop instead of reading

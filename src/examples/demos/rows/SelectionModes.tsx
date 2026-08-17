@@ -15,7 +15,7 @@ const MODES = [
   { value: "row", label: "row" },
   // Both: tick to select, click to highlight one row without selecting it.
   { value: "checkboxAndHighlight", label: "checkbox + highlight" },
-  // No selection at all — just "which row am I looking at".
+  // No selection at all - just "which row am I looking at".
   { value: "highlight", label: "highlight" },
 ] as const satisfies ReadonlyArray<{
   value: TMDataGridSelectionMode;

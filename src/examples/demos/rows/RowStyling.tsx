@@ -42,7 +42,7 @@ export function RowStyling() {
               ? (row) => {
                   // `--row-bg`, never `background`. The row's own background,
                   // its sticky pinned cells and the cell-range tint all read
-                  // this variable — and hover, selection and highlight keep
+                  // this variable - and hover, selection and highlight keep
                   // working on top of it. A raw `background` bypasses the lot.
                   if (row.original.status === "Terminated") {
                     return { "--row-bg": "var(--mantine-color-red-light)" };

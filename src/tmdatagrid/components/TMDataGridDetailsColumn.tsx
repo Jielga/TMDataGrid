@@ -31,7 +31,7 @@ function DetailsCell<TData extends RowData>({
   // cell, not by Tab, or the grid would have one tab stop per mounted row.
   const tabIndex = useCellControlTabIndex();
 
-  // Group rows open into their children, not into a panel — see the body's
+  // Group rows open into their children, not into a panel - see the body's
   // `showsDetails`. Their cells are aggregated, so this lane is already blank
   // on them; the guard is what makes that a decision rather than a side effect.
   if (row.getIsGrouped()) return null;
@@ -63,7 +63,7 @@ function DetailsCell<TData extends RowData>({
  * selects and clears every row.
  *
  * Deliberately not `table.toggleAllRowsExpanded()`: that writes the `expanded`
- * state's whole-table form, and one state holds both the tree and the panels —
+ * state's whole-table form, and one state holds both the tree and the panels -
  * so it would unfold every group as well. Only the data rows are touched here;
  * whatever the tree was showing, it goes on showing. See resolveExpandAll.
  */
@@ -94,7 +94,7 @@ function DetailsHeader<TData extends RowData>({
       }
       data-dg-part="details-toggle-all"
       // Partly expanded opens the rest rather than closing what is already
-      // open — the same reading as an indeterminate select-all box.
+      // open - the same reading as an indeterminate select-all box.
       onClick={() =>
         table.setExpanded(
           resolveExpandAll({
@@ -118,7 +118,7 @@ function DetailsHeader<TData extends RowData>({
  *
  * Structural, like the checkbox and tree columns: fixed width, pinned to the
  * left after both of them, not hideable, not movable and not resizable. A
- * toggle that wandered off to the right of the grid — or hid itself — would
+ * toggle that wandered off to the right of the grid (or hid itself) would
  * leave rows with panels no one can open.
  *
  * Last of the three because it acts on one record: the checkbox picks rows out
@@ -140,7 +140,7 @@ export function createDetailsColumn<TData extends RowData>(
       enableOrdering: false,
     },
     // A system lane: as wide as the control it holds and no wider. Fixed at
-    // every scale — the control does not grow with the font size, so neither
+    // every scale - the control does not grow with the font size, so neither
     // should its track.
     size: 36,
     minSize: 36,
@@ -157,7 +157,7 @@ export function createDetailsColumn<TData extends RowData>(
     header: ({ table }) => <DetailsHeader table={table} />,
     cell: ({ row }) => <DetailsCell row={row} />,
     // Deliberately no `aggregatedCell`: on a group row every cell outside the
-    // grouped column counts as aggregated, and blank is the right answer here —
+    // grouped column counts as aggregated, and blank is the right answer here -
     // groups expand into their rows, not into a panel.
   };
 }

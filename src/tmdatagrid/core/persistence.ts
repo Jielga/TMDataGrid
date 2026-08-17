@@ -55,8 +55,8 @@ export type TMDataGridSettingsSlice = (typeof SETTINGS_STATE_SLICES)[number];
 /**
  * A storage key, optionally narrowed to a subset of its group's slices.
  *
- * - `"employees.data"` — persists every slice in the group.
- * - `["employees.data", ["sorting"]]` — persists only the listed slices.
+ * - `"employees.data"` - persists every slice in the group.
+ * - `["employees.data", ["sorting"]]` - persists only the listed slices.
  */
 export type TMDataGridPersistKey<TSlice extends string> =
   | string
@@ -83,7 +83,7 @@ export type TMDataGridPersistence = {
  * collide with. A payload whose version does not match is dropped whole: a
  * migration would be guessing at a shape this code no longer knows, and the
  * cost of dropping is one lost layout. Payloads written before versioning
- * existed (≤0.4.0) have no stamp and are dropped the same way — the 1.0
+ * existed (≤0.4.0) have no stamp and are dropped the same way - the 1.0
  * wave's one-time break, named in its changeset.
  */
 export const PERSIST_PAYLOAD_VERSION = 1;
@@ -163,7 +163,7 @@ const SLICE_GUARDS: Record<
   (value: unknown) => boolean
 > = {
   columnFilters: (value) => isArrayOf(value, hasStringId),
-  // TanStack leaves the global filter value untyped — the grid's own default
+  // TanStack leaves the global filter value untyped - the grid's own default
   // filters on a string, but a consumer may store anything here.
   globalFilter: () => true,
   sorting: (value) =>
@@ -266,7 +266,7 @@ const defaultSerialize = (value: Partial<GridState>): string =>
  * The leaf column ids a set of column defs will produce, by TanStack's own
  * derivation: `id`, else `accessorKey` with dots replaced by underscores,
  * else a string `header`. Mirrored here so restored state can be realigned
- * against the columns that will actually exist — deriving ids any other way
+ * against the columns that will actually exist - deriving ids any other way
  * would realign against names the table never uses.
  */
 export function collectLeafColumnIds(
@@ -295,7 +295,7 @@ export function collectLeafColumnIds(
  * Drops restored entries that name columns the grid no longer has.
  *
  * A stored layout outlives the column set: a column removed between deploys
- * would otherwise linger forever — a ghost id in the order, a width for
+ * would otherwise linger forever - a ghost id in the order, a width for
  * nothing, and worse, a *filter or sort that is active but has no column to
  * show for itself*. New columns need no counterpart here: TanStack appends
  * columns missing from `columnOrder` on its own, in definition order.
@@ -337,8 +337,8 @@ function realignToColumns(
 /**
  * State to merge into `initialState`, read once on mount.
  *
- * With `knownColumnIds` — every id the grid is about to construct, generated
- * lanes included — the column-shaped slices are realigned first; see
+ * With `knownColumnIds` - every id the grid is about to construct, generated
+ * lanes included - the column-shaped slices are realigned first; see
  * {@link realignToColumns}. Without it the payload is returned as stored.
  */
 export function readPersistedState(

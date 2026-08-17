@@ -7,15 +7,15 @@ import { ProjectStatus } from "./ProjectStatus";
 
 /**
  * The hero owns the page's one h1, so the document's own title comes off
- * before rendering (`\r?` — the checkout is CRLF). The markdown keeps it
- * regardless — it is also read as a plain file, from the README and the
+ * before rendering (`\r?` - the checkout is CRLF). The markdown keeps it
+ * regardless - it is also read as a plain file, from the README and the
  * getting-started skill.
  */
 const doc = gettingStartedDoc.replace(/^# .+\r?\n/, "");
 
 /**
  * The front page: what the package is, how to install it, and where to go
- * next — the getting-started reference follows below, so "/" answers the
+ * next - the getting-started reference follows below, so "/" answers the
  * first five minutes without a single click.
  */
 export function GettingStartedPage() {
@@ -28,7 +28,7 @@ export function GettingStartedPage() {
           </Title>
           <ProjectStatus />
           <Text c="dimmed" size="lg">
-            A React data grid built on TanStack Table v9 and Mantine — always
+            A React data grid built on TanStack Table v9 and Mantine - always
             virtualized, with resizable, reorderable, sortable, filterable,
             hideable and pinnable columns.
           </Text>
@@ -36,8 +36,8 @@ export function GettingStartedPage() {
             <Button component={Link} to="/playground">
               Open the playground
             </Button>
-            <Button component={Link} to="/examples" variant="default">
-              Browse examples
+            <Button component={Link} to="/docs" variant="default">
+              Browse the docs
             </Button>
             <Button
               component="a"

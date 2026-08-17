@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >
-  Write tests against TMDataGrid from a consuming app — Playwright or React
+  Write tests against TMDataGrid from a consuming app - Playwright or React
   Testing Library. Covers the data-dg-part contract, data-row-id/data-column-id
   coordinates, naming a grid with data-testid, the roles and ARIA the grid
   publishes, the cell/gridcell role flip under cell selection, reaching rows
@@ -18,18 +18,18 @@ sources:
   - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGridTable.tsx'
 ---
 
-# TMDataGrid — Testing
+# TMDataGrid - Testing
 
 The grid names its own pieces so a suite can be written against structure
 rather than against copy or class names. Three hooks carry it:
 
-- **`data-dg-part`** — *what* an element is (`"row"`, `"filter-button"`)
-- **`data-row-id` / `data-column-id`** — *which* one, using your own ids
-- **roles and ARIA** — framework-neutral, and what a screen reader reads
+- **`data-dg-part`** - *what* an element is (`"row"`, `"filter-button"`)
+- **`data-row-id` / `data-column-id`** - *which* one, using your own ids
+- **roles and ARIA** - framework-neutral, and what a screen reader reads
 
 Selectors compose: `[data-dg-part="save-row"][data-row-id="42"]`.
 
-The grid mints no `data-testid` of its own — that attribute belongs to the app,
+The grid mints no `data-testid` of its own - that attribute belongs to the app,
 and Playwright's `testIdAttribute` is configurable. `@mantine/core` and
 `@tanstack/*` ship none either.
 
@@ -56,7 +56,7 @@ accessible name belongs to the element carrying the `grid` role.
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused` |
 | Header cell | `columnheader` | `data-column-id`, `aria-sort` |
 
-Body cells carry no `data-dg-part` — the coordinate pair already names them.
+Body cells carry no `data-dg-part` - the coordinate pair already names them.
 
 ## Parts
 
@@ -79,7 +79,7 @@ Body cells carry no `data-dg-part` — the coordinate pair already names them.
 **Keyed by both**: `editor`.
 
 Inside a `filter-row` the controls are `filter-column`, `filter-operator` and
-`filter-value` — or `filter-value-from` / `filter-value-to` for `between`.
+`filter-value` - or `filter-value-from` / `filter-value-to` for `between`.
 
 A column declaring `meta.filterControl` or `meta.editor` renders your own
 component in that slot, so `filter-value` and `editor-input` cover the built-ins
@@ -131,10 +131,10 @@ Only the rows in the viewport plus overscan are in the DOM. A row at index 500
 has no element, and Playwright cannot scroll to what it cannot find.
 
 **Count rows off the grid.** `data-dg-row-count` is the body rows the grid is
-showing — the current page under pagination, everything the filters left
+showing - the current page under pagination, everything the filters left
 otherwise. (`aria-rowcount` also counts the header and summary rows.)
 
-**Reach a row by narrowing to it** — filter or search. Faster, more stable, and
+**Reach a row by narrowing to it** - filter or search. Faster, more stable, and
 what a user would do. Where the row must be reached in place,
 `grid.scrollToRow({ rowId, align })` moves the virtualizer and answers whether
 the row was reachable; from Playwright that needs the app to expose the api.
@@ -164,7 +164,7 @@ layout, so the count depends on the stubbed element size. Assert
 ### getByRole("cell") on a grid with cell selection
 
 `enableCellSelection` turns every `cell` into a `gridcell`, and the grid's
-`table` into a `grid` — a widget with a keyboard cursor is not a table of
+`table` into a `grid` - a widget with a keyboard cursor is not a table of
 content. Tests written on the role break when the feature is switched on. Query
 cells by `[data-row-id][data-column-id]`, which do not move.
 

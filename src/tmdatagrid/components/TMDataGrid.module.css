@@ -3,7 +3,7 @@
    them, and the pinned-column boundary shared by header and body cells lives
    in sticky.module.css. */
 
-/* Size scale. Row heights mirror SIZE_ROW_HEIGHT in core/sizes.ts — the
+/* Size scale. Row heights mirror SIZE_ROW_HEIGHT in core/sizes.ts - the
    virtualizer needs the number in JS, so the two have to agree. */
 .root[data-size="xs"] {
   --dg-row-height: 34px;
@@ -54,7 +54,7 @@
      Stronger than the selected background by default, since under
      "checkboxAndHighlight" the two show up together. */
   --dg-row-highlight-bg: var(--mantine-primary-color-light-hover);
-  /* Background of a group row. Transparent by default — the bold label and the
+  /* Background of a group row. Transparent by default - the bold label and the
      chevron are enough, and with the tree collapsed every row on screen is a
      group row, so a tint would grey out the whole grid. Set it to give groups a
      band of their own. */

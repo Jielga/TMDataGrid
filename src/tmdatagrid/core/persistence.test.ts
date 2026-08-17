@@ -14,7 +14,7 @@ import type { TMDataGridFeatures } from "../useTMDataGrid";
 
 type GridState = TableState<TMDataGridFeatures>;
 
-/** A complete, valid state — tests narrow or corrupt it as needed. */
+/** A complete, valid state - tests narrow or corrupt it as needed. */
 function gridState(overrides: Partial<GridState> = {}): GridState {
   return {
     columnFilters: [{ id: "name", value: { operator: "contains", value: "a" } }],
@@ -150,7 +150,7 @@ describe("readPersistedState", () => {
     expect(readPersistedState({ dataKey: "d" })).toEqual({});
   });
 
-  it("drops a payload without a version stamp — pre-1.0 layouts", () => {
+  it("drops a payload without a version stamp - pre-1.0 layouts", () => {
     // A 0.x build wrote slices with no `__v`.
     window.localStorage.setItem("d", JSON.stringify(gridState()));
 
@@ -276,7 +276,7 @@ describe("readPersistedState", () => {
       expect(restored.columnFilters).toHaveLength(1);
     });
 
-    it("drops a sort and filter on a removed column — no invisible state", () => {
+    it("drops a sort and filter on a removed column - no invisible state", () => {
       writePersistedState(gridState(), persist);
 
       const restored = readPersistedState(persist, ["age"]);

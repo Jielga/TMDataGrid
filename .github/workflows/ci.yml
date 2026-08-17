@@ -20,6 +20,8 @@ jobs:
 
       - run: npm run lint
 
+      - run: npm run check:style
+
       - run: npx tsc -b
 
       - run: npm run test

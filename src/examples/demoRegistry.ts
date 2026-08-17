@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 
 /**
  * Pairs every demo module with its own source text. Both globs walk the same
- * paths, so adding a demo is adding a file — there is no list to keep in step,
+ * paths, so adding a demo is adding a file - there is no list to keep in step,
  * and the code on screen is by construction the code that is running.
  *
  * Eager on purpose: the demos are small next to the grid they render, and
@@ -36,7 +36,7 @@ export type LoadedDemo = {
 
 /**
  * A demo file exports exactly one component, under whatever name reads best in
- * its own source — so the component is found by shape rather than by a name
+ * its own source - so the component is found by shape rather than by a name
  * every file would otherwise have to share.
  */
 function findComponent(module: DemoModule, file: string): ComponentType {
@@ -51,7 +51,7 @@ function findComponent(module: DemoModule, file: string): ComponentType {
   return exported as ComponentType;
 }
 
-/** `file` is relative to `demos/` — e.g. `"columns/Sorting.tsx"`. */
+/** `file` is relative to `demos/` - e.g. `"columns/Sorting.tsx"`. */
 export function loadDemo(file: string): LoadedDemo {
   const key = `./demos/${file}`;
   const module = demoModules[key];
@@ -66,7 +66,7 @@ export function loadDemo(file: string): LoadedDemo {
   return { Component: findComponent(module, file), source };
 }
 
-/** `file` is relative to `src/examples/` — e.g. `"data/employees.ts"`. */
+/** `file` is relative to `src/examples/` - e.g. `"data/employees.ts"`. */
 export function loadSharedSource(file: string): string {
   const source = sharedSources[`./${file}`];
 

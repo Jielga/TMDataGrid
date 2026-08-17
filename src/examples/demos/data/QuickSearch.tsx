@@ -19,7 +19,7 @@ export function QuickSearch() {
     // "fuzzy" is the default: typos are forgiven, and an unsorted grid comes
     // back ordered by match quality. "contains" is the literal substring.
     quickSearchMode: mode,
-    // Cells mark the matched text while a filter or the search narrows —
+    // Cells mark the matched text while a filter or the search narrows -
     // default-rendered columns only, since a custom `cell` returns React the
     // grid cannot safely reach into.
     enableMatchHighlighting: highlight,

@@ -9,7 +9,7 @@ import {
 } from "../../core/filterOperators";
 
 /**
- * The built-in value control of a filter-panel row — what renders when a
+ * The built-in value control of a filter-panel row - what renders when a
  * column declares no `meta.filterControl`. Shaped by the operator: a
  * multi-select for the set operators, a From/To pair for `between`, a Yes/No
  * dropdown for booleans, a typed input otherwise.
@@ -37,7 +37,7 @@ export function TMDataGridFilterValueInput({
       ? [String(value[0] ?? ""), String(value[1] ?? "")]
       : ["", ""];
     return (
-      // The interval's two ends. Either may stay empty — an open end — and
+      // The interval's two ends. Either may stay empty (an open end), and
       // each writes its slot of the `[min, max]` pair.
       <Group gap={4} wrap="nowrap" align="flex-start">
         <TextInput
