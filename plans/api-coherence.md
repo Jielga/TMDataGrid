@@ -1,8 +1,9 @@
 # P2 - API coherence refactor: the rename table
 
-> **Status: in progress, started 2026-08-18.** Executes P2 from
+> **Status: executed 2026-08-18.** Executes P2 from
 > [proposals.md](proposals.md), approved with the rename table below as its
-> second gate. Breaking; ships as **1.2.0**.
+> second gate. Breaking; the changeset is a minor, so it releases as the next
+> minor. Kept for the rationale and as the migration note.
 
 The three conventions P2 settles, and the complete old → new inventory. Every
 break is named in the changeset.

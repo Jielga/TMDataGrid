@@ -13,8 +13,6 @@ status and what waits on whom. The proposals themselves are in
 [plans/proposals.md](plans/proposals.md); nothing here starts before its
 proposal is approved.
 
-- H2 - API coherence refactor and slot reshapes. Held on P2, which has a
-  second gate: its rename table returns for yes/no before execution.
 - H3 - bad-UX warning framework. Held on P3.
 - H4 - details ergonomics (`detailsTrigger`, `detailsMode`). Held on P3, and
   wants H3 shipped first for its rule.
@@ -60,6 +58,13 @@ contract page, landed as part of it as
 **Intent skills** - **done 2026-08-17**, released with **1.0.2**. Twelve
 skills, one per docs topic, replacing the six that mirrored the old docs
 shape.
+
+**API coherence (H2)** - **done 2026-08-18**, breaking. Every render surface is
+a `render*` prop over one typed args object; the Footer's pager and
+`EditActions` became slots over `{ state, actions, Controls }`; the column and
+row context menus hand back the grid's own items through `internalItems`. The
+rename table and the conventions:
+[plans/api-coherence.md](plans/api-coherence.md).
 
 **Showcase pass** - **done 2026-08-10**, ahead of the rest of the wave. 24
 topic pages and 35 focused demos, each with its own source; the kitchen sink
