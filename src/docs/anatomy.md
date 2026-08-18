@@ -58,7 +58,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.ColumnsButton` · `.ColumnsPanel` | Manage columns, and Reset layout | [Column layout](/docs/column-layout#hiding) |
 | `TMDataGrid.Spacer` | Pushes following toolbar items right | [Toolbar](/docs/toolbar) |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count | [Loading and empty](/docs/loading-and-empty) |
-| `TMDataGridEditActions` | Save and Discard under batch editing | [Editing](/docs/editing#batch-editing) |
+| `TMDataGrid.EditActions` | Save and Discard for pending edits. Also exported as `TMDataGridEditActions` | [Editing](/docs/editing#batch-editing) |
 
 `FilterPills` is the one exception to the context rule, and deliberately: an
 active-filter strip often belongs in a page header, above and outside the grid
