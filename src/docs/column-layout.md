@@ -123,6 +123,33 @@ drag takes over from it.
 consumer code; `container` is the grid's scroll container, or any ancestor of
 the column's cells.
 
+## The column menu
+
+Every affordance above reaches the reader through a column's menu, and
+`renderColumnMenuItems` on `TMDataGrid.Table` decides what is in it. It receives
+the items the grid would have rendered and returns the list to render:
+
+```tsx
+<TMDataGrid.Table<Employee>
+  renderColumnMenuItems={({ column, internalItems }) => [
+    ...internalItems,
+    <Menu.Divider key="stats-divider" />,
+    <Menu.Item key="stats" onClick={() => showStats(column.id)}>
+      Column statistics
+    </Menu.Item>,
+  ]}
+/>
+```
+
+`internalItems` is the built-in list in order, dividers included - so returning
+it unchanged is the default menu, splicing around it extends the menu, and
+returning something else replaces it. Return an empty list and the column has
+no menu button at all, exactly as if its every feature were switched off.
+
+It runs for every column that has a menu, so branch on `column.id` for a
+per-column menu. A trailing divider is dropped for you, whichever side left it
+there.
+
 ## Putting it back
 
 `resetSettings()` from the hook clears visibility, order, pinning and widths in
@@ -147,6 +174,7 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `meta.flex` | Column meta | `number` | `1` | Share of the remaining width. |
 | `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once after the first rows render. |
 | `minSize` / `maxSize` / `size` | Column options | `number` | `80` / – / – | Width bounds, and the fixed width once one applies. |
+| `renderColumnMenuItems` | Table prop | `({ column, table, internalItems }) => ReactNode[]` | – | The column menu's contents. An empty list removes the button. |
 | `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |

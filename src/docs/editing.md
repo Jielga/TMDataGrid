@@ -70,8 +70,22 @@ draft (dirty-marked, Tab moving on to the next editable cell), Escape drops the
 one draft, and drafts accumulate across rows - surviving filters, sorts and
 scrolling, since they live outside the DOM.
 
-`TMDataGridEditActions` in the toolbar is the chrome: Save with the dirty-row
-count, and Discard.
+`TMDataGrid.EditActions` in the toolbar is the chrome: Save with the dirty-row
+count, and Discard. `renderActions` replaces the pair while handing over its
+pieces - `state.pendingCount`, `state.isSubmitting`, the `save` and `discard`
+actions, and `Controls.Save` / `Controls.Discard` as the built-in buttons:
+
+```tsx
+<TMDataGrid.EditActions
+  renderActions={({ state, Controls }) => (
+    <Group>
+      {state.pendingCount > 0 && <Badge>{state.pendingCount} unsaved</Badge>}
+      <Controls.Save />
+      <Controls.Discard />
+    </Group>
+  )}
+/>
+```
 
 ```demo
 file: editing/BatchEditing.tsx
@@ -179,7 +193,8 @@ inline cells, because it is the same `FormApi`.
 | `meta.editable` | Column meta | `boolean \| (row) => boolean` | `true` | Whether a column's cells edit. |
 | `meta.editField` | Column meta | `string` | The column id | The data path an edit writes to. |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"` | – | Id of the generated edit lane. |
-| `TMDataGridEditActions` | Component | – | – | Save and Discard for batch mode. |
+| `TMDataGrid.EditActions` | Component | – | – | Save and Discard for pending edits. |
+| `EditActions` `renderActions` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pair | Replaces the buttons, and hands over their pieces. |
 | `clearedValueForType` | Export | `(type) => unknown` | – | What Delete writes for each column type. |
 | `--dg-entry-height` | CSS variable | length | From `size` | Height of the sticky entry block. |
 | `data-deleted` | Data attribute | – | – | On a row marked for deletion under batch. |

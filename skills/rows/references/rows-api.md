@@ -31,11 +31,12 @@ All are props of `TMDataGrid.Table`, not hook options.
 | `onCellClick` | `(args) => void` | Cell click. `args` is `TMDataGridCellEventArgs`. |
 | `onCellDoubleClick` | `(args) => void` | Cell double-click. |
 | `onCellContextMenu` | `(args) => void` | Cell right-click. |
-| `rowContextMenu` | `({ table, row, cell, close }) => ReactNode` | Contents of the row's context menu. `null` for no menu. |
+| `renderRowContextMenu` | `({ table, row, cell, close, internalItems }) => ReactNode` | Contents of the row's context menu. `null` for no menu. Reading `internalItems` hands the composition over. |
+| `renderColumnMenuItems` | `({ column, table, internalItems }) => ReactNode[]` | Contents of a column's menu. An empty list removes the button. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` untouched apart from its open state. |
 
 `TMDataGridCellEventArgs` is `{ cell, row, column, event }`. The context-menu
-render prop's `cell` is `null` only when a custom cell renderer stopped the
+slot's `cell` is `null` only when a custom cell renderer stopped the
 event. One `Menu` serves the whole body: a closed Mantine `Popover` still runs
 its hooks on every render, and the virtualized body re-renders every scroll
 frame.

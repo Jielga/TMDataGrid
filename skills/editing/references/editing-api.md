@@ -85,7 +85,7 @@ type TMDataGridEditState = {
 
 | Name | Kind | What it is |
 | --- | --- | --- |
-| `TMDataGrid.EditActions` | Component | Save with the pending count, and Discard. Any mode; renders nothing while editing is off. |
+| `TMDataGrid.EditActions` | Component | Save with the pending count, and Discard. Any mode; renders nothing while editing is off. Takes `renderActions` over `{ state, actions, Controls }`. |
 | `TMDataGridEditActions` | Export | The same component, for use outside the namespace. |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"`, the generated edit lane's id. |
 | `clearedValueForType` | Export | `(type) => unknown` - what Delete writes per column type. |

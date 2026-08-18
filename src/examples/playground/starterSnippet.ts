@@ -171,12 +171,18 @@ export function buildStarterSnippet({
   if (paginated && customPager) {
     footer.push(
       "",
-      "        {/* Any pager you like, built on the distilled pagination API. */}",
+      "        {/* Any pager you like, beside the built-in page-size select. */}",
       "        <TMDataGrid.Footer",
-      "          pagination={(api) => (",
-      "            <button disabled={!api.canNextPage} onClick={api.nextPage}>",
-      "              Next ({api.pageIndex + 1} / {api.pageCount})",
-      "            </button>",
+      "          renderPagination={({ state, actions, Controls }) => (",
+      "            <>",
+      "              <Controls.PageSize />",
+      "              <button",
+      "                disabled={!state.canNextPage}",
+      "                onClick={actions.nextPage}",
+      "              >",
+      "                Next ({state.pageIndex + 1} / {state.pageCount})",
+      "              </button>",
+      "            </>",
       "          )}",
       "        />",
     );

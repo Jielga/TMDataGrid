@@ -93,9 +93,28 @@ renderRowContextMenu={({ table, row }) => {
 }}
 ```
 
+### Taking the whole menu
+
 Under `cellSelection: "range"` a right-click inside the selection opens the
-copy and export items instead, with your items appended below a divider - see
+copy and export items too. By default they go above a divider and yours below,
+which is what happens when the render prop never mentions `internalItems` - see
 [Cell selection](/docs/cell-selection#copy-and-export).
+
+`internalItems` is those built-in items, and **reading it hands the composition
+over**: the menu becomes exactly what you return, wherever you put them.
+
+```tsx
+renderRowContextMenu={({ row, internalItems }) => (
+  <>
+    <Menu.Item onClick={() => open(row.id)}>Open</Menu.Item>
+    <Menu.Divider />
+    {internalItems}
+  </>
+)}
+```
+
+Reading it without rendering it is how you drop the built-in half entirely -
+taking the handback means owning the result.
 
 ### Menu options
 
@@ -126,7 +145,8 @@ every scroll frame.
 | `onCellClick` | Table prop | `(args) => void` | – | Cell click - `{ cell, row, column, event }`. |
 | `onCellDoubleClick` | Table prop | `(args) => void` | – | Cell double-click. |
 | `onCellContextMenu` | Table prop | `(args) => void` | – | Cell right-click. |
-| `renderRowContextMenu` | Table prop | `({ table, row, cell, close }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |
+| `renderRowContextMenu` | Table prop | `({ table, row, cell, close, internalItems }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |
+| `renderColumnMenuItems` | Table prop | `({ column, table, internalItems }) => ReactNode[]` | – | Contents of a column's menu. An empty list removes the button. |
 | `rowContextMenuProps` | Table prop | `MenuProps` | – | Passed to the Mantine `Menu`. |
 | `TMDataGridCellEventArgs` | Export | type | – | The argument the three cell handlers receive. |
 | `data-context-menu` | Data attribute | – | – | On the row whose menu is open. |

@@ -127,10 +127,10 @@ page of a tree at a time with `manualPagination` and `manualGrouping`.
 out the same way:
 
 ```tsx
-import { getTMDataGridPaginationApi, isPagingActive } from "@jielga/tmdatagrid";
-
 <TMDataGrid.Footer
-  pagination={(api) => <MyPager {...api} disabled={!isPagingActive(table, features)} />}
+  renderPagination={({ state, actions }) => (
+    <MyPager {...state} {...actions} disabled={!state.isPagingActive} />
+  )}
 />
 ```
 
