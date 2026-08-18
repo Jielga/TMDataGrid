@@ -1,6 +1,6 @@
 # Proposals - the 1.0 wave
 
-> **Status: P2 and P3 pending. P1 shipped; P4's deliverable shipped ahead of
+> **Status: P3 pending. P1 and P2 shipped; P4's deliverable shipped ahead of
 > its approval.** Held work in the
 > [tracker](scan-adoption.md#execution-tracker) starts only when its proposal
 > is approved.
@@ -20,56 +20,9 @@ needs its rename table approved as well before H2 starts.
 | Proposal | Status | Unblocks |
 | --- | --- | --- |
 | ~~P1 - Custom controls (direct references)~~ | **shipped 2026-08-09** as H1. Text removed; the contract it proposed is documented in [filtering.md](../src/docs/filtering.md) and [editors.md](../src/docs/editors.md) | - |
-| P2 - API coherence refactor | **pending approval** (+ second gate: rename table) | H2 |
+| ~~P2 - API coherence refactor~~ | **shipped 2026-08-18** as H2. Text removed; the rename table and the conventions are in [api-coherence.md](api-coherence.md) | - |
 | P3 - Bad-UX warning framework | **pending approval** | H3, then H4 |
 | P4 - Density: no built-in | **pending approval**, but its deliverable already shipped - see below | H5 |
-
-## P2 - API coherence refactor (1.0.0-beta)
-
-> **Status: pending approval.** Written 2026-08-01. Unblocks H2 - and H2
-> also waits on the second gate below: the rename table comes back for
-> yes/no before any renaming is executed.
-
-**Goal.** One convention across every render/override surface before 1.0
-freezes them - per Q2, a deliberate refactor rather than point fixes.
-
-**The three conventions.**
-
-1. **One typed args object** per render surface (mostly true today; the
-   refactor closes the stragglers and normalizes naming to `render*`).
-2. **Composable chrome slots** expose `{ state, actions, Controls }`, where
-   `Controls` are pre-bound components and the default render is literally
-   the controls in order - consumers rearrange/restyle/drop without
-   rebuilding. Applied to: Footer pagination (breaking - replaces
-   `TMDataGridPaginationApi`), then `EditActions`.
-
-   ```tsx
-   <TMDataGrid.Footer
-     renderPagination={({ state, actions, Controls }) => (
-       <Group>
-         <Controls.Range />
-         <MyJumpToPage page={state.page} onJump={actions.setPage} />
-         <Controls.Pager size="xs" />
-       </Group>
-     )}
-   />
-   ```
-
-3. **Menu-shaped overrides** receive the built-ins and return the full
-   list - `internalItems` handback: `renderColumnMenuItems({ column,
-   internalItems, table })` on the column menu, and the same treatment for
-   the context menu (today's `rowContextMenu` append-below-divider behavior
-   stays the zero-config default; the handback is the full-control tier).
-
-**Deliverable.** The old → new rename/reshape table over the full inventory
-(Footer `pagination`, `renderDetails`, `rowContextMenu`, `renderEditor`,
-toolbar slots, panel render props), produced as the first act of the
-refactor and executed in one commit series, each break named in a beta
-changeset.
-
-**Approval means:** the three conventions are agreed; the rename table
-comes back for a quick yes/no before execution (it's the list you asked to
-see).
 
 ## P3 - Bad-UX warning framework
 

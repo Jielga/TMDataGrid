@@ -42,7 +42,7 @@ export function ClickAndContextMenu() {
           // The grid owns the Menu and opens it at the pointer; this fills the
           // dropdown. `cell` is the one that was right-clicked, which is what
           // makes a per-cell action possible at all.
-          rowContextMenu={({ row, cell, close }) => {
+          renderRowContextMenu={({ row, cell, close }) => {
             const value = cell ? String(cell.getValue() ?? "") : "";
 
             return (

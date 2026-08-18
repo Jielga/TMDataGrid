@@ -125,7 +125,7 @@ Excel's own copy carries no header row either.
 
 Right-clicking inside the selection opens Copy, "Export as CSV for Excel" and an
 "Include headers" toggle. A right-click outside it moves the selection there
-first, the way a spreadsheet does. Your own `rowContextMenu` items are appended
+first, the way a spreadsheet does. Your own `renderRowContextMenu` items are appended
 below a divider, so nothing is lost by turning cell selection on.
 
 The CSV is written for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF
@@ -236,5 +236,5 @@ Source: `src/docs/cell-selection.md` (Copy and export).
 | `data-edge-top` · `-bottom` · `-left` · `-right` | Data attributes | – | – | On cells at the rectangle's border. |
 
 See also: the `editing` skill, which turns this on implicitly and takes over
-Enter and F2, and the `rows` skill for `rowContextMenu`, whose items are
-appended below the copy and export ones.
+Enter and F2, and the `rows` skill for `renderRowContextMenu`, whose
+`internalItems` are exactly the copy and export items described here.

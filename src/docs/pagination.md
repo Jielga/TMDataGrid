@@ -46,20 +46,22 @@ one switch that defaults to **off**.
 
 ## Replacing the pager
 
-`TMDataGrid.Footer` takes a `pagination` render prop, handed the same API the
-built-in pager is built on:
+`TMDataGrid.Footer` takes a `renderPagination` slot, handed three things: the
+`state` the pager is showing, the `actions` it can take, and `Controls` - the
+built-in pieces, already wired.
 
 ```tsx
 <TMDataGrid.Footer
-  pagination={(api) => (
+  renderPagination={({ state, actions, Controls }) => (
     <Group>
-      <Button onClick={api.previousPage} disabled={!api.canPreviousPage}>
+      <Controls.PageSize />
+      <Button onClick={actions.previousPage} disabled={!state.canPreviousPage}>
         Back
       </Button>
       <Text>
-        {api.pageIndex + 1} / {api.pageCount}
+        {state.pageIndex + 1} / {state.pageCount}
       </Text>
-      <Button onClick={api.nextPage} disabled={!api.canNextPage}>
+      <Button onClick={actions.nextPage} disabled={!state.canNextPage}>
         Next
       </Button>
     </Group>
@@ -67,8 +69,26 @@ built-in pager is built on:
 />
 ```
 
-`getTMDataGridPaginationApi(table)` returns the same object outside the Footer,
-for a pager that lives somewhere else on the page entirely.
+`Controls` is what makes this a rearrangement rather than a rebuild: the
+default footer renders `PageSize`, `Range` and `Pager` in that order, and
+nothing else. Keep the two you like, replace the third, and the ones you kept
+stay identical - including the greying out while a grouping suspends paging.
+
+| Member | Renders |
+| --- | --- |
+| `Controls.PageSize` | "Rows per page" and its select |
+| `Controls.Range` | The "1–25 of 300" label |
+| `Controls.Pager` | The previous and next buttons |
+
+`state` carries `pageIndex`, `pageSize`, `pageCount`, `rowCount`,
+`canPreviousPage`, `canNextPage`, the `from` / `to` bounds of the current page,
+and `isPagingActive`. `actions` carries `setPageIndex`, `setPageSize`,
+`previousPage`, `nextPage`, `firstPage` and `lastPage`.
+
+`getTMDataGridPaginationApi(table)` returns the same `{ state, actions }`
+outside the Footer, for a pager that lives somewhere else on the page entirely.
+`Controls` are not in it: they are components bound to the grid's context, so
+they exist only inside the slot.
 
 ## Grouping suspends it
 
@@ -80,11 +100,9 @@ rows`. The reasoning, and what to do if you need both, is on
 A custom pager can grey itself out the same way:
 
 ```tsx
-import { isPagingActive } from "@jielga/tmdatagrid";
-
 <TMDataGrid.Footer
-  pagination={(api) => (
-    <MyPager {...api} disabled={!isPagingActive(table, features)} />
+  renderPagination={({ state, actions }) => (
+    <MyPager {...state} {...actions} disabled={!state.isPagingActive} />
   )}
 />
 ```
@@ -104,6 +122,7 @@ active.
 | `initialState.pagination` | Table option | `{ pageIndex, pageSize }` | `{ 0, 25 }` | Where paging starts. A data slice, so it persists. |
 | `onPaginationChange` | Table option | `OnChangeFn` | – | Controls the pagination state. |
 | `TMDataGrid.Footer` | Component | – | – | The footer bar. Renders nothing when paging is off. |
-| `Footer` `pagination` | Render prop | `(api) => ReactNode` | Built-in pager | Replaces the pager. |
-| `getTMDataGridPaginationApi` | Export | `(table) => TMDataGridPaginationApi` | – | The pager API, outside the Footer. |
+| `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
+| `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |
+| `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three halves of the slot's argument. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything right now. |

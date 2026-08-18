@@ -149,14 +149,14 @@ flex column.
 | Component | Props | Notes |
 | --- | --- | --- |
 | `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. `style` also takes CSS variables: `--dg-row-selected-bg`, `--dg-row-height`, `--dg-header-height`, `--dg-font-size`, `--dg-padding`. |
-| `TMDataGrid.Table` | `onRowClick(row)`, `rowContextMenu` render prop, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `selectionMode: "row"`. |
+| `TMDataGrid.Table` | `onRowClick(row)`, `renderRowContextMenu`, `renderColumnMenuItems`, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `selectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | - | Pushes later toolbar items right. |
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
 | `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
-| `TMDataGrid.EditActions` | - | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
+| `TMDataGrid.EditActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
 | `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
 | `TMDataGrid.ColumnsButton` | - | Opens column manager. Renders nothing if no column is hideable. |
 | `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
@@ -169,14 +169,14 @@ Pass the row type so `onRowClick` stays typed:
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-`rowContextMenu` fills the dropdown of a Mantine `Menu` the grid opens at the
+`renderRowContextMenu` fills the dropdown of a Mantine `Menu` the grid opens at the
 pointer on a right-click (or a long press). The grid owns the `Menu` - opening,
 positioning, and closing on Escape, outside click, body scroll or an item pick -
 so the render prop only says what goes in it:
 
 ```tsx
 <TMDataGrid.Table<Employee>
-  rowContextMenu={({ table, row, cell, close }) => (
+  renderRowContextMenu={({ table, row, cell, close }) => (
     <>
       <Menu.Label>{row.original.firstName}</Menu.Label>
       <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
@@ -204,25 +204,31 @@ highlight; the row carries `data-context-menu` while its menu is open. Pass
 `options.rowCount`. `TMDataGrid.SummaryCount` uses `meta.totalRowCount` when
 provided, otherwise the pre-filtered row count.
 
-The Footer's `pagination` render prop replaces the built-in pager with your own
-UI, fed by the distilled pagination API:
+The Footer's `renderPagination` slot replaces the built-in pager, and hands
+over the pieces of it - `state`, `actions`, and `Controls` as the built-in
+parts:
 
 ```tsx
 <TMDataGrid.Footer
-  pagination={(api) => (
-    <Pagination
-      total={api.pageCount}
-      value={api.pageIndex + 1}
-      onChange={(page) => api.setPageIndex(page - 1)}
-    />
+  renderPagination={({ state, actions, Controls }) => (
+    <>
+      <Controls.PageSize />
+      <Pagination
+        total={state.pageCount}
+        value={state.pageIndex + 1}
+        onChange={(page) => actions.setPageIndex(page - 1)}
+      />
+    </>
   )}
 />
 ```
 
-`TMDataGridPaginationApi` carries `pageIndex`, `pageSize`, `pageCount`,
-`rowCount`, `canPreviousPage`, `canNextPage` and the actions `setPageIndex`,
-`setPageSize`, `previousPage`, `nextPage`, `firstPage`, `lastPage`. Outside the
-Footer, `getTMDataGridPaginationApi(grid.table)` returns the same object.
+`state` carries `pageIndex`, `pageSize`, `pageCount`, `rowCount`,
+`canPreviousPage`, `canNextPage`, `from`, `to` and `isPagingActive`; `actions`
+carries `setPageIndex`, `setPageSize`, `previousPage`, `nextPage`, `firstPage`
+and `lastPage`. Outside the Footer,
+`getTMDataGridPaginationApi(grid.table)` returns the same `{ state, actions }`.
+See the `data` skill.
 
 ## size
 

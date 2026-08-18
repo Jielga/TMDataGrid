@@ -47,18 +47,45 @@ import {
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { type TMDataGridFeatures, openColumnFilter } from "../useTMDataGrid";
 
+/** The table as the header cell sees it, after the context type erasure. */
+type TMDataGridTableInstance = ReturnType<
+  typeof useTMDataGridContext
+>["table"];
+
 export type TMDataGridHeader = Header<
   TMDataGridFeatures,
   TMDataGridRowData,
   unknown
 >;
 
+/** What {@link TMDataGridColumnMenuItemsRenderer} is handed. */
+export type TMDataGridColumnMenuItemsArgs = {
+  column: TMDataGridHeader["column"];
+  table: TMDataGridTableInstance;
+  /**
+   * The items the grid would have rendered, in order, dividers included.
+   * Return them to keep the built-in menu, splice around them to extend it,
+   * or drop them to replace it.
+   */
+  internalItems: Array<ReactNode>;
+};
+
+/**
+ * Replaces a column's menu contents. Returning an empty list leaves the column
+ * with no menu button at all, the same as a column whose every feature is off.
+ */
+export type TMDataGridColumnMenuItemsRenderer = (
+  args: TMDataGridColumnMenuItemsArgs,
+) => Array<ReactNode>;
+
 export function TMDataGridHeaderCell({
   header,
   layout,
+  renderColumnMenuItems,
 }: {
   header: TMDataGridHeader;
   layout: TMDataGridColumnLayout;
+  renderColumnMenuItems?: TMDataGridColumnMenuItemsRenderer;
 }) {
   const api = useTMDataGridContext();
   const { table, features, labels } = api;
@@ -426,11 +453,21 @@ export function TMDataGridHeaderCell({
     menuItems.pop();
   }
 
+  // The handback: the consumer is given what the grid would have rendered and
+  // returns what should be. Trimmed again afterwards, because a consumer that
+  // drops the last group can leave a divider stranded the same way.
+  const finalItems = renderColumnMenuItems
+    ? [...renderColumnMenuItems({ column, table, internalItems: menuItems })]
+    : menuItems;
+  while (finalItems.length > 0 && isDivider(finalItems.at(-1))) {
+    finalItems.pop();
+  }
+
   // One gate for both ways into the menu - the button and the right-click -
   // so the two can never disagree about which headers have one. A control
   // lane's header is itself a control (select-all, expand-all), so it carries
   // no column menu, and a right-click there falls through to the browser's.
-  const hasMenu = isLeaf && menuItems.length > 0 && !isControlColumn(column.id);
+  const hasMenu = isLeaf && finalItems.length > 0 && !isControlColumn(column.id);
 
   const cellClass = [
     classes.headerCell,
@@ -607,7 +644,7 @@ export function TMDataGridHeaderCell({
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-                {menuItems}
+                {finalItems}
               </Menu.Dropdown>
             </Menu>
           )}
@@ -658,7 +695,7 @@ export function TMDataGridHeaderCell({
 
   // A second Menu for the same items, rather than one Menu serving both ways
   // in: the button's dropdown hangs off the button, while a context menu
-  // belongs at the pointer, and a Mantine Menu has one target. `menuItems` is
+  // belongs at the pointer, and a Mantine Menu has one target. `finalItems` is
   // built once and rendered by whichever dropdown is open (never both), so
   // the two can't drift apart.
   //
@@ -681,7 +718,7 @@ export function TMDataGridHeaderCell({
     >
       <Menu.ContextMenu>{cell}</Menu.ContextMenu>
       <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-        {menuItems}
+        {finalItems}
       </Menu.Dropdown>
     </Menu>
   );

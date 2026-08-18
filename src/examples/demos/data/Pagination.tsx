@@ -37,16 +37,20 @@ export function Pagination() {
         <TMDataGrid.Table<Employee> />
 
         {customPager ? (
-          // The render prop replaces the built-in pager with anything built on
-          // the distilled pagination API - page count, index, and the setters.
+          // The slot hands over the state, the actions, and the built-in
+          // controls - so the page-size select stays exactly as it was while
+          // the pager itself becomes Mantine's.
           <TMDataGrid.Footer
-            pagination={(api) => (
-              <MantinePagination
-                size="sm"
-                total={api.pageCount}
-                value={api.pageIndex + 1}
-                onChange={(page) => api.setPageIndex(page - 1)}
-              />
+            renderPagination={({ state, actions, Controls }) => (
+              <>
+                <Controls.PageSize />
+                <MantinePagination
+                  size="sm"
+                  total={state.pageCount}
+                  value={state.pageIndex + 1}
+                  onChange={(page) => actions.setPageIndex(page - 1)}
+                />
+              </>
             )}
           />
         ) : (

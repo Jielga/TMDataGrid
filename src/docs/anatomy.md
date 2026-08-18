@@ -71,7 +71,7 @@ documented with the feature it belongs to.
 
 | Props | Concern |
 | --- | --- |
-| `onRowClick` · `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` · `rowContextMenu` · `rowContextMenuProps` | [Clicks and context menus](/docs/row-interaction) |
+| `onRowClick` · `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` · `renderRowContextMenu` · `rowContextMenuProps` · `renderColumnMenuItems` | [Clicks and context menus](/docs/row-interaction) |
 | `rowClassName` · `rowStyle` · `striped` | [Row styling](/docs/row-styling) |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | [Scrolling](/docs/scrolling#edge-callbacks) |
 | `onReachEnd` · `reachEndThreshold` | [Server-side data](/docs/server-side#infinite-scroll) |

@@ -1,7 +1,7 @@
 import { ActionIcon, Group, Select, Text, Tooltip } from "@mantine/core";
 import type { RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import classes from "./TMDataGridFooter.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";
@@ -9,8 +9,8 @@ import { isPagingActive } from "../core/rowSelection";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import type { TMDataGridTable } from "../useTMDataGrid";
 
-/** Distilled pagination state and actions for building a custom pager. */
-export type TMDataGridPaginationApi = {
+/** What the pager is showing. The read half of {@link TMDataGridPaginationApi}. */
+export type TMDataGridPaginationState = {
   pageIndex: number;
   pageSize: number;
   /** `-1` when a manual grid declares `pageCount: -1` (unknown total). */
@@ -18,6 +18,18 @@ export type TMDataGridPaginationApi = {
   rowCount: number;
   canPreviousPage: boolean;
   canNextPage: boolean;
+  /**
+   * Whether the pager is slicing anything right now. `false` while a grouping
+   * is active, which suspends paging - see `isPagingActive`.
+   */
+  isPagingActive: boolean;
+  /** First and last row number on this page, 1-based, for a range label. */
+  from: number;
+  to: number;
+};
+
+/** What the pager can do. The write half of {@link TMDataGridPaginationApi}. */
+export type TMDataGridPaginationActions = {
   setPageIndex: (pageIndex: number) => void;
   setPageSize: (pageSize: number) => void;
   previousPage: () => void;
@@ -27,35 +39,201 @@ export type TMDataGridPaginationApi = {
 };
 
 /**
+ * Pagination state and actions, split into the half you read and the half you
+ * call.
+ *
+ * The split is what makes a partial override possible: a consumer replacing
+ * only the range label reads `state` and never touches `actions`, and one
+ * replacing only the buttons does the opposite.
+ */
+export type TMDataGridPaginationApi = {
+  state: TMDataGridPaginationState;
+  actions: TMDataGridPaginationActions;
+};
+
+/**
+ * The pre-bound pieces of the built-in pager.
+ *
+ * Each renders exactly what the default footer renders, already wired to the
+ * table and already respecting the suspended-paging state - so a custom layout
+ * keeps the parts it likes rather than rebuilding them to look the same.
+ */
+export type TMDataGridPaginationControls = {
+  /** "Rows per page" and its select. */
+  PageSize: () => ReactNode;
+  /** The "1–25 of 300" range label. */
+  Range: () => ReactNode;
+  /** The previous/next buttons. */
+  Pager: () => ReactNode;
+};
+
+/** What {@link TMDataGridFooterProps.renderPagination} is handed. */
+export type TMDataGridPaginationSlotArgs = TMDataGridPaginationApi & {
+  Controls: TMDataGridPaginationControls;
+};
+
+/**
  * Reads {@link TMDataGridPaginationApi} off a table. The Footer feeds it to the
- * `pagination` render prop; a pager living outside the Footer can call it with
+ * `renderPagination` slot; a pager living outside the Footer can call it with
  * the table from `useTMDataGrid` directly.
+ *
+ * `Controls` are not here: they are components bound to the grid context, and
+ * this function takes only a table.
  */
 export function getTMDataGridPaginationApi<TData extends RowData>(
   table: TMDataGridTable<TData>,
+  isPaging = true,
 ): TMDataGridPaginationApi {
   const { pageIndex, pageSize } = table.store.state.pagination;
+  const rowCount = table.getRowCount();
   return {
-    pageIndex,
-    pageSize,
-    pageCount: table.getPageCount(),
-    rowCount: table.getRowCount(),
-    canPreviousPage: table.getCanPreviousPage(),
-    canNextPage: table.getCanNextPage(),
-    setPageIndex: (index) => table.setPageIndex(index),
-    setPageSize: (size) => table.setPageSize(size),
-    previousPage: () => table.previousPage(),
-    nextPage: () => table.nextPage(),
-    firstPage: () => table.firstPage(),
-    lastPage: () => table.lastPage(),
+    state: {
+      pageIndex,
+      pageSize,
+      pageCount: table.getPageCount(),
+      rowCount,
+      canPreviousPage: table.getCanPreviousPage(),
+      canNextPage: table.getCanNextPage(),
+      isPagingActive: isPaging,
+      from: rowCount === 0 ? 0 : pageIndex * pageSize + 1,
+      to: Math.min(rowCount, (pageIndex + 1) * pageSize),
+    },
+    actions: {
+      setPageIndex: (index) => table.setPageIndex(index),
+      setPageSize: (size) => table.setPageSize(size),
+      previousPage: () => table.previousPage(),
+      nextPage: () => table.nextPage(),
+      firstPage: () => table.firstPage(),
+      lastPage: () => table.lastPage(),
+    },
   };
+}
+
+/*
+ * The three controls are module-scope components on purpose. Defined inside
+ * the Footer they would be a new component type on every render, so React
+ * would unmount and remount the pager between one render and the next - which
+ * detaches the button a click is landing on mid-interaction.
+ */
+
+function PaginationPageSize({
+  pageSizeOptions,
+}: {
+  pageSizeOptions: ReadonlyArray<number>;
+}) {
+  const { table, features, labels, controlSize } = useTMDataGridContext();
+  useSelector(table.store);
+  const paging = isPagingActive(table, features);
+  const { pageSize } = table.store.state.pagination;
+  // A page size restored from storage, or set through `initialState`, need not
+  // be one of the offered sizes. Without it in the list the Select renders
+  // blank, so the current size is folded in rather than shown as nothing.
+  const sizeOptions = pageSizeOptions.includes(pageSize)
+    ? pageSizeOptions
+    : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
+
+  return (
+    <Group gap="xs" wrap="nowrap">
+      {/* `span`, here and in every other label the grid renders: Mantine's
+          Text is a `<p>` by default, and a grid dropped into prose - a docs
+          page, a CMS body, Mantine's own Typography - picks up that context's
+          `p` margins. A bottom margin on a flex item shifts its border box up
+          off centre, which is how the pager came to sit a half-line below its
+          own label. Chrome labels are not prose. */}
+      <Text span size={controlSize} c="dimmed">
+        {labels.rowsPerPage}
+      </Text>
+      <Select
+        size={controlSize}
+        w={78}
+        allowDeselect={false}
+        variant="unstyled"
+        disabled={!paging}
+        data-dg-part="page-size"
+        data={sizeOptions.map(String)}
+        value={String(pageSize)}
+        onChange={(value) => {
+          table.setPageSize(Number(value) || pageSizeOptions[0]);
+          table.setPageIndex(0);
+        }}
+      />
+    </Group>
+  );
+}
+
+function PaginationRange() {
+  const { table, features, labels, controlSize } = useTMDataGridContext();
+  useSelector(table.store);
+  const paging = isPagingActive(table, features);
+  const { pageIndex, pageSize } = table.store.state.pagination;
+  const total = table.getRowCount();
+  const from = total === 0 ? 0 : pageIndex * pageSize + 1;
+  const to = Math.min(total, (pageIndex + 1) * pageSize);
+
+  return (
+    <Text span size={controlSize} c="dimmed" data-dg-part="page-range">
+      {paging
+        ? labels.pageRange({ from, to, total })
+        : // Not a range: nothing is being sliced, so a range would be a lie.
+          // Counted before grouping too - `getRowCount()` would be counting
+          // the tree, so a collapsed grid would claim to hold eight rows.
+          labels.groupedAllRows(table.getFilteredRowModel().rows.length)}
+    </Text>
+  );
+}
+
+function PaginationPager() {
+  const { table, features, labels } = useTMDataGridContext();
+  useSelector(table.store);
+  const paging = isPagingActive(table, features);
+
+  return (
+    <Group gap={4} wrap="nowrap">
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        aria-label={labels.previousPage}
+        data-dg-part="page-prev"
+        disabled={!paging || !table.getCanPreviousPage()}
+        onClick={() => table.previousPage()}
+      >
+        <ChevronLeftIcon size={18} stroke={1.6} />
+      </ActionIcon>
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        aria-label={labels.nextPage}
+        data-dg-part="page-next"
+        disabled={!paging || !table.getCanNextPage()}
+        onClick={() => table.nextPage()}
+      >
+        <ChevronRightIcon size={18} stroke={1.6} />
+      </ActionIcon>
+    </Group>
+  );
 }
 
 export type TMDataGridFooterProps = {
   pageSizeOptions?: ReadonlyArray<number>;
-  /** Replaces the built-in pager. Receives the distilled pagination API. */
-  pagination?: (api: TMDataGridPaginationApi) => ReactNode;
+  /**
+   * Replaces the built-in pager, and is handed the pieces of it.
+   *
+   * ```tsx
+   * <TMDataGrid.Footer
+   *   renderPagination={({ state, actions, Controls }) => (
+   *     <Group>
+   *       <Controls.PageSize />
+   *       <MyJumpToPage page={state.pageIndex} onJump={actions.setPageIndex} />
+   *       <Controls.Pager />
+   *     </Group>
+   *   )}
+   * />
+   * ```
+   */
+  renderPagination?: (args: TMDataGridPaginationSlotArgs) => ReactNode;
 };
+
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 /**
  * MUI-style pager: "Rows per page · from–to of total · ‹ ›".
@@ -68,36 +246,38 @@ export type TMDataGridFooterProps = {
  * - so a server-paged grid shows the server's total without changes here.
  */
 export function TMDataGridFooter({
-  pageSizeOptions = [10, 25, 50, 100],
-  pagination,
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  renderPagination,
 }: TMDataGridFooterProps) {
-  const { table, features, labels, controlSize } = useTMDataGridContext();
+  const { table, features, labels } = useTMDataGridContext();
   useSelector(table.store);
 
-  if (!getGridCapabilities(table, features).canPaginate) return null;
+  // Bound once per option list rather than per render, so the controls keep
+  // their identity and the elements they render keep theirs.
+  const Controls = useMemo<TMDataGridPaginationControls>(
+    () => ({
+      PageSize: () => <PaginationPageSize pageSizeOptions={pageSizeOptions} />,
+      Range: PaginationRange,
+      Pager: PaginationPager,
+    }),
+    [pageSizeOptions],
+  );
 
-  if (pagination) {
-    return (
-      <div data-dg-part="footer" className={classes.footer}>
-        {pagination(getTMDataGridPaginationApi(table))}
-      </div>
-    );
-  }
+  if (!getGridCapabilities(table, features).canPaginate) return null;
 
   // Grouping suspends paging - see isPagingActive. The pager is greyed out
   // rather than dropped, so that a footer going quiet reads as a state the grid
   // is in rather than as something that broke.
   const paging = isPagingActive(table, features);
-  const { pageIndex, pageSize } = table.store.state.pagination;
-  const total = table.getRowCount();
-  const from = total === 0 ? 0 : pageIndex * pageSize + 1;
-  const to = Math.min(total, (pageIndex + 1) * pageSize);
-  // A page size restored from storage, or set through `initialState`, need not
-  // be one of the offered sizes. Without it in the list the Select renders
-  // blank, so the current size is folded in rather than shown as nothing.
-  const sizeOptions = pageSizeOptions.includes(pageSize)
-    ? pageSizeOptions
-    : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
+
+  if (renderPagination) {
+    const { state, actions } = getTMDataGridPaginationApi(table, paging);
+    return (
+      <div data-dg-part="footer" className={classes.footer}>
+        {renderPagination({ state, actions, Controls })}
+      </div>
+    );
+  }
 
   return (
     <Tooltip
@@ -113,63 +293,11 @@ export function TMDataGridFooter({
         className={classes.footer}
         data-paging-suspended={!paging}
       >
-        <Group gap="xs" wrap="nowrap">
-          {/* `span`, here and in every other label the grid renders: Mantine's
-              Text is a `<p>` by default, and a grid dropped into prose - a
-              docs page, a CMS body, Mantine's own Typography - picks up that
-              context's `p` margins. A bottom margin on a flex item shifts its
-              border box up off centre, which is how the pager came to sit a
-              half-line below its own label. Chrome labels are not prose. */}
-          <Text span size={controlSize} c="dimmed">
-            {labels.rowsPerPage}
-          </Text>
-          <Select
-            size={controlSize}
-            w={78}
-            allowDeselect={false}
-            variant="unstyled"
-            disabled={!paging}
-            data-dg-part="page-size"
-            data={sizeOptions.map(String)}
-            value={String(pageSize)}
-            onChange={(value) => {
-              table.setPageSize(Number(value) || pageSizeOptions[0]);
-              table.setPageIndex(0);
-            }}
-          />
-        </Group>
-
-        <Text span size={controlSize} c="dimmed" data-dg-part="page-range">
-          {paging
-            ? labels.pageRange({ from, to, total })
-            : // Not a range: nothing is being sliced, so a range would be a lie.
-              // Counted before grouping too - `getRowCount()` would be counting
-              // the tree, so a collapsed grid would claim to hold eight rows.
-              labels.groupedAllRows(table.getFilteredRowModel().rows.length)}
-        </Text>
-
-        <Group gap={4} wrap="nowrap">
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={labels.previousPage}
-            data-dg-part="page-prev"
-            disabled={!paging || !table.getCanPreviousPage()}
-            onClick={() => table.previousPage()}
-          >
-            <ChevronLeftIcon size={18} stroke={1.6} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={labels.nextPage}
-            data-dg-part="page-next"
-            disabled={!paging || !table.getCanNextPage()}
-            onClick={() => table.nextPage()}
-          >
-            <ChevronRightIcon size={18} stroke={1.6} />
-          </ActionIcon>
-        </Group>
+        {/* The default render is the controls in order - which is what makes
+            `renderPagination` a rearrangement rather than a rebuild. */}
+        <Controls.PageSize />
+        <Controls.Range />
+        <Controls.Pager />
       </div>
     </Tooltip>
   );

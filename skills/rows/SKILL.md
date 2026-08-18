@@ -6,7 +6,8 @@ description: >
   highlight as state of its own with defaultHighlightedRowId and
   onHighlightedRowChange, showSelectedBackground and --dg-row-selected-bg,
   reading a selection through the table store, onRowClick / onCellClick /
-  onCellDoubleClick / onCellContextMenu, the rowContextMenu render prop and
+  onCellDoubleClick / onCellContextMenu, the renderRowContextMenu slot with its
+  internalItems handback, renderColumnMenuItems and
   rowContextMenuProps, per-row styling with rowStyle, rowClassName, striped and
   the --row-bg rule, the row details panel through renderDetails and
   DETAILS_COLUMN_ID, row pinning with enableRowPinning and row.pin, and the
@@ -117,7 +118,7 @@ not replace selection or the highlight; yours runs in addition.
 | `onRowClick` | `row` | Rows show a pointer cursor when set |
 | `onCellClick` | `{ cell, row, column, event }` | The cell cursor still moves |
 | `onCellDoubleClick` | same | A double-click that opens an editor still does |
-| `onCellContextMenu` | same | `rowContextMenu` still opens |
+| `onCellContextMenu` | same | `renderRowContextMenu` still opens |
 
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
@@ -127,13 +128,13 @@ Pass the row type, as above, and `row.original` is typed. Group rows sit out all
 four: TanStack builds a group row on top of its first child's record, so a
 handler would receive a real-looking row that is the wrong one.
 
-`rowContextMenu` is a render prop saying what goes inside the menu. The grid
+`renderRowContextMenu` is a slot saying what goes inside the menu. The grid
 owns the Mantine `Menu`, opening it at the pointer and closing it on Escape, an
 outside click, a body scroll and after an item is picked.
 
 ```tsx
 <TMDataGrid.Table<Employee>
-  rowContextMenu={({ table, row, cell }) => (
+  renderRowContextMenu={({ table, row, cell }) => (
     <>
       <Menu.Label>{row.original.firstName}</Menu.Label>
       <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
@@ -155,6 +156,35 @@ a pure function of its arguments and do the work in the item handlers. Return
 `null` to leave a row without a menu. Right-clicking does not select: it marks
 the row with `data-context-menu` while its menu is open, so an action meant for
 a multi-selection reads `table` and falls back to the clicked row.
+
+Under `cellSelection: "range"` the grid has its own items for this menu - copy,
+export, include headers. `internalItems` is those items, and **reading it hands
+the composition over**: place it and the menu is exactly what you returned;
+never mention it and the grid keeps its half above a divider and yours below.
+
+```tsx
+renderRowContextMenu={({ row, internalItems }) => (
+  <>
+    <Menu.Item onClick={() => open(row.id)}>Open</Menu.Item>
+    <Menu.Divider />
+    {internalItems}
+  </>
+)}
+```
+
+`renderColumnMenuItems` is the same idea for a column's menu, and returns an
+array rather than a node:
+
+```tsx
+<TMDataGrid.Table
+  renderColumnMenuItems={({ column, internalItems }) => [
+    ...internalItems,
+    <Menu.Item key="stats" onClick={() => showStats(column.id)}>Stats</Menu.Item>,
+  ]}
+/>
+```
+
+Returning an empty list leaves the column with no menu button at all.
 
 ## Row styling
 

@@ -237,7 +237,7 @@ describe("row context menu", () => {
     const targets: string[] = [];
     renderGridUi({
       tableProps: {
-        rowContextMenu: ({ row, cell }) => {
+        renderRowContextMenu: ({ row, cell }) => {
           targets.push(`${row.id}:${cell?.column.id ?? "none"}`);
           return <Menu.Item>Open</Menu.Item>;
         },
@@ -257,7 +257,7 @@ describe("row context menu", () => {
   it("closes again when an item is picked", async () => {
     const user = userEvent.setup();
     renderGridUi({
-      tableProps: { rowContextMenu: () => <Menu.Item>Open</Menu.Item> },
+      tableProps: { renderRowContextMenu: () => <Menu.Item>Open</Menu.Item> },
     });
 
     contextClickName(0);
@@ -272,7 +272,7 @@ describe("row context menu", () => {
   it("leaves a row without a menu when the render prop returns null", async () => {
     renderGridUi({
       tableProps: {
-        rowContextMenu: ({ row }) =>
+        renderRowContextMenu: ({ row }) =>
           row.id === "1" ? null : <Menu.Item>Open</Menu.Item>,
       },
     });
@@ -527,7 +527,7 @@ describe("grouping and the row context menu", () => {
     const seen: string[] = [];
     renderGridUi({
       tableProps: {
-        rowContextMenu: ({ row }) => {
+        renderRowContextMenu: ({ row }) => {
           seen.push(row.id);
           return <Menu.Item>Open</Menu.Item>;
         },
@@ -551,7 +551,7 @@ describe("grouping and the row context menu", () => {
     const user = userEvent.setup();
     renderGridUi({
       tableProps: {
-        rowContextMenu: () => <Menu.Item>Open</Menu.Item>,
+        renderRowContextMenu: () => <Menu.Item>Open</Menu.Item>,
       },
     });
 

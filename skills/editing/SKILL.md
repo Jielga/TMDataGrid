@@ -8,7 +8,8 @@ description: >
   meta.type, custom editors through meta.editor, field validation with
   meta.validate and cross-field rules with rowValidators (Standard Schema and
   Zod), adding and deleting rows with edit.addRow, newRowDefaults, onRowAdd,
-  onRowDelete, the generated edit lane, TMDataGrid.EditActions, and the public
+  onRowDelete, the generated edit lane, TMDataGrid.EditActions with its
+  renderActions slot, and the public
   edit engine (begin, commit, cancel, submitAll, getForm, store). Load when
   making a grid editable, choosing an edit mode, wiring a save, writing a cell
   editor, validating an edit, or when cells will not open for editing.
@@ -241,11 +242,8 @@ const grid = useTMDataGrid({
 the immediate modes, so a confirmation belongs inside that callback. Under batch
 it toggles a mark instead: the row renders struck through and inert
 (`data-deleted`), the lane's trash becomes a restore, and `submitAll` reports
-the ids in `deleted`.
-
-Adds and deletes are applied by you, the same as edits. The engine's `tempId`
-(`__new__1`, `__new__2`, …) never needs to become a real id: mint one when you
-create the record.
+the ids in `deleted`. Adds and deletes are applied by you, the same as edits -
+the engine's `tempId` (`__new__1`, …) never needs to become a real id.
 
 ## The chrome
 
@@ -257,6 +255,22 @@ chrome at all by design.
 `TMDataGrid.EditActions` is Save with the pending count plus Discard. It greys
 out while nothing is pending, spins while a submit is in flight, renders nothing
 while editing is off, and works under any mode, not only batch.
+
+`renderActions` replaces the pair while handing over its pieces:
+
+```tsx
+<TMDataGrid.EditActions
+  renderActions={({ state, Controls }) => (
+    <Group>
+      {state.pendingCount > 0 && <Badge>{state.pendingCount}</Badge>}
+      <Controls.Save />
+      <Controls.Discard />
+    </Group>
+  )}
+/>
+```
+
+`state` is `{ pendingCount, isSubmitting }`, `actions` is `{ save, discard }`.
 
 ## The engine: `edit`
 
@@ -455,15 +469,6 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`onEditCommit`).
 `edit.commit(rowId)` and `edit.submitAll()` resolve to a `boolean` saying
 whether the form closed, and resolve `false` when validation or a rejected save
 kept it open. Ignoring the result reports a save that did not happen.
-
-Wrong:
-
-```tsx
-await grid.edit.submitAll();
-notifications.show({ message: "Saved" });
-```
-
-Correct:
 
 ```tsx
 const saved = await grid.edit.submitAll();

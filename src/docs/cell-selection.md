@@ -113,8 +113,10 @@ hint: Select a block and press Ctrl+C - it pastes into Excel as cells, not as on
 Right-clicking inside the selection opens a menu with **Copy**, **Export as CSV
 for Excel** and an **Include headers** toggle. A right-click outside it moves the
 selection there first, the way a spreadsheet does. Your own
-[`rowContextMenu`](/docs/row-interaction#context-menus) items are appended below
-a divider, so nothing is lost by turning cell selection on.
+[`renderRowContextMenu`](/docs/row-interaction#context-menus) items are appended
+below a divider, so nothing is lost by turning cell selection on - and these
+three items are what that slot's `internalItems` hands you, if you would rather
+place them yourself.
 
 ### The CSV
 

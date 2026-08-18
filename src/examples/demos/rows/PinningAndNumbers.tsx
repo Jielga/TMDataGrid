@@ -21,7 +21,7 @@ export function PinningAndNumbers() {
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
       <TMDataGrid.Table<Employee>
-        rowContextMenu={({ row }) => (
+        renderRowContextMenu={({ row }) => (
           <>
             <Menu.Label>
               {row.original.firstName} {row.original.lastName}

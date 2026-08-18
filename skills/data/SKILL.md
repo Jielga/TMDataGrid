@@ -3,8 +3,9 @@ name: data
 description: >
   How a TMDataGrid presents the rows it has: pagination, virtualization, and
   having nothing to show. Covers the three pagination modes (off,
-  enablePagination, manualPagination), the Footer's pagination render prop and
-  getTMDataGridPaginationApi, isPagingActive versus canPaginate, always-on
+  enablePagination, manualPagination), the Footer's renderPagination slot over
+  { state, actions, Controls }, getTMDataGridPaginationApi, isPagingActive
+  versus canPaginate, always-on
   virtualization with overscan and meta.rowHeight, scrollToRow and scrollerRef,
   the edge callbacks onScrollToBottom / onScrollToRight and why onReachEnd is
   better for loading more, the header and pinned-lane depth shadows, and the
@@ -53,27 +54,38 @@ Initial page size is 25, through `initialState.pagination`. `enablePagination`
 is one of the two switches the grid defines itself, and the one switch that
 defaults to off.
 
-`TMDataGrid.Footer` takes a `pagination` render prop handed the same API the
-built-in pager is built on, and `getTMDataGridPaginationApi(table)` returns that
-object outside the Footer:
+`TMDataGrid.Footer` takes a `renderPagination` slot handed three things: the
+`state` the pager shows, the `actions` it can take, and `Controls` - the
+built-in pieces, already wired.
 
 ```tsx
 <TMDataGrid.Footer
-  pagination={(api) => (
+  renderPagination={({ state, actions, Controls }) => (
     <Group>
-      <Button onClick={api.previousPage} disabled={!api.canPreviousPage}>
+      <Controls.PageSize />
+      <Button onClick={actions.previousPage} disabled={!state.canPreviousPage}>
         Back
       </Button>
       <Text>
-        {api.pageIndex + 1} / {api.pageCount}
+        {state.pageIndex + 1} / {state.pageCount}
       </Text>
-      <Button onClick={api.nextPage} disabled={!api.canNextPage}>
-        Next
-      </Button>
+      <Controls.Pager />
     </Group>
   )}
 />
 ```
+
+`Controls.PageSize`, `Controls.Range` and `Controls.Pager` are exactly what the
+default footer renders, in that order - so a custom layout keeps the parts it
+likes rather than rebuilding them to look the same, greying out under a
+suspended pager included.
+
+`state` carries `pageIndex`, `pageSize`, `pageCount`, `rowCount`,
+`canPreviousPage`, `canNextPage`, `from`, `to` and `isPagingActive`. `actions`
+carries `setPageIndex`, `setPageSize`, `previousPage`, `nextPage`, `firstPage`
+and `lastPage`. `getTMDataGridPaginationApi(table)` returns the same
+`{ state, actions }` outside the Footer; `Controls` are bound to the grid
+context, so they exist only inside the slot.
 
 Grouping suspends the pager and wins: it greys out and the range becomes
 `Grouped · all N rows`. `isPagingActive(table, features)` is the live state -
@@ -268,7 +280,9 @@ Source: `src/docs/pagination.md` (Grouping suspends it).
 | `initialState.pagination` | Table option | `{ pageIndex, pageSize }` | `{ 0, 25 }` | Where paging starts. A `data` slice, so it persists. |
 | `onPaginationChange` | Table option | `OnChangeFn` | – | Controls the pagination state. |
 | `TMDataGrid.Footer` | Component | `pageSizeOptions`, `pagination` | `[10, 25, 50, 100]` | The footer bar. Renders nothing when paging is off. |
-| `getTMDataGridPaginationApi` | Export | `(table) => TMDataGridPaginationApi` | – | The pager API, outside the Footer. |
+| `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
+| `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |
+| `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three halves of the slot argument. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything right now. |
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height in pixels. The virtualizer needs a number. |

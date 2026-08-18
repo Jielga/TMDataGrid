@@ -23,9 +23,9 @@ few subsystems), L (new subsystem or real design surface).
 | What | Where it stands |
 | --- | --- |
 | Decisions Q1–Q7 | **Settled** 2026-08-01, recorded [below](#stakeholder-decisions--q1q7-settled-2026-08-01). Not reopened without new evidence. |
-| Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). P2–P4 pending - [proposals.md](proposals.md). P2 has a second gate: its rename table returns for yes/no before execution. |
+| Proposals P1–P4 | **P1 approved 2026-08-09** (amended: direct references, no registry). **P2 approved 2026-08-18** with its rename table - see [api-coherence.md](api-coherence.md). P3–P4 pending - [proposals.md](proposals.md). |
 | Batches A–D | **Done 2026-08-01** - all items landed on `feature/next`. |
-| Held items | H1 `done 2026-08-09`; H2–H5 blocked on approval - see [Held](#held--waiting-on-approval). |
+| Held items | H1 `done 2026-08-09`, H2 `done 2026-08-18`; H3–H5 blocked on approval - see [Held](#held--waiting-on-approval). |
 | Implementation | A–D and H1 shipped. |
 | Branch | `feature/next`. Merged to `main` at `1.0.0`. |
 | Release | Changesets pre-mode `beta`; first release `1.0.0-beta.1` (A2 opens it). Breaks are free until `1.0.0`, each named in its changeset. |
@@ -68,7 +68,7 @@ tracks are freely reorderable. Run the batches in order A → B → C → D.
 | D3 | Filter match highlighting | M | `done 2026-08-01` | D2 |
 | **H** | **Held - waiting on approval** | | | |
 | H1 | Custom controls (direct refs) + built-in filter controls | L | `done 2026-08-09` | P1 approved 2026-08-09 |
-| H2 | API coherence refactor + slot reshapes | L | `held P2` | P2 approved **and** rename table approved |
+| H2 | API coherence refactor + slot reshapes | L | `done 2026-08-18` | P2 approved 2026-08-18 with its rename table |
 | H3 | Bad-UX warning framework | M | `held P3` | P3 approved |
 | H4 | Details ergonomics (`detailsTrigger`, `detailsMode`) | M | `held P3` | H3 shipped (wants the framework for its rule) |
 | H5 | Density recipe + demo toggle | S | `held P4` | P4 approved |
