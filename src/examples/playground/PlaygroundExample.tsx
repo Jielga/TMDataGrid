@@ -748,7 +748,7 @@ export function PlaygroundExample() {
             // The render prop fills a Mantine dropdown the grid opens at the
             // pointer. `cell` is the one that was right-clicked, which is what
             // makes a per-cell action like "copy" possible at all.
-            rowContextMenu={
+            renderRowContextMenu={
               rowContextMenu
                 ? ({ row, cell }) => {
                     // The raw cell value, not the rendered one: Salary shows
@@ -828,16 +828,19 @@ export function PlaygroundExample() {
           />
 
           {customPager ? (
-            // The render prop replaces the built-in pager with any UI built on
-            // the distilled pagination API - here Mantine's Pagination.
+            // The slot replaces the pager while keeping the built-in
+            // page-size select beside it.
             <TMDataGrid.Footer
-              pagination={(api) => (
-                <Pagination
-                  size="sm"
-                  total={api.pageCount}
-                  value={api.pageIndex + 1}
-                  onChange={(page) => api.setPageIndex(page - 1)}
-                />
+              renderPagination={({ state, actions, Controls }) => (
+                <>
+                  <Controls.PageSize />
+                  <Pagination
+                    size="sm"
+                    total={state.pageCount}
+                    value={state.pageIndex + 1}
+                    onChange={(page) => actions.setPageIndex(page - 1)}
+                  />
+                </>
               )}
             />
           ) : (

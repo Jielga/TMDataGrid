@@ -191,7 +191,7 @@ export function buildStarterSnippet({
   const tableElement = rowContextMenu
     ? [
         "        <TMDataGrid.Table<MyRow>",
-        "          rowContextMenu={({ row, cell }) => (",
+        "          renderRowContextMenu={({ row, cell }) => (",
         "            <>",
         "              <Menu.Label>{row.original.name}</Menu.Label>",
         "              <Menu.Item onClick={() => console.log(row.original)}>",

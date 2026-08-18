@@ -529,7 +529,7 @@ describe("cell selection - ranges", () => {
     const user = userEvent.setup();
     renderGridUi({
       cellSelection: "range",
-      tableProps: { rowContextMenu: () => <Menu.Item>Open</Menu.Item> },
+      tableProps: { renderRowContextMenu: () => <Menu.Item>Open</Menu.Item> },
     });
 
     await user.click(cellAt(0, 2));

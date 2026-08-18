@@ -25,7 +25,7 @@ hint: Click, double-click and right-click anywhere in the body.
 | `onRowClick` | `row` | Rows show a pointer cursor when set. |
 | `onCellClick` | `{ cell, row, column, event }` | The cell cursor still moves. |
 | `onCellDoubleClick` | same | A double-click that opens an editor still does. |
-| `onCellContextMenu` | same | `rowContextMenu` and the cell-selection menu still open. |
+| `onCellContextMenu` | same | `renderRowContextMenu` and the cell-selection menu still open. |
 
 Group rows sit out all four. TanStack builds a group row on top of its first
 child's record, so a handler would receive a real-looking row that is the wrong
@@ -41,7 +41,7 @@ render prop only says what goes inside, so anything valid in a dropdown works:
 
 ```tsx
 <TMDataGrid.Table<Employee>
-  rowContextMenu={({ row, cell }) => (
+  renderRowContextMenu={({ row, cell }) => (
     <>
       <Menu.Label>{row.original.firstName}</Menu.Label>
       <Menu.Item onClick={() => open(row.original.id)}>Open</Menu.Item>
@@ -76,7 +76,7 @@ Return `null` to leave a row without a menu. The browser's own context menu
 stays suppressed over the grid either way:
 
 ```tsx
-rowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit</Menu.Item>)}
+renderRowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit</Menu.Item>)}
 ```
 
 ### Right-clicking does not select
@@ -86,7 +86,7 @@ what gives it the hover background. An action that should apply to a
 multi-selection can read it off `table` and fall back to the clicked row:
 
 ```tsx
-rowContextMenu={({ table, row }) => {
+renderRowContextMenu={({ table, row }) => {
   const selected = table.getSelectedRowModel().rows;
   const targets = selected.some((r) => r.id === row.id) ? selected : [row];
   return <Menu.Item onClick={() => archive(targets)}>Archive {targets.length}</Menu.Item>;
@@ -104,7 +104,7 @@ state:
 
 ```tsx
 <TMDataGrid.Table<Employee>
-  rowContextMenu={items}
+  renderRowContextMenu={items}
   rowContextMenuProps={{ width: 260, shadow: "lg", position: "right-start" }}
 />
 ```
@@ -126,7 +126,7 @@ every scroll frame.
 | `onCellClick` | Table prop | `(args) => void` | – | Cell click - `{ cell, row, column, event }`. |
 | `onCellDoubleClick` | Table prop | `(args) => void` | – | Cell double-click. |
 | `onCellContextMenu` | Table prop | `(args) => void` | – | Cell right-click. |
-| `rowContextMenu` | Table prop | `({ table, row, cell, close }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |
+| `renderRowContextMenu` | Table prop | `({ table, row, cell, close }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |
 | `rowContextMenuProps` | Table prop | `MenuProps` | – | Passed to the Mantine `Menu`. |
 | `TMDataGridCellEventArgs` | Export | type | – | The argument the three cell handlers receive. |
 | `data-context-menu` | Data attribute | – | – | On the row whose menu is open. |

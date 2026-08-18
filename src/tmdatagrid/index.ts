@@ -66,7 +66,14 @@ export {
   type TMDataGridOptionsArgs,
   type TMDataGridOptionsSource,
 } from "./core/columnOptions";
-export { TMDataGridEditActions } from "./components/TMDataGridEditActions";
+export {
+  TMDataGridEditActions,
+  type TMDataGridEditActionsActions,
+  type TMDataGridEditActionsControls,
+  type TMDataGridEditActionsProps,
+  type TMDataGridEditActionsSlotArgs,
+  type TMDataGridEditActionsState,
+} from "./components/TMDataGridEditActions";
 export {
   clearedValueForType,
   getEditFieldName,
@@ -207,13 +214,21 @@ export type {
   TMDataGridCellEventArgs,
   TMDataGridCellNav,
   TMDataGridColumnLayout,
-  TMDataGridRowContextMenu,
   TMDataGridRowContextMenuArgs,
+  TMDataGridRowContextMenuRenderer,
   TMDataGridRowStyle,
   TMDataGridTableProps,
 } from "./components/TMDataGridTable";
+export type {
+  TMDataGridColumnMenuItemsArgs,
+  TMDataGridColumnMenuItemsRenderer,
+} from "./components/TMDataGridHeaderCell";
 export {
   getTMDataGridPaginationApi,
   type TMDataGridFooterProps,
+  type TMDataGridPaginationActions,
   type TMDataGridPaginationApi,
+  type TMDataGridPaginationControls,
+  type TMDataGridPaginationSlotArgs,
+  type TMDataGridPaginationState,
 } from "./components/TMDataGridFooter";

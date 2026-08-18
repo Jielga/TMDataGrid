@@ -8,6 +8,8 @@ import {
   TMDataGridFilterPills,
   useTMDataGrid,
   type TMDataGridApi,
+  type TMDataGridEditActionsProps,
+  type TMDataGridFooterProps,
   type TMDataGridRowData,
   type TMDataGridTableProps,
   type UseTMDataGridOptions,
@@ -113,6 +115,10 @@ export function visibleColumnIds(api: TMDataGridApi<TestRow>): Array<string> {
 export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   /** Everything under this key goes to `TMDataGrid.Table`, not to the hook. */
   tableProps?: TMDataGridTableProps<TestRow>;
+  /** Everything under this key goes to `TMDataGrid.Footer`. */
+  footerProps?: TMDataGridFooterProps;
+  /** Renders `TMDataGrid.EditActions` in the toolbar, with these props. */
+  editActionsProps?: TMDataGridEditActionsProps;
   /** Passed to `<TMDataGrid>` itself, the way a consumer names a grid. */
   "data-testid"?: string;
 };
@@ -125,6 +131,8 @@ export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
  */
 export function Grid({
   tableProps,
+  footerProps,
+  editActionsProps,
   "data-testid": testId,
   ...options
 }: GridProps = {}) {
@@ -144,11 +152,14 @@ export function Grid({
         <TMDataGrid.Toolbar>
           <TMDataGrid.SummaryCount />
           <TMDataGrid.Spacer />
+          {editActionsProps ? (
+            <TMDataGrid.EditActions {...editActionsProps} />
+          ) : null}
           <TMDataGrid.FilterButton />
           <TMDataGrid.ColumnsButton />
         </TMDataGrid.Toolbar>
         <TMDataGrid.Table<TestRow> {...tableProps} />
-        <TMDataGrid.Footer />
+        <TMDataGrid.Footer {...footerProps} />
       </TMDataGrid>
     </>
   );

@@ -20,7 +20,7 @@ row context menu:
 
 ```tsx
 <TMDataGrid.Table<Employee>
-  rowContextMenu={({ row }) => (
+  renderRowContextMenu={({ row }) => (
     <>
       {row.getIsPinned() !== "top" && (
         <Menu.Item onClick={() => row.pin("top")}>Pin to top</Menu.Item>
