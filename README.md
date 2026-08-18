@@ -88,16 +88,19 @@ shows no filter control.
 The documentation is written as markdown under [`src/docs/`](src/docs) and served by the
 demo site:
 
-| Page                                           | Contents                         |
-| ---------------------------------------------- | -------------------------------- |
-| [Getting started](src/docs/getting-started.md) | Structure and defaults           |
-| [useTMDataGrid](src/docs/use-tm-data-grid.md)  | Options, meta and persistence    |
-| [Components](src/docs/components.md)           | Props for every component        |
-| [Columns](src/docs/columns.md)                 | Definitions, sizing and filters  |
-| [Features](src/docs/features.md)               | Enabling and disabling behaviour |
-| [Editing](src/docs/editing.md)                 | Modes, editors and validation    |
-| [Server-side](src/docs/server-side.md)         | Manual pagination and filtering  |
-| [Testing](src/docs/testing.md)                 | Part hooks, roles and Playwright |
+One page per touchpoint: the prose, the demos that show it, and the reference
+table for everything that page owns. [`docsPages.ts`](src/docs/docsPages.ts) is
+the registry and the sidebar order.
+
+| Section              | Pages                                                            |
+| -------------------- | ---------------------------------------------------------------- |
+| Start here           | [Getting started](src/docs/getting-started.md), [Grid anatomy](src/docs/anatomy.md) |
+| Columns              | [Defining columns](src/docs/columns.md), [Sorting](src/docs/sorting.md), [Filtering](src/docs/filtering.md), [Visibility, pinning and size](src/docs/column-layout.md) |
+| Rows                 | [Selection](src/docs/row-selection.md), [Details](src/docs/row-details.md), [Grouping](src/docs/grouping.md), [Summary row](src/docs/summary-row.md), [Pinning and numbering](src/docs/row-pinning.md), [Clicks and context menus](src/docs/row-interaction.md), [Row styling](src/docs/row-styling.md) |
+| Cells and editing    | [Cell selection](src/docs/cell-selection.md), [Editing](src/docs/editing.md), [Editors and validation](src/docs/editors.md) |
+| Data                 | [Pagination](src/docs/pagination.md), [Quick search](src/docs/quick-search.md), [Persistence](src/docs/persistence.md), [Server-side](src/docs/server-side.md), [Loading and empty](src/docs/loading-and-empty.md), [Scrolling](src/docs/scrolling.md) |
+| Appearance           | [Size and styling](src/docs/styling.md), [Toolbar](src/docs/toolbar.md), [Localization](src/docs/localization.md) |
+| Reference            | [useTMDataGrid](src/docs/use-tm-data-grid.md), [Testing](src/docs/testing.md) |
 
 ## Development
 
@@ -117,14 +120,14 @@ The demo site's examples live in [`src/examples/`](src/examples):
 
 | Path              | Contents                                                       |
 | ----------------- | -------------------------------------------------------------- |
-| `examplePages.ts` | The tree - categories, topics, and the prose for every demo     |
+| `demoRegistry.ts` | Pairs each demo module with its own source through `import.meta.glob` |
 | `demos/`          | One file per demo: one idea, no headings, no explanation        |
 | `data/`           | Shared datasets, and the column set for demos about other things |
 | `playground/`     | The kitchen sink, every feature at once behind switches          |
 
-Adding a demo is adding a file under `demos/` and naming it from a topic in
-`examplePages.ts` - the registry pairs each module with its own source through
-`import.meta.glob`, so the code on screen cannot drift from the code running.
+Adding a demo is adding a file under `demos/` and naming it from a ` ```demo `
+fence on the docs page that explains it. The registry pairs each module with
+its own source, so the code on screen cannot drift from the code running.
 [`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo,
 so a demo that stops working fails the suite whether or not it still compiles.
 

@@ -1,13 +1,16 @@
 # Proposals - the 1.0 wave
 
-> **Status: P1 approved 2026-08-09 (as amended in discussion - registry
-> dropped for direct component references). P2–P4 pending.** Held work in
-> the [tracker](scan-adoption.md#execution-tracker) (H1–H5) starts only when
-> its proposal is approved.
+> **Status: P2 and P3 pending. P1 shipped; P4's deliverable shipped ahead of
+> its approval.** Held work in the
+> [tracker](scan-adoption.md#execution-tracker) starts only when its proposal
+> is approved.
 
-The four proposals gating the scan-adoption wave
+The proposals gating the scan-adoption wave
 ([scan-adoption.md](scan-adoption.md)). Each ends with what approval means.
-Decisions Q1–Q7 (settled 2026-08-01) are assumed throughout.
+Decisions Q1–Q7 (settled 2026-08-01) are assumed throughout. A proposal is
+dropped from this file once the work it gates has shipped - the shipped
+behavior is then documented in `src/docs/`, which is the copy that has to
+stay right.
 
 **Approving one:** change its status line to
 `> **Status: approved <date>.**` and set the matching H-item in the
@@ -16,75 +19,10 @@ needs its rename table approved as well before H2 starts.
 
 | Proposal | Status | Unblocks |
 | --- | --- | --- |
-| P1 - Custom controls (direct references) | **approved 2026-08-09** | H1 |
+| ~~P1 - Custom controls (direct references)~~ | **shipped 2026-08-09** as H1. Text removed; the contract it proposed is documented in [filtering.md](../src/docs/filtering.md) and [editors.md](../src/docs/editors.md) | - |
 | P2 - API coherence refactor | **pending approval** (+ second gate: rename table) | H2 |
 | P3 - Bad-UX warning framework | **pending approval** | H3, then H4 |
-| P4 - Density: no built-in | **pending approval** | H5 |
-
-## P1 - Custom controls: direct component references
-
-> **Status: approved 2026-08-09**, as amended in stakeholder discussion.
-> Unblocks H1. The original registry proposal (named controls in a
-> `controls` option, referenced by string) is superseded: column defs are
-> never serialized, so string indirection bought nothing over plain
-> imports. This amendment also amends **Q1** - the two-door editor
-> (`renderEditor` + registry name) collapses to a single component door.
-
-**Goal.** Build a special input once - with its validation pattern - and
-reuse it across columns and grids, for both editing and filtering. Controls
-are ordinary named exports, imported and assigned directly on the column;
-reuse is `import`, the way everything else in React works. Typos are
-compile errors, go-to-definition works, and there is no name-collision
-surface at all.
-
-**Shape.**
-
-```tsx
-// salaryControls.tsx - plain named exports, shared app-wide by import
-export const SalaryEditor = (args: TMDataGridEditorArgs) => { ... };
-export const SalaryRangeFilter = (args: TMDataGridFilterControlArgs) => { ... };
-
-// column definition - direct references, no strings
-columnHelper.accessor("salary", {
-  meta: { type: "number", editor: SalaryEditor, filterControl: SalaryRangeFilter },
-});
-```
-
-**Args contracts.**
-
-- **Editor:** `meta.editor` is a component receiving the existing
-  `TMDataGridEditorArgs` (`field`, `form`, `cell`, `row`, `column`,
-  `table`, `commit`, `cancel`, `size`, `autoFocus`, `seedText`). It is
-  rendered as JSX - a real component, so hooks are legal inside (the MRT
-  bare-call footgun is structurally excluded). `field` is the TanStack Form
-  `FieldApi`, so a custom input plugs into `meta.validate` /
-  `rowValidators` with no extra wiring. **`meta.renderEditor` is removed**
-  (breaking, named in its changeset): one door, always a component. Inline
-  still works (`editor: (args) => <X {...args} />`); the docs carry the
-  standard React caveat to define editors at module scope so identity stays
-  stable across renders.
-- **Filter:** `meta.filterControl` is a component receiving the new
-  `TMDataGridFilterControlArgs`: `{ column, table, operator, value,
-  onChange(nextValue), options, size, labels }`. **Value-only contract:**
-  the control reads `operator` to shape itself (e.g. `between` → two
-  handles) and calls `onChange` with the bare value; the grid composes the
-  operator-aware `TMDataGridFilterValue` internally. Controls never build
-  the wrapper and cannot write the operator - `table` is the escape hatch
-  for the rare control that must. `options` comes pre-resolved through
-  `resolveColumnOptions` for select-shaped controls.
-
-**Resolution order** (most specific wins, two steps each):
-`meta.editor` → built-in editor by `meta.type`;
-`meta.filterControl` → built-in control by type/operator.
-
-**Built-ins through the same door.** The H1 controls (range slider seeded
-from faceted min/max, date-range, autocomplete, tri-state boolean) ship as
-PascalCase named exports (`DgRangeSliderFilter`, `DgDateRangeFilter`, …)
-built against the same public args contracts consumers use - proving the
-contract by construction. No reserved prefix needed; imports don't collide.
-
-**Approval means:** the two args contracts and the resolution order are
-final for the beta; H1 builds against them.
+| P4 - Density: no built-in | **pending approval**, but its deliverable already shipped - see below | H5 |
 
 ## P2 - API coherence refactor (1.0.0-beta)
 
@@ -175,6 +113,15 @@ opinions-vs-errors boundary are settled; phase 1 builds it.
 ## P4 - Density: recommendation is NO built-in
 
 > **Status: pending approval.** Written 2026-08-01. Unblocks H5.
+>
+> **Overtaken by events, 2026-08-16.** The docs restructure shipped both
+> halves of the deliverable without waiting for the approval: the size scale
+> and its recipe are on [styling.md](../src/docs/styling.md), and
+> `getting-started/DensityAndLayout.tsx` is the runtime toggle, a
+> `SegmentedControl` over `size`. What is still missing is the test pinning
+> that a live `size` change re-estimates virtualized row heights. Approving
+> this now means confirming density stays closed as "recipe, not feature" and
+> reducing H5 to that one test.
 
 The grid already derives row height, paddings and font size from the live
 `size` prop - a runtime compact/comfortable toggle is a `useState` in

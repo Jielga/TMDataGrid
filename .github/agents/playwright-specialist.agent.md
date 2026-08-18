@@ -19,7 +19,7 @@ accessible role), report that back instead of patching the app.
    `npx playwright test` is self-contained; if not, find the dev/start
    script in `package.json` and run the app yourself).
 2. Look for a skills directory (`.agents/skills/`, `.claude/skills/`, or
-   whatever the project's AGENTS.md points to). If skills matching your
+   whatever the project's CLAUDE.md points to). If skills matching your
    task exist, read them **before** writing any test - typically ones
    covering page objects, driving complex inputs, or URL-state testing.
 3. Match the conventions of existing tests (folder layout, fixtures,

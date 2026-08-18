@@ -1,6 +1,6 @@
 # Docs restructure - one page per touchpoint
 
-> **Status: in progress, started 2026-08-16.** Supersedes the two-tree layout
+> **Status: executed 2026-08-16.** Supersedes the two-tree layout
 > that [examples-showcase.md](examples-showcase.md) shipped on 2026-08-10.
 > That plan fixed the examples; it left them in a tree of their own, beside
 > the docs, which is the problem this one closes.

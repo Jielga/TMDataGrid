@@ -43,7 +43,7 @@ integrate, and verify.
 - TypeScript strict - no `any`; `type` over `interface`.
 - Named exports only. Double quotes. Typed argument objects at call sites.
 - UI is Mantine; styling is Emotion. Never Tailwind, never CSS modules.
-- At the start of a task, read the project's AGENTS.md (if present) and
+- At the start of a task, read the project's CLAUDE.md (if present) and
   note where its skills live (commonly `.agents/skills/` or
   `.claude/skills/`). Pass those pointers along in every subagent task -
   subagents start with zero context and won't find them on their own.

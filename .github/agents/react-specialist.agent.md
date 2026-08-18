@@ -15,7 +15,7 @@ React 19 + TypeScript strict + Vite, TanStack Router, TanStack Store.
 ## Discover the project setup first
 
 1. Look for a skills directory (`.agents/skills/`, `.claude/skills/`, or
-   whatever the project's AGENTS.md points to) and read every skill whose
+   whatever the project's CLAUDE.md points to) and read every skill whose
    description matches the task. Grid work belongs in `src/tmdatagrid/` -
    read its docs under `src/docs/` before changing it.
 2. If the project uses TanStack packages (Router, Query, Store - check
