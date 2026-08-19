@@ -3,20 +3,19 @@ name: data
 description: >
   How a TMDataGrid presents the rows it has: pagination, virtualization, and
   having nothing to show. Covers the three pagination modes (off,
-  enablePagination, manualPagination), the Footer's renderPagination slot over
-  { state, actions, Controls }, getTMDataGridPaginationApi, isPagingActive
-  versus canPaginate, always-on
-  virtualization with overscan and meta.rowHeight, scrollToRow and scrollerRef,
-  the edge callbacks onScrollToBottom / onScrollToRight and why onReachEnd is
-  better for loading more, the header and pinned-lane depth shadows, and the
-  four empty states in precedence order with meta.loading, renderEmptyState,
-  hasActiveFilters, TMDataGrid.LoadingIndicator and TMDataGrid.SummaryCount.
-  Load when adding a pager, tuning scrolling, scrolling to a row, or deciding
-  what an empty grid should say.
+  enablePagination, manualPagination), the Footer's renderPagination slot over {
+  state, actions, Controls }, getTMDataGridPaginationApi, isPagingActive versus
+  canPaginate, always-on virtualization with overscan and meta.rowHeight,
+  scrollToRow and scrollerRef, the edge callbacks onScrollToBottom /
+  onScrollToRight and why onReachEnd is better for loading more, the header and
+  pinned-lane depth shadows, and the four empty states in precedence order with
+  meta.loading, renderEmptyState, hasActiveFilters, TMDataGrid.LoadingIndicator
+  and TMDataGrid.SummaryCount. Load when adding a pager, tuning scrolling,
+  scrolling to a row, or deciding what an empty grid should say.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '1.0.2'
+  library_version: '1.1.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/pagination.md'
   - 'Jielga/TMDataGrid:src/docs/scrolling.md'
