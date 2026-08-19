@@ -149,17 +149,11 @@ columnHelper.accessor("salary", {
 
 ## Editors and validation
 
-`meta.type` picks the editor, and `meta.options` feeds the select editors from
-the same declaration the filter panel reads.
-
-| `meta.type` | Editor |
-| --- | --- |
-| `"string"` (default) | Text input |
-| `"number"` | Number input |
-| `"boolean"` | Checkbox |
-| `"date"` | Native `<input type="date">`, ISO `YYYY-MM-DD` |
-| `"select"` | Searchable select from `meta.options`; commits on pick under `"cell"` |
-| `"multiSelect"` | Multi-select, same source |
+`meta.type` picks the editor - `"string"` (the default), `"number"`,
+`"boolean"`, `"date"`, `"select"` and `"multiSelect"` - and `meta.options` feeds
+the two select editors from the same declaration the filter panel reads. Each
+one, with the export that wraps it, is in
+[references/editors-and-validation.md](references/editors-and-validation.md#the-built-in-editors).
 
 `meta.editor` replaces one, `meta.validate` guards the field, and
 `rowValidators` carries cross-field rules. The validators are TanStack Form's
@@ -249,17 +243,11 @@ while editing is off, and works under any mode, not only batch.
 
 ## The engine: `edit`
 
-`grid.edit` is public, and everything the chrome does goes through it.
-
-| Member | Does |
-| --- | --- |
-| `edit.begin({ rowId, columnId })` | Opens an editor. `columnId: null` opens the whole row |
-| `edit.commit(rowId)` | Commits one row. `Promise<boolean>`, `false` when blocked |
-| `edit.cancel(rowId)` / `edit.cancelAll()` | Drops one draft, or every draft |
-| `edit.submitAll()` | Commits every open row. `Promise<boolean>` |
-| `edit.addRow()` / `edit.deleteRow(rowId)` | Rows in and out |
-| `edit.getForm(rowId)` | The row's live TanStack Form `FormApi` |
-| `edit.store` | The projection store, for `useSelector` |
+`grid.edit` is public, and everything the chrome does goes through it:
+`begin` and `commit`, `cancel` / `cancelAll`, `submitAll`, `addRow` /
+`deleteRow`, `getForm`, and `store` for `useSelector`. Every member with its
+signature, the gates, `clearCell`, `deactivate`, and the `edit.store` shape are
+in [references/editing-api.md](references/editing-api.md#the-edit-engine).
 
 ```tsx
 import { useSelector } from "@tanstack/react-store";
@@ -269,11 +257,6 @@ const pendingCount = useSelector(
   (state) => state.openRowIds.length + state.deletedRowIds.length,
 );
 ```
-
-`edit.store` holds `active`, `openRowIds`, `rows` (per row `dirtyFields`,
-`errorFields`, `isSubmitting`), `newRows` and `deletedRowIds`. The full member
-list, `clearCell`, `deactivate` and the gates included, is in
-[references/editing-api.md](references/editing-api.md).
 
 `getForm` is the *one row, one form* promise made public: render that same form
 in a drawer and it shares values, dirty state and errors with the inline cells,
