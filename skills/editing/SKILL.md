@@ -9,14 +9,14 @@ description: >
   meta.validate and cross-field rules with rowValidators (Standard Schema and
   Zod), adding and deleting rows with edit.addRow, newRowDefaults, onRowAdd,
   onRowDelete, the generated edit lane, TMDataGrid.EditActions with its
-  renderActions slot, and the public
-  edit engine (begin, commit, cancel, submitAll, getForm, store). Load when
-  making a grid editable, choosing an edit mode, wiring a save, writing a cell
-  editor, validating an edit, or when cells will not open for editing.
+  renderActions slot, and the public edit engine (begin, commit, cancel,
+  submitAll, getForm, store). Load when making a grid editable, choosing an edit
+  mode, wiring a save, writing a cell editor, validating an edit, or when cells
+  will not open for editing.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '1.0.2'
+  library_version: '1.1.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/editing.md'
   - 'Jielga/TMDataGrid:src/docs/query-builder.md'
