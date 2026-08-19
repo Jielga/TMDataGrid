@@ -7,18 +7,12 @@
 
 Start here after a break, or on a cold session:
 
-- [BACKLOG.md](BACKLOG.md) — what is planned, in progress and done.
-- [plans/scan-adoption.md](plans/scan-adoption.md) — **the tracker for the
-  current 1.0 wave**: per-item status, running order, and what is waiting on
-  whom. Its execution-tracker table is the only place item status lives;
-  update the Status cell there when something ships.
-- [plans/proposals.md](plans/proposals.md) — proposals awaiting stakeholder
-  approval. Held work does not start until its proposal is approved.
-- `plans/*.md` for finished waves keep a `> **Status: executed <date>**`
-  stamp at the top; they are rationale, not instructions.
+- [BACKLOG.md](BACKLOG.md) - what is planned, held, done and iceboxed.
+  It is the only place item status lives; update it there when something ships.
 
-Do not start planned work without the stakeholder's go — the tracker names
-what is cleared and what is still waiting.
+Do not start planned work without the stakeholder's go - the backlog names what is held and what is cleared.
+
+`plans/` is gitignored. Working notes may live there, but they stay local and nothing committed may depend on them.
 
 ## Commands
 
@@ -81,7 +75,6 @@ Docs are markdown under [src/docs/](src/docs), registered in [docsPages.ts](src/
 They stay plain markdown: `intent.docs` publishes them and the `SKILL.md` files cite them as sources, so no MDX.
 
 One touchpoint, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
-[plans/docs-restructure.md](plans/docs-restructure.md) is the rule and the running status.
 
 A demo is one file under `src/examples/demos/` holding code and nothing else: no headings, no prose, nothing you would not paste.
 Prose lives in the docs page that shows it.
