@@ -25,6 +25,10 @@ past 1.0.0 on 2026-08-01.
 
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing; see scan notes.
+- Editing friction found in consumer use (delete-chrome gating, never-saved
+  rows, bulk entry rows) - notes and evidence in
+  [plans/editing-consumer-friction.md](plans/editing-consumer-friction.md).
+  Gathering more field evidence before anything becomes a proposal.
 
 ## Done
 
