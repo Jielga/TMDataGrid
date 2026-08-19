@@ -286,6 +286,56 @@ describe("row context menu", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens the menu for a pinned row", async () => {
+    // Pinned rows leave the scrolling order, so the body list the menu once
+    // resolved its target against no longer holds them. Right-click is the
+    // documented way to unpin, and it has to reach a row at either edge.
+    const targets: string[] = [];
+    renderGridUi({
+      enableRowPinning: true,
+      initialState: { rowPinning: { top: ["1"], bottom: ["2"] } },
+      tableProps: {
+        renderRowContextMenu: ({ row }) => {
+          targets.push(row.id);
+          return <Menu.Item>Unpin</Menu.Item>;
+        },
+      },
+    });
+
+    fireEvent.contextMenu(
+      within(part("row", { rowId: "1" }, part("pinned-top"))).getAllByRole(
+        "cell",
+      )[2],
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Unpin" }),
+    ).toBeInTheDocument();
+    expect(targets).toContain("1");
+  });
+
+  it("opens the menu for a bottom-pinned row", async () => {
+    renderGridUi({
+      enableRowPinning: true,
+      initialState: { rowPinning: { top: [], bottom: ["2"] } },
+      tableProps: {
+        renderRowContextMenu: ({ row }) => (
+          <Menu.Item>{`Unpin ${row.id}`}</Menu.Item>
+        ),
+      },
+    });
+
+    fireEvent.contextMenu(
+      within(part("row", { rowId: "2" }, part("pinned-bottom"))).getAllByRole(
+        "cell",
+      )[2],
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Unpin 2" }),
+    ).toBeInTheDocument();
+  });
+
   it("does not touch right-click without the prop", () => {
     renderGridUi();
 

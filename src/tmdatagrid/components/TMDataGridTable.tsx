@@ -1735,7 +1735,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       const columnIndex = orderedColumns.findIndex(
         (column) => column.id === columnId,
       );
-      if (!isWithinBounds(selectionBounds, rowIndex, columnIndex)) {
+      // `rowIndex < 0` is a pinned row: those sit out the cell range, so
+      // moving the selection onto one would resolve to no rectangle at all
+      // and drop the selection the user could still see at the edge.
+      if (
+        rowIndex >= 0 &&
+        !isWithinBounds(selectionBounds, rowIndex, columnIndex)
+      ) {
         ui.actions.setFocusedCell({ rowId, columnId });
         setRangeTo({ rowId, columnId }, { extend: false });
       }
@@ -1744,10 +1750,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     setContextMenuTarget(rowId === null ? null : { rowId, columnId });
   };
 
+  // The body list, then the edge blocks: pinning takes a row out of the
+  // scrolling order, and unpinning is the first thing its menu exists to
+  // offer, so a menu that could not resolve a pinned row would strand it
+  // there. Searched in that order because the body holds nearly every row.
   const contextMenuRow =
     contextMenuTarget === null
       ? undefined
-      : rows.find((row) => row.id === contextMenuTarget.rowId);
+      : (rows.find((row) => row.id === contextMenuTarget.rowId) ??
+        pinnedTopRows.find((row) => row.id === contextMenuTarget.rowId) ??
+        pinnedBottomRows.find((row) => row.id === contextMenuTarget.rowId));
 
   const canRenderRowMenu =
     renderRowContextMenu !== undefined &&

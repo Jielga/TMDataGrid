@@ -15,8 +15,54 @@ Pinned rows leave the scrolling order and render in sticky blocks -
 top-pinned rows under the header (and under the entry block while one is
 open), bottom-pinned rows above the summary row.
 
-There is no built-in pin gesture. Pin from wherever suits - most naturally the
-row context menu:
+There is no built-in pin gesture and no pin icon.
+What the grid gives you is `row.pin()` on every row, reachable from anywhere
+you render a row.
+Two places suit it.
+
+A **lane of your own** - a display column whose cell is a pin button:
+
+```tsx
+function PinToggle({ row }: { row: Row<TMDataGridFeatures, Employee> }) {
+  // Subscribed rather than called in the component body: the `row` identity
+  // survives a pin, so the React Compiler would cache the call along with it
+  // and the icon would never fill in.
+  const pinned = useSelector(row.table.store, () => row.getIsPinned());
+  return (
+    <ActionIcon
+      variant={pinned === false ? "subtle" : "light"}
+      color={pinned === false ? "gray" : "blue"}
+      // A body control is reached by stepping into its cell, not by Tab.
+      tabIndex={useCellControlTabIndex()}
+      aria-label={pinned === false ? "Pin to top" : "Unpin"}
+      // The row underneath may select or highlight on click.
+      onClick={(event) => {
+        event.stopPropagation();
+        row.pin(pinned === false ? "top" : false);
+      }}
+    >
+      {pinned === false ? <IconPin size={16} /> : <IconPinFilled size={16} />}
+    </ActionIcon>
+  );
+}
+
+const pinColumn = columnHelper.display({
+  id: "pin",
+  header: "",
+  // Columns are fluid - `minmax(minSize, flex fr)` - so a control lane states
+  // one width three times to opt out. See [Sizing](/docs/column-layout#sizing).
+  size: 44,
+  minSize: 44,
+  maxSize: 44,
+  meta: { label: "Pin", align: "center" },
+  enableResizing: false,
+  enableSorting: false,
+  cell: ({ row }) => <PinToggle row={row} />,
+});
+```
+
+Or the **row context menu**, which reaches a row at either edge as readily as
+one in the body:
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -33,9 +79,12 @@ row context menu:
 />
 ```
 
+Whichever you build, leave a way *back*: a row pinned by a gesture that has no
+unpin in it is a row the user cannot put down.
+
 ```demo
 file: rows/PinningAndNumbers.tsx
-hint: Right-click a row to pin it to either edge, then scroll.
+hint: Click a pin, or right-click a row for either edge, then scroll.
 ```
 
 `row.pin("top" | "bottom" | false)`, `row.getIsPinned()` and `row.getCanPin()`
