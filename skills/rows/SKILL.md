@@ -249,10 +249,15 @@ const grid = useTMDataGrid({
 });
 ```
 
-There is no built-in pin gesture - pin from wherever suits, most naturally the
-row context menu, through TanStack's own `row.pin("top" | "bottom" | false)`,
-`row.getIsPinned()` and `row.getCanPin()`. Pinned rows leave the scrolling order
-and render in sticky blocks: top under the header, bottom above the summary row.
+There is no built-in pin gesture and no pin icon - build one from TanStack's own
+`row.pin("top" | "bottom" | false)`, `row.getIsPinned()` and `row.getCanPin()`,
+either as a display column whose cell is a pin button or in the row context
+menu. Read the pinned state through a subscription
+(`useSelector(row.table.store, () => row.getIsPinned())`) rather than calling it
+in a component body: the `row` identity survives a pin, so the React Compiler
+would cache the call and the icon would never change. Whichever gesture you
+build, put unpin in it too. Pinned rows leave the scrolling order and render in
+sticky blocks: top under the header, bottom above the summary row.
 
 Pinned rows are still body rows - selection, editing, details, the context menu
 and per-row styling all behave normally. What they sit out are the statements

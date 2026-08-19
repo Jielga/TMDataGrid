@@ -64,7 +64,7 @@ export function TMDataGridCellEditor({
   row: Row<TMDataGridFeatures, TMDataGridRowData>;
   /** Consumes the pending type-to-edit seed, when typing opened this editor. */
   takeSeedText: () => string | undefined;
-  /** In row mode only the first editable cell takes the focus. */
+  /** @deprecated The grid places the caret; see `TMDataGridEditorArgs`. */
   autoFocus?: boolean;
   /** After the editor closed itself - the table moves the focus. */
   onClose: (args: TMDataGridCellEditorClose) => void;

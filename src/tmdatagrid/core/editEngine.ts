@@ -118,9 +118,16 @@ export type TMDataGridEditRowProjection = {
  * reads a form's store directly - it is mounted for one cell at a time.
  */
 export type TMDataGridEditState = {
-  /** The cell whose editor is open; `columnId: null` is a whole row (row mode). */
+  /**
+   * The cell the last open gesture named - where the caret goes. In row mode
+   * the whole row is editing whatever this says, so there it is only the
+   * caret's cell, and `null` for the lane's pencil, which names no column.
+   */
   active: { rowId: string; columnId: string | null } | null;
-  /** Rows with a live form. In cell mode at most one; in batch, many. */
+  /**
+   * Rows with a live form. In cell mode at most one; in row, cellConfirm and
+   * batch, as many as the user opened - which rows are editing.
+   */
   openRowIds: ReadonlyArray<string>;
   rows: Record<string, TMDataGridEditRowProjection>;
   /** Phase 4 - rows being created, not yet in `data`. */
@@ -166,8 +173,13 @@ export type TMDataGridEditorArgs = {
   cancel: () => void;
   size: TMDataGridSize;
   /**
-   * Whether this editor should take the focus on mount. True for a single
-   * opened cell; in row mode only the row's first editable cell gets it.
+   * @deprecated The grid places the caret itself, once per open gesture, so
+   * honouring this is optional and it will go in the next major. It focuses
+   * `data-dg-part="editor-input"` when the editor publishes it and the first
+   * focusable element inside the editor otherwise, which is why a custom
+   * editor that ignores this prop still gets the caret. False under
+   * `editMode: "row"`, where a whole row of editors is mounted at once and
+   * only the named cell may take it.
    */
   autoFocus: boolean;
   /**
@@ -285,7 +297,11 @@ export type TMDataGridEditApi = {
   canEditCell: (row: ErasedRow, column: ErasedColumn) => boolean;
   /** Whether the row takes edits at all - the edit lane's pencil gate. */
   canEditRow: (row: ErasedRow) => boolean;
-  /** Opens an editor. `columnId: null` opens the whole row (row mode). */
+  /**
+   * Opens an editor. In row mode the whole row opens either way and `columnId`
+   * only says which cell takes the caret; `null` (the lane's pencil) leaves it
+   * to the row's first editable cell.
+   */
   begin: (target: { rowId: string; columnId: string | null }) => void;
   /**
    * Commits one row - `form.handleSubmit` under the hood. Resolves `true`
@@ -636,29 +652,21 @@ export function createEditEngine(
 
   const begin: TMDataGridEditApi["begin"] = ({ rowId, columnId }) => {
     const { editMode } = getContext();
-    const openElsewhere = [...forms.keys()].find((id) => id !== rowId);
-    // Each mode's policy about the row being left:
+    // Each mode's policy about a row already open elsewhere:
     //
     // | Mode | Another row open |
     // | ---- | ---------------- |
     // | cell | committed - Sheets; a failed commit keeps holding the edit |
-    // | row  | dropped if pristine, otherwise the pencil is refused - a
-    //          row edit saves explicitly, so leaving must not save quietly |
-    // | cellConfirm, batch | accumulates; every draft waits for its ✓ |
-    if (openElsewhere !== undefined) {
-      if (editMode === "cell") {
+    // | row, cellConfirm, batch | accumulates. Every draft waits for its own
+    //   save, so a second row opening can neither discard the first nor be
+    //   refused by it - nothing about one row's form bears on another's |
+    if (editMode === "cell") {
+      const openElsewhere = [...forms.keys()].find((id) => id !== rowId);
+      if (openElsewhere !== undefined) {
         void commit(openElsewhere).then((ok) => {
           if (ok) beginOn(rowId, columnId);
         });
         return;
-      }
-      if (editMode === "row") {
-        const entry = forms.get(openElsewhere);
-        const pristine =
-          entry !== undefined &&
-          diff(entry, entry.form.state.values as TMDataGridRowData).length === 0;
-        if (!pristine) return;
-        drop(openElsewhere);
       }
     }
     beginOn(rowId, columnId);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import {
   bodyRows,
   cellAt,
   part,
+  parts,
   queryPart,
   renderWithMantine,
 } from "../../test/gridHarness";
@@ -31,6 +32,9 @@ describe("cell editing", () => {
     { id: 1, name: "Anna", age: 34, note: "a" },
     { id: 2, name: "Erik", age: 41, note: "b" },
   ];
+
+  /** The same rows with row two out - a stable identity, for the remount. */
+  const firstRowOnly: Employee[] = [editRows[0]!];
 
   const editColumns = (() => {
     const helper = createTMDataGridColumnHelper<Employee>();
@@ -286,6 +290,209 @@ describe("cell editing", () => {
       "age",
       "name",
     ]);
+  });
+
+  it("row mode edits a second row alongside a dirty first one", async () => {
+    const user = userEvent.setup();
+    const commits: Array<{ rowId: string }> = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="row"
+        onEditCommit={(args) => void commits.push(args as { rowId: string })}
+      />,
+    );
+
+    // Row one, opened from a cell and dirtied.
+    await user.dblClick(cellAt(0, 0));
+    const firstName = within(bodyRows()[0]!).getByRole("textbox", {
+      name: "Edit Name",
+    });
+    await user.clear(firstName);
+    await user.type(firstName, "Annika");
+
+    // Row two, from a cell too. Nothing about row one refuses it, and row one
+    // is neither saved nor discarded to make room.
+    await user.dblClick(cellAt(1, 0));
+
+    expect(parts("save-row")).toHaveLength(2);
+    expect(commits.length).toBe(0);
+    expect(firstName).toHaveValue("Annika");
+    const secondName = within(bodyRows()[1]!).getByRole("textbox", {
+      name: "Edit Name",
+    });
+    await user.clear(secondName);
+    await user.type(secondName, "Erika");
+
+    // Each row saves on its own: row two's ✓ commits row two and leaves row
+    // one open with its draft.
+    await user.click(
+      within(bodyRows()[1]!).getByRole("button", { name: "Save row" }),
+    );
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.rowId).toBe("2");
+    expect(
+      within(bodyRows()[1]!).queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(bodyRows()[0]!).getByRole("textbox", { name: "Edit Name" }),
+    ).toHaveValue("Annika");
+
+    await user.click(
+      within(bodyRows()[0]!).getByRole("button", { name: "Save row" }),
+    );
+    await waitFor(() => expect(commits.length).toBe(2));
+    expect(commits[1]?.rowId).toBe("1");
+  });
+
+  it("row mode puts the caret in the cell the gesture named, not on the cell", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<EditGrid editMode="row" onEditCommit={() => {}} />);
+
+    // The whole row opens, and Age - the cell double-clicked - holds the
+    // caret. The focused-cell ring lands on the same cell, so it has nothing
+    // to pull the caret back to.
+    await user.dblClick(cellAt(0, 1));
+    expect(screen.getByRole("textbox", { name: "Edit Name" })).toBeInTheDocument();
+    expect(document.activeElement).toBe(
+      screen.getByRole("textbox", { name: "Edit Age" }),
+    );
+
+    // The pencil names no column, so the row's first editable cell takes it.
+    await user.click(within(bodyRows()[1]!).getByRole("button", { name: "Edit row" }));
+    expect(document.activeElement).toBe(
+      within(bodyRows()[1]!).getByRole("textbox", { name: "Edit Name" }),
+    );
+    // And opening row two did not move row one's caret out of its editor.
+    expect(parts("save-row")).toHaveLength(2);
+  });
+
+  it("places the caret from the keyboard's open gestures too", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<EditGrid editMode="row" onEditCommit={() => {}} />);
+
+    // Enter on the cell cursor's cell, not the row's first.
+    await user.click(cellAt(0, 1));
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(
+      screen.getByRole("textbox", { name: "Edit Age" }),
+    );
+
+    // F2 on a second row, same rule - and the first row stays open.
+    await user.click(cellAt(1, 0));
+    await user.keyboard("{F2}");
+    expect(document.activeElement).toBe(
+      within(bodyRows()[1]!).getByRole("textbox", { name: "Edit Name" }),
+    );
+    expect(parts("save-row")).toHaveLength(2);
+  });
+
+  it("places the caret in a custom editor that ignores autoFocus", async () => {
+    const user = userEvent.setup();
+
+    /**
+     * A `meta.editor` is free to ignore `autoFocus` - most do, since nothing
+     * about a custom editor suggests it has to thread a prop into its input.
+     * The grid places the caret itself, so this one gets it anyway. No
+     * `editor-input` either: the first focusable element inside is the target.
+     */
+    const BareEditor: TMDataGridEditorComponent = ({ field }) => (
+      <input
+        aria-label="Bare Age"
+        value={typeof field.state.value === "number" ? field.state.value : 0}
+        onChange={(event) => field.handleChange(Number(event.target.value))}
+      />
+    );
+    const bareColumns = (() => {
+      const helper = createTMDataGridColumnHelper<Employee>();
+      return helper.columns([
+        helper.accessor("name", { header: "Name" }),
+        helper.accessor("age", {
+          header: "Age",
+          meta: { type: "number", editor: BareEditor },
+        }),
+      ]);
+    })();
+
+    function BareGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: bareColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "row",
+        selectionMode: "highlight",
+        onEditCommit: () => {},
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+
+    renderWithMantine(<BareGrid />);
+    await user.dblClick(cellAt(0, 1));
+
+    expect(document.activeElement).toBe(
+      screen.getByRole("textbox", { name: "Bare Age" }),
+    );
+  });
+
+  it("row mode keeps the caret when another open row remounts", async () => {
+    const user = userEvent.setup();
+
+    /**
+     * Row two leaves the row model and comes back - a filter, a page, or the
+     * virtualizer scrolling it away, which is the same unmount. Its draft
+     * lives outside the DOM, so its editors remount over the same form.
+     */
+    function RemountingGrid() {
+      const [hideSecond, setHideSecond] = useState(false);
+      const grid = useTMDataGrid<Employee>({
+        // Both identities are stable: `useTMDataGrid` memoizes on the data
+        // reference, and a fresh array each render is a render loop.
+        data: hideSecond ? firstRowOnly : editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "row",
+        selectionMode: "highlight",
+        onEditCommit: () => {},
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <>
+          <button type="button" onClick={() => setHideSecond((it) => !it)}>
+            Toggle row two
+          </button>
+          <TMDataGrid {...grid}>
+            <TMDataGrid.Table<Employee> />
+          </TMDataGrid>
+        </>
+      );
+    }
+
+    renderWithMantine(<RemountingGrid />);
+    const toggle = screen.getByRole("button", { name: "Toggle row two" });
+
+    // Two rows open, then the caret moved by hand into the first row's Age -
+    // the second row is still the one `active` names.
+    await user.click(within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }));
+    await user.click(within(bodyRows()[1]!).getByRole("button", { name: "Edit row" }));
+    const firstAge = within(bodyRows()[0]!).getByRole("textbox", {
+      name: "Edit Age",
+    });
+    await user.click(firstAge);
+    expect(document.activeElement).toBe(firstAge);
+
+    // Row two out and back. Its editors remount, and the caret stays put -
+    // the row was focused once, when it opened. `fireEvent` rather than
+    // `user.click`, which would focus the button: the real trigger is the
+    // virtualizer, and it does not touch the focus either.
+    fireEvent.click(toggle);
+    expect(parts("save-row")).toHaveLength(1);
+    fireEvent.click(toggle);
+    expect(parts("save-row")).toHaveLength(2);
+    expect(document.activeElement).toBe(
+      within(bodyRows()[0]!).getByRole("textbox", { name: "Edit Age" }),
+    );
   });
 
   it("row mode cancels the whole row from the lane", async () => {

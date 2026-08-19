@@ -17,6 +17,7 @@ import {
   type UIEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -34,7 +35,10 @@ import {
 } from "./TMDataGridCellEditor";
 import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
 import { getColumnAlign, isControlColumn } from "../core/columnUtils";
-import { getEditFieldName } from "../core/editEngine";
+import {
+  getEditFieldName,
+  type TMDataGridEditState,
+} from "../core/editEngine";
 import {
   getNextEditableCell,
   resolveCellMove,
@@ -720,6 +724,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Which cell has an editor open. The projection (dirty/error markers) is
   // subscribed per cell instead - see TMDataGridBodyCell.
   const editActive = useSelector(edit.store, (state) => state.active);
+  // Row mode opens whole rows and any number of them at once, so which rows
+  // are showing editors is the set of open forms, not the single active slot.
+  const editOpenRowIds = useSelector(edit.store, (state) => state.openRowIds);
   const newRowCount = useSelector(edit.store, (state) => state.newRows.length);
   const deletedRowIds = useSelector(edit.store, (state) => state.deletedRowIds);
 
@@ -1399,6 +1406,74 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     return seed;
   };
 
+  /**
+   * The row's first cell that edits, in visual order - where the caret goes
+   * for a gesture that named no column, which is the edit lane's pencil.
+   */
+  const firstEditableColumnId = (rowId: string): string | null => {
+    const row = rows.find((candidate) => candidate.id === rowId);
+    if (row === undefined) return null;
+    const cells = [
+      ...row.getLeftVisibleCells(),
+      ...row.getCenterVisibleCells(),
+      ...row.getRightVisibleCells(),
+    ];
+    return (
+      cells.find((cell) => edit.canEditCell(row, cell.column))?.column.id ??
+      null
+    );
+  };
+
+  /**
+   * The `active` the caret has already been placed for. Identity, not value:
+   * `beginOn` publishes a fresh object per gesture, so re-opening the same
+   * cell is a new intent, while every later render for the same gesture - a
+   * remount as the virtualizer scrolls among open rows - is not.
+   */
+  const placedEditCaretRef = useRef<TMDataGridEditState["active"]>(null);
+
+  /**
+   * Puts the caret in the cell the open gesture named, once per gesture.
+   *
+   * The grid does this rather than leaving it to the editor's `autoFocus`,
+   * because only the built-ins honour that prop: a `meta.editor` is free to
+   * ignore it, and then the row opened with the caret in none of its editors -
+   * the ring on the cell and a Tab still needed to reach the input. Focus goes
+   * to `editor-input` when the editor publishes it, otherwise to whatever is
+   * focusable inside, which is what a custom editor renders.
+   *
+   * A layout effect, ahead of the focused-cell effect below: the ring follows
+   * the caret there rather than fighting it.
+   */
+  useLayoutEffect(() => {
+    if (editActive === null) {
+      placedEditCaretRef.current = null;
+      return;
+    }
+    if (placedEditCaretRef.current === editActive) return;
+    const container = scrollContainerRef.current;
+    if (container === null) return;
+    // The lane's pencil names no column - the row's first editable cell.
+    const columnId =
+      editActive.columnId ?? firstEditableColumnId(editActive.rowId);
+    if (columnId === null) {
+      placedEditCaretRef.current = editActive;
+      return;
+    }
+    const editor = container.querySelector<HTMLElement>(
+      `[data-dg-part="editor"][data-row-id="${CSS.escape(editActive.rowId)}"]` +
+        `[data-column-id="${CSS.escape(columnId)}"]`,
+    );
+    // Not mounted yet - the virtualizer is still bringing the row in. The
+    // intent stays up, and the next render tries again.
+    if (editor === null) return;
+    placedEditCaretRef.current = editActive;
+    const target =
+      editor.querySelector<HTMLElement>('[data-dg-part="editor-input"]') ??
+      editor.querySelector<HTMLElement>(FOCUSABLE_IN_CELL);
+    target?.focus();
+  });
+
   /** DOM focus back onto a cell - after Escape, or a commit with nowhere to go. */
   const refocusCell = (position: TMDataGridCellPosition) => {
     const container = scrollContainerRef.current;
@@ -1409,12 +1484,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   const openEditor = (position: TMDataGridCellPosition) => {
     if (cellSelection) ui.actions.setFocusedCell(position);
-    // Row mode edits whole rows: any editable cell's open gesture opens the
-    // row, exactly as the lane's pencil does.
-    edit.begin({
-      rowId: position.rowId,
-      columnId: features.editMode === "row" ? null : position.columnId,
-    });
+    // Row mode edits whole rows: any editable cell's open gesture opens all of
+    // them, exactly as the lane's pencil does. The column still travels, as
+    // the cell the caret belongs in - the one the gesture named. Dropping it
+    // here sent the caret to the row's first editable cell instead, which the
+    // focused-cell effect above then pulled back onto the cell just clicked,
+    // leaving the row open with the caret in none of its editors.
+    edit.begin({ rowId: position.rowId, columnId: position.columnId });
   };
 
   const handleEditorClose = (
@@ -1693,6 +1769,18 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     // Focus is already inside - on the control Enter stepped into. The cell is
     // where the ring belongs, so there is nothing to move.
     if (cellElement.contains(document.activeElement)) return;
+    // An open editor outranks the ring, wherever it is. Row mode opens a whole
+    // row from one gesture, so the caret legitimately sits in a cell other
+    // than the one that gesture landed the ring on - the lane's pencil is the
+    // plain case, focusing its own cell on the way to opening the row. Pulling
+    // the caret back onto that cell would leave the row open with the caret in
+    // none of its editors, and the user with nothing to type into.
+    if (
+      document.activeElement instanceof Element &&
+      document.activeElement.closest('[data-dg-part="editor"]') !== null
+    ) {
+      return;
+    }
 
     // The vertical half is the virtualizer's, and it has already been asked.
     cellElement.focus({ preventScroll: true });
@@ -1735,7 +1823,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       const columnIndex = orderedColumns.findIndex(
         (column) => column.id === columnId,
       );
-      if (!isWithinBounds(selectionBounds, rowIndex, columnIndex)) {
+      // `rowIndex < 0` is a pinned row: those sit out the cell range, so
+      // moving the selection onto one would resolve to no rectangle at all
+      // and drop the selection the user could still see at the edge.
+      if (
+        rowIndex >= 0 &&
+        !isWithinBounds(selectionBounds, rowIndex, columnIndex)
+      ) {
         ui.actions.setFocusedCell({ rowId, columnId });
         setRangeTo({ rowId, columnId }, { extend: false });
       }
@@ -1744,10 +1838,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     setContextMenuTarget(rowId === null ? null : { rowId, columnId });
   };
 
+  // The body list, then the edge blocks: pinning takes a row out of the
+  // scrolling order, and unpinning is the first thing its menu exists to
+  // offer, so a menu that could not resolve a pinned row would strand it
+  // there. Searched in that order because the body holds nearly every row.
   const contextMenuRow =
     contextMenuTarget === null
       ? undefined
-      : rows.find((row) => row.id === contextMenuTarget.rowId);
+      : (rows.find((row) => row.id === contextMenuTarget.rowId) ??
+        pinnedTopRows.find((row) => row.id === contextMenuTarget.rowId) ??
+        pinnedBottomRows.find((row) => row.id === contextMenuTarget.rowId));
 
   const canRenderRowMenu =
     renderRowContextMenu !== undefined &&
@@ -2017,17 +2117,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 ...row.getCenterVisibleCells(),
                 ...row.getRightVisibleCells(),
               ];
-              // Row mode opens every editable cell of the row at once;
-              // exactly one of them may take the focus.
+              // Row mode opens every editable cell of the row at once, and
+              // rows accumulate: a second row opening leaves the first one
+              // open, so every row holding a form shows its editors. Which of
+              // them holds the caret is not decided here - see
+              // placeEditCaret, which places it once per gesture.
               const rowEditing =
-                editActive !== null &&
-                editActive.rowId === row.id &&
-                editActive.columnId === null;
-              const firstEditableColumnId = rowEditing
-                ? (rowCells.find((cell) =>
-                    edit.canEditCell(row, cell.column),
-                  )?.column.id ?? null)
-                : null;
+                features.editMode === "row" && editOpenRowIds.includes(row.id);
               // Cell selection takes the body's tab stop off the row and puts
               // it on a cell - two stops per row would make Tab a way of
               // walking the grid, which is what the arrow keys are for. Space
@@ -2207,10 +2303,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                             cell={cell}
                             row={row}
                             takeSeedText={takeEditSeed}
-                            autoFocus={
-                              !rowEditing ||
-                              cell.column.id === firstEditableColumnId
-                            }
+                            autoFocus={!rowEditing}
                             onClose={(close) =>
                               handleEditorClose(
                                 { rowId: row.id, columnId: cell.column.id },

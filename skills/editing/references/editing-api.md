@@ -46,7 +46,7 @@ path, which may be dotted.
 
 | Member | Signature | Notes |
 | --- | --- | --- |
-| `begin` | `({ rowId, columnId }) => void` | `columnId: null` opens the whole row (row mode). |
+| `begin` | `({ rowId, columnId }) => void` | Row mode opens the whole row either way; `columnId` says which cell takes the caret, `null` (the pencil) its first editable one. |
 | `commit` | `(rowId) => Promise<boolean>` | `false` keeps the form open with its errors. |
 | `cancel` | `(rowId) => void` | Drops one draft. |
 | `cancelAll` | `() => void` | Drops every draft. |
@@ -66,7 +66,10 @@ path, which may be dotted.
 
 ```ts
 type TMDataGridEditState = {
+  // The cell the last open gesture named - where the caret goes.
   active: { rowId: string; columnId: string | null } | null;
+  // Rows with a live form. One under `"cell"`; as many as the user opened
+  // under `"row"`, `"cellConfirm"` and `"batch"` - which rows are editing.
   openRowIds: ReadonlyArray<string>;
   rows: Record<
     string,
