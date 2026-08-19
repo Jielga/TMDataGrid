@@ -83,6 +83,10 @@ Cross-field rules want a mode that commits the whole row at once. Under
 satisfied by either one; `"row"` and `"batch"` are where `rowValidators.onSubmit`
 earns its place - see [Editing](/docs/editing#row-editing).
 
+A rule about the whole collection - "at least one row", "no duplicates" - is
+neither a field rule nor a row rule: it belongs to a form around the grid.
+See [A query builder inside a form](/docs/query-builder).
+
 ## Reference
 
 | Name | Kind | Type | Default | What it does |

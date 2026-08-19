@@ -178,6 +178,9 @@ Everything the chrome does goes through `edit`, which is public.
 in a drawer or side panel and it shares values, dirty state and errors with the
 inline cells, because it is the same `FormApi`.
 
+For the inverse - a `@tanstack/react-form` form *around* the grid, owning the
+row array - see [A query builder inside a form](/docs/query-builder).
+
 ## Reference
 
 | Name | Kind | Type | Default | What it does |

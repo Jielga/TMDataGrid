@@ -19,6 +19,7 @@ metadata:
   library_version: '1.0.2'
 sources:
   - 'Jielga/TMDataGrid:src/docs/editing.md'
+  - 'Jielga/TMDataGrid:src/docs/query-builder.md'
   - 'Jielga/TMDataGrid:src/docs/editors.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/editEngine.ts'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
@@ -42,50 +43,26 @@ every wiring question below:
 ## Setup
 
 ```tsx
-import { useState } from "react";
-import {
-  createTMDataGridColumnHelper,
-  TMDataGrid,
-  useTMDataGrid,
-} from "@jielga/tmdatagrid";
+const [employees, setEmployees] = useState(initial);
 
-type Employee = { id: number; firstName: string; salary: number };
-
-const columnHelper = createTMDataGridColumnHelper<Employee>();
-
-const columns = columnHelper.columns([
-  columnHelper.accessor("firstName", { header: "First name", minSize: 140 }),
-  columnHelper.accessor("salary", {
-    header: "Salary",
-    minSize: 130,
-    meta: { type: "number", align: "right" },
-  }),
-]);
-
-export function Employees({ initial }: { initial: Array<Employee> }) {
-  const [employees, setEmployees] = useState(initial);
-
-  const grid = useTMDataGrid({
-    data: employees,
-    columns,
-    getRowId: (row) => String(row.id),
-    editMode: "cell",
-    // The grid writes nothing: apply the change, and the edited row arrives
-    // back through `data`.
-    onEditCommit: ({ rowId, value }) =>
-      setEmployees((previous) =>
-        previous.map((employee) =>
-          String(employee.id) === rowId ? value : employee,
-        ),
+const grid = useTMDataGrid({
+  data: employees,
+  columns,
+  getRowId: (row) => String(row.id),
+  editMode: "cell",
+  // The grid writes nothing: apply the change, and the edited row arrives
+  // back through `data`.
+  onEditCommit: ({ rowId, value }) =>
+    setEmployees((previous) =>
+      previous.map((employee) =>
+        String(employee.id) === rowId ? value : employee,
       ),
-  });
+    ),
+});
 
-  return (
-    <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
-      <TMDataGrid.Table<Employee> />
-    </TMDataGrid>
-  );
-}
+<TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
+  <TMDataGrid.Table<Employee> />
+</TMDataGrid>;
 ```
 
 The editing options travel together, and the types say so: passing any of them
@@ -104,13 +81,10 @@ One axis, four policies over the same engine.
 | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape | generated edit lane |
 | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` | `TMDataGrid.EditActions` |
 
-Which to pick:
-
-- One field at a time, saved as you go, spreadsheet feel: `"cell"`.
-- The same, but every commit costs a request you do not want fired by a stray
-  click: `"cellConfirm"`.
-- The row is the unit of the save, or a rule spans two columns: `"row"`.
-- Many edits reviewed and sent as one transaction: `"batch"`.
+Which to pick: `"cell"` for saved-as-you-go spreadsheet feel; `"cellConfirm"`
+when a stray click must not fire a request; `"row"` when the row is the unit of
+the save or a rule spans two columns; `"batch"` for many edits sent as one
+transaction.
 
 An editor opens on double-click, or with the cell cursor on the cell: Enter, F2,
 or just typing, where the character replaces the value. Delete or Backspace
@@ -154,21 +128,15 @@ Group rows and the generated lanes (checkbox, row number, details, edit) never
 edit.
 
 ```tsx
-// Computed column: writes back to a real field.
+// Computed column writing back to a real field, and per-row gating.
 columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
   id: "fullName",
   header: "Full name",
   meta: { label: "Full name", editField: "lastName" },
 });
-
-// Editable only while the employee is active.
 columnHelper.accessor("salary", {
   header: "Salary",
-  meta: {
-    type: "number",
-    align: "right",
-    editable: (row) => row.original.status !== "Terminated",
-  },
+  meta: { editable: (row) => row.original.status !== "Terminated" },
 });
 ```
 
@@ -303,6 +271,20 @@ list, `clearCell`, `deactivate` and the gates included, is in
 `getForm` is the *one row, one form* promise made public: render that same form
 in a drawer and it shares values, dirty state and errors with the inline cells,
 because it is the same `FormApi`.
+
+## Inside an outer form
+
+A `@tanstack/react-form` form can own the row array, with the grid as a
+controlled field: `data` from `field.state.value`, and `onEditCommit` /
+`onRowAdd` / `onRowDelete` composing the next array into `field.handleChange`.
+Use `editMode: "row"` so a row reaches the form on approval, map by row id
+(never index), and mint negative ids for new rows.
+
+The validation split is structural, not stylistic: **a rule decidable from one
+row belongs to the grid (`meta.validate`, `rowValidators`); a rule needing the
+other rows or the collection ("has rows", "no duplicates") belongs to the
+form's field validator.** A row's form cannot see the array, and `edit.store`
+publishes field names, never values, so the form cannot see a draft.
 
 ## Common mistakes
 
@@ -463,6 +445,26 @@ onEditCommit: async ({ rowId, changes }) => {
 ```
 
 Source: `src/tmdatagrid/useTMDataGrid.tsx` (`onEditCommit`).
+
+### HIGH Submitting an outer form while the grid holds a draft
+
+The outer form's array contains only committed rows. Under any mode a mid-edit
+row is invisible to it, and under `"batch"` *every* edit is until
+`submitAll()` - so a form submit saves stale rows and collection rules pass
+over pending values.
+
+Correct:
+
+```tsx
+const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0);
+
+<Button type="submit" disabled={!canSubmit || hasOpenDraft}>Save</Button>
+// or flush instead of blocking:
+const flushed = await grid.edit.submitAll();
+if (flushed) await form.handleSubmit();
+```
+
+Source: `src/docs/query-builder.md` (Which mode, Submitting).
 
 ### MEDIUM Reading a commit's result as the saved value
 

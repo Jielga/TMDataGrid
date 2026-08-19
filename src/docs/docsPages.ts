@@ -11,6 +11,7 @@ import loadingAndEmptyDoc from "./loading-and-empty.md?raw";
 import localizationDoc from "./localization.md?raw";
 import paginationDoc from "./pagination.md?raw";
 import persistenceDoc from "./persistence.md?raw";
+import queryBuilderDoc from "./query-builder.md?raw";
 import quickSearchDoc from "./quick-search.md?raw";
 import rowDetailsDoc from "./row-details.md?raw";
 import rowInteractionDoc from "./row-interaction.md?raw";
@@ -39,6 +40,7 @@ export const DOCS_SECTIONS = [
   "Cells and editing",
   "Data",
   "Appearance",
+  "Recipes",
   "Reference",
 ] as const;
 
@@ -236,6 +238,14 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Localization",
     description: "Every string, in any language",
     source: localizationDoc,
+  },
+
+  {
+    id: "query-builder",
+    section: "Recipes",
+    label: "A query builder form",
+    description: "The grid as a form field",
+    source: queryBuilderDoc,
   },
 
   {
