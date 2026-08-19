@@ -17,7 +17,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '1.1.0'
+  library_version: '1.1.1'
 sources:
   - 'Jielga/TMDataGrid:src/docs/row-selection.md'
   - 'Jielga/TMDataGrid:src/docs/row-interaction.md'
