@@ -43,10 +43,16 @@ type TMDataGridEditorArgs = {
   commit: () => Promise<boolean>; // what Enter would do
   cancel: () => void; // what Escape would do
   size: TMDataGridSize;
-  autoFocus: boolean; // take focus on mount
+  autoFocus: boolean; // deprecated - the grid places the caret itself
   seedText?: string; // set when typing opened the editor
 };
 ```
+
+The grid places the caret itself, once per open gesture: it focuses
+`data-dg-part="editor-input"` when the editor publishes it, and the first
+focusable element inside the editor otherwise. So a custom editor gets the caret
+without honouring `autoFocus` - set `editor-input` only to name which of several
+inputs should take it.
 
 Bind any control to `field` exactly as inside any TanStack Form:
 `field.state.value`, `field.state.meta.errors`, `field.handleChange`,

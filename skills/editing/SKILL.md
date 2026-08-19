@@ -90,7 +90,14 @@ An editor opens on double-click, or with the cell cursor on the cell: Enter, F2,
 or just typing, where the character replaces the value. Delete or Backspace
 clears the value and commits without opening an editor. Editing brings cell
 selection with it: `cellSelection` defaults to `"single"` while `editMode` is
-set.
+set. Every open gesture puts the caret in the cell it named, and the grid places
+it rather than the editor - a `meta.editor` needs no `autoFocus` wiring.
+
+Under `"row"` the pencil - or a double-click on any cell, which puts the caret
+in the cell clicked - opens every editable cell of the row, and ✓ saves them as
+one commit. Rows accumulate: opening a second row leaves the first open, and
+each row's ✓ and ✕ act on that row alone, so no row is closed or saved to make
+space for the next.
 
 Under `"batch"` nothing leaves the grid until `submitAll`. Enter and Tab park
 the draft, dirty-marked, Escape drops that one draft, and drafts accumulate

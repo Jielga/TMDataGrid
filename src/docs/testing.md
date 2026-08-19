@@ -141,6 +141,11 @@ A column declaring `meta.filterControl` or `meta.editor` renders your component
 in that slot, so `filter-value` and `editor-input` cover the built-ins only.
 `filter-row` and `editor` still hold - scope your own queries through them.
 
+`editor-input` is also where the grid puts the caret when an editor opens. An
+editor that does not publish it is focused on the first focusable element inside
+its `editor` instead, so a custom editor needs the attribute only to name which
+of several inputs the caret should land in.
+
 Every icon-only control also carries an `aria-label` drawn from `labels`. Those
 are yours to translate, so they make brittle selectors; prefer the parts above
 unless your grid runs in one language.

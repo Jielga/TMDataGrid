@@ -47,15 +47,24 @@ height: 440
 
 **Opening an editor**: double-click, or with the cell cursor on the cell -
 Enter, F2, or just typing, where the character replaces the value as it would
-in a spreadsheet. Delete or Backspace clears the value and commits without
-opening anything. Editing brings cell selection along: `cellSelection` defaults
-to `"single"` while `editMode` is set.
+in a spreadsheet. Every one of those gestures puts the caret in the cell it
+named, and the grid places it rather than leaving it to the editor - so a
+`meta.editor` gets the caret without threading `autoFocus` into its input.
+Delete or Backspace clears the value and commits without opening anything.
+Editing brings cell selection along: `cellSelection` defaults to `"single"`
+while `editMode` is set.
 
 ### Row editing
 
 The pencil opens every cell of the row at once and ✓ saves them as **one
 commit** - which is where a cross-field rule can finally live, because the
 whole row is being validated together.
+Double-clicking a cell opens the same whole row, with the caret in the cell
+that was clicked.
+
+Rows **accumulate**: opening a second row leaves the first one open, and each
+row's ✓ and ✕ act on that row alone. Nothing about one row's draft bears on
+another's, so no row is ever closed or saved to make space for the next.
 
 ```demo
 file: editing/RowEditing.tsx

@@ -253,22 +253,48 @@ describe("edit engine", () => {
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
   });
 
-  it("row mode refuses the pencil while another row is dirty, swaps a pristine one", () => {
+  it("row mode opens a second row alongside a dirty first one", () => {
     const grid = renderEditGrid({ editMode: "row" });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: null });
     expect(edit.state.active).toEqual({ rowId: "1", columnId: null });
 
-    // Pristine - leaving drops it and opens the next row.
+    // A dirty row is not a reason to refuse the next one, and not a reason to
+    // discard it either: each row's save is its own.
+    edit.getForm("1")?.setFieldValue("name", "Annika");
     edit.begin({ rowId: "2", columnId: null });
-    expect(edit.state.openRowIds).toEqual(["2"]);
 
-    // Dirty - the open row keeps the edit until saved or cancelled.
-    edit.getForm("2")?.setFieldValue("name", "Erik B");
-    edit.begin({ rowId: "1", columnId: null });
-    expect(edit.state.openRowIds).toEqual(["2"]);
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
     expect(edit.state.active).toEqual({ rowId: "2", columnId: null });
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+  });
+
+  it("row mode commits and cancels one open row without touching the others", async () => {
+    const onEditCommit = vi.fn();
+    const grid = renderEditGrid({ editMode: "row", onEditCommit });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: null });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    edit.begin({ rowId: "2", columnId: null });
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+
+    // Row 2's Save is row 2's alone: one commit, and row 1's draft intact.
+    await expect(edit.commit("2")).resolves.toBe(true);
+    expect(onEditCommit).toHaveBeenCalledTimes(1);
+    const committed = onEditCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(committed.rowId).toBe("2");
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+
+    // And row 1's Cancel drops only row 1.
+    edit.cancel("1");
+    expect(edit.state.openRowIds).toEqual([]);
+    expect(onEditCommit).toHaveBeenCalledTimes(1);
   });
 
   it("submitAll commits every dirty row through the per-row loop", async () => {
