@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@jielga/tmdatagrid": "1.1.1"
+  },
+  "changesets": []
+}
