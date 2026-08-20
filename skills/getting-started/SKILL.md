@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '1.1.1'
+  library_version: '2.0.0-beta.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/getting-started.md'
   - 'Jielga/TMDataGrid:src/docs/anatomy.md'

@@ -4,5 +4,7 @@
   "initialVersions": {
     "@jielga/tmdatagrid": "1.1.1"
   },
-  "changesets": []
+  "changesets": [
+    "wise-donkeys-shave"
+  ]
 }
