@@ -4,19 +4,19 @@ description: >
   Define and arrange TMDataGrid columns. Covers createTMDataGridColumnHelper,
   every column meta field (label, type, options, flex, align, autoSize,
   enableOrdering, and the meta.filter and meta.edit namespaces holding
-  defaultOperator, control, enabled, field, editor, validate and mapValue),
-  the six column types, fluid minmax sizing versus fixed
-  width with minSize / maxSize / size, autosizing and autosizeColumn, hiding
-  through enableHiding and the columns panel, pinning and why a pinned column
-  becomes fixed-width, ordering with enableColumnOrdering, meta.enableOrdering,
-  moveColumn, moveColumnByStep, getStepTargetColumn and the pinned regions,
-  resetSettings, sorting with multi-sort through isMultiSortEvent and a custom
-  sortFn, and the generated lanes. Load when adding or changing columns,
-  controlling widths, hiding, pinning, reordering or sorting them.
+  defaultOperator, control, enabled, field, editor, validate and mapValue), the
+  six column types, fluid minmax sizing versus fixed width with minSize /
+  maxSize / size, autosizing and autosizeColumn, hiding through enableHiding and
+  the columns panel, pinning and why a pinned column becomes fixed-width,
+  ordering with enableColumnOrdering, meta.enableOrdering, moveColumn,
+  moveColumnByStep, getStepTargetColumn and the pinned regions, resetSettings,
+  sorting with multi-sort through isMultiSortEvent and a custom sortFn, and the
+  generated lanes. Load when adding or changing columns, controlling widths,
+  hiding, pinning, reordering or sorting them.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '1.1.1'
+  library_version: '2.0.0-beta.0'
 sources:
   - 'Jielga/TMDataGrid:src/docs/columns.md'
   - 'Jielga/TMDataGrid:src/docs/column-layout.md'
