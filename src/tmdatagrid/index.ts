@@ -78,6 +78,7 @@ export {
   clearedValueForType,
   getEditFieldName,
   normalizeFieldValidate,
+  type TMDataGridColumnEditOptions,
   type TMDataGridEditApi,
   type TMDataGridEditChange,
   type TMDataGridEditCommitArgs,
@@ -88,6 +89,8 @@ export {
   type TMDataGridEditorComponent,
   type TMDataGridEditRowProjection,
   type TMDataGridEditState,
+  type TMDataGridEditValueMap,
+  type TMDataGridEditValueMapArgs,
   type TMDataGridFieldValidate,
   type TMDataGridRowAddArgs,
   type TMDataGridRowDeleteArgs,
@@ -95,6 +98,7 @@ export {
   type TMDataGridRowValidators,
 } from "./core/editEngine";
 export type {
+  TMDataGridColumnFilterOptions,
   TMDataGridFilterControlArgs,
   TMDataGridFilterControlComponent,
 } from "./core/filterControls";
@@ -118,8 +122,10 @@ export {
 export { TMDATAGRID_LABELS_SV } from "./core/labelsSv";
 export {
   getColumnDefaultOperator,
+  getColumnFilterControl,
   getColumnLabel,
   getColumnType,
+  isColumnEditableForRow,
   isColumnReorderable,
   isControlColumn,
 } from "./core/columnUtils";

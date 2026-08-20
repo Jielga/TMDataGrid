@@ -9,7 +9,7 @@ import {
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
- * A built-in `meta.filterControl` for text-shaped columns: a free-text input
+ * A built-in `meta.filter.control` for text-shaped columns: a free-text input
  * that also offers the values present in the data (or the column's declared
  * `meta.options`) as suggestions. Set or range operators fall back to the
  * standard input.

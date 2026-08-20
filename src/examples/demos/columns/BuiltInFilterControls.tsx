@@ -22,8 +22,7 @@ const columns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      defaultFilterOperator: "between",
-      filterControl: DgRangeSliderFilter,
+      filter: { defaultOperator: "between", control: DgRangeSliderFilter },
     },
     cell: (info) => sek(info.getValue()),
   }),
@@ -34,8 +33,7 @@ const columns = columnHelper.columns([
     minSize: 130,
     meta: {
       type: "date",
-      defaultFilterOperator: "between",
-      filterControl: DgDateRangeFilter,
+      filter: { defaultOperator: "between", control: DgDateRangeFilter },
     },
   }),
 
@@ -44,7 +42,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("location", {
     header: "Location",
     minSize: 130,
-    meta: { filterControl: DgAutocompleteFilter },
+    meta: { filter: { control: DgAutocompleteFilter } },
   }),
 
   // A boolean has three answers, not two: true, false, and "do not care".
@@ -54,7 +52,7 @@ const columns = columnHelper.columns([
     meta: {
       type: "boolean",
       align: "center",
-      filterControl: DgTriStateFilter,
+      filter: { control: DgTriStateFilter },
     },
     cell: (info) => (info.getValue() ? "✓" : "-"),
   }),

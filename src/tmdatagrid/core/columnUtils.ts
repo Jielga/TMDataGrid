@@ -1,3 +1,4 @@
+import type { Row } from "@tanstack/react-table";
 import {
   getDefaultOperator,
   type TMDataGridColumnType,
@@ -7,7 +8,9 @@ import { DETAILS_COLUMN_ID } from "../components/TMDataGridDetailsColumn";
 import { EDIT_COLUMN_ID } from "../components/TMDataGridEditColumn";
 import { ROW_NUMBER_COLUMN_ID } from "../components/TMDataGridRowNumberColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
-import type { TMDataGridColumnMeta } from "../useTMDataGrid";
+import type { TMDataGridRowData } from "../TMDataGridContext";
+import type { TMDataGridColumnMeta, TMDataGridFeatures } from "../useTMDataGrid";
+import type { TMDataGridFilterControlComponent } from "./filterControls";
 
 /**
  * Structural shape of the column bits the chrome reads. Kept minimal so these
@@ -35,15 +38,53 @@ export function getColumnType(column: ColumnLike): TMDataGridColumnType {
 
 /**
  * The operator a fresh filter on this column starts with -
- * `meta.defaultFilterOperator`, else the type's default.
+ * `meta.filter.defaultOperator`, else the type's default.
  */
 export function getColumnDefaultOperator(
   column: ColumnLike,
 ): TMDataGridFilterOperator {
   return (
-    column.columnDef.meta?.defaultFilterOperator ??
+    column.columnDef.meta?.filter?.defaultOperator ??
     getDefaultOperator(getColumnType(column))
   );
+}
+
+/**
+ * This column's filter-panel value control - `meta.filter.control`, or
+ * `undefined` for the built-in shape-by-operator input.
+ */
+export function getColumnFilterControl(
+  column: ColumnLike,
+): TMDataGridFilterControlComponent | undefined {
+  return column.columnDef.meta?.filter?.control;
+}
+
+/**
+ * Whether `meta.edit.enabled` switches this column off outright, ignoring any
+ * per-row predicate. For the passes that have no row in hand - listing which
+ * columns a row form covers, finding the first cell an opened row should put
+ * the caret in.
+ */
+export function isColumnEditSwitchedOff(column: ColumnLike): boolean {
+  return column.columnDef.meta?.edit?.enabled === false;
+}
+
+/**
+ * Whether `meta.edit.enabled` lets this column's cell on this row be edited -
+ * the switch, then the predicate.
+ *
+ * This is only the column's half of the rule. A cell also needs the column to
+ * map to a field (`getEditFieldName`) and the row to take edits at all
+ * (`isRowEditable`); `edit.canEditCell` is the whole question.
+ */
+export function isColumnEditableForRow(
+  column: ColumnLike,
+  row: Row<TMDataGridFeatures, TMDataGridRowData>,
+): boolean {
+  const enabled = column.columnDef.meta?.edit?.enabled;
+  if (enabled === false) return false;
+  if (typeof enabled === "function") return enabled(row);
+  return true;
 }
 
 export function getColumnAlign(column: ColumnLike): "left" | "right" | "center" {

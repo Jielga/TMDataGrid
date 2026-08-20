@@ -4,11 +4,11 @@ description: >
   Edit cells and rows in TMDataGrid. Covers editMode with its four policies
   (cell, cellConfirm, row, batch), the required getRowId, onEditCommit and
   onEditCommitBatch, why the grid never mutates data, per-column gating with
-  meta.editable and meta.editField, the six built-in editors picked by
-  meta.type, custom editors through meta.editor, field validation with
-  meta.validate and cross-field rules with rowValidators (Standard Schema and
-  Zod), adding and deleting rows with edit.addRow, newRowDefaults, onRowAdd,
-  onRowDelete, the generated edit lane, TMDataGrid.EditActions with its
+  meta.edit.enabled and meta.edit.field, the six built-in editors picked by
+  meta.type, custom editors through meta.edit.editor, per-keystroke value
+  mapping with meta.edit.mapValue, field validation with meta.edit.validate and
+  cross-field rules with rowValidators (Standard Schema and Zod), adding and
+  deleting rows with edit.addRow, newRowDefaults, onRowAdd, onRowDelete, the generated edit lane, TMDataGrid.EditActions with its
   renderActions slot, and the public edit engine (begin, commit, cancel,
   submitAll, getForm, store). Load when making a grid editable, choosing an edit
   mode, wiring a save, writing a cell editor, validating an edit, or when cells
@@ -91,7 +91,9 @@ or just typing, where the character replaces the value. Delete or Backspace
 clears the value and commits without opening an editor. Editing brings cell
 selection with it: `cellSelection` defaults to `"single"` while `editMode` is
 set. Every open gesture puts the caret in the cell it named, and the grid places
-it rather than the editor - a `meta.editor` needs no `autoFocus` wiring.
+it rather than the editor, so a `meta.edit.editor` gets the caret without
+doing anything to earn it. A row added with `edit.addRow()` opens the same way,
+caret in its first editable cell.
 
 Under `"row"` the pencil - or a double-click on any cell, which puts the caret
 in the cell clicked - opens every editable cell of the row, and ✓ saves them as
@@ -121,14 +123,14 @@ the error on the row, which is how a failed save stays visible.
 ## Which cells edit
 
 A column is editable when it maps to a data path: its `accessorKey`, or
-`meta.editField` for a column built on `accessorFn`. Dot paths reach into nested
+`meta.edit.field` for a column built on `accessorFn`. Dot paths reach into nested
 records, so `accessorKey: "address.city"` edits `values.address.city`.
 
 | Gate | Effect |
 | --- | --- |
-| `meta.editable: false` | The column never edits |
-| `meta.editable: (row) => boolean` | Per row, per column |
-| `meta.editField: "lastName"` | The path an `accessorFn` column writes to |
+| `meta.edit.enabled: false` | The column never edits |
+| `meta.edit.enabled: (row) => boolean` | Per row, per column |
+| `meta.edit.field: "lastName"` | The path an `accessorFn` column writes to |
 | `isRowEditable: (row) => boolean` | The whole row, in every mode |
 
 Group rows and the generated lanes (checkbox, row number, details, edit) never
@@ -139,11 +141,11 @@ edit.
 columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
   id: "fullName",
   header: "Full name",
-  meta: { label: "Full name", editField: "lastName" },
+  meta: { label: "Full name", edit: { field: "lastName" } },
 });
 columnHelper.accessor("salary", {
   header: "Salary",
-  meta: { editable: (row) => row.original.status !== "Terminated" },
+  meta: { edit: { enabled: (row) => row.original.status !== "Terminated" } },
 });
 ```
 
@@ -155,7 +157,7 @@ the two select editors from the same declaration the filter panel reads. Each
 one, with the export that wraps it, is in
 [references/editors-and-validation.md](references/editors-and-validation.md#the-built-in-editors).
 
-`meta.editor` replaces one, `meta.validate` guards the field, and
+`meta.edit.editor` replaces one, `meta.edit.validate` guards the field, and
 `rowValidators` carries cross-field rules. The validators are TanStack Form's
 own, Standard Schema included, so a Zod schema passes straight through:
 
@@ -163,7 +165,7 @@ own, Standard Schema included, so a Zod schema passes straight through:
 import { z } from "zod";
 
 // Field level, on the column. A bare schema means { onChange: schema }.
-meta: { validate: z.string().min(2, "At least two characters") }
+meta: { edit: { validate: z.string().min(2, "At least two characters") } }
 
 // Form level, on the hook. Cross-field rules, under "row" or "batch".
 rowValidators: {
@@ -178,8 +180,30 @@ rowValidators: {
 Pathed issues land on the matching cells, pathless ones on the row. Cell corners
 mark state meanwhile: blue for a dirty draft, red for a validation error.
 
-The editor contract, wrapping a built-in, and async server-side field errors:
-[references/editors-and-validation.md](references/editors-and-validation.md).
+`meta.edit.mapValue` rewrites a value on its way into the draft rather than
+rejecting it: uppercase a code, strip spaces from an IBAN, clamp a number. It
+runs on every write an editor makes, so a text input maps per keystroke and a
+select per pick, and what it returns is what the cell shows, what the validators
+judge and what commits.
+
+```tsx
+meta: {
+  edit: {
+    mapValue: ({ value }) =>
+      typeof value === "string" ? value.toUpperCase() : value,
+  },
+}
+```
+
+The map lives in the editor host, so one declaration covers the built-ins, a
+custom `meta.edit.editor`, and the character that opened the editor when typing
+started the edit. Two writes stay unmapped by design: the value the editor opens
+with (mapping it would dirty a pristine row and eat the select-all), and
+`edit.clearCell()`, which writes the type's empty value through the form rather
+than through an editor.
+
+The editor contract, wrapping a built-in, mapping, and async server-side field
+errors: [references/editors-and-validation.md](references/editors-and-validation.md).
 
 ## Adding and deleting rows
 
@@ -271,7 +295,7 @@ Use `editMode: "row"` so a row reaches the form on approval, map by row id
 (never index), and mint negative ids for new rows.
 
 The validation split is structural, not stylistic: **a rule decidable from one
-row belongs to the grid (`meta.validate`, `rowValidators`); a rule needing the
+row belongs to the grid (`meta.edit.validate`, `rowValidators`); a rule needing the
 other rows or the collection ("has rows", "no duplicates") belongs to the
 form's field validator.** A row's form cannot see the array, and `edit.store`
 publishes field names, never values, so the form cannot see a draft.
@@ -331,14 +355,14 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 
 ### HIGH A cell editor defined inside the component
 
-`meta.editor` is rendered as JSX, so its identity is its component type. An
+`meta.edit.editor` is rendered as JSX, so its identity is its component type. An
 inline arrow is a new type on every render, which unmounts the open editor and
 loses what was being typed.
 
 Wrong:
 
 ```tsx
-meta: { editor: ({ field }) => <Slider value={field.state.value} /> },
+meta: { edit: { editor: ({ field }) => <Slider value={field.state.value} /> } },
 ```
 
 Correct:
@@ -353,7 +377,7 @@ const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => (
   />
 );
 
-meta: { editor: SalaryEditor },
+meta: { edit: { editor: SalaryEditor } },
 ```
 
 Source: `src/docs/editors.md`, `src/tmdatagrid/core/editEngine.ts`.
@@ -401,7 +425,7 @@ Correct:
 columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
   id: "fullName",
   header: "Full name",
-  meta: { label: "Full name", editField: "lastName" },
+  meta: { label: "Full name", edit: { field: "lastName" } },
 });
 ```
 

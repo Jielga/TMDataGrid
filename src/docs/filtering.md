@@ -66,14 +66,14 @@ column, whose cells hold arrays, `isAnyOf` is an intersection test and
 `isEmpty`. `between` is inclusive at both ends; the panel renders a From/To
 pair and either end may stay empty to leave the interval open on that side.
 
-`meta.defaultFilterOperator` sets which one a fresh filter opens on - a salary
+`meta.filter.defaultOperator` sets which one a fresh filter opens on: a salary
 column can start on `between` rather than `equals`. It must be one of the
 type's own operators.
 
 ```tsx
 columnHelper.accessor("salary", {
   header: "Salary",
-  meta: { type: "number", defaultFilterOperator: "between" },
+  meta: { type: "number", filter: { defaultOperator: "between" } },
 });
 ```
 
@@ -137,10 +137,13 @@ Four ready-made alternatives ship as named exports:
 | `DgTriStateFilter` | `boolean` | All / Yes / No segments - All clears the filter. |
 
 ```tsx
-meta: { type: "number", filterControl: DgRangeSliderFilter, defaultFilterOperator: "between" }
+meta: {
+  type: "number",
+  filter: { control: DgRangeSliderFilter, defaultOperator: "between" },
+}
 ```
 
-Pair the range-shaped ones with `defaultFilterOperator: "between"` so the filter
+Pair the range-shaped ones with `defaultOperator: "between"` so the filter
 opens on them. For operators outside their shape every built-in falls back to
 `TMDataGridFilterValueInput`, the default control, which is exported for custom
 controls that want the same escape.
@@ -152,7 +155,7 @@ hint: Open the filter panel and compare each row's control with the plain input 
 
 ### Writing your own
 
-`meta.filterControl` is a **component** - rendered as JSX, so hooks are legal
+`meta.filter.control` is a **component** - rendered as JSX, so hooks are legal
 inside - receiving `TMDataGridFilterControlArgs`. It is a **value-only
 contract**: the control reads `operator` to shape itself and writes the bare
 value through `onChange`, and the grid composes the stored `{ operator, value }`
@@ -170,7 +173,7 @@ const SalaryFilter: TMDataGridFilterControlComponent = ({
     <NumberInput /* a single bound */ />
   );
 
-meta: { filterControl: SalaryFilter, defaultFilterOperator: "between" }
+meta: { filter: { control: SalaryFilter, defaultOperator: "between" } }
 ```
 
 Define controls at module scope so their identity is stable. `args.options`
@@ -202,8 +205,8 @@ menu item and its entry in the panel's column list.
 | `enableColumnFilters` | Table option | `boolean` | `true` | `false` removes the panel, the button and the menu item. |
 | `enableColumnFilter` | Column option | `boolean` | `true` | `false` takes one column out of filtering. |
 | `meta.type` | Column meta | `"string" \| "number" \| "boolean" \| "date" \| "select" \| "multiSelect"` | `"string"` | Selects the operators and the value control. |
-| `meta.defaultFilterOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
-| `meta.filterControl` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. |
+| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
+| `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. |
 | `filterFn` | Column option | name \| fn | `"tmDataGrid"` | Custom matching for one column. |
 | `TMDataGrid.FilterPanel` | Component | – | – | The panel of filter rows. |
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button opening the panel, with an active count. |

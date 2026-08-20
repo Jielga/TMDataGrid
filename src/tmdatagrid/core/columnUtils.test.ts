@@ -60,11 +60,11 @@ describe("getColumnDefaultOperator", () => {
     expect(getColumnDefaultOperator(columnOf("age"))).toBe("equals");
   });
 
-  it("prefers meta.defaultFilterOperator when the column names one", () => {
+  it("prefers meta.filter.defaultOperator when the column names one", () => {
     const columns = helper.columns([
       helper.accessor("name", {
         header: "Name",
-        meta: { defaultFilterOperator: "startsWith" },
+        meta: { filter: { defaultOperator: "startsWith" } },
       }),
     ]);
     const api = erased(renderGrid({ columns } as never).result.current);

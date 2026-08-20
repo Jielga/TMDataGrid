@@ -137,7 +137,7 @@ Within a filter row the three controls are `filter-column`,
 `filter-operator` and `filter-value` (or `filter-value-from` /
 `filter-value-to` for `between`).
 
-A column declaring `meta.filterControl` or `meta.editor` renders your component
+A column declaring `meta.filter.control` or `meta.edit.editor` renders your component
 in that slot, so `filter-value` and `editor-input` cover the built-ins only.
 `filter-row` and `editor` still hold - scope your own queries through them.
 

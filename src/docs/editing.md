@@ -48,8 +48,10 @@ height: 440
 **Opening an editor**: double-click, or with the cell cursor on the cell -
 Enter, F2, or just typing, where the character replaces the value as it would
 in a spreadsheet. Every one of those gestures puts the caret in the cell it
-named, and the grid places it rather than leaving it to the editor - so a
-`meta.editor` gets the caret without threading `autoFocus` into its input.
+named, and the grid places it rather than leaving it to the editor, so a
+`meta.edit.editor` gets the caret without doing anything to earn it. A row
+added with `edit.addRow()` opens the same way, caret in its first editable
+cell.
 Delete or Backspace clears the value and commits without opening anything.
 Editing brings cell selection along: `cellSelection` defaults to `"single"`
 while `editMode` is set.
@@ -110,14 +112,14 @@ rejected batch keeps every draft.
 ## Which cells edit
 
 A column is editable when it maps to a data path: its `accessorKey`, or
-`meta.editField` for a column built on `accessorFn`. Dot paths reach into
+`meta.edit.field` for a column built on `accessorFn`. Dot paths reach into
 nested records - `accessorKey: "address.city"` edits `values.address.city`, and
 a nested schema's issues land on the right column.
 
 | Gate | Effect |
 | --- | --- |
-| `meta.editable: false` | The column never edits |
-| `meta.editable: (row) => boolean` | Per row, per column |
+| `meta.edit.enabled: false` | The column never edits |
+| `meta.edit.enabled: (row) => boolean` | Per row, per column |
 | `isRowEditable: (row) => boolean` | The whole row, in every mode |
 
 Group rows and the generated lanes never edit.
@@ -202,8 +204,9 @@ row array - see [A query builder inside a form](/docs/query-builder).
 | `newRowDefaults` | Option | `() => TData` | – | Seeds the entry row's form. |
 | `onRowAdd` | Callback | `({ row }) => void \| Promise` | – | Commits an added row. |
 | `onRowDelete` | Callback | `({ rowId, row }) => void \| Promise` | – | Deletes a row, and puts the trash in the edit lane. |
-| `meta.editable` | Column meta | `boolean \| (row) => boolean` | `true` | Whether a column's cells edit. |
-| `meta.editField` | Column meta | `string` | The column id | The data path an edit writes to. |
+| `meta.edit.enabled` | Column meta | `boolean \| (row) => boolean` | `true` | Whether a column's cells edit. |
+| `meta.edit.field` | Column meta | `string` | The `accessorKey` | The data path an edit writes to. |
+| `meta.edit.mapValue` | Column meta | `({ value, previous, row, column }) => unknown` | – | Maps each value an editor writes. See [Editors](/docs/editors#mapping-the-value-as-it-is-typed). |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"` | – | Id of the generated edit lane. |
 | `TMDataGrid.EditActions` | Component | – | – | Save and Discard for pending edits. |
 | `EditActions` `renderActions` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pair | Replaces the buttons, and hands over their pieces. |

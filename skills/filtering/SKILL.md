@@ -3,11 +3,11 @@ name: filtering
 description: >
   Narrow the rows a TMDataGrid shows. Covers the shared tmDataGrid filter
   function and its {operator, value} model, the eighteen operators and which
-  meta.type offers each, meta.defaultFilterOperator, isFilterActive and the
+  meta.type offers each, meta.filter.defaultOperator, isFilterActive and the
   half-typed filter, the filter panel, TMDataGrid.FilterButton,
   TMDataGrid.FilterPills with its api prop, openColumnFilter, replacing a value
   control with DgRangeSliderFilter / DgDateRangeFilter / DgAutocompleteFilter /
-  DgTriStateFilter or a meta.filterControl component, per-column filterFn, and
+  DgTriStateFilter or a meta.filter.control component, per-column filterFn, and
   the quick search: TMDataGrid.Search, quickSearchMode fuzzy or contains,
   fuzzyGlobalFilterFn, enableMatchHighlighting and enableGlobalFilter. Load when
   adding filters, choosing operators, building a filter control, showing active
@@ -70,13 +70,13 @@ and `equals` on a `date` column plays the role of "is". On a `multiSelect`
 column, whose cells hold arrays, `isAnyOf` is an intersection test and `isNoneOf`
 its complement. `between` is inclusive at both ends.
 
-`meta.defaultFilterOperator` sets which one a fresh filter opens on, and must be
+`meta.filter.defaultOperator` sets which one a fresh filter opens on, and must be
 one of the type's own:
 
 ```tsx
 columnHelper.accessor("salary", {
   header: "Salary",
-  meta: { type: "number", defaultFilterOperator: "between" },
+  meta: { type: "number", filter: { defaultOperator: "between" } },
 });
 ```
 
@@ -118,17 +118,16 @@ named exports:
 ```tsx
 meta: {
   type: "number",
-  filterControl: DgRangeSliderFilter,
-  defaultFilterOperator: "between",
+  filter: { control: DgRangeSliderFilter, defaultOperator: "between" },
 }
 ```
 
-Pair the range-shaped ones with `defaultFilterOperator: "between"` so the filter
+Pair the range-shaped ones with `defaultOperator: "between"` so the filter
 opens on them. For operators outside their shape every built-in falls back to
 `TMDataGridFilterValueInput`, which is exported so a custom control can take the
 same escape.
 
-`meta.filterControl` is a **component**, rendered as JSX, so hooks are legal
+`meta.filter.control` is a **component**, rendered as JSX, so hooks are legal
 inside. It is a **value-only contract**: it reads `operator` to shape itself and
 writes the bare value through `onChange`, and the grid composes the stored
 `{ operator, value }` around it. The column and operator dropdowns stay the
@@ -157,7 +156,7 @@ const StatusFilter: TMDataGridFilterControlComponent = ({
   </Chip.Group>
 );
 
-meta: { type: "select", filterControl: StatusFilter }
+meta: { type: "select", filter: { control: StatusFilter } }
 ```
 
 `args.options` arrives pre-resolved for a column that declares `meta.options` or
@@ -259,7 +258,7 @@ Source: `src/docs/filtering.md` (Operators).
 
 ### HIGH A filter control defined inside the component
 
-`meta.filterControl` is rendered as JSX, so its identity is its component type.
+`meta.filter.control` is rendered as JSX, so its identity is its component type.
 An inline arrow is a new type every render, which remounts the control and loses
 what was being typed into it.
 
@@ -269,7 +268,7 @@ Correct:
 // Module scope, referenced by name.
 const StatusFilter: TMDataGridFilterControlComponent = (args) => { /* … */ };
 
-meta: { filterControl: StatusFilter }
+meta: { filter: { control: StatusFilter } }
 ```
 
 Source: `src/docs/filtering.md` (Writing your own).
@@ -318,8 +317,8 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `enableColumnFilters` | Table option | `boolean` | `true` | `false` removes the panel, the button and the menu item. |
 | `enableColumnFilter` | Column option | `boolean` | `true` | `false` takes one column out of filtering. |
 | `meta.type` | Column meta | `TMDataGridColumnType` | `"string"` | Selects the operators and the value control. |
-| `meta.defaultFilterOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
-| `meta.filterControl` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. Module scope. |
+| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
+| `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. Module scope. |
 | `filterFn` | Column option | name or fn | `"tmDataGrid"` | Custom matching for one column. |
 | `quickSearchMode` | Option | `"fuzzy" \| "contains"` | `"fuzzy"` | How the quick search matches. |
 | `enableMatchHighlighting` | Option | `boolean` | `false` | Mark matched text in default-rendered cells. |

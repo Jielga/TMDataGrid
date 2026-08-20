@@ -20,7 +20,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("firstName", {
     header: "First name",
     minSize: 120,
-    meta: { validate: z.string().min(2, "At least two characters") },
+    meta: { edit: { validate: z.string().min(2, "At least two characters") } },
   }),
   columnHelper.accessor("lastName", { header: "Last name", minSize: 120 }),
   columnHelper.accessor("salary", {

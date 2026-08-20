@@ -41,12 +41,12 @@ describe("cell editing", () => {
     return helper.columns([
       helper.accessor("name", {
         header: "Name",
-        meta: { validate: z.string().min(2, "Too short") },
+        meta: { edit: { validate: z.string().min(2, "Too short") } },
       }),
       helper.accessor("age", { header: "Age", meta: { type: "number" } }),
       helper.accessor("note", {
         header: "Note",
-        meta: { editable: false },
+        meta: { edit: { enabled: false } },
       }),
     ]);
   })();
@@ -131,7 +131,7 @@ describe("cell editing", () => {
     expect(editorInput()).toHaveValue("Z");
   });
 
-  it("renders meta.editor as a component, hooks included", async () => {
+  it("renders meta.edit.editor as a component, hooks included", async () => {
     // A stateful custom editor - legal exactly because the grid renders it
     // as JSX instead of calling it.
     const StampEditor: TMDataGridEditorComponent = ({ field }) => {
@@ -152,7 +152,10 @@ describe("cell editing", () => {
     };
     const helper = createTMDataGridColumnHelper<Employee>();
     const customColumns = helper.columns([
-      helper.accessor("name", { header: "Name", meta: { editor: StampEditor } }),
+      helper.accessor("name", {
+        header: "Name",
+        meta: { edit: { editor: StampEditor } },
+      }),
     ]);
 
     const user = userEvent.setup();
@@ -209,7 +212,7 @@ describe("cell editing", () => {
     await user.keyboard("{Tab}");
 
     await waitFor(() => expect(commits.length).toBe(1));
-    // Age is next; Note is `editable: false` and would be skipped from Age.
+    // Age is next; Note is `edit.enabled: false` and is skipped from Age.
     await waitFor(() =>
       expect(document.activeElement).toBe(cellAt(0, 1)),
     );
@@ -269,7 +272,7 @@ describe("cell editing", () => {
       within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }),
     );
 
-    // Name and Age both open; Note (editable: false) does not.
+    // Name and Age both open; Note (edit.enabled: false) does not.
     const name = screen.getByRole("textbox", { name: "Edit Name" });
     expect(screen.getByRole("textbox", { name: "Edit Age" })).toBeInTheDocument();
     expect(
@@ -386,13 +389,12 @@ describe("cell editing", () => {
     expect(parts("save-row")).toHaveLength(2);
   });
 
-  it("places the caret in a custom editor that ignores autoFocus", async () => {
+  it("places the caret in a custom editor that never asks for focus", async () => {
     const user = userEvent.setup();
 
     /**
-     * A `meta.editor` is free to ignore `autoFocus` - most do, since nothing
-     * about a custom editor suggests it has to thread a prop into its input.
-     * The grid places the caret itself, so this one gets it anyway. No
+     * A `meta.edit.editor` has no focus prop to honour and no reason to focus
+     * itself. The grid places the caret, so this one gets it anyway. No
      * `editor-input` either: the first focusable element inside is the target.
      */
     const BareEditor: TMDataGridEditorComponent = ({ field }) => (
@@ -408,7 +410,7 @@ describe("cell editing", () => {
         helper.accessor("name", { header: "Name" }),
         helper.accessor("age", {
           header: "Age",
-          meta: { type: "number", editor: BareEditor },
+          meta: { type: "number", edit: { editor: BareEditor } },
         }),
       ]);
     })();
@@ -736,5 +738,88 @@ describe("cell editing", () => {
       { columnId: "name", field: "name", previous: "Erik", next: "" },
     ]);
   });
-});
 
+  it("puts the caret in a new entry row's first editable cell", async () => {
+    const user = userEvent.setup();
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "cell",
+        selectionMode: "highlight",
+        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              add
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(document.activeElement).toBe(
+      within(entryRow).getByRole("textbox", { name: "Edit Name" }),
+    );
+  });
+
+  it("puts the caret in an entry row whose first editor is a custom one", async () => {
+    const user = userEvent.setup();
+
+    /** Focuses nothing itself, exactly like the body-row case above. */
+    const BareEditor: TMDataGridEditorComponent = ({ field }) => (
+      <input
+        aria-label="Bare Name"
+        value={typeof field.state.value === "string" ? field.state.value : ""}
+        onChange={(event) => field.handleChange(event.target.value)}
+      />
+    );
+    const bareColumns = (() => {
+      const helper = createTMDataGridColumnHelper<Employee>();
+      return helper.columns([
+        helper.accessor("name", {
+          header: "Name",
+          meta: { edit: { editor: BareEditor } },
+        }),
+        helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+      ]);
+    })();
+
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: bareColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "cell",
+        selectionMode: "highlight",
+        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              add
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(document.activeElement).toBe(
+      within(entryRow).getByRole("textbox", { name: "Bare Name" }),
+    );
+  });
+});

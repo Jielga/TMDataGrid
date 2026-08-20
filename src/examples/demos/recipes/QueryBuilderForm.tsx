@@ -125,17 +125,17 @@ const columns = columnHelper.columns([
   columnHelper.accessor("field", {
     header: "Field",
     minSize: 120,
-    meta: { editor: FieldEditor },
+    meta: { edit: { editor: FieldEditor } },
   }),
   columnHelper.accessor("operator", {
     header: "Operator",
     minSize: 140,
-    meta: { editor: OperatorEditor },
+    meta: { edit: { editor: OperatorEditor } },
   }),
   columnHelper.accessor("value", {
     header: "Value",
     minSize: 160,
-    meta: { editor: ValueEditor },
+    meta: { edit: { editor: ValueEditor } },
   }),
 ]);
 

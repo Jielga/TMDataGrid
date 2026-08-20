@@ -81,7 +81,7 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 Inside a `filter-row` the controls are `filter-column`, `filter-operator` and
 `filter-value` - or `filter-value-from` / `filter-value-to` for `between`.
 
-A column declaring `meta.filterControl` or `meta.editor` renders your own
+A column declaring `meta.filter.control` or `meta.edit.editor` renders your own
 component in that slot, so `filter-value` and `editor-input` cover the built-ins
 only. `filter-row` and `editor` still hold; scope through them.
 

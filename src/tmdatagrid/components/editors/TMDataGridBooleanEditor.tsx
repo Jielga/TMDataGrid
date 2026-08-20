@@ -7,7 +7,6 @@ import { useFieldError, useFieldValue } from "./editorShared";
 /** The built-in editor for `meta.type: "boolean"` - a focused checkbox. */
 export function TMDataGridBooleanEditor({
   field,
-  autoFocus,
   column,
   size,
 }: TMDataGridEditorArgs) {
@@ -17,7 +16,6 @@ export function TMDataGridBooleanEditor({
   return (
     <Checkbox
       size={size}
-      autoFocus={autoFocus}
       aria-label={labels.editCell(getColumnLabel(column))}
       data-dg-part="editor-input"
       checked={value === true}

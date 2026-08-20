@@ -35,10 +35,10 @@ path, which may be dotted.
 | --- | --- | --- | --- |
 | `meta.type` | `TMDataGridColumnType` | `"string"` | Picks the built-in editor, and the filter operators. |
 | `meta.options` | `TMDataGridOptionsSource` | – | Choices for `select` / `multiSelect`, shared with the filter panel. Array, `"faceted"`, or a function. |
-| `meta.editable` | `boolean \| ((row) => boolean)` | editable where a field maps | Whether this column's cells edit. |
-| `meta.editField` | `string` | The `accessorKey` | The data path an edit writes to. The only way an `accessorFn` column edits. |
-| `meta.editor` | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. Define at module scope. |
-| `meta.validate` | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
+| `meta.edit.enabled` | `boolean \| ((row) => boolean)` | editable where a field maps | Whether this column's cells edit. |
+| `meta.edit.field` | `string` | The `accessorKey` | The data path an edit writes to. The only way an `accessorFn` column edits. |
+| `meta.edit.editor` | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. Define at module scope. |
+| `meta.edit.validate` | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
 
 ## The `edit` engine
 
