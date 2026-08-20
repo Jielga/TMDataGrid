@@ -41,6 +41,11 @@
 }
 
 .root {
+  /* The frame's corner radius. Any length or Mantine radius token; `0` squares
+     the grid off against a card or a full-bleed page. Override it on the grid:
+     <TMDataGrid style={{ "--dg-radius": 0 }} />
+     The root clips its overflow, so the header and the last row follow it. */
+  --dg-radius: var(--mantine-radius-md);
   /* Fallbacks, so the parts still work if rendered outside a sized root. */
   --dg-row-height: 52px;
   --dg-header-height: 44px;
@@ -89,6 +94,6 @@
      from the host page would centre headers away from their cell content. */
   text-align: left;
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--dg-radius);
   background-color: var(--mantine-color-body);
 }
