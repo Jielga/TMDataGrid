@@ -8,11 +8,11 @@ description: >
   meta.type, custom editors through meta.edit.editor, per-keystroke value
   mapping with meta.edit.mapValue, field validation with meta.edit.validate and
   cross-field rules with rowValidators (Standard Schema and Zod), adding and
-  deleting rows with edit.addRow, newRowDefaults, onRowAdd, onRowDelete, the generated edit lane, TMDataGrid.EditActions with its
-  renderActions slot, and the public edit engine (begin, commit, cancel,
-  submitAll, getForm, store). Load when making a grid editable, choosing an edit
-  mode, wiring a save, writing a cell editor, validating an edit, or when cells
-  will not open for editing.
+  deleting rows with edit.addRow, newRowDefaults, onRowAdd and onRowDelete, the
+  generated edit lane, TMDataGrid.EditActions with its renderActions slot, and
+  the public edit engine (begin, commit, cancel, submitAll, getForm, store).
+  Load when making a grid editable, choosing an edit mode, wiring a save,
+  writing a cell editor, validating an edit, or when cells will not open.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -90,10 +90,9 @@ An editor opens on double-click, or with the cell cursor on the cell: Enter, F2,
 or just typing, where the character replaces the value. Delete or Backspace
 clears the value and commits without opening an editor. Editing brings cell
 selection with it: `cellSelection` defaults to `"single"` while `editMode` is
-set. Every open gesture puts the caret in the cell it named, and the grid places
-it rather than the editor, so a `meta.edit.editor` gets the caret without
-doing anything to earn it. A row added with `edit.addRow()` opens the same way,
-caret in its first editable cell.
+set. Every open gesture puts the caret in the cell it named, and `edit.addRow()`
+in the new row's first editable cell. The grid places it rather than the editor,
+so a `meta.edit.editor` gets it without doing anything to earn it.
 
 Under `"row"` the pencil - or a double-click on any cell, which puts the caret
 in the cell clicked - opens every editable cell of the row, and ✓ saves them as
@@ -177,33 +176,19 @@ rowValidators: {
 }
 ```
 
-Pathed issues land on the matching cells, pathless ones on the row. Cell corners
-mark state meanwhile: blue for a dirty draft, red for a validation error.
+Pathed issues land on the matching cells, pathless ones on the row, and cell
+corners mark both: blue for a dirty draft, red for a validation error.
 
-`meta.edit.mapValue` rewrites a value on its way into the draft rather than
-rejecting it: uppercase a code, strip spaces from an IBAN, clamp a number. It
-runs on every write an editor makes, so a text input maps per keystroke and a
-select per pick, and what it returns is what the cell shows, what the validators
-judge and what commits.
+`meta.edit.mapValue` rewrites a value rather than rejecting it: uppercase a
+code, strip spaces from an IBAN, clamp a number. It runs on every write an
+editor makes, so a text input maps per keystroke, and what it returns is what
+the validators judge and what commits.
 
 ```tsx
-meta: {
-  edit: {
-    mapValue: ({ value }) =>
-      typeof value === "string" ? value.toUpperCase() : value,
-  },
-}
+meta: { edit: { mapValue: ({ value }) => String(value).toUpperCase() } }
 ```
 
-The map lives in the editor host, so one declaration covers the built-ins, a
-custom `meta.edit.editor`, and the character that opened the editor when typing
-started the edit. Two writes stay unmapped by design: the value the editor opens
-with (mapping it would dirty a pristine row and eat the select-all), and
-`edit.clearCell()`, which writes the type's empty value through the form rather
-than through an editor.
-
-The editor contract, wrapping a built-in, mapping, and async server-side field
-errors: [references/editors-and-validation.md](references/editors-and-validation.md).
+Detail for all three: [references/editors-and-validation.md](references/editors-and-validation.md).
 
 ## Adding and deleting rows
 
@@ -505,7 +490,8 @@ Source: `src/docs/editing.md` (Adding and deleting rows).
 ## References
 
 - [Editors and validation](references/editors-and-validation.md) - the editor
-  contract, wrapping a built-in, field and row validators, server-side errors.
+  contract, wrapping a built-in, what `mapValue` leaves alone, field and row
+  validators, server-side errors.
 - [Editing API](references/editing-api.md) - every option, callback, column meta
   field, export, CSS variable and data attribute editing owns.
 
