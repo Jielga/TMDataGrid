@@ -128,7 +128,7 @@ const columns = columnHelper.columns([
     header: "Location",
     minSize: 120,
     // Free text, but the values in the data offered as suggestions.
-    meta: { filterControl: DgAutocompleteFilter },
+    meta: { filter: { control: DgAutocompleteFilter } },
   }),
   columnHelper.accessor("salary", {
     header: "Salary",
@@ -136,8 +136,7 @@ const columns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      defaultFilterOperator: "between",
-      filterControl: DgRangeSliderFilter,
+      filter: { defaultOperator: "between", control: DgRangeSliderFilter },
     },
     minSize: 130,
     cell: (info) => sek(info.getValue()),

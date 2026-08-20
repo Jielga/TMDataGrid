@@ -29,7 +29,7 @@ the data), or a function of the table, column and row.
 
 ## The editor contract
 
-`meta.editor` fills the same slot the built-ins fill. It is a **component**,
+`meta.edit.editor` fills the same slot the built-ins fill. It is a **component**,
 rendered as JSX, so hooks are legal inside it.
 
 ```ts
@@ -43,7 +43,6 @@ type TMDataGridEditorArgs = {
   commit: () => Promise<boolean>; // what Enter would do
   cancel: () => void; // what Escape would do
   size: TMDataGridSize;
-  autoFocus: boolean; // deprecated - the grid places the caret itself
   seedText?: string; // set when typing opened the editor
 };
 ```
@@ -51,7 +50,7 @@ type TMDataGridEditorArgs = {
 The grid places the caret itself, once per open gesture: it focuses
 `data-dg-part="editor-input"` when the editor publishes it, and the first
 focusable element inside the editor otherwise. So a custom editor gets the caret
-without honouring `autoFocus` - set `editor-input` only to name which of several
+without asking for focus - set `editor-input` only to name which of several
 inputs should take it.
 
 Bind any control to `field` exactly as inside any TanStack Form:
@@ -79,7 +78,7 @@ const SalaryEditor: TMDataGridEditorComponent = ({ field, commit, cancel }) => (
 
 columnHelper.accessor("salary", {
   header: "Salary",
-  meta: { type: "number", editor: SalaryEditor },
+  meta: { type: "number", edit: { editor: SalaryEditor } },
 });
 ```
 
@@ -120,9 +119,52 @@ Pass `args` through whole. `field` is a live TanStack Form `FieldApi`, not a
 plain object, so spreading or rebuilding it loses the binding its methods rely
 on.
 
+## Mapping the value
+
+`meta.edit.mapValue` maps every value an editor writes, before it reaches the
+draft. It runs per write, which for a text input is per keystroke and for a
+select is per pick.
+
+```tsx
+meta: {
+  edit: {
+    // Uppercase as it is typed.
+    mapValue: ({ value }) =>
+      typeof value === "string" ? value.toUpperCase() : value,
+  },
+}
+
+meta: {
+  edit: {
+    // Depends on the record being edited; `previous` is the value the field
+    // held before this write.
+    mapValue: ({ value, previous, row }) =>
+      row.original.country === "SE" ? normalise(value) : previous,
+  },
+}
+```
+
+The grid applies it in the editor host, around the field every editor writes
+through, so it covers the six built-ins, a custom `meta.edit.editor`, and the
+type-to-edit seed character.
+
+Left unmapped on purpose:
+
+- The value an editor opens with. Mapping it would rewrite stored data nobody
+  edited, mark a pristine row dirty and swallow the select-all.
+- `edit.clearCell()`, the Delete key: it writes the type's empty value through
+  the form, so there is no input to map.
+- An editor calling `field.setValue`. `handleChange` is the mapped path.
+
+The built-in string and number editors restore the caret after a mapped write,
+shifted by the length the map changed, because React reassigning `input.value`
+otherwise drops the caret at the end of the field. A custom editor rendering its
+own input has to do the same: record `selectionStart` on change, restore it in a
+layout effect.
+
 ## Field validation
 
-`meta.validate` takes TanStack Form's field-validator vocabulary. A bare schema
+`meta.edit.validate` takes TanStack Form's field-validator vocabulary. A bare schema
 (Zod, or any Standard Schema, or a plain function) means `{ onChange: it }`; the
 object form takes every trigger Form defines.
 
@@ -130,13 +172,13 @@ object form takes every trigger Form defines.
 import { z } from "zod";
 
 // Bare schema: validates on change.
-meta: { validate: z.string().min(2, "At least two characters") }
+meta: { edit: { validate: z.string().min(2, "At least two characters") } }
 
 // Object form: pick the trigger.
-meta: { validate: { onBlur: z.string().email("Not an email address") } }
+meta: { edit: { validate: { onBlur: z.string().email("Not an email address") } } }
 
 // A plain function works too.
-meta: { validate: ({ value }) => (value > 0 ? undefined : "Must be positive") }
+meta: { edit: { validate: ({ value }) => (value > 0 ? undefined : "Must be positive") } }
 ```
 
 `normalizeFieldValidate(validate)` is exported for consumers building their own

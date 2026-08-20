@@ -30,7 +30,7 @@ const columns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      defaultFilterOperator: "between",
+      filter: { defaultOperator: "between" },
     },
     cell: (info) => sek(info.getValue()),
   }),

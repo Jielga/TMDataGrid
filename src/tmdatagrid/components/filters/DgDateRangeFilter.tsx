@@ -4,10 +4,10 @@ import { operatorTakesRangeValue } from "../../core/filterOperators";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
- * A built-in `meta.filterControl` for `date` columns: a From/To pair of
+ * A built-in `meta.filter.control` for `date` columns: a From/To pair of
  * native date inputs writing the `between` pair - no `@mantine/dates`
  * involved, like the built-in date editor. Pair it with
- * `meta.defaultFilterOperator: "between"`; any non-range operator falls back
+ * `meta.filter.defaultOperator: "between"`; any non-range operator falls back
  * to the standard input.
  */
 export function DgDateRangeFilter(args: TMDataGridFilterControlArgs) {

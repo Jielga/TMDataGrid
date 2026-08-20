@@ -63,8 +63,7 @@ const columns = columnHelper.columns([
       options: "faceted",
       // `isAnyOf` is the operator the chips are shaped for, so the filter
       // opens on it rather than on the type's default.
-      defaultFilterOperator: "isAnyOf",
-      filterControl: StatusChips,
+      filter: { defaultOperator: "isAnyOf", control: StatusChips },
     },
   }),
 ]);

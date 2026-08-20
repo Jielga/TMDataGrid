@@ -16,6 +16,7 @@ import {
   normalizeFieldValidate,
   type TMDataGridEditField,
   type TMDataGridEditorArgs,
+  type TMDataGridEditValueMap,
 } from "../core/editEngine";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 import { CheckIcon, CloseIcon } from "./icons";
@@ -48,7 +49,7 @@ export type TMDataGridCellEditorClose =
 /**
  * The host an editing cell mounts - it owns the field, the keys and the blur
  * policy; the editor inside it (a built-in picked by `meta.type`, or the
- * column's `meta.editor`) owns the input.
+ * column's `meta.edit.editor`) owns the input.
  *
  * The form outlives this component by design: scrolling the row away
  * unmounts the host, and the form in the engine's map keeps the draft.
@@ -57,15 +58,12 @@ export function TMDataGridCellEditor({
   cell,
   row,
   takeSeedText,
-  autoFocus = true,
   onClose,
 }: {
   cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>;
   row: Row<TMDataGridFeatures, TMDataGridRowData>;
   /** Consumes the pending type-to-edit seed, when typing opened this editor. */
   takeSeedText: () => string | undefined;
-  /** @deprecated The grid places the caret; see `TMDataGridEditorArgs`. */
-  autoFocus?: boolean;
   /** After the editor closed itself - the table moves the focus. */
   onClose: (args: TMDataGridCellEditorClose) => void;
 }) {
@@ -80,18 +78,54 @@ export function TMDataGridCellEditor({
   const fieldName = getEditFieldName(column);
   const [seedText] = useState(() => takeSeedText());
 
+  /**
+   * The column's current `mapValue`, for the field below to read at write
+   * time. No dependency array, so it re-registers every render: the field is
+   * created once and kept, and a map redeclared per render would otherwise be
+   * frozen at the one this editor opened with. Declared above the seed effect,
+   * which writes through the same field.
+   */
+  const mapValueRef = useRef<TMDataGridEditValueMap | undefined>(undefined);
+  useEffect(() => {
+    mapValueRef.current = column.columnDef.meta?.edit?.mapValue;
+  });
+
   // One FieldApi per open editor, over the row's long-lived form. Created
   // imperatively (the documented core usage) because the form was too.
-  const [field] = useState<TMDataGridEditField>(
-    () =>
-      new FieldApi({
-        form: form as never,
-        name: fieldName as never,
-        validators: normalizeFieldValidate(
-          column.columnDef.meta?.validate,
-        ) as never,
-      }) as unknown as TMDataGridEditField,
-  );
+  const [field] = useState<TMDataGridEditField>(() => {
+    const created = new FieldApi({
+      form: form as never,
+      name: fieldName as never,
+      validators: normalizeFieldValidate(
+        column.columnDef.meta?.edit?.validate,
+      ) as never,
+    }) as unknown as TMDataGridEditField;
+
+    // `meta.edit.mapValue` lives here rather than in each editor, so one
+    // implementation covers the six built-ins, any `meta.edit.editor` and the
+    // type-to-edit seed below - everything that writes through this field.
+    // Form's own paths (validation, reset, `form.setFieldValue`) hold the
+    // form, not this field, so a cleared cell and a rolled-back draft stay
+    // exactly what the engine wrote.
+    const write = created.handleChange.bind(created);
+    created.handleChange = ((updater: unknown) => {
+      const map = mapValueRef.current;
+      const previous = created.state.value as unknown;
+      // Form takes a value or an updater; resolve one so `mapValue` is only
+      // ever handed the value itself.
+      const value =
+        typeof updater === "function"
+          ? (updater as (prev: unknown) => unknown)(previous)
+          : updater;
+      write(
+        (map === undefined
+          ? value
+          : map({ value, previous, row, column, table })) as never,
+      );
+    }) as typeof created.handleChange;
+
+    return created;
+  });
   useEffect(() => field.mount(), [field]);
 
   // Type-to-edit: the seed replaces the value, as it does in a spreadsheet.
@@ -200,12 +234,11 @@ export function TMDataGridCellEditor({
     commit: () => commitAndClose("pick"),
     cancel: cancelAndClose,
     size: controlSize,
-    autoFocus,
     seedText,
   };
 
   const Editor =
-    column.columnDef.meta?.editor ??
+    column.columnDef.meta?.edit?.editor ??
     BUILT_IN_EDITORS[column.columnDef.meta?.type ?? "string"] ??
     TMDataGridStringEditor;
 

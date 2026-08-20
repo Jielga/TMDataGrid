@@ -10,7 +10,7 @@ import {
 
 /**
  * The built-in value control of a filter-panel row - what renders when a
- * column declares no `meta.filterControl`. Shaped by the operator: a
+ * column declares no `meta.filter.control`. Shaped by the operator: a
  * multi-select for the set operators, a From/To pair for `between`, a Yes/No
  * dropdown for booleans, a typed input otherwise.
  *

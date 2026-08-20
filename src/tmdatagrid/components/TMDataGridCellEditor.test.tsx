@@ -207,3 +207,232 @@ describe("the multiSelect editor", () => {
     expect(commits[0]?.changes[0]?.next).toEqual(["red", "blue", "green"]);
   });
 });
+
+/**
+ * `meta.edit.mapValue` sits in the editor host rather than in any one editor,
+ * so these drive it through the same gestures a user has: typing, the
+ * type-to-edit seed, and a custom editor that knows nothing about it.
+ */
+describe("mapping the value on its way in", () => {
+  type Code = { id: number; code: string; slots: number };
+
+  const upperColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Code>();
+    return helper.columns([
+      helper.accessor("code", {
+        header: "Code",
+        meta: {
+          edit: {
+            mapValue: ({ value }) =>
+              typeof value === "string" ? value.toUpperCase() : value,
+          },
+        },
+      }),
+      helper.accessor("slots", {
+        header: "Slots",
+        meta: {
+          type: "number",
+          edit: {
+            mapValue: ({ value }) =>
+              typeof value === "number" ? Math.min(value, 10) : value,
+          },
+        },
+      }),
+    ]);
+  })();
+
+  const codeRows: Array<Code> = [{ id: 1, code: "ab", slots: 2 }];
+
+  type CodeCommit = TMDataGridEditCommitArgs<Code>;
+
+  function renderCodeGrid(
+    columns: typeof upperColumns = upperColumns,
+  ): { container: HTMLElement; commits: Array<CodeCommit> } {
+    const commits: Array<CodeCommit> = [];
+    function CodeGrid() {
+      const grid = useTMDataGrid<Code>({
+        data: codeRows,
+        columns,
+        getRowId: (row) => String(row.id),
+        editMode: "cell",
+        selectionMode: "highlight",
+        onEditCommit: (args) => void commits.push(args as CodeCommit),
+      } as UseTMDataGridOptions<Code>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<Code> />
+        </TMDataGrid>
+      );
+    }
+    const { container } = renderWithMantine(<CodeGrid />);
+    return { container, commits };
+  }
+
+  /** By the published coordinates, as the tests above do. */
+  function codeCell(container: HTMLElement, columnId: string): HTMLElement {
+    const found = container.querySelector<HTMLElement>(
+      `[role="gridcell"][data-row-id="1"][data-column-id="${columnId}"]`,
+    );
+    if (found === null) throw new Error(`no cell for column "${columnId}"`);
+    return found;
+  }
+
+  it("maps every keystroke, and commits what it mapped", async () => {
+    const user = userEvent.setup();
+    const { container, commits } = renderCodeGrid();
+
+    await user.dblClick(codeCell(container, "code"));
+    const input = screen.getByLabelText("Edit Code") as HTMLInputElement;
+    await user.keyboard("xy");
+
+    expect(input.value).toBe("XY");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes).toEqual([
+      { columnId: "code", field: "code", previous: "ab", next: "XY" },
+    ]);
+  });
+
+  it("maps the character that typing opened the editor with", async () => {
+    const user = userEvent.setup();
+    const { container, commits } = renderCodeGrid();
+
+    // The seed is written by the grid, not by the editor, and would arrive
+    // unmapped if the host did not write it through the same path.
+    await user.click(codeCell(container, "code"));
+    await user.keyboard("q");
+
+    const input = screen.getByLabelText("Edit Code") as HTMLInputElement;
+    expect(input.value).toBe("Q");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe("Q");
+  });
+
+  it("leaves the value alone at open, so a pristine cell stays pristine", async () => {
+    const user = userEvent.setup();
+    const { container, commits } = renderCodeGrid();
+    const cellElement = codeCell(container, "code");
+
+    await user.dblClick(cellElement);
+    const input = screen.getByLabelText("Edit Code") as HTMLInputElement;
+
+    // Stored lowercase and untouched: mapping here would dirty a row nobody
+    // edited, and would eat the select-all that makes typing replace.
+    expect(input.value).toBe("ab");
+    expect(cellElement).not.toHaveAttribute("data-dirty");
+
+    await user.keyboard("z");
+    expect(input.value).toBe("Z");
+    await user.keyboard("{Escape}");
+    expect(commits.length).toBe(0);
+  });
+
+  it("keeps the caret where it was typed", async () => {
+    const user = userEvent.setup();
+    const { container } = renderCodeGrid();
+
+    await user.dblClick(codeCell(container, "code"));
+    const input = screen.getByLabelText("Edit Code") as HTMLInputElement;
+    await user.keyboard("xy");
+
+    // A mapped value differs from what the input holds, so React reassigns it
+    // and the browser would otherwise drop the caret at the end.
+    input.setSelectionRange(0, 0);
+    await user.keyboard("z");
+    expect(input.value).toBe("ZXY");
+    expect(input.selectionStart).toBe(1);
+
+    await user.keyboard("w");
+    expect(input.value).toBe("ZWXY");
+  });
+
+  it("maps a number editor's writes too", async () => {
+    const user = userEvent.setup();
+    const { container, commits } = renderCodeGrid();
+
+    await user.dblClick(codeCell(container, "slots"));
+    const input = screen.getByLabelText("Edit Slots");
+    fireEvent.change(input, { target: { value: "42" } });
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe(10);
+  });
+
+  it("maps what a custom editor writes, without the editor knowing", async () => {
+    const user = userEvent.setup();
+    const helper = createTMDataGridColumnHelper<Code>();
+    const customColumns = helper.columns([
+      helper.accessor("code", {
+        header: "Code",
+        meta: {
+          edit: {
+            editor: ({ field }) => (
+              <input
+                aria-label="Bare Code"
+                value={typeof field.state.value === "string" ? field.state.value : ""}
+                onChange={(event) => field.handleChange(event.target.value)}
+              />
+            ),
+            mapValue: ({ value }) =>
+              typeof value === "string" ? value.toUpperCase() : value,
+          },
+        },
+      }),
+      helper.accessor("slots", { header: "Slots", meta: { type: "number" } }),
+    ]);
+    const { container, commits } = renderCodeGrid(customColumns);
+
+    await user.dblClick(codeCell(container, "code"));
+    const input = screen.getByLabelText("Bare Code") as HTMLInputElement;
+    await user.clear(input);
+    await user.type(input, "zz");
+
+    expect(input.value).toBe("ZZ");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe("ZZ");
+  });
+
+  it("validates what the map produced, not what was typed", async () => {
+    const user = userEvent.setup();
+    const helper = createTMDataGridColumnHelper<Code>();
+    const validatedColumns = helper.columns([
+      helper.accessor("code", {
+        header: "Code",
+        meta: {
+          edit: {
+            mapValue: ({ value }) =>
+              typeof value === "string" ? value.toUpperCase() : value,
+            // Passes only for the mapped value: a validator that ran on the
+            // raw keystrokes would reject every one of them.
+            validate: ({ value }: { value: string }) =>
+              value === value.toUpperCase() ? undefined : "Must be upper case",
+          },
+        },
+      }),
+      helper.accessor("slots", { header: "Slots", meta: { type: "number" } }),
+    ]);
+    const { container, commits } = renderCodeGrid(validatedColumns);
+
+    await user.dblClick(codeCell(container, "code"));
+    await user.keyboard("xy{Enter}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe("XY");
+  });
+
+  it("does not map the empty value Delete writes", async () => {
+    const user = userEvent.setup();
+    const { container, commits } = renderCodeGrid();
+
+    // Clearing writes the type's empty value through the form, not through an
+    // editor: there is no user input to map.
+    await user.click(codeCell(container, "code"));
+    await user.keyboard("{Delete}");
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe("");
+  });
+});

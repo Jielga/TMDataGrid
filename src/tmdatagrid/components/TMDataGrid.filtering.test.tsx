@@ -231,7 +231,7 @@ describe("typed columns in the filter panel", () => {
     return helper.columns([
       helper.accessor("id", {
         header: "Id",
-        meta: { type: "number", defaultFilterOperator: "between" },
+        meta: { type: "number", filter: { defaultOperator: "between" } },
       }),
       helper.accessor("status", {
         header: "Status",
@@ -299,7 +299,7 @@ describe("typed columns in the filter panel", () => {
     expect(gridRowCount()).toBe(2);
   });
 
-  it("filters through a between pair, seeded by meta.defaultFilterOperator", async () => {
+  it("filters through a between pair, seeded by meta.filter.defaultOperator", async () => {
     const user = userEvent.setup();
     renderWithMantine(<TypedGrid filterColumnId="id" />);
 
@@ -366,25 +366,23 @@ describe("filter controls", () => {
         header: "Id",
         meta: {
           type: "number",
-          defaultFilterOperator: "between",
-          filterControl: DgRangeSliderFilter,
+          filter: { defaultOperator: "between", control: DgRangeSliderFilter },
         },
       }),
       helper.accessor("status", {
         header: "Status",
-        meta: { filterControl: DgAutocompleteFilter },
+        meta: { filter: { control: DgAutocompleteFilter } },
       }),
       helper.accessor("active", {
         header: "Active",
-        meta: { type: "boolean", filterControl: DgTriStateFilter },
+        meta: { type: "boolean", filter: { control: DgTriStateFilter } },
         cell: (info) => (info.getValue() ? "yes" : "no"),
       }),
       helper.accessor("hired", {
         header: "Hired",
         meta: {
           type: "date",
-          defaultFilterOperator: "between",
-          filterControl: DgDateRangeFilter,
+          filter: { defaultOperator: "between", control: DgDateRangeFilter },
         },
       }),
     ]);
@@ -421,12 +419,12 @@ describe("filter controls", () => {
     await user.click(screen.getByRole("button", { name: "open filter" }));
   };
 
-  it("hands meta.filterControl the bare value and wraps what it writes", async () => {
+  it("hands meta.filter.control the bare value and wraps what it writes", async () => {
     const helper = createTMDataGridColumnHelper<ControlRow>();
     const customColumns = helper.columns([
       helper.accessor("status", {
         header: "Status",
-        meta: { filterControl: StatusPicker },
+        meta: { filter: { control: StatusPicker } },
       }),
     ]);
 

@@ -42,6 +42,11 @@ what menus and the columns panel show.
 
 ## meta
 
+`meta` carries what a TanStack column definition has no field for. What the
+column **is** sits at the top level; what a stage **does** with it sits in that
+stage's own namespace, `filter` and `edit`, named after the `filter` panel and
+the `edit` engine you drive at runtime.
+
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `label` | `string` | String header, or column id | Name used in menus and the column manager. Required when `header` is a component. |
@@ -51,12 +56,53 @@ what menus and the columns panel show.
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment, applied to both header and cells. |
 | `autoSize` | `boolean` | `false` | Fit the column to its content once, after the first rows render. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
-| `defaultFilterOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter starts with. See [Filtering](/docs/filtering#operators). |
-| `filterControl` | `TMDataGridFilterControlComponent` | By type and operator | Replaces the filter panel's value control. See [Filtering](/docs/filtering#replacing-the-value-control). |
-| `editable` | `boolean \| (row) => boolean` | `true` | Whether cells in this column may be edited. See [Editing](/docs/editing). |
-| `editField` | `string` | The column id | The field an edit writes to, for a computed column. |
-| `validate` | `TMDataGridFieldValidate` | - | Per-cell validation. See [Editors and validation](/docs/editors#validation). |
-| `editor` | `TMDataGridEditorComponent` | By type | Replaces the cell editor. |
+| `filter` | `TMDataGridColumnFilterOptions` | - | How this column filters. See [meta.filter](#metafilter). |
+| `edit` | `TMDataGridColumnEditOptions` | - | How this column is edited. See [meta.edit](#metaedit). |
+
+`type` and `options` stay at the top level because both stages read them: one
+`type` picks the filter operators and the cell editor, and one `options` list
+feeds the filter panel's dropdown and the select editor. Declaring either twice
+is the bug the shared field exists to prevent.
+
+### meta.filter
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `defaultOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter starts with. See [Filtering](/docs/filtering#operators). |
+| `control` | `TMDataGridFilterControlComponent` | By type and operator | Replaces the filter panel's value control. See [Filtering](/docs/filtering#replacing-the-value-control). |
+
+```tsx
+meta: {
+  type: "number",
+  filter: { defaultOperator: "between", control: DgRangeSliderFilter },
+}
+```
+
+### meta.edit
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean \| (row) => boolean` | `true` | Whether cells in this column may be edited. See [Editing](/docs/editing#which-cells-edit). |
+| `field` | `string` | The `accessorKey` | The data path an edit writes to, for a column built on `accessorFn`. |
+| `editor` | `TMDataGridEditorComponent` | By `type` | Replaces the cell editor. See [Editors](/docs/editors#writing-your-own). |
+| `validate` | `TMDataGridFieldValidate` | - | Per-cell validation. See [Validation](/docs/editors#validation). |
+| `mapValue` | `TMDataGridEditValueMap` | - | Maps each value an editor writes. See [Mapping the value](/docs/editors#mapping-the-value-as-it-is-typed). |
+
+```tsx
+meta: {
+  type: "string",
+  edit: {
+    enabled: (row) => row.original.status !== "Terminated",
+    validate: z.string().min(2, "At least two characters"),
+    mapValue: ({ value }) =>
+      typeof value === "string" ? value.toUpperCase() : value,
+  },
+}
+```
+
+A column that wants the defaults declares neither namespace: any column mapping
+to a data path is editable once `editMode` is on, and every column filters by
+its type.
 
 `enableOrdering` and `autoSize` live in `meta` because they are the two
 behaviours TanStack defines no column option for.
@@ -166,6 +212,8 @@ no column can be placed in front of it.
 | `meta.type` | Column meta | six types | `"string"` | What the values are; drives filters and editors. |
 | `meta.options` | Column meta | array \| `"faceted"` \| `(args) => …` | – | The choices of an option column. |
 | `meta.align` | Column meta | `"left" \| "right" \| "center"` | `"left"` | Header and cell alignment. |
+| `meta.filter` | Column meta | `TMDataGridColumnFilterOptions` | – | How the column filters: `defaultOperator`, `control`. |
+| `meta.edit` | Column meta | `TMDataGridColumnEditOptions` | – | How the column edits: `enabled`, `field`, `editor`, `validate`, `mapValue`. |
 | `resolveColumnOptions` | Export | `({ table, column, row? }) => options` | – | Normalises all three `meta.options` forms. |
 | `optionsToComboboxData` | Export | `(options) => ComboboxData` | – | Options as Mantine `Select` data. |
 | `getColumnLabel` · `getColumnType` · `isControlColumn` | Exports | `(column) => …` | – | What the chrome uses to read a column. |

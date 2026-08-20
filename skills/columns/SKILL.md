@@ -3,8 +3,9 @@ name: columns
 description: >
   Define and arrange TMDataGrid columns. Covers createTMDataGridColumnHelper,
   every column meta field (label, type, options, flex, align, autoSize,
-  enableOrdering, defaultFilterOperator, filterControl, editable, editField,
-  editor, validate), the six column types, fluid minmax sizing versus fixed
+  enableOrdering, and the meta.filter and meta.edit namespaces holding
+  defaultOperator, control, enabled, field, editor, validate and mapValue),
+  the six column types, fluid minmax sizing versus fixed
   width with minSize / maxSize / size, autosizing and autosizeColumn, hiding
   through enableHiding and the columns panel, pinning and why a pinned column
   becomes fixed-width, ordering with enableColumnOrdering, meta.enableOrdering,
@@ -65,17 +66,41 @@ column model.
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Applied to both header and cells. |
 | `autoSize` | `boolean` | `false` | Size to the widest mounted content once, after the first rows render. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
-| `defaultFilterOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter on this column starts with. |
-| `filterControl` | `TMDataGridFilterControlComponent` | By `meta.type` | Replaces the value control in this column's filter row. Module scope. |
-| `editable` | `boolean \| ((row) => boolean)` | editable where a field maps | Whether this column's cells edit. |
-| `editField` | `string` | The `accessorKey` | The data path an edit writes to. The only way an `accessorFn` column edits. |
+| `filter` | `TMDataGridColumnFilterOptions` | – | How this column filters. See below. |
+| `edit` | `TMDataGridColumnEditOptions` | – | How this column is edited. See below. |
+
+What the column **is** stays flat; what a stage **does** with it sits in that
+stage's namespace. `type` and `options` are the shared ground both stages read,
+which is why they are not inside either.
+
+`meta.filter`:
+
+| Field | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `defaultOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter on this column starts with. |
+| `control` | `TMDataGridFilterControlComponent` | By `meta.type` | Replaces the value control in this column's filter row. Module scope. |
+
+`meta.edit`:
+
+| Field | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `enabled` | `boolean \| ((row) => boolean)` | editable where a field maps | Whether this column's cells edit. |
+| `field` | `string` | The `accessorKey` | The data path an edit writes to. The only way an `accessorFn` column edits. |
 | `editor` | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. Module scope. |
 | `validate` | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
+| `mapValue` | `TMDataGridEditValueMap` | – | Maps each value an editor writes, on every keystroke. |
+
+```tsx
+meta: {
+  type: "number",
+  filter: { defaultOperator: "between", control: DgRangeSliderFilter },
+  edit: { enabled: (row) => !row.original.locked },
+}
+```
 
 `enableOrdering` lives in `meta` because column ordering is the one feature
-TanStack defines no column option for. The four editing fields only act once
-`editMode` is set: see the `editing` skill. `filterControl` and
-`defaultFilterOperator` belong to the `filtering` skill.
+TanStack defines no column option for. `meta.edit` only acts once `editMode` is
+set: see the `editing` skill. `meta.filter` belongs to the `filtering` skill.
 
 ### Column types
 

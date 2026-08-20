@@ -40,7 +40,7 @@ const columns = helper.columns([
   helper.accessor("name", {
     id: "readonlyName",
     header: "Locked",
-    meta: { editable: false },
+    meta: { edit: { enabled: false } },
   }),
 ]);
 
@@ -67,9 +67,9 @@ function renderEditGrid(
 }
 
 describe("getEditFieldName", () => {
-  it("prefers meta.editField, falls back to accessorKey, refuses accessorFn", () => {
+  it("prefers meta.edit.field, falls back to accessorKey, refuses accessorFn", () => {
     expect(
-      getEditFieldName({ columnDef: { meta: { editField: "custom.path" } } }),
+      getEditFieldName({ columnDef: { meta: { edit: { field: "custom.path" } } } }),
     ).toBe("custom.path");
     expect(
       getEditFieldName({
@@ -519,7 +519,7 @@ describe("edit engine", () => {
     ).toBe(true);
   });
 
-  it("gates per-row editability through isRowEditable and meta.editable", () => {
+  it("gates per-row editability through isRowEditable and meta.edit.enabled", () => {
     const grid = renderEditGrid({
       isRowEditable: (row) => row.original.id !== 2,
     });

@@ -10,7 +10,11 @@ import type { Cell, Column, Row, RowData } from "@tanstack/react-table";
 import type { ComponentType } from "react";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
-import { isControlColumn } from "./columnUtils";
+import {
+  isColumnEditableForRow,
+  isColumnEditSwitchedOff,
+  isControlColumn,
+} from "./columnUtils";
 import type { TMDataGridColumnType } from "./filterOperators";
 import type { TMDataGridSize } from "./sizes";
 
@@ -44,7 +48,7 @@ export type TMDataGridValidator =
   | ((args: { value: never; fieldApi: never }) => unknown);
 
 /**
- * `meta.validate` - per-column field validators. A bare schema or function is
+ * `meta.edit.validate` - per-column field validators. A bare schema or function is
  * shorthand for `{ onChange: it }`; the object form takes every trigger
  * TanStack Form defines, `Async` variants and debounce included.
  */
@@ -155,7 +159,7 @@ type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
  * inside any TanStack Form. The table side is where the editor is standing.
  *
  * The built-ins are implemented against this same contract, so
- * `meta.editor` is not a special case - it is the slot the defaults
+ * `meta.edit.editor` is not a special case - it is the slot the defaults
  * fill, and the exported built-ins can be wrapped instead of replaced.
  */
 export type TMDataGridEditorArgs = {
@@ -173,16 +177,6 @@ export type TMDataGridEditorArgs = {
   cancel: () => void;
   size: TMDataGridSize;
   /**
-   * @deprecated The grid places the caret itself, once per open gesture, so
-   * honouring this is optional and it will go in the next major. It focuses
-   * `data-dg-part="editor-input"` when the editor publishes it and the first
-   * focusable element inside the editor otherwise, which is why a custom
-   * editor that ignores this prop still gets the caret. False under
-   * `editMode: "row"`, where a whole row of editors is mounted at once and
-   * only the named cell may take it.
-   */
-  autoFocus: boolean;
-  /**
    * Set when typing opened the editor (the Sheets gesture) - the built-ins
    * replace the value with it and keep typing. A custom editor may ignore it.
    */
@@ -190,11 +184,86 @@ export type TMDataGridEditorArgs = {
 };
 
 /**
- * `meta.editor` - replaces the built-in editor for this column. Rendered as
- * JSX, never invoked as a bare function, so hooks are legal inside. Define it
- * at module scope: a new identity per render remounts the editor mid-edit.
+ * `meta.edit.editor` - replaces the built-in editor for this column. Rendered
+ * as JSX, never invoked as a bare function, so hooks are legal inside. Define
+ * it at module scope: a new identity per render remounts the editor mid-edit.
  */
 export type TMDataGridEditorComponent = ComponentType<TMDataGridEditorArgs>;
+
+/** What `meta.edit.mapValue` is handed for one write. */
+export type TMDataGridEditValueMapArgs = {
+  /** The value the editor just wrote. */
+  value: unknown;
+  /** What the field held before this write - for length-aware masks. */
+  previous: unknown;
+  row: ErasedRow;
+  column: ErasedColumn;
+  table: TMDataGridTable<TMDataGridRowData>;
+};
+
+/**
+ * `meta.edit.mapValue` - the value on its way into the draft, mapped.
+ *
+ * Runs on every write an editor makes, which for a text input is every
+ * keystroke and for a select is every pick, so the mapped value is what the
+ * user sees, what validators judge and what commits.
+ */
+export type TMDataGridEditValueMap = (
+  args: TMDataGridEditValueMapArgs,
+) => unknown;
+
+/**
+ * `meta.edit` - everything about how this column is edited, in one place,
+ * mirroring the `edit.*` engine the grid exposes at runtime.
+ *
+ * ```tsx
+ * meta: {
+ *   type: "string",
+ *   edit: {
+ *     enabled: (row) => row.original.status !== "Locked",
+ *     validate: z.string().min(2, "Too short"),
+ *     mapValue: ({ value }) =>
+ *       typeof value === "string" ? value.toUpperCase() : value,
+ *   },
+ * }
+ * ```
+ *
+ * `meta.type` and `meta.options` stay outside this namespace on purpose: one
+ * declaration of each feeds the cell editor and the filter panel alike.
+ */
+export type TMDataGridColumnEditOptions = {
+  /**
+   * Whether this column's cells take edits, once `editMode` is on. `false`
+   * switches the column off outright; a predicate decides per row. Defaults
+   * to editable for any column that maps to a field - see {@link field}.
+   */
+  enabled?:
+    | boolean
+    | ((row: Row<TMDataGridFeatures, TMDataGridRowData>) => boolean);
+  /**
+   * The data path this column edits, when it is not the `accessorKey` - the
+   * only way a column built on `accessorFn` becomes editable. Dot paths reach
+   * into nested records: `"address.city"`.
+   */
+  field?: string;
+  /**
+   * Replaces the built-in editor for this column. See
+   * {@link TMDataGridEditorComponent}.
+   */
+  editor?: TMDataGridEditorComponent;
+  /**
+   * Field-level validators, in TanStack Form's own vocabulary. A bare Zod
+   * schema (or any Standard Schema, or a plain function) means
+   * `{ onChange: it }`; the object form takes every trigger Form defines.
+   */
+  validate?: TMDataGridFieldValidate;
+  /**
+   * Maps every value an editor writes before it reaches the draft - uppercase
+   * a code, strip spaces from an IBAN, clamp a number into range. See
+   * {@link TMDataGridEditValueMap}.
+   */
+  mapValue?: TMDataGridEditValueMap;
+};
 
 /** A new row being committed - `onRowAdd`, and `submitAll`'s `added`. */
 export type TMDataGridRowAddArgs<TData extends RowData> = {
@@ -247,14 +316,14 @@ export type TMDataGridEditEngineContext = {
  * `accessorKey` is the true path and Form addresses fields by dot-path, so
  * nested rows work for free: `accessorKey: "address.city"` edits
  * `values.address.city`. A column built on `accessorFn` has no path and is
- * not editable unless `meta.editField` names one. TanStack's default column
+ * not editable unless `meta.edit.field` names one. TanStack's default column
  * id turns dots into underscores - which is why this starts from
  * `accessorKey`, never from `id`.
  */
 export function getEditFieldName(column: {
-  columnDef: { meta?: { editField?: string } };
+  columnDef: { meta?: { edit?: { field?: string } } };
 }): string | null {
-  const fromMeta = column.columnDef.meta?.editField;
+  const fromMeta = column.columnDef.meta?.edit?.field;
   if (fromMeta) return fromMeta;
   const accessorKey = (column.columnDef as Record<string, unknown>)[
     "accessorKey"
@@ -422,7 +491,7 @@ export function createEditEngine(
       .filter(
         (column) =>
           !isControlColumn(column.id) &&
-          column.columnDef.meta?.editable !== false &&
+          !isColumnEditSwitchedOff(column) &&
           getEditFieldName(column) !== null,
       );
 
@@ -585,9 +654,7 @@ export function createEditEngine(
     if (row.getIsGrouped()) return false;
     if (isControlColumn(column.id)) return false;
     if (getEditFieldName(column) === null) return false;
-    const editable = column.columnDef.meta?.editable;
-    if (editable === false) return false;
-    if (typeof editable === "function" && !editable(row)) return false;
+    if (!isColumnEditableForRow(column, row)) return false;
     if (context.isRowEditable !== undefined && !context.isRowEditable(row)) {
       return false;
     }
@@ -851,7 +918,7 @@ export function createEditEngine(
 }
 
 /**
- * `meta.validate` normalised to the object TanStack Form's `validators`
+ * `meta.edit.validate` normalised to the object TanStack Form's `validators`
  * option takes - a bare schema or function is shorthand for `{ onChange }`.
  */
 export function normalizeFieldValidate(

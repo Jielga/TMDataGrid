@@ -53,9 +53,8 @@ import {
   type TMDataGridEditCommitArgs,
   type TMDataGridEditCommitBatchArgs,
   type TMDataGridEditEngineContext,
+  type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
-  type TMDataGridEditorComponent,
-  type TMDataGridFieldValidate,
   type TMDataGridRowAddArgs,
   type TMDataGridRowDeleteArgs,
   type TMDataGridRowValidators,
@@ -63,11 +62,10 @@ import {
 import {
   emptyValueForOperator,
   type TMDataGridColumnType,
-  type TMDataGridFilterOperator,
   tmDataGridFilterFn,
 } from "./core/filterOperators";
 import { getColumnDefaultOperator } from "./core/columnUtils";
-import type { TMDataGridFilterControlComponent } from "./core/filterControls";
+import type { TMDataGridColumnFilterOptions } from "./core/filterControls";
 import {
   createFuzzyRankedSortedRowModel,
   fuzzyGlobalFilterFn,
@@ -124,7 +122,16 @@ import {
  */
 const PERSIST_DEBOUNCE_MS = 200;
 
-/** Per-column configuration the TMDataGrid chrome reads. */
+/**
+ * Per-column configuration the TMDataGrid chrome reads.
+ *
+ * A stage that owns behaviour gets a namespace - `filter` and `edit`, each
+ * mirroring the feature's runtime API. What the column *is* stays flat:
+ * `label`, `type`, `options`, `align`, `flex`, `autoSize`, `enableOrdering`.
+ * `type` and `options` in particular are shared ground - one declaration of
+ * each feeds the filter panel and the cell editor alike, which is why they sit
+ * outside both namespaces.
+ */
 export type TMDataGridColumnMeta = {
   /** Name shown in menus and the column manager. Falls back to a string header. */
   label?: string;
@@ -157,52 +164,34 @@ export type TMDataGridColumnMeta = {
    */
   enableOrdering?: boolean;
   /**
-   * The operator a fresh filter on this column starts with, instead of the
-   * type's default - a salary column can open on `"between"`. Must be one of
-   * the type's own operators.
-   */
-  defaultFilterOperator?: TMDataGridFilterOperator;
-  /**
-   * Replaces the built-in value control in this column's filter-panel row. A
-   * component rendered as JSX (hooks are legal inside), receiving the
-   * value-only contract: it reads the current operator, writes the bare
-   * value, and the grid composes the stored filter around it. Define it at
-   * module scope. See {@link TMDataGridFilterControlArgs}.
-   */
-  filterControl?: TMDataGridFilterControlComponent;
-  /**
-   * Whether this column's cells take edits, once `editMode` is on. `false`
-   * switches the column off outright; a predicate decides per row. Defaults
-   * to editable for any column that maps to a field - see {@link editField}.
-   */
-  editable?:
-    | boolean
-    | ((row: Row<TMDataGridFeatures, TMDataGridRowData>) => boolean);
-  /**
-   * The data path this column edits, when it is not the `accessorKey` - the
-   * only way a column built on `accessorFn` becomes editable. Dot paths reach
-   * into nested records: `"address.city"`.
-   */
-  editField?: string;
-  /**
-   * Field-level validators, in TanStack Form's own vocabulary. A bare Zod
-   * schema (or any Standard Schema, or a plain function) means
-   * `{ onChange: it }`; the object form takes every trigger Form defines.
+   * How this column filters: the operator a fresh filter starts with, and the
+   * value control the filter panel renders for it.
    *
    * ```tsx
-   * meta: { validate: z.string().min(2, "Too short") }
-   * meta: { validate: { onBlur: z.string().email() } }
+   * meta: {
+   *   type: "number",
+   *   filter: { defaultOperator: "between", control: DgRangeSliderFilter },
+   * }
    * ```
+   *
+   * See {@link TMDataGridColumnFilterOptions}.
    */
-  validate?: TMDataGridFieldValidate;
+  filter?: TMDataGridColumnFilterOptions;
   /**
-   * Replaces the built-in editor for this column. A component rendered as
-   * JSX (hooks are legal inside), receiving the live TanStack Form `field`
-   * API plus the table context, the same contract the built-ins fill. Define
-   * it at module scope so its identity is stable across renders. See
-   * {@link TMDataGridEditorArgs}.
+   * How this column is edited: whether it takes edits, which field they write
+   * to, which editor opens, what validates the field and what maps the value
+   * on its way in.
+   *
+   * ```tsx
+   * meta: {
+   *   type: "string",
+   *   edit: { validate: z.string().min(2, "Too short") },
+   * }
+   * ```
+   *
+   * See {@link TMDataGridColumnEditOptions}.
    */
-  editor?: TMDataGridEditorComponent;
+  edit?: TMDataGridColumnEditOptions;
 };
 
 /** Grid-wide configuration passed through `options.meta`. */
@@ -526,9 +515,9 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  *
  * One TanStack Form per editing row; drafts survive scrolling because the
  * forms live outside the DOM, keyed by row id. Which columns edit, and with
- * what, is declared per column: `meta.type` picks the built-in editor,
- * `meta.validate` its validators, `meta.editable` / `meta.editor` the
- * overrides.
+ * what, is declared per column under `meta.edit`: `meta.type` picks the
+ * built-in editor, and `enabled`, `field`, `editor`, `validate` and `mapValue`
+ * override the rest.
  */
 export type TMDataGridEditingOptions<TData extends RowData> =
   | (TMDataGridEditingCallbacks<TData> & {

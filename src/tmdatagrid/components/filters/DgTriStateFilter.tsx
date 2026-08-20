@@ -8,7 +8,7 @@ import {
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
- * A built-in `meta.filterControl` for `boolean` columns: an All / Yes / No
+ * A built-in `meta.filter.control` for `boolean` columns: an All / Yes / No
  * segmented control - All clears the value, which deactivates the filter.
  * Set or range operators fall back to the standard input.
  */

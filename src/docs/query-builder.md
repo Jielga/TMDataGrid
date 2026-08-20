@@ -89,7 +89,7 @@ needs the other rows, or the collection as a whole, belongs to the form.**
 | Rule | Owner | Written as |
 | --- | --- | --- |
 | "The condition needs a value" | Grid | `rowValidators.onSubmit` |
-| "A date, for a date field" | Grid | `meta.editor` per column |
+| "A date, for a date field" | Grid | `meta.edit.editor` per column |
 | "At least one condition" | Form | the `conditions` field's `onChange` validator |
 | "No two conditions repeat a field and operator" | Form | the same place |
 
@@ -103,7 +103,7 @@ keystroke.
 ## Editors that follow the row
 
 In a `[field, operator, value]` builder the value cell means something
-different on every row. `meta.editor` receives the row's live form, so one
+different on every row. `meta.edit.editor` receives the row's live form, so one
 component switches on the *draft* field - not the committed one - and picking
 a new field resets its dependents:
 
@@ -179,5 +179,5 @@ This page introduces no API of its own. The pieces it composes:
 | Piece | Documented on |
 | --- | --- |
 | `data`, `getRowId`, `editMode`, `onEditCommit`, `onRowAdd`, `onRowDelete`, `newRowDefaults`, `edit.store` | [Editing](/docs/editing) |
-| `rowValidators`, `meta.editor`, the editor contract | [Editors and validation](/docs/editors) |
+| `rowValidators`, `meta.edit.editor`, the editor contract | [Editors and validation](/docs/editors) |
 | `useForm`, `form.Field`, field validators | TanStack Form's own docs |

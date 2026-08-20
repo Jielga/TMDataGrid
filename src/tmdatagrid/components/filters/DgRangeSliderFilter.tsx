@@ -4,9 +4,9 @@ import { operatorTakesRangeValue } from "../../core/filterOperators";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
- * A built-in `meta.filterControl` for `number` columns: a range slider whose
+ * A built-in `meta.filter.control` for `number` columns: a range slider whose
  * bounds are seeded from the values present in the data, writing the
- * `between` pair. Pair it with `meta.defaultFilterOperator: "between"` so
+ * `between` pair. Pair it with `meta.filter.defaultOperator: "between"` so
  * the filter opens on it; any non-range operator falls back to the standard
  * input.
  */

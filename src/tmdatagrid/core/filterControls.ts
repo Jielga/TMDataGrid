@@ -37,9 +37,36 @@ export type TMDataGridFilterControlArgs = {
 };
 
 /**
- * `meta.filterControl` - replaces the built-in value control for this column.
+ * `meta.filter.control` - replaces the built-in value control for this column.
  * Rendered as JSX, never invoked as a bare function, so hooks are legal
  * inside. Define it at module scope so its identity is stable across renders.
  */
 export type TMDataGridFilterControlComponent =
   ComponentType<TMDataGridFilterControlArgs>;
+
+/**
+ * `meta.filter` - everything about how this column filters, in one place.
+ *
+ * ```tsx
+ * meta: {
+ *   type: "number",
+ *   filter: { defaultOperator: "between", control: DgRangeSliderFilter },
+ * }
+ * ```
+ *
+ * `meta.type` and `meta.options` stay outside this namespace on purpose: one
+ * declaration of each feeds the filter panel and the cell editor alike.
+ */
+export type TMDataGridColumnFilterOptions = {
+  /**
+   * The operator a fresh filter on this column starts with, instead of the
+   * type's default - a salary column can open on `"between"`. Must be one of
+   * the type's own operators.
+   */
+  defaultOperator?: TMDataGridFilterOperator;
+  /**
+   * Replaces the built-in value control in this column's filter-panel row.
+   * See {@link TMDataGridFilterControlComponent}.
+   */
+  control?: TMDataGridFilterControlComponent;
+};

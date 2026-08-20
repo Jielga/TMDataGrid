@@ -14,7 +14,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("id", {
     header: "ID",
     minSize: 70,
-    meta: { type: "number", flex: 0.3, editable: false },
+    meta: { type: "number", flex: 0.3, edit: { enabled: false } },
   }),
 
   columnHelper.accessor("firstName", { header: "First name", minSize: 120 }),
@@ -26,7 +26,7 @@ const columns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      editable: (row) => row.original.status !== "Terminated",
+      edit: { enabled: (row) => row.original.status !== "Terminated" },
     },
     cell: (info) => sek(info.getValue()),
   }),
@@ -37,12 +37,12 @@ const columns = columnHelper.columns([
     meta: { type: "select", options: "faceted" },
   }),
 
-  // A computed column has no field to write back to - `editField` names one.
+  // A computed column has no field to write back to - `edit.field` names one.
   columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
     id: "fullName",
     header: "Full name → edits last name",
     minSize: 200,
-    meta: { label: "Full name", editField: "lastName" },
+    meta: { label: "Full name", edit: { field: "lastName" } },
   }),
 ]);
 

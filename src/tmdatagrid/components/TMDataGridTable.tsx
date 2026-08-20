@@ -44,6 +44,7 @@ import {
   resolveCellMove,
   type TMDataGridCellPosition,
 } from "../core/cellNavigation";
+import { FOCUSABLE_IN_CELL, focusEditorContent } from "../core/editorFocus";
 import {
   boundsCellCount,
   boundsEdges,
@@ -86,20 +87,6 @@ const UNPINNED_LAYOUT: TMDataGridColumnLayout = {
   offset: 0,
   isBoundary: false,
 };
-
-/**
- * What Enter and F2 step into. Deliberately the plain list rather than a full
- * tabbable audit: a cell holds a control or it doesn't, and anything exotic
- * enough to fool this is exotic enough to handle its own keys.
- */
-const FOCUSABLE_IN_CELL = [
-  "button:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  "a[href]",
-  '[tabindex]:not([tabindex="-1"])',
-].join(",");
 
 /**
  * The mounted element for a cell position, or `null` when its row is scrolled
@@ -1434,13 +1421,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   /**
    * Puts the caret in the cell the open gesture named, once per gesture.
-   *
-   * The grid does this rather than leaving it to the editor's `autoFocus`,
-   * because only the built-ins honour that prop: a `meta.editor` is free to
-   * ignore it, and then the row opened with the caret in none of its editors -
-   * the ring on the cell and a Tab still needed to reach the input. Focus goes
-   * to `editor-input` when the editor publishes it, otherwise to whatever is
-   * focusable inside, which is what a custom editor renders.
+   * See `focusEditorContent` for where inside the editor it lands.
    *
    * A layout effect, ahead of the focused-cell effect below: the ring follows
    * the caret there rather than fighting it.
@@ -1468,10 +1449,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     // intent stays up, and the next render tries again.
     if (editor === null) return;
     placedEditCaretRef.current = editActive;
-    const target =
-      editor.querySelector<HTMLElement>('[data-dg-part="editor-input"]') ??
-      editor.querySelector<HTMLElement>(FOCUSABLE_IN_CELL);
-    target?.focus();
+    focusEditorContent(editor);
   });
 
   /** DOM focus back onto a cell - after Escape, or a commit with nowhere to go. */
@@ -2303,7 +2281,6 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                             cell={cell}
                             row={row}
                             takeSeedText={takeEditSeed}
-                            autoFocus={!rowEditing}
                             onClose={(close) =>
                               handleEditorClose(
                                 { rowId: row.id, columnId: cell.column.id },

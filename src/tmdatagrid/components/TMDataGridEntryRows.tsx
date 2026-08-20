@@ -5,12 +5,17 @@ import {
   type Row,
 } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import classes from "./TMDataGridTable.module.css";
 import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
-import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import {
+  getColumnAlign,
+  isColumnEditableForRow,
+  isControlColumn,
+} from "../core/columnUtils";
 import { getEditFieldName } from "../core/editEngine";
+import { focusEditorContent } from "../core/editorFocus";
 import {
   tmDataGridFeatures,
   type TMDataGridFeatures,
@@ -32,10 +37,7 @@ function isEntryCellEditable(
 ): boolean {
   if (isControlColumn(column.id)) return false;
   if (getEditFieldName(column) === null) return false;
-  const editable = column.columnDef.meta?.editable;
-  if (editable === false) return false;
-  if (typeof editable === "function" && !editable(row)) return false;
-  return true;
+  return isColumnEditableForRow(column, row);
 }
 
 /**
@@ -65,6 +67,34 @@ export function TMDataGridEntryRows({
 }) {
   const { table, edit } = useTMDataGridContext();
   const newRows = useSelector(edit.store, (state) => state.newRows);
+  const blockRef = useRef<HTMLDivElement>(null);
+  /** The entry row the caret has already been placed in. */
+  const focusedTempIdRef = useRef<string | null>(null);
+
+  /**
+   * The caret goes into a row the moment `edit.addRow()` opens it, landing in
+   * its first editable cell - the same placement the main table makes for a
+   * row opened by a gesture, and made here for the same reason: an editor is
+   * free not to focus itself, and then a new row appeared with the caret
+   * still outside it.
+   */
+  useLayoutEffect(() => {
+    const newest = newRows.at(-1)?.tempId;
+    if (newest === undefined) {
+      focusedTempIdRef.current = null;
+      return;
+    }
+    if (focusedTempIdRef.current === newest) return;
+    const block = blockRef.current;
+    if (block === null) return;
+    const editor = block.querySelector<HTMLElement>(
+      `[data-dg-part="editor"][data-row-id="${CSS.escape(newest)}"]`,
+    );
+    // Not mounted yet; the next render tries again, as the table's does.
+    if (editor === null) return;
+    focusedTempIdRef.current = newest;
+    focusEditorContent(editor);
+  });
 
   // The seed values, frozen at addRow: the live values belong to the forms,
   // which the editors read directly - this table only provides row and cell
@@ -91,14 +121,16 @@ export function TMDataGridEntryRows({
   const entryRows = entryTable.getCoreRowModel().rows;
 
   return (
-    <div role="rowgroup" data-dg-entry-block className={classes.entryBlock}>
+    <div
+      ref={blockRef}
+      role="rowgroup"
+      data-dg-entry-block
+      className={classes.entryBlock}
+    >
       {entryRows.map((entryRow) => {
         const cellsById = new Map(
           entryRow.getAllCells().map((cell) => [cell.column.id, cell]),
         );
-        const firstEditableColumnId = orderedColumns.find((column) =>
-          isEntryCellEditable(entryRow, column),
-        )?.id;
         return (
           <div
             key={entryRow.id}
@@ -146,7 +178,6 @@ export function TMDataGridEntryRows({
                       cell={cell}
                       row={entryRow}
                       takeSeedText={() => undefined}
-                      autoFocus={column.id === firstEditableColumnId}
                       onClose={() => {}}
                     />
                   ) : cell !== undefined && column.id === EDIT_COLUMN_ID ? (

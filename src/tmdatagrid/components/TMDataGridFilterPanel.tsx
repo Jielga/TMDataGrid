@@ -13,6 +13,7 @@ import { useTMDataGridContext } from "../TMDataGridContext";
 import { resolveColumnOptions } from "../core/columnOptions";
 import {
   getColumnDefaultOperator,
+  getColumnFilterControl,
   getColumnLabel,
   getColumnType,
 } from "../core/columnUtils";
@@ -235,12 +236,13 @@ export function TMDataGridFilterPanel() {
               ? resolveColumnOptions({ table, column, fallback: "faceted" })
               : [];
           const ValueControl =
-            column?.columnDef.meta?.filterControl ?? TMDataGridFilterValueInput;
+            (column === undefined ? undefined : getColumnFilterControl(column)) ??
+            TMDataGridFilterValueInput;
 
           return (
             <div
               key={filter.id}
-              // The row is the handle: a `meta.filterControl` renders whatever
+              // The row is the handle: a `meta.filter.control` renders whatever
               // it likes in the value slot, so the one thing a test can always
               // count on is which row it is in.
               data-dg-part="filter-row"
@@ -292,7 +294,7 @@ export function TMDataGridFilterPanel() {
               />
 
               {column ? (
-                // The value slot: `meta.filterControl` if the column declares
+                // The value slot: `meta.filter.control` if the column declares
                 // one, the built-in shape-by-operator input otherwise - both
                 // through the same value-only contract.
                 <ValueControl

@@ -45,7 +45,7 @@ const columns = columnHelper.columns([
     minSize: 120,
     // A bare schema means `{ onChange: it }`; the object form takes every
     // trigger TanStack Form defines. Any Standard Schema works, not just Zod.
-    meta: { validate: z.string().min(2, "At least two characters") },
+    meta: { edit: { validate: z.string().min(2, "At least two characters") } },
   }),
   columnHelper.accessor("age", {
     header: "Number",
@@ -53,10 +53,12 @@ const columns = columnHelper.columns([
     meta: {
       type: "number",
       align: "right",
-      validate: z
-        .number({ error: "A number" })
-        .min(16, "16 or older")
-        .max(99, "99 or younger"),
+      edit: {
+        validate: z
+          .number({ error: "A number" })
+          .min(16, "16 or older")
+          .max(99, "99 or younger"),
+      },
     },
   }),
   columnHelper.accessor("active", {
@@ -92,7 +94,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("salary", {
     header: "Custom",
     minSize: 200,
-    meta: { type: "number", align: "right", editor: SalarySliderEditor },
+    meta: { type: "number", align: "right", edit: { editor: SalarySliderEditor } },
     cell: (info) => sek(info.getValue()),
   }),
 ]);

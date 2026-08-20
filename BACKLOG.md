@@ -36,6 +36,16 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Column meta namespaces (2.0)** - **done 2026-08-20**, breaking. `meta.edit`
+and `meta.filter` group the fields belonging to those stages, leaving `label`,
+`type`, `options`, `flex`, `align`, `autoSize` and `enableOrdering` at the top
+level; `type` and `options` stay shared because both stages read them. Shipped
+with `meta.edit.mapValue`, which maps a value per write on its way into the
+draft, and with the removal of the deprecated `TMDataGridEditorArgs.autoFocus`.
+The rename table is in the changeset for the release. Entry rows gained the
+caret placement body rows got in 1.1.1, which the `autoFocus` path had only ever
+given the built-in editors.
+
 **The 1.0 wave** - competitor-scan adoption, decisions settled 2026-08-01.
 Batches A–D landed 2026-08-01 and H1 on 2026-08-09, on `feature/next`,
 released as **1.0.0**.
