@@ -74,7 +74,16 @@ useTMDataGrid({
 Pathed issues land on the matching cells; pathless ones on the row.
 
 A commit blocked by validation keeps the editor open with the message on the
-input. A rejected `onEditCommit` keeps the draft too, with the error on the row.
+input. A pathless issue - the bare `.refine()` - has no cell to mark, so it
+turns the edit lane's ✓ red and opens its message there as soon as the commit
+is refused, whether the ✓ was clicked or the row was saved with Ctrl+Enter.
+The message closes again on the next edit to the row.
+
+A field issue stops the row rule from running: Form validates the fields
+first, so a row whose cells are marked has not been put to `rowValidators` at
+all - clear them and the row rule speaks next.
+
+A rejected `onEditCommit` keeps the draft too, with the error on the row.
 Server-side field errors can be returned natively through
 `rowValidators.onSubmitAsync`'s `{ form, fields }` shape.
 

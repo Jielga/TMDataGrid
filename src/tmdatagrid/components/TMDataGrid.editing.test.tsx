@@ -543,10 +543,83 @@ describe("cell editing", () => {
     await user.click(screen.getByRole("button", { name: "Save row" }));
 
     expect(commits.length).toBe(0);
-    // Still editing, and the pathless message rides the Save's tooltip.
+    // Still editing, and the pathless message is on screen without a hover -
+    // the pointer that clicked Save never fires a second mouseenter, so a
+    // tooltip waiting for one would never open at all.
     expect(screen.getByRole("textbox", { name: "Edit Age" })).toBeInTheDocument();
-    await user.hover(screen.getByRole("button", { name: "Save row" }));
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
+
+    // It goes away the moment the row is being fixed, not on the next save.
+    await user.type(screen.getByRole("textbox", { name: "Edit Age" }), "{Backspace}");
+    await waitFor(() =>
+      expect(screen.queryByText("Nobody is that old")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("shows the row error after a Ctrl+Enter save, with no pointer involved", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editMode="row"
+        rowValidators={{
+          onSubmit: z
+            .object({ name: z.string(), age: z.number() })
+            .refine((row) => row.age < 100, { message: "Nobody is that old" }),
+        }}
+        onEditCommit={(args) => void commits.push(args)}
+      />,
+    );
+
+    await user.click(
+      within(bodyRows()[0]!).getByRole("button", { name: "Edit row" }),
+    );
+    const age = screen.getByRole("textbox", { name: "Edit Age" });
+    await user.clear(age);
+    await user.type(age, "120");
+    await user.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(commits.length).toBe(0);
+    expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
+  });
+
+  it("shows a row error on the entry row's Add too", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editMode: "row",
+        rowValidators: {
+          onSubmit: z
+            .object({ name: z.string(), age: z.number() })
+            .refine((row) => row.age > 0, { message: "A new row needs an age" }),
+        },
+        onRowAdd: (args) => void adds.push(args),
+        // A name the field validator accepts: a field issue is its own
+        // error, and Form stops at it rather than running the row's rule.
+        newRowDefaults: () => ({ id: 0, name: "Ny", age: 0, note: "" }),
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button type="button" onClick={() => grid.edit.addRow()}>
+              add
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+    await user.click(screen.getByRole("button", { name: "Add row" }));
+
+    expect(adds.length).toBe(0);
+    expect(await screen.findByText("A new row needs an age")).toBeInTheDocument();
   });
 
   function BatchGrid({
