@@ -130,6 +130,11 @@ trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize` and
 written into `columnSizing`, so it persists with the other widths and a later
 drag takes over from it.
 
+`meta.autoSize` waits for content: on a grid whose rows are fetched, the first
+render has a header and no cells, and a width measured there would fit the title
+alone. The column is sized on the render its first cells appear in, whenever
+that is.
+
 `autosizeColumn({ table, columnId, container })` is exported for menus and
 consumer code; `container` is the grid's scroll container, or any ancestor of
 the column's cells.
@@ -183,7 +188,7 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `enableColumnResizing` | Table option | `boolean` | `true` | `false` leaves the divider as a separator only. |
 | `enableResizing` | Column option | `boolean` | `true` | `false` for one column. |
 | `meta.flex` | Column meta | `number` | `1` | Share of the remaining width. |
-| `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once after the first rows render. |
+| `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once, on the render the column's first cells appear in. |
 | `minSize` / `maxSize` / `size` | Column options | `number` | `80` / – / – | Width bounds, and the fixed width once one applies. |
 | `renderColumnMenuItems` | Table prop | `({ column, table, internalItems }) => ReactNode[]` | – | The column menu's contents. An empty list removes the button. |
 | `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |

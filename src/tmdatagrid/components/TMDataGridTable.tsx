@@ -60,7 +60,7 @@ import {
   writeClipboardText,
   type TMDataGridCellExportOptions,
 } from "../core/cellExport";
-import { autosizeColumn } from "../core/autosize";
+import { autosizeColumn, hasMountedCells } from "../core/autosize";
 import {
   getDisplayedRows,
   getSelectableRowIds,
@@ -768,22 +768,43 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     renderDetails !== undefined && !row.getIsGrouped() && row.getIsExpanded();
 
   /**
-   * `meta.autoSize` columns, sized once after the first rows are in the DOM.
-   * A ref rather than an effect dependency: this must run exactly once per
-   * mount, and only for columns no persisted or user width already covers -
-   * autosizing again on data changes would fight a width the user has since
-   * dragged.
+   * `meta.autoSize` columns, sized once each after the first rows are in the
+   * DOM.
+   *
+   * The wait is the whole point. The virtualizer measures its scroll element in
+   * an effect and mounts its first rows in the render that follows, so on the
+   * mounting commit this column has a header and no cells - and autosize would
+   * fit the header alone, which is the width it kept for the rest of the
+   * session. So the ids are held in a set and each one is dropped only once it
+   * has actually been measured against mounted content.
+   *
+   * A ref rather than an effect dependency: a column is sized once per mount,
+   * and only while no persisted or user width covers it - autosizing again on a
+   * data change would fight a width the user has since dragged. Built from
+   * every leaf column rather than the visible ones, so a column hidden at mount
+   * is still sized when it is shown.
    */
-  const autoSizedRef = useRef(false);
+  const pendingAutoSizeRef = useRef<Set<string> | null>(null);
   useEffect(() => {
-    if (autoSizedRef.current) return;
-    autoSizedRef.current = true;
     const container = scrollContainerRef.current;
     if (container === null) return;
-    for (const column of orderedColumns) {
-      if (column.columnDef.meta?.autoSize !== true) continue;
-      if (column.id in table.store.state.columnSizing) continue;
-      autosizeColumn({ table, columnId: column.id, container });
+    pendingAutoSizeRef.current ??= new Set(
+      table
+        .getAllLeafColumns()
+        .filter((column) => column.columnDef.meta?.autoSize === true)
+        .map((column) => column.id),
+    );
+    const pending = pendingAutoSizeRef.current;
+    if (pending.size === 0) return;
+
+    for (const columnId of [...pending]) {
+      if (columnId in table.store.state.columnSizing) {
+        pending.delete(columnId);
+        continue;
+      }
+      if (!hasMountedCells(container, columnId)) continue;
+      autosizeColumn({ table, columnId, container });
+      pending.delete(columnId);
     }
   });
 

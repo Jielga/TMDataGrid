@@ -54,7 +54,7 @@ the `edit` engine you drive at runtime.
 | `options` | `TMDataGridOptionsSource` | - | The choices of a `select` / `multiSelect` column. See [Options](#options). |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment, applied to both header and cells. |
-| `autoSize` | `boolean` | `false` | Fit the column to its content once, after the first rows render. |
+| `autoSize` | `boolean` | `false` | Fit the column to its content once, on the render its first cells appear in. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
 | `filter` | `TMDataGridColumnFilterOptions` | - | How this column filters. See [meta.filter](#metafilter). |
 | `edit` | `TMDataGridColumnEditOptions` | - | How this column is edited. See [meta.edit](#metaedit). |

@@ -37,12 +37,40 @@ function contentSpanWidth(content: HTMLElement): number {
   return width > 0 ? width : content.scrollWidth;
 }
 
+/** One column's body cells that are currently in the DOM. */
+function mountedCells(
+  container: HTMLElement,
+  columnId: string,
+): NodeListOf<HTMLElement> {
+  const id = CSS.escape(columnId);
+  return container.querySelectorAll<HTMLElement>(
+    `[role="cell"][data-column-id="${id}"],` +
+      `[role="gridcell"][data-column-id="${id}"]`,
+  );
+}
+
+/**
+ * Whether this column has any body cell in the DOM to measure.
+ *
+ * A caller sizing a column on its own schedule rather than from a gesture has
+ * to ask: the virtualizer mounts its first rows a render *after* the grid
+ * itself mounts, and a measurement taken before that fits the header alone.
+ */
+export function hasMountedCells(
+  container: HTMLElement,
+  columnId: string,
+): boolean {
+  return mountedCells(container, columnId).length > 0;
+}
+
 /**
  * Widest rendered content of one column, in px, measured from the DOM.
  *
  * Mounted cells only: under virtualization the unmounted rows do not exist to
  * be measured, so this reads the visible window plus overscan - the same
- * trade AG Grid's autosize makes by default.
+ * trade AG Grid's autosize makes by default. With no rows mounted at all the
+ * header is the only thing left to measure, which is a width that fits the
+ * title and nothing else - see `hasMountedCells`.
  */
 export function measureColumnContentWidth({
   container,
@@ -54,11 +82,7 @@ export function measureColumnContentWidth({
 }): number {
   let widest = 0;
 
-  const cells = container.querySelectorAll<HTMLElement>(
-    `[role="cell"][data-column-id="${CSS.escape(columnId)}"],` +
-      `[role="gridcell"][data-column-id="${CSS.escape(columnId)}"]`,
-  );
-  for (const cell of cells) {
+  for (const cell of mountedCells(container, columnId)) {
     const content = cell.firstElementChild;
     if (!(content instanceof HTMLElement)) continue;
     const styles = getComputedStyle(cell);
