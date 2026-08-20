@@ -17,20 +17,26 @@ const grid = useTMDataGrid({
 });
 ```
 
-`getRowId` is **required**: drafts are keyed by row id, and the index fallback
-would point a draft at a different record after any sort.
 `@tanstack/react-form` becomes a peer dependency once editing is used.
 
-The editing options travel together, and the types say so: setting any of them
-without `editMode` is a compile error (they would act on nothing), the moment
-`editMode` is set `getRowId` stops being optional, and `onEditCommitBatch` only
-exists under `editMode: "batch"` - the one mode whose `submitAll` calls it.
-Batch *without* `onEditCommitBatch` stays legal; `submitAll` falls back to the
-per-row `onEditCommit` loop.
+## What requires what
+
+The editing options travel together, and the types enforce it: each line below
+is a compile error, not an option that silently does nothing.
+
+| This option | Requires | Because |
+| --- | --- | --- |
+| `onEditCommit` · `onEditCommitBatch` · `isRowEditable` · `rowValidators` · `newRowDefaults` · `onRowAdd` · `onRowDelete` | `editMode` | Without a mode there is no editing for them to act on |
+| `editMode` | `getRowId` | Drafts are keyed by row id, and the index fallback would name a different record after any sort |
+| `onEditCommitBatch` | `editMode: "batch"` | `submitAll` is its only caller |
+
+`editMode: "batch"` *without* `onEditCommitBatch` is fine: `submitAll` falls
+back to the per-row `onEditCommit` loop.
 
 ## The four modes
 
-`editMode` is one axis, and each mode is a policy over the same engine.
+All four run the same engine and the same forms. `editMode` decides two things:
+what counts as a commit, and what chrome asks for it.
 
 | Mode | Commit | Cancel | Chrome |
 | --- | --- | --- | --- |
@@ -65,8 +71,7 @@ Double-clicking a cell opens the same whole row, with the caret in the cell
 that was clicked.
 
 Rows **accumulate**: opening a second row leaves the first one open, and each
-row's ✓ and ✕ act on that row alone. Nothing about one row's draft bears on
-another's, so no row is ever closed or saved to make space for the next.
+row's ✓ and ✕ act on that row alone.
 
 ```demo
 file: editing/RowEditing.tsx
