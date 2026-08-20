@@ -19,8 +19,15 @@ all, and **Reset layout**. It is rendered by `TMDataGrid.ColumnsButton` and
 exported for custom layouts.
 
 `enableHiding: false` removes all of it; on a column it removes that column's
-menu item and disables its checkbox in the panel. The state is TanStack's
+menu item and leaves it out of the panel, which lists what can be hidden and
+nothing else. Show/hide all covers the same list, so a column switched off this
+way keeps whatever visibility it was given. The state is TanStack's
 `columnVisibility`.
+
+The generated lanes are all `enableHiding: false` and so never appear: the
+checkbox and edit lanes hold controls the grid needs to work, the tree column
+follows the grouping state, and the row-number gutter follows
+`enableRowNumbers`. None of them is a user setting.
 
 ## Pinning
 
@@ -35,6 +42,10 @@ source, so pinning does not change a column's position relative to its group.
 A pinned column also becomes fixed-width: sticky offsets are computed from
 `getSize()`, which cannot resolve an `fr` value. The grid stores the column's
 rendered width in `columnSizing` at the moment it is pinned, so nothing jumps.
+
+The generated lanes keep the outside of both pinned lanes: pinning a column
+right puts it to the left of the edit lane, so the row's Save, Cancel and
+Delete stay the last thing in the row.
 
 ## Ordering
 
@@ -179,6 +190,7 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
+| `keepGeneratedColumnsOutermost` | Export | `(columnPinning) => ColumnPinningState` | – | Puts the generated lanes back on the outside of both pinned lanes. The grid runs it after every pin. |
 | `getColumnRegion` | Export | `(column) => "left" \| "center" \| "right"` | – | Which pinned region a column is in. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `TMDataGrid.ColumnsButton` · `TMDataGrid.ColumnsPanel` | Components | – | – | Manage columns, and Reset layout. |

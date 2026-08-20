@@ -6,6 +6,7 @@ import {
 } from "./filterOperators";
 import { DETAILS_COLUMN_ID } from "../components/TMDataGridDetailsColumn";
 import { EDIT_COLUMN_ID } from "../components/TMDataGridEditColumn";
+import { GROUP_COLUMN_ID } from "../components/TMDataGridGroupColumn";
 import { ROW_NUMBER_COLUMN_ID } from "../components/TMDataGridRowNumberColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import type { TMDataGridRowData } from "../TMDataGridContext";
@@ -111,6 +112,19 @@ export function isControlColumn(columnId: string): boolean {
     columnId === EDIT_COLUMN_ID ||
     columnId === ROW_NUMBER_COLUMN_ID
   );
+}
+
+/**
+ * Whether the grid generated this column rather than the consumer declaring it
+ * - the four control lanes plus the tree column.
+ *
+ * These hold the grid's own chrome, and they keep the edges of the row: the
+ * generated left lanes before every consumer column, the edit lane after all of
+ * them. `isControlColumn` answers a narrower question about layout, and leaves
+ * the tree column out because it is padded like a data column.
+ */
+export function isGeneratedColumn(columnId: string): boolean {
+  return isControlColumn(columnId) || columnId === GROUP_COLUMN_ID;
 }
 
 /**

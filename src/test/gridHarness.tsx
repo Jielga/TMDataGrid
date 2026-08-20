@@ -217,6 +217,10 @@ export const gridRowCount = () =>
 export const renderedRowIds = () =>
   bodyRows().map((row) => row.getAttribute("data-row-id") ?? "");
 
+/** Column ids in the order their headers are rendered, left lane first. */
+export const renderedHeaderIds = () =>
+  parts("header").map((cell) => cell.getAttribute("data-column-id") ?? "");
+
 /**
  * Text of one column's cells, in rendered order. Cell 0 is the generated
  * checkbox column, so the defined columns start at 1.
