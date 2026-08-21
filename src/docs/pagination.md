@@ -1,8 +1,9 @@
 # Pagination
 
 **Off by default.** The grid renders every filtered and sorted row and relies
-on [virtualization](/docs/scrolling), which handles any row count - so paging
-is a choice about how the reader navigates, not a performance workaround.
+on [virtualization](/docs/scrolling), which handles any row count. Paging is
+not needed for performance. Turn it on when users should move through the data
+a page at a time.
 
 There are three modes.
 
@@ -40,9 +41,9 @@ file: data/Pagination.tsx
 extraSources: data/employeeColumns.tsx
 ```
 
-`enablePagination` is one of the two switches the grid defines itself -
-TanStack ships the state and the APIs but no `enable` option - and it is the
-one switch that defaults to **off**.
+`enablePagination` is defined by the grid rather than by TanStack, which ships
+the pagination state and APIs but no `enable` option. It is the only grid
+option that defaults to **off**.
 
 ## Replacing the pager
 
@@ -69,10 +70,9 @@ built-in pieces, already wired.
 />
 ```
 
-`Controls` is what makes this a rearrangement rather than a rebuild: the
-default footer renders `PageSize`, `Range` and `Pager` in that order, and
-nothing else. Keep the two you like, replace the third, and the ones you kept
-stay identical - including the greying out while a grouping suspends paging.
+The default footer renders `PageSize`, `Range` and `Pager`, in that order.
+Keep the ones you want and replace the rest; the ones you keep behave exactly
+as before, including greying out while a grouping suspends paging.
 
 | Member | Renders |
 | --- | --- |
@@ -86,9 +86,9 @@ and `isPagingActive`. `actions` carries `setPageIndex`, `setPageSize`,
 `previousPage`, `nextPage`, `firstPage` and `lastPage`.
 
 `getTMDataGridPaginationApi(table)` returns the same `{ state, actions }`
-outside the Footer, for a pager that lives somewhere else on the page entirely.
-`Controls` are not in it: they are components bound to the grid's context, so
-they exist only inside the slot.
+outside the Footer, for a pager that lives elsewhere on the page. `Controls` is
+not included: those components are bound to the grid's context and work only
+inside the slot.
 
 ## Grouping suspends it
 
@@ -107,10 +107,9 @@ A custom pager can grey itself out the same way:
 />
 ```
 
-`isPagingActive` is live state - whether the pager is currently slicing
-anything. `getGridCapabilities(...).canPaginate` is the *configuration*: whether
-paging is switched on at all. The two differ exactly while a grouping is
-active.
+`isPagingActive` is live state: whether the pager is currently slicing
+anything. `getGridCapabilities(...).canPaginate` is configuration: whether
+paging is switched on at all. The two differ while a grouping is active.
 
 ## Reference
 
@@ -124,5 +123,5 @@ active.
 | `TMDataGrid.Footer` | Component | – | – | The footer bar. Renders nothing when paging is off. |
 | `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
 | `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |
-| `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three halves of the slot's argument. |
+| `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three parts of the slot's argument. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything right now. |

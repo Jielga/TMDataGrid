@@ -1,7 +1,7 @@
 # Row pinning and numbering
 
-Two independent lanes at the edges of the body: rows stuck to the top or
-bottom so they stay in sight, and a gutter that counts.
+Two independent features: rows stuck to the top or bottom of the body so they
+stay in view, and a gutter numbering the rows.
 
 ## Pinning rows
 
@@ -11,16 +11,15 @@ Opt in with `enableRowPinning: true`, or a per-row predicate.
 const grid = useTMDataGrid({ data, columns, enableRowPinning: true });
 ```
 
-Pinned rows leave the scrolling order and render in sticky blocks -
-top-pinned rows under the header (and under the entry block while one is
-open), bottom-pinned rows above the summary row.
+Pinned rows leave the scrolling order and render in sticky blocks: top-pinned
+rows under the header (and under the entry block while one is open),
+bottom-pinned rows above the summary row.
 
-There is no built-in pin gesture and no pin icon.
-What the grid gives you is `row.pin()` on every row, reachable from anywhere
-you render a row.
-Two places suit it.
+There is no built-in pin gesture and no pin icon. The grid provides `row.pin()`
+on every row, callable from anywhere a row is rendered. Two places are
+convenient for it.
 
-A **lane of your own** - a display column whose cell is a pin button:
+A **lane of your own**, a display column whose cell is a pin button:
 
 ```tsx
 function PinToggle({ row }: { row: Row<TMDataGridFeatures, Employee> }) {
@@ -61,7 +60,7 @@ const pinColumn = columnHelper.display({
 });
 ```
 
-Or the **row context menu**, which reaches a row at either edge as readily as
+Or the **row context menu**, which reaches a row at either edge as easily as
 one in the body:
 
 ```tsx
@@ -79,8 +78,8 @@ one in the body:
 />
 ```
 
-Whichever you build, leave a way *back*: a row pinned by a gesture that has no
-unpin in it is a row the user cannot put down.
+Whichever you build, include a way to unpin. A pin control with no unpin leaves
+the row stuck at its edge.
 
 ```demo
 file: rows/PinningAndNumbers.tsx
@@ -95,21 +94,21 @@ string[] }`, settable wholesale with `table.setRowPinning()` or seeded through
 ### They are still body rows
 
 Selection, editing, details, the context menu and per-row styling all behave as
-they do in the body. What pinned rows sit out are the statements about
-scrolling *order* (striping and the cell range), and the row-number gutter
-leaves them unnumbered.
+they do in the body. Pinned rows are excluded only from the features that
+depend on scroll *order* - striping and the cell range - and the row-number
+gutter leaves them unnumbered.
 
-Worth knowing:
+Also note:
 
 - A pinned row stays at its edge even when a filter or the pager would have
-  dropped it from the body. Pinning means "always in sight".
-- A pinned id whose row leaves `data` (a delete, a server-side page swap) is
-  simply not shown. It stays in state, harmless, and the row returns to its
-  edge if its data comes back.
-- **Group rows never pin.** A group row is built on its first child's record,
-  so pinning one would drag an arbitrary data row's identity to the edge. A
-  leaf whose group is collapsed stays hidden while pinned.
-- `rowPinning` is **not** persisted by `settingsKey`: row ids are data, and a
+  dropped it from the body.
+- A pinned id whose row leaves `data` (a delete, a server-side page swap) is not
+  shown. It stays in state and the row returns to its edge if its data comes
+  back.
+- **Group rows never pin.** A group row is built on its first child's record, so
+  pinning one would move an arbitrary data row's identity to the edge. A leaf
+  whose group is collapsed stays hidden while pinned.
+- `rowPinning` is **not** persisted by `settingsKey`: row ids are data, and the
   layout store outlives any one data set.
 
 ## Numbering rows
@@ -121,13 +120,12 @@ lane.
 const grid = useTMDataGrid({ data, columns, enableRowNumbers: true });
 ```
 
-It numbers **the current view** - sorted, filtered, and continuing across pages
-rather than restarting at each one. So the number answers "where am I in what I
-am looking at", not "which record is this". Group rows take no number, and
-neither do pinned rows.
+It numbers **the current view**: sorted, filtered, and continuing across pages
+rather than restarting on each one. The number is a position in the current
+view, not an identifier for the record. Group rows and pinned rows take no
+number.
 
-If you need a stable identifier instead, that is a column of your own over the
-record's id.
+For a stable identifier, add a column of your own over the record's id.
 
 ## Reference
 

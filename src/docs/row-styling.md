@@ -1,7 +1,7 @@
 # Row styling
 
-Colouring rows by what is in them - an overdue invoice red, a draft greyed, a
-terminated employee struck through.
+Colouring rows by their contents: an overdue invoice in red, a draft greyed
+out, a terminated employee struck through.
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -13,26 +13,25 @@ terminated employee struck through.
 
 ```demo
 file: rows/RowStyling.tsx
-hint: Select and hover a coloured row - both still read through the row background.
+hint: Select and hover a coloured row - both still show through the row background.
 ```
 
 ## Set `--row-bg`, not `background`
 
-This is the one rule worth knowing. A row is not a single element - it is a
-strip of cells, some of them sticky in pinned lanes - and several things paint
-on top of it: hover, selection, the highlight, the cell range, striping.
+A row is not a single element. It is a strip of cells, some of them sticky in
+pinned lanes, and several things paint on top of it: hover, selection, the
+highlight, the cell range and striping.
 
-Setting `background` wins over all of them, so a coloured row stops responding
-to being hovered or selected. Setting `--row-bg` feeds the variable those
-layers are composed against, and everything keeps working on top of your
-colour.
+Setting `background` overrides all of them, so a coloured row stops responding
+to hover and selection. Setting `--row-bg` sets the variable those layers are
+composed against, so they keep working on top of your colour.
 
 ```tsx
-rowStyle={() => ({ background: "pink" })}          // hover and selection die
-rowStyle={() => ({ "--row-bg": "pink" })}          // both still read
+rowStyle={() => ({ background: "pink" })}          // hover and selection hidden
+rowStyle={() => ({ "--row-bg": "pink" })}          // both still show
 ```
 
-`rowStyle` accepts `CSSProperties` or an object of custom properties - the type
+`rowStyle` accepts `CSSProperties` or an object of custom properties. The type
 is a union, so a callback returning either compiles.
 
 ## Classes instead
@@ -63,13 +62,13 @@ virtualization rather than sticking to particular records.
 <TMDataGrid.Table striped />
 ```
 
-Pinned rows sit striping out - they have left the scrolling order, so there is
-no "every second" for them to be part of.
+Pinned rows are not striped. They have left the scrolling order, so there is no
+"every second row" for them to be part of.
 
 ## Styling by state
 
-Rows carry data attributes for everything the grid knows about them, so a
-stylesheet can reach any of it without a callback:
+Rows carry data attributes for their state, so a stylesheet can target any of
+it without a callback:
 
 | Attribute | On |
 | --- | --- |
@@ -77,9 +76,9 @@ stylesheet can reach any of it without a callback:
 | `data-selected-bg` | Selected rows that also take the background |
 | `data-highlighted` | The highlighted row |
 | `data-grouped` | Group rows |
-| `data-depth` | Every row - the nesting level |
+| `data-depth` | Every row. The nesting level |
 | `data-context-menu` | The row whose context menu is open |
-| `data-row-id` | Every row - its id, which is what [tests](/docs/testing) key off |
+| `data-row-id` | Every row. Its id, which [tests](/docs/testing) key off |
 
 ```css
 [data-dg-part="row"][data-grouped] {

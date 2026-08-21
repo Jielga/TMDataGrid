@@ -1,7 +1,7 @@
 # Grid anatomy
 
-A grid is a hook and a tree of components. The hook owns all the state; the
-components read it from context and render the parts you asked for.
+A grid is a hook and a tree of components. The hook holds the state; the
+components read it from context and render only what you include.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });
@@ -18,9 +18,8 @@ const grid = useTMDataGrid({ data, columns });
 </TMDataGrid>
 ```
 
-**Only the parts you render exist.** There is no chrome to switch off - a grid
-that is just `<TMDataGrid.Table />` has no toolbar, no footer and no search,
-because you did not put them there.
+**Only the parts you render exist.** There is nothing to switch off: a grid
+containing only `<TMDataGrid.Table />` has no toolbar, footer or search.
 
 ## Spreading the hook
 
@@ -28,9 +27,8 @@ because you did not put them there.
 <TMDataGrid {...grid} size="sm">
 ```
 
-The spread hands over `table`, `ui`, `features` and the rest as one. Assigning
-the first three individually works and is more to get wrong; spreading is the
-supported shape.
+The spread passes `table`, `ui`, `features` and the rest in one go. Passing
+them individually works, but spreading is the supported form.
 
 | Prop | Type | Description |
 | --- | --- | --- |
@@ -40,7 +38,7 @@ supported shape.
 | `size` | `MantineSize` | The [size scale](/docs/styling#the-size-scale). Defaults to `"md"`. |
 | `children` | `ReactNode` | The grid's parts, in the order you want them. |
 | `className` · `style` · `id` | – | On the root element. Set a bounded height - see [Layout](/docs/styling#layout). |
-| `data-testid` | `string` | Names the grid for [tests](/docs/testing). Worth setting when a page holds more than one. |
+| `data-testid` | `string` | Names the grid for [tests](/docs/testing). Set it when a page holds more than one grid. |
 
 ## The parts
 
@@ -60,13 +58,12 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count | [Loading and empty](/docs/loading-and-empty) |
 | `TMDataGrid.EditActions` | Save and Discard for pending edits. Also exported as `TMDataGridEditActions` | [Editing](/docs/editing#batch-editing) |
 
-`FilterPills` is the one exception to the context rule, and deliberately: an
-active-filter strip often belongs in a page header, above and outside the grid
-it describes.
+`FilterPills` is the exception to the context rule: an active-filter strip
+often belongs in a page header, outside the grid it describes.
 
 ## `TMDataGrid.Table`
 
-The scrollable surface. Its props divide cleanly by concern, and each set is
+The scrollable surface. Its props are grouped by concern, and each group is
 documented with the feature it belongs to.
 
 | Props | Concern |
@@ -85,9 +82,9 @@ Pass the row type so the handlers are typed:
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-`aria-label` is the accessible name - what a screen reader announces on entry,
-and what `getByRole("grid", { name })` matches. Worth setting on any page
-holding more than one grid.
+`aria-label` is the accessible name: what a screen reader announces on entry,
+and what `getByRole("grid", { name })` matches. Set it on any page holding more
+than one grid.
 
 ### Which rows it renders
 
