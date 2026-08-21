@@ -64,7 +64,7 @@ import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
 } from "./core/filterOperators";
-import { getColumnDefaultOperator } from "./core/columnUtils";
+import { getColumnDefaultOperator, isControlColumn } from "./core/columnUtils";
 import type { TMDataGridColumnFilterOptions } from "./core/filterControls";
 import {
   createFuzzyRankedSortedRowModel,
@@ -807,6 +807,26 @@ type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
  * request for one. Cleared here, so a grouped grid is a tree until a column
  * says otherwise - `aggregationFn: "sum"` on the column that wants it.
  */
+/**
+ * Drops the control lanes' entries from a visibility map.
+ *
+ * They are all `enableHiding: false`, but TanStack applies `columnVisibility`
+ * regardless - the option only gates `toggleVisibility` - so a stale `false`
+ * would hide a lane nothing in the grid can bring back: restored from storage
+ * written before 2.1 (when the checkbox lane was still hideable), or passed in
+ * `initialState`. The tree column is not scrubbed; its entry is the grid's own,
+ * written after this.
+ */
+function withoutControlColumnVisibility(
+  visibility: Record<string, boolean>,
+): Record<string, boolean> {
+  const scrubbed = { ...visibility };
+  for (const id of Object.keys(scrubbed)) {
+    if (isControlColumn(id)) delete scrubbed[id];
+  }
+  return scrubbed;
+}
+
 function withTMDataGridDefaults<TData extends RowData>(
   columns: ReadonlyArray<TMDataGridColumnDef<TData>>,
 ): Array<TMDataGridColumnDef<TData>> {
@@ -1008,8 +1028,10 @@ export function useTMDataGrid<TData extends RowData>({
       ...options.initialState,
       ...persistedState,
       columnVisibility: {
-        ...options.initialState?.columnVisibility,
-        ...persistedState.columnVisibility,
+        ...withoutControlColumnVisibility({
+          ...options.initialState?.columnVisibility,
+          ...persistedState.columnVisibility,
+        }),
         // Last word, because the tree column's visibility is not a user setting
         // - it tracks the grouping state. See the effect below.
         ...(groupColumnEnabled
@@ -1302,7 +1324,7 @@ export function useTMDataGrid<TData extends RowData>({
     const grouping = [...(initial?.grouping ?? [])];
     table.setGrouping(grouping);
     table.setColumnVisibility({
-      ...initial?.columnVisibility,
+      ...withoutControlColumnVisibility({ ...initial?.columnVisibility }),
       // The tree lane's visibility tracks the grouping, never the user.
       ...(groupColumnEnabled ? { [GROUP_COLUMN_ID]: grouping.length > 0 } : {}),
     });

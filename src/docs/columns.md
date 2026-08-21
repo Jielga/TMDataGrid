@@ -54,7 +54,7 @@ the `edit` engine you drive at runtime.
 | `options` | `TMDataGridOptionsSource` | - | The choices of a `select` / `multiSelect` column. See [Options](#options). |
 | `flex` | `number` | `1` | Share of the remaining width. |
 | `align` | `"left" \| "right" \| "center"` | `"left"` | Alignment, applied to both header and cells. |
-| `autoSize` | `boolean` | `false` | Fit the column to its content once, after the first rows render. |
+| `autoSize` | `boolean` | `false` | Fit the column to its content once, on the render its first cells appear in. |
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
 | `filter` | `TMDataGridColumnFilterOptions` | - | How this column filters. See [meta.filter](#metafilter). |
 | `edit` | `TMDataGridColumnEditOptions` | - | How this column is edited. See [meta.edit](#metaedit). |
@@ -178,7 +178,7 @@ that column alone.
 | --- | --- |
 | `enableSorting` | No sort indicator and no sort menu items. See [Sorting](/docs/sorting). |
 | `enableColumnFilter` | No filter menu item, and no entry in the panel's column list. |
-| `enableHiding` | No hide menu item; the checkbox is disabled in the column manager. |
+| `enableHiding` | No hide menu item, and no checkbox in the column manager. |
 | `enablePinning` | No pin menu items. |
 | `enableResizing` | The divider stays as a separator but cannot be dragged. |
 | `meta.enableOrdering` | No header dragging and no move menu items. |
@@ -190,15 +190,19 @@ Sizing, pinning, ordering and visibility are covered on
 
 Five lanes the grid adds for itself when a feature asks for them. All are
 **system lanes**: fixed width, no column menu, no resize handle, never exported,
-and not listed in the columns panel unless noted.
+never hidden, and never listed in the columns panel.
 
 | Id | Appears when | Where |
 | --- | --- | --- |
 | `ROW_NUMBER_COLUMN_ID` | `enableRowNumbers` | Outermost left, before everything. See [Row pinning and numbering](/docs/row-pinning#numbering-rows). |
-| `SELECT_COLUMN_ID` | A checkbox selection mode | First, pinned left. Listed as "Checkbox selection" and can be hidden. See [Row selection](/docs/row-selection). |
+| `SELECT_COLUMN_ID` | A checkbox selection mode | First, pinned left. See [Row selection](/docs/row-selection). |
 | `GROUP_COLUMN_ID` | A column is grouped | Front, beside the checkbox lane. See [Grouping](/docs/grouping). |
-| `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. Cannot be hidden. See [Row details](/docs/row-details). |
-| `EDIT_COLUMN_ID` | `editMode: "row"` | Appended, pinned right. See [Editing](/docs/editing). |
+| `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. See [Row details](/docs/row-details). |
+| `EDIT_COLUMN_ID` | `editMode: "row"` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
+
+Hiding one is not offered: each holds a control the grid needs - the row's
+checkbox, its Save and Delete - or tracks a feature's state rather than a
+setting of its own.
 
 The checkbox lane cannot be moved, which is what anchors the left pinned region:
 no column can be placed in front of it.
@@ -217,4 +221,5 @@ no column can be placed in front of it.
 | `resolveColumnOptions` | Export | `({ table, column, row? }) => options` | – | Normalises all three `meta.options` forms. |
 | `optionsToComboboxData` | Export | `(options) => ComboboxData` | – | Options as Mantine `Select` data. |
 | `getColumnLabel` · `getColumnType` · `isControlColumn` | Exports | `(column) => …` | – | What the chrome uses to read a column. |
+| `isGeneratedColumn` | Export | `(columnId) => boolean` | – | Whether the grid generated the column - the four control lanes plus the tree column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | `string` | – | Ids of the five generated lanes. |

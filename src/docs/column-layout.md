@@ -19,8 +19,15 @@ all, and **Reset layout**. It is rendered by `TMDataGrid.ColumnsButton` and
 exported for custom layouts.
 
 `enableHiding: false` removes all of it; on a column it removes that column's
-menu item and disables its checkbox in the panel. The state is TanStack's
+menu item and leaves it out of the panel, which lists what can be hidden and
+nothing else. Show/hide all covers the same list, so a column switched off this
+way keeps whatever visibility it was given. The state is TanStack's
 `columnVisibility`.
+
+The generated lanes are all `enableHiding: false` and so never appear: the
+checkbox and edit lanes hold controls the grid needs to work, the tree column
+follows the grouping state, and the row-number gutter follows
+`enableRowNumbers`. None of them is a user setting.
 
 ## Pinning
 
@@ -35,6 +42,10 @@ source, so pinning does not change a column's position relative to its group.
 A pinned column also becomes fixed-width: sticky offsets are computed from
 `getSize()`, which cannot resolve an `fr` value. The grid stores the column's
 rendered width in `columnSizing` at the moment it is pinned, so nothing jumps.
+
+The generated lanes keep the outside of both pinned lanes: pinning a column
+right puts it to the left of the edit lane, so the row's Save, Cancel and
+Delete stay the last thing in the row.
 
 ## Ordering
 
@@ -119,6 +130,11 @@ trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize` and
 written into `columnSizing`, so it persists with the other widths and a later
 drag takes over from it.
 
+`meta.autoSize` waits for content: on a grid whose rows are fetched, the first
+render has a header and no cells, and a width measured there would fit the title
+alone. The column is sized on the render its first cells appear in, whenever
+that is.
+
 `autosizeColumn({ table, columnId, container })` is exported for menus and
 consumer code; `container` is the grid's scroll container, or any ancestor of
 the column's cells.
@@ -172,13 +188,14 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `enableColumnResizing` | Table option | `boolean` | `true` | `false` leaves the divider as a separator only. |
 | `enableResizing` | Column option | `boolean` | `true` | `false` for one column. |
 | `meta.flex` | Column meta | `number` | `1` | Share of the remaining width. |
-| `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once after the first rows render. |
+| `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once, on the render the column's first cells appear in. |
 | `minSize` / `maxSize` / `size` | Column options | `number` | `80` / – / – | Width bounds, and the fixed width once one applies. |
 | `renderColumnMenuItems` | Table prop | `({ column, table, internalItems }) => ReactNode[]` | – | The column menu's contents. An empty list removes the button. |
 | `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
+| `keepGeneratedColumnsOutermost` | Export | `(columnPinning) => ColumnPinningState` | – | Puts the generated lanes back on the outside of both pinned lanes. The grid runs it after every pin. |
 | `getColumnRegion` | Export | `(column) => "left" \| "center" \| "right"` | – | Which pinned region a column is in. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `TMDataGrid.ColumnsButton` · `TMDataGrid.ColumnsPanel` | Components | – | – | Manage columns, and Reset layout. |

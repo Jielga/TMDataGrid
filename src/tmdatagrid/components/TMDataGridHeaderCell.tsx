@@ -15,6 +15,7 @@ import { autosizeColumn } from "../core/autosize";
 import {
   getColumnRegion,
   getStepTargetColumn,
+  keepGeneratedColumnsOutermost,
   moveColumn,
   moveColumnByStep,
   type TMDataGridDropSide,
@@ -238,6 +239,10 @@ export function TMDataGridHeaderCell({
       }
     }
     column.pin(position);
+    // `pin("right")` appends, which would leave the column outside the edit
+    // lane. Normalising after the pin rather than writing the lane by hand
+    // keeps TanStack's own handling of a header group's leaves.
+    table.setColumnPinning(keepGeneratedColumnsOutermost);
   }
 
   const menuItems: ReactNode[] = [];

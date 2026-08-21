@@ -65,14 +65,22 @@ const grid = useTMDataGrid({
 </TMDataGrid>;
 ```
 
-The editing options travel together, and the types say so: passing any of them
-without `editMode` is a compile error, `getRowId` stops being optional the
-moment `editMode` is set, and `onEditCommitBatch` exists only under
-`editMode: "batch"`.
+The editing options travel together, and the types enforce it. Each line below
+is a compile error, not an option that silently does nothing.
+
+| This option | Requires |
+| --- | --- |
+| `onEditCommit` · `onEditCommitBatch` · `isRowEditable` · `rowValidators` · `newRowDefaults` · `onRowAdd` · `onRowDelete` | `editMode` |
+| `editMode` | `getRowId` |
+| `onEditCommitBatch` | `editMode: "batch"` |
+
+`editMode: "batch"` without `onEditCommitBatch` is fine: `submitAll` falls back
+to the per-row `onEditCommit` loop.
 
 ## The four modes
 
-One axis, four policies over the same engine.
+All four run the same engine and the same forms. `editMode` decides what counts
+as a commit, and what chrome asks for it.
 
 | Mode | Commits on | Cancels on | Chrome |
 | --- | --- | --- | --- |
@@ -97,8 +105,7 @@ so a `meta.edit.editor` gets it without doing anything to earn it.
 Under `"row"` the pencil - or a double-click on any cell, which puts the caret
 in the cell clicked - opens every editable cell of the row, and ✓ saves them as
 one commit. Rows accumulate: opening a second row leaves the first open, and
-each row's ✓ and ✕ act on that row alone, so no row is closed or saved to make
-space for the next.
+each row's ✓ and ✕ act on that row alone.
 
 Under `"batch"` nothing leaves the grid until `submitAll`. Enter and Tab park
 the draft, dirty-marked, Escape drops that one draft, and drafts accumulate

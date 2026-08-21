@@ -3,11 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
   bodyRows,
+  clickMenuItem,
   Grid,
   gridRowCount,
   header,
   makeRows,
   part,
+  parts,
+  renderedHeaderIds,
   queryPart,
   renderedColumn,
   renderedRowIds,
@@ -21,6 +24,8 @@ import {
 } from "../../test/gridHarness";
 import { aggregateColumn } from "../core/summary";
 import { TMDATAGRID_LABELS_SV } from "../core/labelsSv";
+import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
+import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { TMDataGrid } from "./TMDataGrid";
 import {
@@ -208,6 +213,66 @@ describe("column visibility", () => {
     await user.click(screen.getByRole("button", { name: "RESET LAYOUT" }));
 
     expect(header("city")).toBeInTheDocument();
+  });
+
+  it("leaves the generated lanes out of the panel", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ enableRowNumbers: true, initialState: { grouping: ["city"] } });
+
+    await user.click(screen.getByRole("button", { name: "Manage columns" }));
+
+    // Chrome the grid generated, not a column the consumer declared: the
+    // checkbox lane, the row-number gutter and the tree column are all
+    // `enableHiding: false`, so none of them is a setting to offer.
+    expect(parts("columns-toggle").map((box) => box.dataset.columnId)).toEqual([
+      "id",
+      "name",
+      "age",
+    ]);
+  });
+
+  it("show/hide all leaves a lane the panel never listed alone", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Manage columns" }));
+    // Off, then on again. The tree column is hidden because nothing is grouped,
+    // not because anyone hid it, and the checkbox lane is not a setting either:
+    // neither pass may touch them. `table.toggleAllColumnsVisible` writes an
+    // entry for every leaf column, which is what published the tree column.
+    await user.click(part("columns-toggle-all"));
+    expect(queryPart("header", { columnId: GROUP_COLUMN_ID })).not.toBeInTheDocument();
+    expect(part("select-all")).toBeInTheDocument();
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
+
+    await user.click(part("columns-toggle-all"));
+    expect(queryPart("header", { columnId: GROUP_COLUMN_ID })).not.toBeInTheDocument();
+    expect(part("select-all")).toBeInTheDocument();
+    expect(header("city")).toBeInTheDocument();
+  });
+
+  // enableHiding: false only gates toggleVisibility - TanStack applies a
+  // `columnVisibility` entry regardless - so without the scrub a stale `false`
+  // would hide a lane the panel no longer lists and cannot bring back.
+  it("ignores a visibility entry for a control lane in initialState", () => {
+    renderGridUi({
+      initialState: { columnVisibility: { [SELECT_COLUMN_ID]: false } },
+    });
+
+    expect(part("select-all")).toBeInTheDocument();
+  });
+
+  it("ignores a persisted visibility entry for a control lane", () => {
+    // The payload a pre-2.1 session left behind, when the lane was hideable.
+    localStorage.setItem(
+      "s",
+      JSON.stringify({ __v: 1, columnVisibility: { [SELECT_COLUMN_ID]: false, city: false } }),
+    );
+    renderGridUi({ persist: { settingsKey: "s" } });
+
+    expect(part("select-all")).toBeInTheDocument();
+    // The user's own hidden column still restores.
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
   });
 });
 
@@ -450,6 +515,21 @@ describe("column menu", () => {
   });
 });
 
+describe("column pinning", () => {
+  it("keeps the edit lane outside a column the user pins right", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ editMode: "row", onEditCommit: () => {} });
+
+    await clickMenuItem(user, "City", "Pin to right");
+
+    // The row's Save and Cancel stay the last thing in the row: a column pinned
+    // right lands to the left of the lane, not outside it. `column.pin("right")`
+    // appends, so this is the grid putting the lane back on the edge.
+    expect(renderedHeaderIds().at(-1)).toBe(EDIT_COLUMN_ID);
+    expect(renderedHeaderIds().at(-2)).toBe("city");
+  });
+});
+
 describe("labels", () => {
   it("renders the chrome in Swedish from the preset", async () => {
     renderGridUi({ labels: TMDATAGRID_LABELS_SV });
@@ -476,14 +556,14 @@ describe("labels", () => {
     expect(screen.getByText("No rows to show")).toBeInTheDocument();
   });
 
-  it("puts the localized label on the generated lane's column meta", async () => {
-    const user = userEvent.setup();
-    renderGridUi({ labels: TMDATAGRID_LABELS_SV });
+  it("puts the localized label on the generated lane's column meta", () => {
+    // Read off the column rather than out of the columns panel: a generated
+    // lane cannot be hidden, so the panel does not list it.
+    const { result } = renderGrid({ labels: TMDATAGRID_LABELS_SV });
 
-    await user.click(screen.getByRole("button", { name: "Hantera kolumner" }));
     expect(
-      await screen.findByRole("checkbox", { name: "Kryssrutemarkering" }),
-    ).toBeInTheDocument();
+      result.current.table.getColumn(SELECT_COLUMN_ID)?.columnDef.meta?.label,
+    ).toBe("Kryssrutemarkering");
   });
 });
 

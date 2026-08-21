@@ -225,6 +225,10 @@ export function createEditColumn<TData extends RowData>(
     enableSorting: false,
     enableColumnFilter: false,
     enableGlobalFilter: false,
+    // The row's Save, Cancel and Delete live here, so hiding the lane would
+    // strand an open row with no way to commit or discard it. Same rule as the
+    // checkbox lane: chrome the grid generates is not a user setting.
+    enableHiding: false,
     // Structurally pinned to the right; not movable.
     enablePinning: false,
     header: () => null,

@@ -97,6 +97,9 @@ Splitting or renaming a docs page means fixing the `sources:` of every skill tha
 Changesets, and a change under `src/tmdatagrid/` needs one - the pre-commit hook refuses the commit otherwise.
 A comment, a test or a refactor with no observable effect is the case for `git commit --no-verify`.
 
+Keep a changeset short: what changed, in a line or a short list.
+Reasoning belongs in the code comments; the only thing worth spelling out is a workaround a consumer has to know about.
+
 `CHANGELOG.md` and the `library_version` in each `SKILL.md` are generated; `npm run version-packages` writes both.
 Never edit them by hand.
 

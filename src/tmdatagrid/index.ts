@@ -128,6 +128,7 @@ export {
   isColumnEditableForRow,
   isColumnReorderable,
   isControlColumn,
+  isGeneratedColumn,
 } from "./core/columnUtils";
 export { getGroupDataRows } from "./core/grouping";
 export {
@@ -174,6 +175,7 @@ export {
 export {
   getColumnRegion,
   getStepTargetColumn,
+  keepGeneratedColumnsOutermost,
   moveColumn,
   moveColumnByStep,
   type ColumnStepArgs,

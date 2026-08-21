@@ -1,8 +1,14 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { MantineWrapper, renderGrid, type TestRow } from "../../test/gridHarness";
+import {
+  MantineWrapper,
+  renderGrid,
+  testRows,
+  type TestRow,
+} from "../../test/gridHarness";
 import { TMDataGrid } from "../components/TMDataGrid";
 import { autosizeColumn, measureColumnContentWidth } from "./autosize";
+import { useTMDataGrid, type TMDataGridApi } from "../useTMDataGrid";
 
 /**
  * jsdom lays nothing out, so `scrollWidth` is always 0 there. The tests stub
@@ -136,5 +142,79 @@ describe("autosizeColumn", () => {
         container: detached,
       }),
     ).toBe(false);
+  });
+});
+
+describe("meta.autoSize", () => {
+  /**
+   * The one thing this has to prove: the width comes from the data, not from
+   * the header. The virtualizer mounts its first rows a render after the grid
+   * does, so a pass that ran on the mounting commit alone would see the title
+   * and nothing else - "City" is narrower than "Stockholm", and narrower than
+   * the column's own minSize, so a header-only measurement is visible as the
+   * floor rather than as the content width.
+   */
+  const autoSizedColumns = [
+    { accessorKey: "city", header: "City", minSize: 120, meta: { autoSize: true } },
+  ];
+
+  it("fits the column to its mounted content once the rows arrive", async () => {
+    stubScrollWidth(16);
+    const { result } = renderGrid({ columns: autoSizedColumns } as never);
+    renderTable(result);
+
+    await waitFor(() =>
+      expect(
+        result.current.table.store.state.columnSizing["city"],
+      ).toBeGreaterThan(120),
+    );
+  });
+
+  it("waits for data that arrives after the mount", async () => {
+    // The case the demos never hit: a grid whose rows are fetched. It mounts
+    // empty, so the only thing in the DOM to measure is the header - a width
+    // that fits the title and nothing else, and used to be the one the column
+    // kept for good.
+    stubScrollWidth(16);
+
+    function AsyncGrid({ rows }: { rows: Array<TestRow> }) {
+      const grid = useTMDataGrid<TestRow>({
+        data: rows,
+        columns: autoSizedColumns as never,
+        getRowId: (row) => String(row.id),
+      });
+      apiRef = grid;
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+    let apiRef: TMDataGridApi<TestRow> | null = null;
+
+    const empty: Array<TestRow> = [];
+    const { rerender } = render(<AsyncGrid rows={empty} />, {
+      wrapper: MantineWrapper,
+    });
+    expect(apiRef!.table.store.state.columnSizing["city"]).toBeUndefined();
+
+    rerender(<AsyncGrid rows={testRows} />);
+
+    await waitFor(() =>
+      expect(apiRef!.table.store.state.columnSizing["city"]).toBeGreaterThan(
+        120,
+      ),
+    );
+  });
+
+  it("leaves a column a persisted width already covers alone", () => {
+    stubScrollWidth(16);
+    const { result } = renderGrid({
+      columns: autoSizedColumns,
+      initialState: { columnSizing: { city: 200 } },
+    } as never);
+    renderTable(result);
+
+    expect(result.current.table.store.state.columnSizing["city"]).toBe(200);
   });
 });

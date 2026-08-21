@@ -9,6 +9,7 @@ const ACCENTS = ["blue", "grape", "teal", "orange"] as const;
 export function Styling() {
   const [accent, setAccent] = useState<(typeof ACCENTS)[number]>("grape");
   const [roomy, setRoomy] = useState(false);
+  const [square, setSquare] = useState(false);
 
   const grid = useTMDataGrid({
     data: EMPLOYEES,
@@ -45,6 +46,12 @@ export function Styling() {
           checked={roomy}
           onChange={(event) => setRoomy(event.currentTarget.checked)}
         />
+        <Switch
+          size="xs"
+          label="Square corners"
+          checked={square}
+          onChange={(event) => setSquare(event.currentTarget.checked)}
+        />
       </Group>
 
       <TMDataGrid
@@ -59,6 +66,9 @@ export function Styling() {
           "--dg-row-selected-bg": `var(--mantine-color-${accent}-light)`,
           "--dg-row-highlight-bg": `var(--mantine-color-${accent}-light-hover)`,
           "--dg-row-striped-bg": "var(--mantine-color-default-hover)",
+          // The frame's own radius. The root clips its overflow, so the header
+          // and the last row follow the corner it is given.
+          "--dg-radius": square ? "0" : "var(--mantine-radius-md)",
         }}
       >
         <TMDataGrid.Toolbar>

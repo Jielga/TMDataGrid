@@ -1,11 +1,13 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { erased, renderGrid, visibleColumnIds } from "../../test/gridHarness";
+import { EDIT_COLUMN_ID } from "../components/TMDataGridEditColumn";
 import { GROUP_COLUMN_ID } from "../components/TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "../components/TMDataGridSelectColumn";
 import {
   getColumnRegion,
   getStepTargetColumn,
+  keepGeneratedColumnsOutermost,
   moveColumn,
   moveColumnByStep,
 } from "./columnOrdering";
@@ -270,5 +272,24 @@ describe("moveColumnByStep", () => {
     });
 
     expect(visibleColumnIds(result.current)).toEqual(before);
+  });
+});
+
+describe("keepGeneratedColumnsOutermost", () => {
+  it("keeps the generated lanes on the outside of both pinned lanes", () => {
+    expect(
+      keepGeneratedColumnsOutermost({
+        left: ["name", SELECT_COLUMN_ID, GROUP_COLUMN_ID],
+        right: [EDIT_COLUMN_ID, "city"],
+      }),
+    ).toEqual({
+      left: [SELECT_COLUMN_ID, GROUP_COLUMN_ID, "name"],
+      right: ["city", EDIT_COLUMN_ID],
+    });
+  });
+
+  it("leaves the consumer's own order alone inside each part", () => {
+    const pinning = { left: ["id", "name"], right: ["age", "city"] };
+    expect(keepGeneratedColumnsOutermost(pinning)).toEqual(pinning);
   });
 });

@@ -52,6 +52,7 @@ from a stylesheet.
 | `--dg-entry-height` | From `size` | The sticky [entry block](/docs/editing#adding-and-deleting-rows) |
 | `--dg-font-size` | From `size` | Cell and header font size |
 | `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are exempt - they are fixed 36px tracks that centre their control. |
+| `--dg-radius` | `--mantine-radius-md` | The frame's corner radius. `0` squares the grid off; the root clips its overflow, so the header and the last row follow it. |
 
 ### Colours
 

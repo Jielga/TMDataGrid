@@ -1,6 +1,6 @@
 import type { Column, ColumnPinningState } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
-import { isColumnReorderable } from "./columnUtils";
+import { isColumnReorderable, isGeneratedColumn } from "./columnUtils";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 type GridColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
@@ -81,6 +81,35 @@ export function moveColumn({
       [region]: moveInList(previous[region], columnId, targetId, side),
     }));
   }
+}
+
+/**
+ * Puts the generated lanes back on the outside of both pinned lanes: the ones
+ * on the left before every consumer column, the edit lane after all of them.
+ *
+ * `column.pin("right")` appends, so pinning a column right would otherwise drop
+ * it outside the edit lane - the row's Save and Delete would no longer be the
+ * last thing in the row. Pinning left appends too, which is already the right
+ * answer there, but the same pass keeps both lanes honest whatever a consumer
+ * writes into `columnPinning` directly.
+ *
+ * Relative order is preserved inside each part, so a user's own arrangement of
+ * the pinned columns survives.
+ */
+export function keepGeneratedColumnsOutermost(
+  pinning: ColumnPinningState,
+): ColumnPinningState {
+  const generated = (id: string) => isGeneratedColumn(id);
+  return {
+    left: [
+      ...pinning.left.filter(generated),
+      ...pinning.left.filter((id) => !generated(id)),
+    ],
+    right: [
+      ...pinning.right.filter((id) => !generated(id)),
+      ...pinning.right.filter(generated),
+    ],
+  };
 }
 
 /** Visible leaf columns of one lane, in the order they render. */

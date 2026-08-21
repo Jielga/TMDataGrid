@@ -177,6 +177,11 @@ export function createSelectColumn<TData extends RowData>(
     enableSorting: false,
     enableColumnFilter: false,
     enableGlobalFilter: false,
+    // Not a column the user chose, so not one they can switch off: hiding the
+    // lane would take the grid's only way to select a row with it, with the
+    // row-selection state left behind and no way back to it. Keeping it out of
+    // "Manage columns" follows from this - the panel lists what can be hidden.
+    enableHiding: false,
     // Structurally pinned to the left; users shouldn't be able to move it.
     enablePinning: false,
     header: ({ table }) => <SelectAllHeader table={table} />,
