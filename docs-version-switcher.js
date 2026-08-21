@@ -25,6 +25,22 @@
     return path.indexOf(base) === 0 ? "/" + path.slice(base.length) : "/";
   }
 
+  /**
+   * These builds put the version npm serves today in the header, next to the
+   * wordmark and linked to the registry. On a frozen copy that is some other
+   * version entirely - "v2.0.0-beta.0" sitting above the 1.0.2 documentation -
+   * and it reads as the badge naming the page, which the select below now is.
+   *
+   * Matched by its registry href rather than by a class, because the class
+   * names in these bundles are hashed and not ours to depend on.
+   */
+  function hideStaleBadge() {
+    var stale = document.querySelector(
+      'header a[href^="https://www.npmjs.com/package/"]',
+    );
+    if (stale) stale.style.display = "none";
+  }
+
   function render(entries) {
     var here = null;
     for (var i = 0; i < entries.length; i++) {
@@ -61,6 +77,7 @@
 
     box.appendChild(select);
     document.body.appendChild(box);
+    hideStaleBadge();
   }
 
   function start() {
