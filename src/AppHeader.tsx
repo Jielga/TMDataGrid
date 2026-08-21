@@ -12,6 +12,7 @@ import {
   IconBrandGithub,
   IconCheck,
   IconChevronDown,
+  IconExternalLink,
   IconSearch,
 } from "@tabler/icons-react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -151,11 +152,16 @@ function VersionMenu() {
         )}
 
         {versions.length + previews.length > 0 && <Menu.Divider />}
+        {/* Not a copy of the documentation and not somewhere this menu can
+            navigate to. Under the same heading as the copies it read as one
+            more of them, which is the one thing it must not do. */}
+        <Menu.Label>Package</Menu.Label>
         <Menu.Item
           component="a"
           href={NPM_PAGE}
           target="_blank"
           rel="noreferrer"
+          rightSection={<IconExternalLink size={13} stroke={1.8} />}
         >
           {npmVersion ? `v${npmVersion} on npm` : "This package on npm"}
         </Menu.Item>
