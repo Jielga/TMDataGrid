@@ -21,15 +21,19 @@ async function run({
   slug,
   pathname,
   manifest = MANIFEST,
+  header = true,
 }: {
   slug: string;
   pathname: string;
   manifest?: unknown;
+  /** Whether the page has the header these copies shipped with. */
+  header?: boolean;
 }) {
   window.history.replaceState({}, "", pathname);
-  document.body.innerHTML =
-    '<header><a href="https://www.npmjs.com/package/@jielga/tmdatagrid">' +
-    "v2.0.0-beta.0</a></header>";
+  document.body.innerHTML = header
+    ? '<header><a href="https://www.npmjs.com/package/@jielga/tmdatagrid">' +
+      "v2.0.0-beta.0</a></header>"
+    : "";
 
   const script = document.createElement("script");
   script.setAttribute("data-site-root", "/TMDataGrid/");
@@ -111,6 +115,23 @@ describe("the standalone version switcher", () => {
 
     const badge = document.querySelector<HTMLElement>("header a");
     expect(badge?.style.display).toBe("none");
+  });
+
+  // Floating it over the corner put it on top of the controls already there.
+  it("stands in the header, where that version stood", async () => {
+    await run({ slug: "root", pathname: "/TMDataGrid/" });
+
+    const select = document.querySelector("select");
+    expect(select?.closest("header")).not.toBeNull();
+    expect(select?.closest("[style*='position:fixed']")).toBeNull();
+  });
+
+  it("falls back to the corner when the header is shaped some other way", async () => {
+    await run({ slug: "root", pathname: "/TMDataGrid/", header: false });
+
+    const box = document.querySelector<HTMLElement>("[role='group']");
+    expect(box?.parentElement).toBe(document.body);
+    expect(box?.style.position).toBe("fixed");
   });
 
   it("leaves the header alone when it renders nothing", async () => {
