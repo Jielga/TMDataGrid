@@ -1,16 +1,17 @@
 {
   "entries": [
     {
+      "path": "v2.0",
+      "label": "2.0.0-beta.0",
+      "version": "2.0.0-beta.0",
+      "kind": "prerelease",
+      "latest": true
+    },
+    {
       "path": "next",
       "label": "next",
       "version": "2.0.0-beta.0",
       "kind": "dev"
-    },
-    {
-      "path": "v2.0",
-      "label": "2.0.0-beta.0",
-      "version": "2.0.0-beta.0",
-      "kind": "prerelease"
     }
   ]
 }
