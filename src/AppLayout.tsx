@@ -3,11 +3,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import { AppHeader } from "./AppHeader";
-import {
-  DOCS_NAV_TOP,
-  docsNavSections,
-  docsPageHref,
-} from "./docs/docsPages";
+import { DOCS_NAV_TOP, docsNavSections, docsPageHref } from "./docs/docsPages";
 import { DocsSearch } from "./docs/DocsSearch";
 import { useDocsSearch } from "./docs/useDocsSearch";
 
@@ -173,7 +169,7 @@ export function AppLayout() {
                 component={Link}
                 to="/docs"
                 activeOptions={EXACT}
-                label="All pages"
+                label="Overview"
                 style={NAV_LINK_STYLE}
               />
               <DocsNav pathname={pathname} />
