@@ -117,16 +117,13 @@ function DetailsHeader<TData extends RowData>({
  * The generated details lane, prepended whenever `renderDetails` is set.
  *
  * Structural, like the checkbox and tree columns: fixed width, pinned to the
- * left after both of them, not hideable, not movable and not resizable. A
- * toggle that wandered off to the right of the grid (or hid itself) would
- * leave rows with panels no one can open.
+ * left after both of them, not hideable, not movable and not resizable. Moving
+ * or hiding the toggle would leave rows with panels that cannot be opened.
  *
- * Last of the three because it acts on one record: the checkbox picks rows out
- * and the tree says which group they are in, and only then is there a row to
- * open.
+ * Last of the three because it acts on a single record.
  *
- * Nothing stops a second toggle elsewhere: `row.toggleExpanded()` is the whole
- * interface, and this lane is only the one the grid ships.
+ * A second toggle elsewhere is supported: `row.toggleExpanded()` is the entire
+ * interface, and this lane is only the control the grid ships.
  */
 export function createDetailsColumn<TData extends RowData>(
   label = "Details",

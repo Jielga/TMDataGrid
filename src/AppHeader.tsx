@@ -34,12 +34,11 @@ import {
 } from "./packageStatus";
 
 /**
- * The site header: what this is, which version, and the way in to everything -
- * the shape every library documentation site has settled on.
+ * The site header: what this is, which version, and the way in to everything.
  *
  * The search button is styled as an input rather than being one. A real input
- * here would take focus on click and then have to hand it to the palette's
- * own field; a button opens the palette and the palette owns the typing.
+ * here would take focus on click and then have to hand it to the palette's own
+ * field; a button opens the palette and the palette handles the typing.
  *
  * The version badge names the copy of the documentation you are reading, not
  * the version on npm. Several copies are published side by side, so "which one
@@ -185,7 +184,7 @@ export function AppHeader({ onSearch }: { onSearch: () => void }) {
       >
         <IconSearch size={15} stroke={1.8} />
         <span className={classes.searchLabel}>Search…</span>
-        {/* Not a hint the reader has to have read: the palette answers Ctrl+K
+        {/* Not a hint anyone has to have read: the palette answers Ctrl+K
             whether or not this is on screen. */}
         <Kbd size="xs" className={classes.shortcut}>
           Ctrl K

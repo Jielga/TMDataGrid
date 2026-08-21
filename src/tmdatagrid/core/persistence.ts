@@ -6,11 +6,11 @@ type GridState = TableState<TMDataGridFeatures>;
 /**
  * Persistence deliberately does not use Mantine's `useLocalStorage`.
  *
- * That hook owns a piece of state and returns `[value, setValue]`. Here the
- * table already owns the state and storage only mirrors it, so routing writes
+ * That hook holds a piece of state and returns `[value, setValue]`. Here the
+ * table already holds the state and storage only mirrors it, so routing writes
  * through the hook would keep a second copy and trigger a React state update on
  * every change, including every pointer move during a column resize. Its
- * defaults also work against this use: `getInitialValueInEffect: true` delivers
+ * defaults also conflict with this use: `getInitialValueInEffect: true` delivers
  * the stored value after mount, while `initialState` is only read on the first
  * render, and `sync: true` would let two open tabs overwrite each other's
  * column layout.

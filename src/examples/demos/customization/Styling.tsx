@@ -60,9 +60,9 @@ export function Styling() {
           flex: 1,
           minHeight: 0,
           // `style` is widened to accept custom properties, which is how the
-          // grid's own values are themed. The same variables can be set from
-          // a stylesheet through `className`, or globally in your theme -
-          // there is no separate theming API to learn.
+          // grid's own values are themed. The same variables can be set from a
+          // stylesheet through `className`, or globally in your theme. There is
+          // no separate theming API.
           "--dg-row-selected-bg": `var(--mantine-color-${accent}-light)`,
           "--dg-row-highlight-bg": `var(--mantine-color-${accent}-light-hover)`,
           "--dg-row-striped-bg": "var(--mantine-color-default-hover)",

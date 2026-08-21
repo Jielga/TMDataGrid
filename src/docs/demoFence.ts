@@ -16,9 +16,9 @@ import type { DemoBlockDemo } from "../examples/DemoBlock";
  *
  * A fence rather than MDX because the markdown has to stay markdown: it is
  * what `intent.docs` publishes, what six `SKILL.md` files cite as `sources:`,
- * and what an agent reads as plain text. Anything reading the raw file sees
- * the demo's path and its hint, which is the honest degradation - the demo
- * itself is code in a file, exactly where the fence says it is.
+ * and what an agent reads as plain text. Anything reading the raw file sees the
+ * demo's path and its hint, and the demo itself is code in a file, exactly
+ * where the fence says it is.
  */
 
 const KEYS = ["file", "hint", "height", "extraSources"] as const;

@@ -6,11 +6,11 @@ import type {
 
 /**
  * Builds the smallest file that reproduces what the example page is currently
- * showing - the "I want these features, give me the code" path.
+ * showing.
  *
- * Kept honest by only emitting what differs from a default. A grid with every
- * switch left alone comes out as `data` + `columns` + `getRowId` and nothing
- * else, which is the real API surface for the common case.
+ * Only what differs from a default is emitted. A grid with every switch left
+ * alone comes out as `data`, `columns` and `getRowId`, which is what the common
+ * case actually requires.
  */
 
 /** Options whose default is known, so they can be left out when they match. */
@@ -80,8 +80,8 @@ export function buildStarterSnippet({
   const highlight = hasHighlight(selectionMode);
   const paginated = options.enablePagination;
 
-  // Only the lines that say something. Anything omitted is a default, which is
-  // the whole point - a shorter snippet is a more readable starting point.
+  // Only the lines that differ from a default. Anything omitted is a default,
+  // which keeps the snippet short.
   const gridOptions: Array<string> = [];
 
   if (selectionMode !== DEFAULT_SELECTION_MODE) {
@@ -157,8 +157,8 @@ export function buildStarterSnippet({
     "          <TMDataGrid.SummaryCount />",
     "          <TMDataGrid.Spacer />",
   ];
-  // Both buttons hide themselves when their feature is off, so leaving them out
-  // here loses nothing and keeps the starting point honest.
+  // Both buttons render nothing when their feature is off, so leaving them out
+  // here changes nothing on screen.
   if (options.enableColumnFilters) {
     toolbar.push("          <TMDataGrid.FilterButton />");
   }

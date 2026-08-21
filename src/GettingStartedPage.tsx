@@ -6,9 +6,9 @@ import gettingStartedDoc from "./docs/getting-started.md?raw";
 import { ProjectStatus } from "./ProjectStatus";
 
 /**
- * The hero owns the page's one h1, so the document's own title comes off
- * before rendering (`\r?` - the checkout is CRLF). The markdown keeps it
- * regardless - it is also read as a plain file, from the README and the
+ * The hero renders the page's one h1, so the document's own title is stripped
+ * before rendering (`\r?`, because the checkout may be CRLF). The markdown file
+ * keeps it, since it is also read as a plain file by the README and the
  * getting-started skill.
  */
 const doc = gettingStartedDoc.replace(/^# .+\r?\n/, "");

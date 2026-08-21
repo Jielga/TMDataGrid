@@ -87,11 +87,10 @@ function SelectRowCheckbox<TData extends RowData>({
   const tabIndex = useCellControlTabIndex();
   const isGroupRow = row.subRows.length > 0;
 
-  // A group row is never selected by id: `rowSelection` only ever holds the
-  // leaves, and TanStack's `getIsSelected()` is a plain lookup in that map. So
-  // a group asks about its descendants instead, which is also the honest
-  // reading - the box means "all of these", and it goes indeterminate as soon
-  // as that stops being true.
+  // A group row is never selected by id: `rowSelection` only holds the leaves,
+  // and TanStack's `getIsSelected()` is a plain lookup in that map. A group
+  // therefore asks about its descendants instead, so the box means "all of
+  // these" and goes indeterminate as soon as that stops being true.
   const selected = useSelector(row.table.store, () =>
     isGroupRow ? row.getIsAllSubRowsSelected() : row.getIsSelected(),
   );

@@ -136,7 +136,7 @@ describe("cell selection", () => {
     await user.keyboard("{Enter}");
 
     // `tabindex="-1"` keeps it out of the tab order without putting it out of
-    // reach - which is the whole point of the pair.
+    // reach, which is what the pair is for.
     expect(focused()).toBe(within(cellAt(0, 0)).getByRole("checkbox"));
   });
 

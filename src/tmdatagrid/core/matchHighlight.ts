@@ -25,9 +25,9 @@ const HIGHLIGHTABLE_OPERATORS: ReadonlyArray<TMDataGridFilterOperator> = [
  * column filter. `null` while nothing highlightable is active, which is the
  * common case and the cheap one.
  *
- * The fuzzy quick search still contributes its raw text: when the needle
- * occurs contiguously it is highlighted, and a typo-match simply shows no
- * highlight - the honest answer to what a non-contiguous match "is".
+ * The fuzzy quick search still contributes its raw text: when the needle occurs
+ * contiguously it is highlighted, and a typo-match with no contiguous
+ * occurrence is not highlighted at all.
  */
 export function buildMatchNeedles<TData extends RowData>(
   table: TMDataGridTable<TData>,

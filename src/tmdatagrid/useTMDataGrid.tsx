@@ -123,14 +123,14 @@ import {
 const PERSIST_DEBOUNCE_MS = 200;
 
 /**
- * Per-column configuration the TMDataGrid chrome reads.
+ * Per-column configuration the grid's own components read.
  *
- * A stage that owns behaviour gets a namespace - `filter` and `edit`, each
+ * The filter and edit stages each get a namespace, `filter` and `edit`,
  * mirroring the feature's runtime API. What the column *is* stays flat:
  * `label`, `type`, `options`, `align`, `flex`, `autoSize`, `enableOrdering`.
- * `type` and `options` in particular are shared ground - one declaration of
- * each feeds the filter panel and the cell editor alike, which is why they sit
- * outside both namespaces.
+ * `type` and `options` are read by both stages, so one declaration of each
+ * feeds the filter panel and the cell editor, which is why they sit outside
+ * both namespaces.
  */
 export type TMDataGridColumnMeta = {
   /** Name shown in menus and the column manager. Falls back to a string header. */
@@ -431,8 +431,8 @@ export type TMDataGridApi<TData extends RowData> = {
    */
   scrollToRow: (args: TMDataGridScrollToRowArgs) => boolean;
   /**
-   * @internal Wiring for `TMDataGrid.Table`, which owns the virtualizer and
-   * fills this in. Not part of the supported surface.
+   * @internal Wiring for `TMDataGrid.Table`, which holds the virtualizer and
+   * fills this in. Not part of the public API.
    */
   scrollerRef: MutableRefObject<TMDataGridScroller>;
 };
@@ -470,8 +470,8 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    * draft visible with a busy marker - and a rejection keeps the form open
    * with the error on the row.
    *
-   * `changes` is the per-field diff (one entry in cell mode) for consumers
-   * who PATCH; `value` is the whole edited row for those who save records.
+   * `changes` is the per-field diff (one entry in cell mode), for a PATCH.
+   * `value` is the entire edited row, for saving a record.
    */
   onEditCommit?: (
     args: TMDataGridEditCommitArgs<TData>,
@@ -772,9 +772,9 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * Defaults to 160.
    *
    * An estimate, not a height: every mounted row is measured, so the real one
-   * takes over as soon as the panel is on screen. It keeps the scrollbar honest
-   * for panels that open off screen (restored `expanded` state, say), and being
-   * roughly right is enough.
+   * takes over as soon as the panel is on screen. It keeps the scrollbar
+   * accurate for panels that open off screen, such as restored `expanded`
+   * state. An approximate value is enough.
    */
   renderDetailsEstHeight?: number;
   /**
@@ -1262,9 +1262,9 @@ export function useTMDataGrid<TData extends RowData>({
         ),
       setCellRange: (range) =>
         setState((prev) =>
-          // Same guard as above, and it earns more here: a drag publishes a new
-          // corner on every mouse move, and most of those land on the cell the
-          // range already ends at.
+          // Same guard as above, and it matters more here: a drag publishes a
+          // new corner on every mouse move, and most of those land on the cell
+          // the range already ends at.
           isSameCell(prev.cellRange?.anchor ?? null, range?.anchor ?? null) &&
           isSameCell(prev.cellRange?.focus ?? null, range?.focus ?? null)
             ? prev
@@ -1355,8 +1355,8 @@ export function useTMDataGrid<TData extends RowData>({
   const resetSettings = useCallback(() => resetSettingsRef.current(), []);
 
   // Filled in by `TMDataGrid.Table` on every render, because only the body
-  // holds the virtualizer and the current view. Answers `false` until one is
-  // mounted, which is the honest answer: there is nothing to scroll yet.
+  // holds the virtualizer and the current view. Returns `false` until one is
+  // mounted, since there is nothing to scroll before then.
   const scrollerRef = useRef<TMDataGridScroller>(() => false);
   const scrollToRow = useCallback(
     (args: TMDataGridScrollToRowArgs) => scrollerRef.current(args),

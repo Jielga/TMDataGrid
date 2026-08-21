@@ -4,8 +4,8 @@
  * Ids, because every other thing the grid does moves cells around: sorting
  * reorders rows, filtering removes them, dragging a header reorders columns. A
  * coordinate pair would silently come to mean a different cell after any of
- * them, while a pair of ids either still resolves or does not resolve at all -
- * and "does not resolve" is a state the grid can handle honestly.
+ * them, while a pair of ids either still resolves or does not resolve at all,
+ * and the grid handles "does not resolve" explicitly.
  *
  * Indices are what navigation is actually computed in, so they are resolved
  * from the ids on each keystroke and turned straight back. See resolveCellMove.

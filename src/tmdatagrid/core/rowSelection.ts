@@ -75,9 +75,9 @@ export type ResolveRowSelectionClickArgs<TData extends RowData> = {
   /**
    * Whether this gesture is allowed to clear rows it did not touch.
    *
-   * `true` for a bare row click, where replacing is the whole point. `false` for
-   * a checkbox, which is only ever additive - ticking one box has never cleared
-   * the others, and shift-clicking one adds the range rather than becoming it.
+   * `true` for a bare row click, which replaces the selection. `false` for a
+   * checkbox, which is only ever additive: ticking one box does not clear the
+   * others, and shift-clicking one adds the range rather than replacing it.
    */
   canReplaceSelection: boolean;
 };

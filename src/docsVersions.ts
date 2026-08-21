@@ -69,9 +69,9 @@ function readEntry(value: unknown): DocsEntry | null {
 }
 
 /**
- * Reads the manifest the deploy writes, dropping anything malformed rather
- * than failing: an entry the reader cannot understand is one menu item fewer,
- * and a manifest from an older deploy has to stay readable by a newer build.
+ * Reads the manifest the deploy writes, dropping anything malformed rather than
+ * failing: an unreadable entry costs one menu item, and a manifest from an
+ * older deploy has to stay readable by a newer build.
  */
 export function readManifest(value: unknown): DocsManifest | null {
   if (!isRecord(value) || !Array.isArray(value.entries)) return null;
