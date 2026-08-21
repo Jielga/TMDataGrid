@@ -26,19 +26,41 @@
   }
 
   /**
-   * These builds put the version npm serves today in the header, next to the
-   * wordmark and linked to the registry. On a frozen copy that is some other
-   * version entirely - "v2.0.0-beta.0" sitting above the 1.0.2 documentation -
-   * and it reads as the badge naming the page, which the select below now is.
+   * The version badge these builds ship, beside the wordmark and linked to the
+   * registry. It names what npm serves today, which on a frozen copy is some
+   * other version than the one being read.
    *
    * Matched by its registry href rather than by a class, because the class
    * names in these bundles are hashed and not ours to depend on.
    */
-  function hideStaleBadge() {
-    var stale = document.querySelector(
+  function staleBadge() {
+    return document.querySelector(
       'header a[href^="https://www.npmjs.com/package/"]',
     );
-    if (stale) stale.style.display = "none";
+  }
+
+  /**
+   * In the header, standing where that badge stood. Floating it over the corner
+   * put it on top of the controls already there, and left the page carrying two
+   * version indicators that disagreed.
+   *
+   * The badge is hidden rather than removed, and the control is appended rather
+   * than swapped in: the header is React's, and it re-renders when its own
+   * registry fetch lands. Hiding a node it keeps and adding one it never had
+   * survives that; replacing one does not.
+   */
+  function mount(box) {
+    var badge = staleBadge();
+    if (badge && badge.parentNode) {
+      badge.style.display = "none";
+      box.style.cssText += ";display:inline-flex;align-items:center";
+      badge.parentNode.appendChild(box);
+      return;
+    }
+    // A header shaped some other way: the corner is all that is left.
+    box.style.cssText +=
+      ";position:fixed;top:10px;right:12px;z-index:2147483647";
+    document.body.appendChild(box);
   }
 
   function render(entries) {
@@ -52,9 +74,7 @@
     var box = document.createElement("div");
     box.setAttribute("role", "group");
     box.setAttribute("aria-label", "Documentation version");
-    box.style.cssText =
-      "position:fixed;top:10px;right:12px;z-index:2147483647;" +
-      "font:500 12px/1.4 system-ui,sans-serif";
+    box.style.cssText = "font:500 12px/1.4 system-ui,sans-serif";
 
     var select = document.createElement("select");
     select.setAttribute("aria-label", "Documentation version");
@@ -76,8 +96,7 @@
     });
 
     box.appendChild(select);
-    document.body.appendChild(box);
-    hideStaleBadge();
+    mount(box);
   }
 
   function start() {
