@@ -120,7 +120,7 @@ jobs:
           tools="$RUNNER_TEMP/docs-deploy"
           mkdir -p "$tools"
           cp -a scripts/. "$tools/"
-          cp public/docs-version-switcher.js "$tools/"
+          cp public/docs-spa-path.js public/docs-version-switcher.js "$tools/"
 
           head_sha=$(git rev-parse HEAD)
           current=""
@@ -133,10 +133,17 @@ jobs:
             VITE_DOCS_SITE_ROOT="$SITE_ROOT" VITE_DOCS_SLUG="$slug" \
               npm run build -- --base="$base"
 
-            # Pages resolves 404.html from the deepest matching directory, so
-            # every copy needs its own or the root one answers deep links into
-            # all of them and loads the wrong bundle.
+            # Pages answers every missing path with the site root's 404,
+            # whatever directory the path was under: a copy's own is never
+            # consulted. The root's therefore carries the redirect that sends a
+            # version's deep link into that version, and every copy builds one
+            # because the root is a mirror of one of them.
             cp dist-demo/index.html dist-demo/404.html
+
+            # In the head, and synchronous: module scripts are deferred, so this
+            # settles the URL before the router first reads it.
+            head_tag="<script src=\"${SITE_ROOT}docs-spa-path.js\" data-site-root=\"$SITE_ROOT\" data-slug=\"$slug\"></script>"
+            sed -i "s#<head>#<head>$head_tag#" dist-demo/index.html dist-demo/404.html
 
             jq -n --arg slug "$slug" --arg label "$label" \
               --arg version "$version" --arg kind "$kind" \
@@ -189,7 +196,7 @@ jobs:
           done
           rmdir site/b 2>/dev/null || true
 
-          cp "$tools/docs-version-switcher.js" site/
+          cp "$tools/docs-spa-path.js" "$tools/docs-version-switcher.js" site/
           node "$tools/docs-manifest.mjs" site
 
       - name: Commit the site
