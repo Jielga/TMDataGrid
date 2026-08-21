@@ -5,8 +5,8 @@ that a consumer's suite can be written against structure rather than against
 copy or class names. Everything on this page is supported. Anything else in the
 DOM is internal and may change without notice.
 
-> During the `1.0.0-beta` line the contract is still provisional. It freezes at
-> `1.0.0`.
+> Renaming or dropping anything on this page is a breaking change, so it moves
+> only with a major version.
 
 ## Why not `data-testid`
 
