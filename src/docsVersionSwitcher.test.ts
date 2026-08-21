@@ -27,6 +27,9 @@ async function run({
   manifest?: unknown;
 }) {
   window.history.replaceState({}, "", pathname);
+  document.body.innerHTML =
+    '<header><a href="https://www.npmjs.com/package/@jielga/tmdatagrid">' +
+    "v2.0.0-beta.0</a></header>";
 
   const script = document.createElement("script");
   script.setAttribute("data-site-root", "/TMDataGrid/");
@@ -99,5 +102,25 @@ describe("the standalone version switcher", () => {
   it("says nothing when there is no manifest", async () => {
     await run({ slug: "root", pathname: "/TMDataGrid/", manifest: null });
     expect(document.querySelector("select")).toBeNull();
+  });
+
+  // These copies name the version npm serves today beside the wordmark, which
+  // on a frozen copy is some other version than the one being read.
+  it("takes down the header version that is not this copy's", async () => {
+    await run({ slug: "root", pathname: "/TMDataGrid/" });
+
+    const badge = document.querySelector<HTMLElement>("header a");
+    expect(badge?.style.display).toBe("none");
+  });
+
+  it("leaves the header alone when it renders nothing", async () => {
+    await run({
+      slug: "root",
+      pathname: "/TMDataGrid/",
+      manifest: { entries: [MANIFEST.entries[0]] },
+    });
+
+    const badge = document.querySelector<HTMLElement>("header a");
+    expect(badge?.style.display).toBe("");
   });
 });
