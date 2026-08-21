@@ -42,6 +42,9 @@
 
 .version {
   cursor: pointer;
+  /* A button now that it opens the version menu, so the browser's own button
+     chrome has to go. Mantine styles everything else about the badge. */
+  border: none;
 }
 
 /* The wordmark and version give way before the search box does - the box is
