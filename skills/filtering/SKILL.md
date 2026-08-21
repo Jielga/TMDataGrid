@@ -46,10 +46,10 @@ The model is therefore plain JSON: dates as ISO `YYYY-MM-DD`, booleans as
 cell is tested against) and `between` (a `[min, max]` pair, an empty string
 leaving that end open).
 
-A filter with an empty value **stays in state** so the panel keeps showing its
-row while the reader types. It matches every row, does not light the header
-indicator and gets no pill. `isFilterActive(value)` is the test for that state -
-presence in `columnFilters` is not.
+A filter with an empty value **stays in state** so the panel keeps its row while
+the user types. It matches every row, does not set the header indicator and
+produces no pill. `isFilterActive(value)` tests for that state; presence in
+`columnFilters` does not.
 
 ## Operators
 
@@ -66,12 +66,12 @@ presence in `columnFilters` is not.
 Every type also offers `isEmpty` and `isNotEmpty`, which ignore the value input.
 
 String comparisons are case-insensitive. Date comparisons are by calendar day,
-and `equals` on a `date` column plays the role of "is". On a `multiSelect`
+so `equals` on a `date` column matches the same day. On a `multiSelect`
 column, whose cells hold arrays, `isAnyOf` is an intersection test and `isNoneOf`
 its complement. `between` is inclusive at both ends.
 
 `meta.filter.defaultOperator` sets which one a fresh filter opens on, and must be
-one of the type's own:
+one of the operators that type offers:
 
 ```tsx
 columnHelper.accessor("salary", {
@@ -85,10 +85,10 @@ columnHelper.accessor("salary", {
 `TMDataGrid.FilterPanel` is column, operator and value rows under a "Filters"
 header, above "Add filter" and "Clear all". It is rendered by
 `TMDataGrid.Table`; Escape and a click outside close it, with `FilterButton`
-exempt from the click-away so it stays a toggle. Closing only hides it - the
+exempt from the click-away so it stays a toggle. Closing only hides it; the
 filters stay. **Clear all** drops every filter, half-typed ones included.
 
-`TMDataGrid.FilterPills` takes the grid as an `api` prop rather than reading
+`TMDataGrid.FilterPills` takes the grid as an `api` prop instead of reading
 context, so active filters can live in a page header or anywhere else:
 
 ```tsx
@@ -97,7 +97,7 @@ import { TMDataGridFilterPills } from "@jielga/tmdatagrid";
 <TMDataGridFilterPills api={grid} onPillClick={(columnId) => focus(columnId)} />;
 ```
 
-One pill per **active** filter - `First name: Sofia ✕` - where ✕ clears it and a
+One pill per **active** filter, `First name: Sofia ✕`, where ✕ clears it and a
 click on the label reopens the panel on its column. The label spells the
 operator out unless it is the type's default: `Age is greater than 30`, but
 `First name: Sofia`. `openColumnFilter(api, columnId)` does the same reopening
@@ -123,15 +123,15 @@ meta: {
 ```
 
 Pair the range-shaped ones with `defaultOperator: "between"` so the filter
-opens on them. For operators outside their shape every built-in falls back to
-`TMDataGridFilterValueInput`, which is exported so a custom control can take the
-same escape.
+opens on them. For an operator they do not cover, every built-in falls back to
+`TMDataGridFilterValueInput`, which is exported so custom controls can fall back
+the same way.
 
-`meta.filter.control` is a **component**, rendered as JSX, so hooks are legal
-inside. It is a **value-only contract**: it reads `operator` to shape itself and
-writes the bare value through `onChange`, and the grid composes the stored
-`{ operator, value }` around it. The column and operator dropdowns stay the
-panel's.
+`meta.filter.control` is a **component**, rendered as JSX, so hooks may be used
+inside. It handles the value only: it reads `operator` to shape itself and
+writes the bare value through `onChange`, and the grid stores the
+`{ operator, value }` pair around it. The column and operator dropdowns remain
+the panel's.
 
 ```tsx
 import type { TMDataGridFilterControlComponent } from "@jielga/tmdatagrid";
@@ -160,16 +160,17 @@ meta: { type: "select", filter: { control: StatusFilter } }
 ```
 
 `args.options` arrives pre-resolved for a column that declares `meta.options` or
-is select-shaped; `args.table` is the escape hatch for a control that must reach
-further.
+is select-shaped. `args.table` is available to a control that needs more than
+that.
 
-To give a column its own *matching* rather than its own control, set `filterFn`
-on the column definition. The grid only provides `"tmDataGrid"` as the default.
+To give a column its own *matching* instead of its own control, set `filterFn`
+on the column definition. The grid provides only `"tmDataGrid"`, which is the
+default.
 
 ## Quick search
 
-`TMDataGrid.Search` is a debounced input writing TanStack's `globalFilter`. No
-option turns it on: you render it or you do not.
+`TMDataGrid.Search` is a debounced input writing TanStack's `globalFilter`.
+There is no option to turn it on: render the component, or do not.
 
 ```tsx
 <TMDataGrid.Toolbar>
@@ -177,37 +178,37 @@ option turns it on: you render it or you do not.
 </TMDataGrid.Toolbar>
 ```
 
-Matching is **fuzzy by default**: typos and skipped characters are forgiven, and
+Matching is **fuzzy by default**: typos and skipped characters still match, and
 while the search is the only thing narrowing the grid (no sort, no grouping) the
-rows order by match quality, best first. That ordering is derived, never written
-into `sorting` - no column claims `aria-sort`, nothing lands in the persisted
-slices, and the reader's next sort click takes over just by existing.
+rows are ordered by match quality, best first. That ordering is derived and
+never written into `sorting`: no column takes `aria-sort`, nothing is written to
+the persisted slices, and the next sort click replaces it.
 
 `quickSearchMode: "contains"` restores plain substring matching. An explicit
 `globalFilterFn` overrides both, and switches the rank ordering off with it.
 `fuzzyGlobalFilterFn` is exported for a custom input over the same matching.
 
-`enableMatchHighlighting: true` marks the matched slice of a cell's text, under
+`enableMatchHighlighting: true` marks the matched part of a cell's text, under
 the quick search or a `contains` / `startsWith` / `endsWith` column filter. What
-gets marked is the contiguous, case-insensitive occurrence, so a fuzzy
-typo-match with no contiguous occurrence shows no highlight. It applies to
-**default-rendered cells only**: a column with its own `cell` renderer opts out
-by existing.
+is marked is the contiguous, case-insensitive occurrence, so a fuzzy typo-match
+with no contiguous occurrence is not highlighted. It applies to
+**default-rendered cells only**: a column with its own `cell` renderer is
+excluded.
 
 ## Turning it off
 
 `enableColumnFilters: false` removes the panel, the button and the menu item;
 `enableColumnFilter: false` on a column takes that column out.
 `enableGlobalFilter: false` removes the search input, or on a column removes its
-participation in the search. Generated lanes already opt out.
+participation in the search. The generated lanes are already excluded.
 
 ## Common mistakes
 
 ### CRITICAL Treating presence in `columnFilters` as an active filter
 
-A half-typed filter stays in state on purpose, so the panel keeps its row while
-the reader types. Counting entries reports filters that are narrowing nothing,
-and forwarding them to a server sends `{ operator: "contains", value: "" }` as a
+A half-typed filter stays in state deliberately, so the panel keeps its row
+while the user types. Counting entries reports filters that narrow nothing, and
+forwarding them to a server sends `{ operator: "contains", value: "" }` as a
 real constraint.
 
 Wrong:
@@ -251,8 +252,8 @@ Source: `src/tmdatagrid/core/filterOperators.ts`.
 
 `getColumnType` defaults to `"string"`, so a numeric column that omits
 `meta: { type: "number" }` offers only the string operators. `greaterThan` and
-`between` never appear in the panel, and comparisons run as text - `"9"` sorts
-above `"10"`.
+`between` never appear in the panel, and comparisons run as text, where `"9"`
+sorts above `"10"`.
 
 Source: `src/docs/filtering.md` (Operators).
 
@@ -275,9 +276,9 @@ Source: `src/docs/filtering.md` (Writing your own).
 
 ### MEDIUM Writing the whole filter from a custom control
 
-The contract is value-only: `onChange` takes the bare value, and the grid
-composes `{ operator, value }` around it. Passing an object writes a filter
-whose `value` is itself an object, which no operator can match against.
+A control handles the value only: `onChange` takes the bare value, and the grid
+stores `{ operator, value }` around it. Passing an object writes a filter whose
+`value` is itself an object, which no operator can match against.
 
 Wrong:
 
@@ -295,18 +296,18 @@ Source: `src/docs/filtering.md` (Writing your own).
 
 ### MEDIUM Expecting match highlighting in a custom cell
 
-The grid replicates the default value-to-string render with marks added, and
-never rummages inside a custom renderer's output. A column with a `cell`
-renderer shows no marks however `enableMatchHighlighting` is set. Equality
-operators highlight nothing either.
+The grid reproduces the default value-to-string render with marks added, and
+does not modify a custom renderer's output. A column with a `cell` renderer
+shows no marks whatever `enableMatchHighlighting` is set to. Equality operators
+highlight nothing either.
 
 Source: `src/docs/quick-search.md` (Match highlighting).
 
 ### MEDIUM Expecting fuzzy ranking to survive a sort
 
 The rank ordering applies only while the search is the sole narrowing. Any sort
-or grouping takes over, by design - the ordering is derived and never written
-into `sorting`, so there is nothing to clear afterwards.
+or grouping replaces it. The ordering is derived and never written into
+`sorting`, so there is nothing to clear afterwards.
 
 Source: `src/docs/quick-search.md` (Fuzzy by default).
 
@@ -329,11 +330,11 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `TMDataGrid.FilterPills` | Component | `api`, `size`, `showClearAll`, `onPillClick`, `className` | – | Active filters as removable pills, renderable anywhere. |
 | `TMDataGrid.Search` | Component | `placeholder`, `debounce` (`250`), `w` (`220`) | – | The debounced quick-search input. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Opens the panel on a column. |
-| `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value is doing anything. |
+| `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
-| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator wants. |
+| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator expects. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
 | `DgRangeSliderFilter` · `DgDateRangeFilter` · `DgAutocompleteFilter` · `DgTriStateFilter` | Exports | components | – | The four ready-made controls. |
 | `fuzzyGlobalFilterFn` | Export | filter fn | – | The default matcher, for a custom input. |

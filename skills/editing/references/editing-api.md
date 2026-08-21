@@ -22,7 +22,7 @@ Passing any editing option without `editMode` is a compile error, and
 | Name | Argument | What it does |
 | --- | --- | --- |
 | `onEditCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
-| `onEditCommitBatch` | `{ rows, added, deleted }` | Batch only. One call for the whole save. Without it, `submitAll` loops `onEditCommit`. |
+| `onEditCommitBatch` | `{ rows, added, deleted }` | Batch only. One call for the entire save. Without it, `submitAll` loops `onEditCommit`. |
 | `onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
 | `onRowDelete` | `{ rowId, row }` | Deletes a row under the immediate modes, and puts the trash can in the edit lane. |
 
@@ -46,7 +46,7 @@ path, which may be dotted.
 
 | Member | Signature | Notes |
 | --- | --- | --- |
-| `begin` | `({ rowId, columnId }) => void` | Row mode opens the whole row either way; `columnId` says which cell takes the caret, `null` (the pencil) its first editable one. |
+| `begin` | `({ rowId, columnId }) => void` | Row mode opens the entire row either way. `columnId` selects which cell takes the caret; `null` (the pencil) uses its first editable one. |
 | `commit` | `(rowId) => Promise<boolean>` | `false` keeps the form open with its errors. |
 | `cancel` | `(rowId) => void` | Drops one draft. |
 | `cancelAll` | `() => void` | Drops every draft. |
@@ -55,9 +55,9 @@ path, which may be dotted.
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
 | `addRow` | `() => string` | Opens an entry row, returns its `tempId`. |
 | `deleteRow` | `(rowId) => void` | `onRowDelete` under the immediate modes, a deletion mark under batch. |
-| `canEditCell` | `(row, column) => boolean` | The gate the chrome uses. |
+| `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
-| `canDeleteRows` | `() => boolean` | Whether delete chrome makes sense. |
+| `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
 | `getForm` | `(rowId) => TMDataGridRowEditForm \| undefined` | The row's live `FormApi`. |
 | `state` | `TMDataGridEditState` | Snapshot, for reads outside React. |
 | `store` | `Store<TMDataGridEditState>` | For `useSelector`. |

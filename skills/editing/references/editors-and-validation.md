@@ -27,15 +27,15 @@ columnHelper.accessor("department", {
 `meta.options` takes a static array, `"faceted"` (the distinct values present in
 the data), or a function of the table, column and row.
 
-## The editor contract
+## The editor API
 
-`meta.edit.editor` fills the same slot the built-ins fill. It is a **component**,
-rendered as JSX, so hooks are legal inside it.
+`meta.edit.editor` fills the same slot as the built-ins. It is a **component**,
+rendered as JSX, so hooks may be used inside it.
 
 ```ts
 type TMDataGridEditorArgs = {
   field: TMDataGridEditField; // the live TanStack Form field
-  form: TMDataGridRowEditForm; // the whole row's form, for sibling fields
+  form: TMDataGridRowEditForm; // the row's form, for sibling fields
   cell: Cell;
   row: Row;
   column: Column;
@@ -85,7 +85,8 @@ columnHelper.accessor("salary", {
 ## Wrapping a built-in
 
 The built-ins take `TMDataGridEditorArgs` as their props, so a custom editor can
-pass the whole object through and add around it rather than start over.
+pass the whole object through and render around it instead of starting from
+scratch.
 
 ```tsx
 import { Group, Text } from "@mantine/core";
@@ -211,7 +212,7 @@ issue lands on the column whose `editField` is `"address.city"`.
 
 Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
-unedited value and can never pass. Use `"row"` or `"batch"`.
+unedited value and cannot pass. Use `"row"` or `"batch"`.
 
 ## Server-side errors
 

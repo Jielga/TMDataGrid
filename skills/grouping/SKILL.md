@@ -29,8 +29,8 @@ category, and the summary row totals everything along the bottom edge.
 
 ## Grouping
 
-On by default, and nothing changes until a column is grouped - the reader does
-that from **Group by …** in any column menu. To open already grouped, seed the
+On by default, and nothing changes until a column is grouped, which users do
+from **Group by …** in any column menu. To open already grouped, seed the
 state:
 
 ```tsx
@@ -41,8 +41,8 @@ const grid = useTMDataGrid({
 });
 ```
 
-Grouping a column **removes it** - its values have moved into the tree lane -
-and a generated Group column (`GROUP_COLUMN_ID`) appears at the front, pinned
+Grouping a column **removes it**, since its values have moved into the tree
+lane, and a generated Group column (`GROUP_COLUMN_ID`) appears at the front, pinned
 beside the checkbox lane. Each group row shows its value, its record count and a
 chevron. Grouping a second column nests.
 
@@ -53,9 +53,8 @@ instead of removing them.
 
 ## Aggregation
 
-Off unless asked for. A grouped grid is a tree, not a summary: a group row
-leaves every cell blank except the tree lane. Give a column an `aggregationFn`
-and it fills in.
+Off by default. A group row leaves every cell blank except the tree lane. Give a
+column an `aggregationFn` and its group cells fill in.
 
 ```tsx
 columnHelper.accessor("salary", {
@@ -81,8 +80,8 @@ leaves the groups where they are.
 
 ## Group rows are not data rows
 
-A group row is built on its first child's record, so handing it to a callback
-would hand over a real-looking row that is the wrong one. Group rows therefore:
+A group row is built on its first child's record, so passing it to a callback
+would pass a row that looks real but is the wrong one. Group rows therefore:
 
 - do not fire `onRowClick` or the cell handlers
 - cannot be highlighted, pinned, or given a details panel
@@ -91,8 +90,8 @@ would hand over a real-looking row that is the wrong one. Group rows therefore:
 
 A group row's checkbox selects every record under it at any depth, including
 records inside collapsed sub-groups, showing a tick once all are selected and a
-dash while only some are. Only the records reach `rowSelection` - a group row is
-never in it - so `getSelectedRowModel()` and the toolbar count are unaffected by
+dash while only some are. Only the records reach `rowSelection`; a group row is
+never in it, so `getSelectedRowModel()` and the toolbar count do not depend on
 how the tree is arranged. Under `enableMultiRowSelection: false` group rows carry
 no checkbox.
 
@@ -102,14 +101,14 @@ no checkbox.
 
 **Grouping and the built-in pager do not work together, and grouping wins.** As
 soon as a column is grouped the grid renders the whole tree and relies on
-virtualization; `TMDataGrid.Footer` greys its pager out and replaces the range
+virtualization. `TMDataGrid.Footer` greys its pager out and replaces the range
 with `Grouped · all N rows`. Ungroup and paging resumes where it left off.
 
 This is deliberate. A page can only count one kind of thing, and once the rows
-are a tree neither answer is usable: counting every row splits a group across a
-page boundary, and counting top-level rows quietly redefines "rows per page" as
-groups per page. Rendering the whole tree is the grid's default mode anyway -
-pagination is the opt-in - so nothing is lost but the pager.
+are a tree neither option works: counting every row splits a group across a page
+boundary, and counting top-level rows redefines "rows per page" as groups per
+page. Rendering the whole tree is the grid's default mode in any case, so only
+the pager is lost.
 
 `isPagingActive(table, features)` is exported so a custom pager can grey itself
 out the same way. To have both, page on the server: group there and feed the
@@ -117,8 +116,8 @@ grid one page of a tree at a time with `manualPagination` and `manualGrouping`.
 
 ## The summary row
 
-There is no flag. Give a column a `footer` and the row appears; it exists
-exactly when at least one visible column defines one.
+There is no flag. Give a column a `footer` and the row appears. It exists
+whenever at least one visible column defines one.
 
 ```tsx
 import { aggregateColumn } from "@jielga/tmdatagrid";
@@ -131,8 +130,8 @@ columnHelper.accessor("salary", {
 ```
 
 `footer` is TanStack's own column option, rendered the way the header is.
-`aggregateColumn({ table, columnId, fn })` computes over every **filtered** row -
-all pages, following the filters live - through the registered aggregation
+`aggregateColumn({ table, columnId, fn })` computes over every **filtered** row,
+all pages, following the filters live, through the registered aggregation
 functions, with `fn` defaulting to `"sum"`.
 
 ```tsx
@@ -140,9 +139,8 @@ aggregateColumn({ table, columnId: "age", fn: "mean" });
 aggregateColumn({ table, columnId: "location", fn: "uniqueCount" });
 ```
 
-Following the filters is the point: a footer that keeps saying the same number
-while the reader narrows the grid looks like it is answering the question in
-front of them when it is not.
+It follows the filters deliberately. A total that does not change as the user
+narrows the grid is misleading.
 
 Pinned columns keep their lanes in the summary row, the generated lanes define
 no `footer` so their cells stay blank, and the row is sticky at
@@ -153,8 +151,8 @@ no `footer` so their cells stay blank, and the row is sticky at
 ### CRITICAL Expecting group rows to total automatically
 
 Grouping alone leaves every cell blank on a group row, because the grid clears
-TanStack's `aggregationFn: "auto"` default. Nothing errors - the tree simply
-looks empty, which reads as a broken feature.
+TanStack's `aggregationFn: "auto"` default. Nothing errors; the tree just looks
+empty.
 
 Wrong:
 
@@ -173,9 +171,9 @@ Source: `src/docs/grouping.md` (Aggregation).
 ### HIGH Looking for the grouped column in the grid
 
 `groupedColumnMode` defaults to `"remove"`, so grouping by Department takes the
-Department column out - its values are in the tree lane. Code that reads that
-column's cells, or a test that queries its header, stops finding it the moment a
-reader groups.
+Department column out, since its values are in the tree lane. Code that reads
+that column's cells, or a test that queries its header, stops finding it as soon
+as a user groups.
 
 Correct, when the column must stay:
 
@@ -187,19 +185,19 @@ Source: `src/docs/grouping.md` (What grouping does to the grid).
 
 ### HIGH Combining the pager with grouping
 
-`enablePagination: true` and a grouped column cannot both be honoured. The pager
-greys out rather than paging the tree, so a footer count wired to
-`getPageCount()` reports a number nobody can navigate to. Read
+`enablePagination: true` and a grouped column cannot both apply. The pager greys
+out instead of paging the tree, so a footer count wired to `getPageCount()`
+reports a number nobody can navigate to. Read
 `isPagingActive(table, features)` before trusting the pager state.
 
 Source: `src/docs/grouping.md` (Grouping suspends pagination).
 
 ### HIGH Handing a group row to a row callback
 
-Group rows sit out `onRowClick`, the cell handlers, pinning, details and
-editing, and their `row.original` is an arbitrary child's record. A bulk action
-built from `row.original` on the tree lane acts on one record instead of the
-group.
+Group rows do not fire `onRowClick` or the cell handlers, and cannot be pinned,
+expanded or edited. Their `row.original` is an arbitrary child's record, so a
+bulk action built from `row.original` on the tree lane acts on one record
+instead of the group.
 
 Correct:
 
@@ -214,16 +212,16 @@ Source: `src/docs/grouping.md` (Group rows are not data rows).
 ### MEDIUM Totalling the page instead of the data
 
 `aggregateColumn` deliberately runs over every filtered row, all pages. Summing
-`table.getRowModel().rows` instead totals only what is currently paged in, which
-matches the screen but answers a different question - and under virtualization
-it is not even the whole page.
+`table.getRowModel().rows` instead totals only what is currently paged in, and
+under virtualization not even that: only the mounted rows.
 
 Source: `src/docs/summary-row.md` (Totalling a column).
 
 ### MEDIUM Grouping a server-paged grid
 
-`manualPagination: true` turns grouping off: the client holds one page and would
-build groups out of an arbitrary slice. Group on the server and declare it.
+`manualPagination: true` turns grouping off, because the client holds one page
+and would build groups out of an arbitrary slice. Group on the server and
+declare it.
 
 Correct:
 
@@ -247,9 +245,9 @@ Source: `src/docs/grouping.md` (Server-side grids).
 | `groupedColumnMode` | Table option | `"reorder" \| "remove" \| false` | `"remove"` | Whether a grouped column leaves the grid or moves to the front. |
 | `manualGrouping` | Table option | `boolean` | `false` | The rows arrive grouped. Required to group a server-paged grid. |
 | `initialState.grouping` | Table option | `string[]` | `[]` | Column ids grouped at mount. A settings slice, so it persists. |
-| `aggregationFn` | Column option | `TMDataGridAggregationName \| fn` | – | How a column fills in its group rows. Unset means blank. |
+| `aggregationFn` | Column option | `TMDataGridAggregationName \| fn` | – | How a column fills in its group cells. Unset leaves them blank. |
 | `aggregatedCell` | Column option | `(ctx) => ReactNode` | The `cell` renderer | Renders a group row's value differently. |
-| `footer` | Column option | `(ctx) => ReactNode` | – | Renders this column's summary cell, and summons the row. |
+| `footer` | Column option | `(ctx) => ReactNode` | – | Renders this column's summary cell. Defining one adds the row. |
 | `aggregateColumn` | Export | `({ table, columnId, fn }) => unknown` | `fn: "sum"` | Aggregates over every filtered row, all pages. |
 | `TMDataGridAggregationName` | Export | type | – | The registered function names. |
 | `GROUP_COLUMN_ID` | Export | `"__group__"` | – | Id of the generated tree column. |

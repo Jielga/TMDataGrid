@@ -31,7 +31,7 @@ sources:
 every wiring question below:
 
 - **The grid never mutates `data`.** `onEditCommit` applies the change wherever
-  the data actually lives, and the new rows arrive back through `data`.
+  the data lives, and the updated rows arrive back through `data`.
 - **One row, one form.** Each editing row gets its own TanStack Form, keyed by
   row id and living outside the DOM, so a draft survives scrolling, sorting and
   filtering.
@@ -65,8 +65,8 @@ const grid = useTMDataGrid({
 </TMDataGrid>;
 ```
 
-The editing options travel together, and the types enforce it. Each line below
-is a compile error, not an option that silently does nothing.
+The editing options depend on each other, and the types enforce it. Each line
+below is a compile error, not an option that silently does nothing.
 
 | This option | Requires |
 | --- | --- |
@@ -79,10 +79,10 @@ to the per-row `onEditCommit` loop.
 
 ## The four modes
 
-All four run the same engine and the same forms. `editMode` decides what counts
-as a commit, and what chrome asks for it.
+All four use the same engine and the same forms. `editMode` sets what counts as
+a commit, and which controls trigger it.
 
-| Mode | Commits on | Cancels on | Chrome |
+| Mode | Commits on | Cancels on | Controls |
 | --- | --- | --- | --- |
 | `"cell"` | Enter, Tab, blur | Escape | none |
 | `"cellConfirm"` | ✓ or Enter; blur keeps the draft | ✕ or Escape | ✓ / ✕ beside the input |
@@ -95,17 +95,17 @@ the save or a rule spans two columns; `"batch"` for many edits sent as one
 transaction.
 
 An editor opens on double-click, or with the cell cursor on the cell: Enter, F2,
-or just typing, where the character replaces the value. Delete or Backspace
-clears the value and commits without opening an editor. Editing brings cell
-selection with it: `cellSelection` defaults to `"single"` while `editMode` is
-set. Every open gesture puts the caret in the cell it named, and `edit.addRow()`
-in the new row's first editable cell. The grid places it rather than the editor,
-so a `meta.edit.editor` gets it without doing anything to earn it.
+or typing, where the first character replaces the value. Delete or Backspace
+clears the value and commits without opening an editor. Editing implies cell
+selection: `cellSelection` defaults to `"single"` while `editMode` is set. The
+grid places the caret in the cell that was opened, and `edit.addRow()` places it
+in the new row's first editable cell, so a `meta.edit.editor` receives focus
+without handling it itself.
 
-Under `"row"` the pencil - or a double-click on any cell, which puts the caret
-in the cell clicked - opens every editable cell of the row, and ✓ saves them as
-one commit. Rows accumulate: opening a second row leaves the first open, and
-each row's ✓ and ✕ act on that row alone.
+Under `"row"` the pencil, or a double-click on any cell, which puts the caret in
+the cell clicked, opens every editable cell of the row, and ✓ saves them as one
+commit. Rows accumulate: opening a second row leaves the first open, and each
+row's ✓ and ✕ act on that row alone.
 
 Under `"batch"` nothing leaves the grid until `submitAll`. Enter and Tab park
 the draft, dirty-marked, Escape drops that one draft, and drafts accumulate
@@ -117,14 +117,14 @@ draft.
 
 ## What a commit receives
 
-`onEditCommit` is handed `{ rowId, value, original, changes, source }`: `value`
-is the whole edited row for consumers who save records, `changes` the per-field
-diff (`columnId`, `field`, `previous`, `next`) for consumers who PATCH, one
-entry in cell mode.
+`onEditCommit` is handed `{ rowId, value, original, changes, source }`. `value`
+is the whole edited row, for saving a record; `changes` is the per-field diff
+(`columnId`, `field`, `previous`, `next`), for a PATCH, and holds one entry in
+cell mode.
 
 The engine drops the draft only when `onEditCommit` resolves. A slow save keeps
-the draft on screen with a busy marker; a **rejection keeps the form open** with
-the error on the row, which is how a failed save stays visible.
+the draft on screen with a busy marker, and a **rejection keeps the form open**
+with the error on the row.
 
 ## Which cells edit
 
@@ -186,10 +186,10 @@ rowValidators: {
 Pathed issues land on the matching cells, pathless ones on the row, and cell
 corners mark both: blue for a dirty draft, red for a validation error.
 
-`meta.edit.mapValue` rewrites a value rather than rejecting it: uppercase a
-code, strip spaces from an IBAN, clamp a number. It runs on every write an
-editor makes, so a text input maps per keystroke, and what it returns is what
-the validators judge and what commits.
+`meta.edit.mapValue` rewrites a value instead of rejecting it: uppercase a code,
+strip spaces from an IBAN, clamp a number. It runs on every write an editor
+makes, so a text input maps per keystroke, and what it returns is what the
+validators check and what is committed.
 
 ```tsx
 meta: { edit: { mapValue: ({ value }) => String(value).toUpperCase() } }
@@ -223,25 +223,25 @@ const grid = useTMDataGrid({
 </TMDataGrid.Toolbar>;
 ```
 
-`edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` straight away under
-the immediate modes, so a confirmation belongs inside that callback. Under batch
+`edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` immediately under
+the immediate modes, so put any confirmation inside that callback. Under batch
 it toggles a mark instead: the row renders struck through and inert
 (`data-deleted`), the lane's trash becomes a restore, and `submitAll` reports
-the ids in `deleted`. Adds and deletes are applied by you, the same as edits -
-the engine's `tempId` (`__new__1`, …) never needs to become a real id.
+the ids in `deleted`. You apply adds and deletes, the same as edits. The
+engine's `tempId` (`__new__1`, …) does not need to become a real id.
 
-## The chrome
+## The built-in controls
 
 The generated edit lane (`EDIT_COLUMN_ID`, pinned right) appears when `editMode`
 is `"row"`, or `onRowDelete` is set, or `editMode` is `"batch"` with
-`onEditCommitBatch` set. Nothing else conjures it, and `"cell"` mode has no
-chrome at all by design.
+`onEditCommitBatch` set. Nothing else adds it, and `"cell"` mode renders no
+controls of its own.
 
 `TMDataGrid.EditActions` is Save with the pending count plus Discard. It greys
 out while nothing is pending, spins while a submit is in flight, renders nothing
 while editing is off, and works under any mode, not only batch.
 
-`renderActions` replaces the pair while handing over its pieces:
+`renderActions` replaces the pair and hands over its pieces:
 
 ```tsx
 <TMDataGrid.EditActions
@@ -259,7 +259,7 @@ while editing is off, and works under any mode, not only batch.
 
 ## The engine: `edit`
 
-`grid.edit` is public, and everything the chrome does goes through it:
+`grid.edit` is public, and everything the built-in controls do goes through it:
 `begin` and `commit`, `cancel` / `cancelAll`, `submitAll`, `addRow` /
 `deleteRow`, `getForm`, and `store` for `useSelector`. Every member with its
 signature, the gates, `clearCell`, `deactivate`, and the `edit.store` shape are
@@ -274,31 +274,31 @@ const pendingCount = useSelector(
 );
 ```
 
-`getForm` is the *one row, one form* promise made public: render that same form
-in a drawer and it shares values, dirty state and errors with the inline cells,
-because it is the same `FormApi`.
+`getForm` exposes the row's form: render it in a drawer and it shares values,
+dirty state and errors with the inline cells, because it is the same
+`FormApi`.
 
 ## Inside an outer form
 
-A `@tanstack/react-form` form can own the row array, with the grid as a
+A `@tanstack/react-form` form can hold the row array, with the grid as a
 controlled field: `data` from `field.state.value`, and `onEditCommit` /
 `onRowAdd` / `onRowDelete` composing the next array into `field.handleChange`.
 Use `editMode: "row"` so a row reaches the form on approval, map by row id
-(never index), and mint negative ids for new rows.
+(never index), and assign negative ids to new rows.
 
-The validation split is structural, not stylistic: **a rule decidable from one
-row belongs to the grid (`meta.edit.validate`, `rowValidators`); a rule needing the
-other rows or the collection ("has rows", "no duplicates") belongs to the
-form's field validator.** A row's form cannot see the array, and `edit.store`
-publishes field names, never values, so the form cannot see a draft.
+The validation split follows from what each side can see: **a rule decidable
+from one row belongs to the grid (`meta.edit.validate`, `rowValidators`); a rule
+needing the other rows or the collection ("has rows", "no duplicates") belongs
+to the form's field validator.** A row's form cannot see the array, and
+`edit.store` publishes field names but not values, so the form cannot see a
+draft.
 
 ## Common mistakes
 
 ### CRITICAL Expecting the grid to write into `data`
 
 The grid holds no copy of the rows. Without `onEditCommit` an edit commits, the
-draft clears, and the cell snaps back to the value in `data`, which looks like
-the edit was silently discarded.
+draft clears, and the cell reverts to the value in `data`.
 
 Wrong:
 
@@ -327,9 +327,9 @@ Source: `src/docs/editing.md`, `src/tmdatagrid/core/editEngine.ts`.
 
 ### CRITICAL `getRowId` built from the row index
 
-`getRowId` satisfies the compiler with any string, so an index-based id passes.
-Drafts are keyed by it, so after a sort or a filter the draft is applied to
-whichever record now sits at that index.
+`getRowId` accepts any string, so an index-based id compiles. Drafts are keyed
+by it, so after a sort or a filter the draft is applied to whichever record now
+sits at that index.
 
 Wrong:
 
@@ -348,8 +348,8 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 ### HIGH A cell editor defined inside the component
 
 `meta.edit.editor` is rendered as JSX, so its identity is its component type. An
-inline arrow is a new type on every render, which unmounts the open editor and
-loses what was being typed.
+inline arrow function is a new type on every render, which unmounts the open
+editor and discards what was being typed.
 
 Wrong:
 
@@ -376,9 +376,9 @@ Source: `src/docs/editors.md`, `src/tmdatagrid/core/editEngine.ts`.
 
 ### HIGH A cross-field rule under `editMode: "cell"`
 
-Under `"cell"` each cell commits on its own, so a rule spanning two columns can
-never be satisfied by either one: the first cell edited is rejected against the
-other column's old value, and the row cannot be saved at all.
+Under `"cell"` each cell commits on its own, so a rule spanning two columns
+cannot be satisfied by either one: the first cell edited is rejected against the
+other column's old value, and the row cannot be saved.
 
 Wrong:
 
@@ -393,8 +393,7 @@ Correct:
 useTMDataGrid({ editMode: "row", rowValidators: { onSubmit: endAfterStart } });
 ```
 
-Source: `src/docs/editors.md` (cross-field rules want a mode that commits the
-whole row at once).
+Source: `src/docs/editors.md` (Validation).
 
 ### HIGH An `accessorFn` column that never opens an editor
 
@@ -455,9 +454,8 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`onEditCommit`).
 ### HIGH Submitting an outer form while the grid holds a draft
 
 The outer form's array contains only committed rows. Under any mode a mid-edit
-row is invisible to it, and under `"batch"` *every* edit is until
-`submitAll()` - so a form submit saves stale rows and collection rules pass
-over pending values.
+row is invisible to it, and under `"batch"` every edit is until `submitAll()`,
+so a form submit saves stale rows and collection rules skip pending values.
 
 Correct:
 
@@ -497,10 +495,10 @@ Source: `src/docs/editing.md` (Adding and deleting rows).
 ## References
 
 - [Editors and validation](references/editors-and-validation.md) - the editor
-  contract, wrapping a built-in, what `mapValue` leaves alone, field and row
+  API, wrapping a built-in, what `mapValue` leaves alone, field and row
   validators, server-side errors.
 - [Editing API](references/editing-api.md) - every option, callback, column meta
-  field, export, CSS variable and data attribute editing owns.
+  field, export, CSS variable and data attribute belonging to editing.
 
 See also: the `columns` skill for `meta.type` and the shared `meta.options`
 source, and the `testing` skill for driving editors from a test.

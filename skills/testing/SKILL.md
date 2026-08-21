@@ -148,11 +148,11 @@ rather than adding a timeout.
 
 ## Common mistakes
 
-### Selecting chrome by its aria-label
+### Selecting a control by its aria-label
 
-Every icon-only control has one, but they come from `labels` and are yours to
-translate. A suite written on `getByRole("button", { name: "Filters" })` breaks
-the day the grid renders in Swedish, and again on any copy change. Use the part.
+Every icon-only control has one, but they come from `labels` and are translated.
+A suite written on `getByRole("button", { name: "Filters" })` breaks as soon as
+the grid renders in Swedish, and again on any copy change. Use the part.
 
 ### Counting row elements
 
@@ -163,10 +163,10 @@ layout, so the count depends on the stubbed element size. Assert
 
 ### getByRole("cell") on a grid with cell selection
 
-`enableCellSelection` turns every `cell` into a `gridcell`, and the grid's
-`table` into a `grid` - a widget with a keyboard cursor is not a table of
-content. Tests written on the role break when the feature is switched on. Query
-cells by `[data-row-id][data-column-id]`, which do not move.
+`cellSelection` turns every `cell` into a `gridcell`, and the grid's `table`
+into a `grid`, because a widget with a keyboard cursor is not a static table.
+Tests written on the role break when the feature is switched on. Query cells by
+`[data-row-id][data-column-id]` instead.
 
 ### Expecting a row far down the list to exist
 

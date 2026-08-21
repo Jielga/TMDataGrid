@@ -24,9 +24,9 @@ sources:
 
 # TMDataGrid - Cell selection
 
-A cell cursor the arrow keys move, a rectangle of cells that can be dragged out,
-and a Ctrl+C that pastes into Excel as cells rather than as one string. Off by
-default.
+A cell cursor moved with the arrow keys, a rectangle of cells that can be
+dragged out, and a Ctrl+C that pastes into Excel as cells rather than as one
+string. Off by default.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns, cellSelection: "range" });
@@ -44,9 +44,9 @@ navigates by cursor. An explicit `cellSelection` always wins.
 Turning it on changes three things about the body:
 
 - The tab stop moves from the row to a cell, so the whole grid is **one** Tab
-  stop and the arrow keys walk it.
+  stop and the arrow keys move within it.
 - The grid reports itself as a `grid` of `gridcell`s rather than a `table` of
-  `cell`s, which is what tells a screen reader those keys are live.
+  `cell`s, which tells a screen reader those keys are live.
 - The focused cell takes `data-focused`, selected ones `data-selected` and
   `data-edge-*`.
 
@@ -97,10 +97,11 @@ cell works either way.
 ## Where the selection lives
 
 `ui.state.focusedCell` is a `{ rowId, columnId }` pair, and `ui.state.cellRange`
-is two of them, the anchor and the moving corner. **Ids rather than indices**, so
-sorting, filtering and column reordering carry the selection with the cells
-instead of leaving it over whatever slid into those positions. A range whose
-corner is filtered away paints nothing, and comes back when the filter lifts.
+is two of them: the anchor and the moving corner. They hold **ids rather than
+indices**, so sorting, filtering and column reordering move the selection with
+the cells instead of leaving it over whatever took those positions. A range
+whose corner is filtered away paints nothing, and returns when the filter is
+cleared.
 
 ```tsx
 const focusedCell = useSelector(grid.ui, (state) => state.focusedCell);
@@ -111,11 +112,10 @@ grid.ui.actions.setFocusedCell({ rowId: "42", columnId: "salary" });
 One rectangle at a time; Ctrl+drag for a second, disjoint block is not
 supported.
 
-The generated lanes (checkbox, tree, details) are part of the selection - they
-take the tint and the outline so the block stays a rectangle - but are never
-*exported*, since they hold controls rather than values. A block covering
-nothing else has nothing to copy, and the Copy and Export items say so by being
-disabled.
+The generated lanes (checkbox, tree, details) are part of the selection: they
+take the tint and the outline so the block stays a rectangle. They are never
+*exported*, because they hold controls rather than values. A block covering
+nothing else has nothing to copy, and the Copy and Export items are disabled.
 
 ## Copy and export
 
@@ -130,7 +130,7 @@ below a divider, so nothing is lost by turning cell selection on.
 
 The CSV is written for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF
 endings, semicolons between fields and a comma as the decimal mark. That
-combination is what makes the file open straight into columns with å ä ö intact.
+combination opens straight into columns with å ä ö intact.
 
 ```tsx
 <TMDataGrid.Table

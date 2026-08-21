@@ -69,9 +69,9 @@ column model.
 | `filter` | `TMDataGridColumnFilterOptions` | – | How this column filters. See below. |
 | `edit` | `TMDataGridColumnEditOptions` | – | How this column is edited. See below. |
 
-What the column **is** stays flat; what a stage **does** with it sits in that
-stage's namespace. `type` and `options` are the shared ground both stages read,
-which is why they are not inside either.
+What the column **is** stays flat; what the filter panel and the edit engine do
+with it sits in their namespaces. `type` and `options` are read by both stages,
+which is why they are in neither.
 
 `meta.filter`:
 
@@ -350,10 +350,10 @@ columnHelper.accessor("priority", { header: "Priority", sortFn: byRank });
 Source: `@tanstack/table-core` `rowSortingFeature.types.d.ts`, and
 `src/tmdatagrid/useTMDataGrid.tsx` (the registered `sortFns`).
 
-### MEDIUM Autosize measured against the whole data set
+### MEDIUM Expecting autosize to measure every row
 
 Autosizing fits the **mounted** rows plus overscan, not every row, because
-virtualization means the rest have no DOM to measure. A column autosized at the
+virtualization leaves the rest with no DOM to measure. A column autosized at the
 top of a long list can be too narrow for a value further down.
 
 Source: `src/docs/column-layout.md` (Autosizing).
@@ -387,7 +387,7 @@ Source: `src/docs/column-layout.md` (Regions).
 | `isColumnReorderable` | Export | `(column, features) => boolean` | – | Whether this column may move at all. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `measureColumnContentWidth` | Export | `(args) => number` | – | The measurement behind it. |
-| `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the chrome reads off a column. |
+| `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | ids | – | The generated lanes. |
 | `TMDataGrid.ColumnsButton` · `TMDataGrid.ColumnsPanel` | Components | – | – | Manage columns, and Reset layout. |
 
