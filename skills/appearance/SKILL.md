@@ -44,13 +44,15 @@ and selects the size of every Mantine control the grid renders.
 | `xl` | 72px | 60px | `lg` | 18px |
 
 Row height is also required by the virtualizer **as a number**, so it cannot be
-defined in CSS alone. For a height outside the scale set `meta.rowHeight`, not
-the variable. `SIZE_ROW_HEIGHT` is the exported source of these values.
+defined in CSS alone. For a height outside the scale, set `meta.rowHeight`
+rather than the variable. `SIZE_ROW_HEIGHT` is the exported source of these
+values.
 
 ## CSS variables
 
 `style` accepts custom properties and `className` reaches the same element from
-a stylesheet. Both are per instance - a grid is themed without a provider.
+a stylesheet. Both are per instance, so a grid can be themed without a
+provider.
 
 ```tsx
 <TMDataGrid
@@ -62,17 +64,17 @@ a stylesheet. Both are per instance - a grid is themed without a provider.
 
 **Metrics:** `--dg-row-height`, `--dg-header-height`, `--dg-summary-height`,
 `--dg-entry-height`, `--dg-font-size`, `--dg-padding`. All default from `size`.
-The generated lanes are exempt from padding: they are fixed 36px tracks that
+The generated lanes are excluded from padding: they are fixed 36px tracks that
 centre their control.
 
-**Colours:** `--row-bg` (one row's own background - set this, never
+**Colours:** `--row-bg` (one row's own background; set this, never
 `background`), `--dg-row-selected-bg`, `--dg-row-highlight-bg`,
 `--dg-row-striped-bg`, `--dg-row-group-bg`, `--dg-match-highlight-bg`,
 `--dg-header-shadow-color`.
 
 **Layout internals:** `--dg-sticky-edge-range` (`20px`), the `--dg-edge-*`
-markers the grid sets on cell-range borders, and the `--dg-z-*` stacking ladder -
-change those only to slot something of your own between two layers.
+markers the grid sets on cell-range borders, and the `--dg-z-*` stacking order.
+Change those only to place something of your own between two layers.
 
 One stylesheet import, once, anywhere:
 
@@ -87,7 +89,8 @@ two, never both.
 ## Layout
 
 The grid fills the box you give it and scrolls inside it. It does not size
-itself to its content - a virtualized grid has no content height to measure.
+itself to its content, because a virtualized grid has no content height to
+measure.
 
 ```tsx
 <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -97,16 +100,15 @@ itself to its content - a virtualized grid has no content height to measure.
 </div>
 ```
 
-`minHeight: 0` is the part everyone forgets: a flex item's default
-`min-height: auto` refuses to shrink below its content, so without it the grid
-grows past the viewport instead of scrolling.
+`minHeight: 0` is required: a flex item's default `min-height: auto` will not
+shrink below its content, so without it the grid grows past the viewport instead
+of scrolling.
 
 ## Toolbar
 
-The toolbar is a flex row and nothing more. No slots API, no `actions` prop -
-your buttons sit beside the built-in ones because they are all just children,
-and `TMDataGrid.Spacer` pushes what follows to the right. That is the whole
-layout system.
+The toolbar is a flex row. There is no slots API and no `actions` prop: your
+buttons sit beside the built-in ones because they are all children of the same
+element, and `TMDataGrid.Spacer` pushes what follows to the right.
 
 ```tsx
 <TMDataGrid.Toolbar>
@@ -121,11 +123,11 @@ layout system.
 ```
 
 Each built-in renders nothing when its feature is off, so a read-only grid needs
-no conditionals: `FilterButton` under `enableColumnFilters: false` is simply
-absent.
+no conditionals: `FilterButton` under `enableColumnFilters: false` renders
+nothing at all.
 
-A button of your own reads the grid from context - `{ table, ui, features,
-labels, controlSize, resetSettings }`:
+A button of your own reads the grid from context, which returns
+`{ table, ui, features, labels, controlSize, resetSettings }`:
 
 ```tsx
 import {
@@ -148,9 +150,9 @@ function ExportButton() {
 }
 ```
 
-`getGridCapabilities(table, features)` answers `canSortAny`, `canFilterAny`,
+`getGridCapabilities(table, features)` returns `canSortAny`, `canFilterAny`,
 `canHideAny`, `canPinAny`, `canReorderAny`, `canGroupAny`, `canSelectRows`,
-`canPaginate` and `canSearch`. `getColumnCapabilities(column, features)` answers
+`canPaginate` and `canSearch`. `getColumnCapabilities(column, features)` returns
 the same for one column as `canSort`, `canFilter`, `canHide`, `canPin`,
 `canResize`, `canReorder` and `canGroup`.
 
@@ -158,13 +160,13 @@ the same for one column as `canSort`, `canFilter`, `canHide`, `canPin`,
 
 `features` comes back from `useTMDataGrid` and is re-derived from the options
 object on every render. It is required **in addition to** TanStack's `getCanX()`
-methods because it is what makes the result reactive: `column.getCanSort()` is a
+methods because it is what makes the result reactive. `column.getCanSort()` is a
 method call on a column object whose identity survives an options change, so
 under the React Compiler that call is memoized and a grid whose `enableSorting`
-flipped to `false` would carry on rendering sort indicators. `features` supplies
+changed to `false` would carry on rendering sort indicators. `features` supplies
 a value that changes; `getCanX()` still decides the outcome.
 
-The same rule applies anywhere in your app: read state through
+The same rule applies elsewhere in your application: read state through
 `useSelector(table.store, …)` and options through `features`, rather than
 calling methods on a long-lived object.
 
@@ -180,8 +182,8 @@ import { TMDATAGRID_LABELS_SV } from "@jielga/tmdatagrid";
 const grid = useTMDataGrid({ data, columns, labels: TMDATAGRID_LABELS_SV });
 ```
 
-Labels that carry a value are functions, so a language can put the value where
-its grammar wants it:
+Labels that carry a value are functions, so each language can place the value
+where its grammar requires:
 
 ```tsx
 const labels = {
@@ -190,10 +192,10 @@ const labels = {
 } satisfies TMDataGridLabelsOverride;
 ```
 
-`TMDataGridLabels` is the full dictionary type, which is what makes a new
-translation a typed exercise rather than a guess. The resolved dictionary comes
-back as `grid.labels` and from `useTMDataGridContext().labels`, so a component
-of your own uses the same strings as the built-in chrome.
+`TMDataGridLabels` is the full dictionary type, so a missing key in a new
+translation is a compile error. The resolved dictionary comes back as
+`grid.labels` and from `useTMDataGridContext().labels`, so a component of your
+own uses the same strings as the built-in parts.
 
 ## Common mistakes
 
@@ -229,7 +231,7 @@ Source: `src/docs/styling.md` (Layout).
 ### HIGH Setting `--dg-row-height` to change density
 
 The virtualizer needs the row height as a number, and takes it from
-`meta.rowHeight` or `size` - not from the variable. Setting the variable alone
+`meta.rowHeight` or `size`, not from the variable. Setting the variable alone
 leaves the measurement and the render disagreeing, so rows overlap or gaps open
 as you scroll.
 
@@ -266,8 +268,9 @@ Source: `src/docs/toolbar.md` (Why `features` is a second argument).
 
 ### MEDIUM An inline `labels` object
 
-The chrome re-renders when the labels object changes identity, and an inline
-literal is a new object every render. Keep it at module scope, or `useMemo` it.
+The grid re-renders when the labels object changes identity, and an inline
+literal is a new object on every render. Define it at module scope, or memoize
+it.
 
 Wrong:
 

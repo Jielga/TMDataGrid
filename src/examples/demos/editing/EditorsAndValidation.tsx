@@ -38,8 +38,8 @@ const SalarySliderEditor: TMDataGridEditorComponent = ({ field }) => (
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
 const columns = columnHelper.columns([
-  // Each type opens its own editor. No wiring - `meta.type` is the whole
-  // declaration, and the same one the filter panel reads.
+  // Each type opens its own editor. `meta.type` is the only declaration
+  // needed, and it is the same one the filter panel reads.
   columnHelper.accessor("firstName", {
     header: "String",
     minSize: 120,

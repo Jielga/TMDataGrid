@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { isRecord, useJson } from "./useJson";
 
 /**
- * Live package state, shared by the header badge and the front page's version
- * strip.
+ * Live package state: what is on the registry today, shown on the front page's
+ * version strip and inside the header's version menu.
  *
- * Read at runtime rather than baked in at build time: the site deploys from
- * the same push that publishes, so a stamped version would be right the moment
- * it shipped and quietly wrong from the next merge that skipped a release.
+ * Read at runtime rather than baked in at build time: a stamped figure would be
+ * right the moment it shipped and quietly wrong from the next merge that
+ * skipped a release. Which documentation you are reading is the opposite case
+ * and is stamped, in `docsVersions.ts`.
  */
 
 export const PACKAGE = "@jielga/tmdatagrid";
@@ -21,10 +22,6 @@ export const NPM_PAGE = `https://www.npmjs.com/package/${PACKAGE}`;
 const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE}`;
 const REGISTRY_ACCEPT = "application/vnd.npm.install-v1+json";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 export type DistTags = { latest?: string; beta?: string };
 
 function readDistTags(value: unknown): DistTags | null {
@@ -37,47 +34,6 @@ function readDistTags(value: unknown): DistTags | null {
     latest: typeof latest === "string" ? latest : undefined,
     beta: typeof beta === "string" ? beta : undefined,
   };
-}
-
-/**
- * Reads one JSON endpoint, or gives up quietly.
- *
- * Every failure mode here is one the page can survive by showing one badge
- * fewer: offline, or an ad blocker that eats registry requests. So nothing is
- * retried and no error is surfaced. "If available" is the whole contract.
- *
- * `parse` is called with `unknown` rather than trusted, because it is parsing a
- * response from a third party. It must be defined at module scope: it is an
- * effect dependency, and a new identity each render would refetch forever.
- */
-function useJson<T>(
-  url: string,
-  parse: (value: unknown) => T | null,
-  accept?: string,
-): T | null {
-  const [data, setData] = useState<T | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetch(url, {
-      signal: controller.signal,
-      headers: accept ? { Accept: accept } : undefined,
-    })
-      .then((response): Promise<unknown> | null =>
-        response.ok ? response.json() : null,
-      )
-      .then((value) => {
-        if (value != null) setData(parse(value));
-      })
-      .catch(() => {
-        // Includes the abort on unmount, which is not worth distinguishing.
-      });
-
-    return () => controller.abort();
-  }, [url, parse, accept]);
-
-  return data;
 }
 
 export function useDistTags(): DistTags | null {

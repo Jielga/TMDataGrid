@@ -228,9 +228,9 @@ const SELECTION_MODES = [
 }>;
 
 /**
- * Enough room for three rows of switches *and* a grid worth looking at. Below
- * it the switches start eating the thing they configure, so they fold away -
- * which is what makes the page usable in a side-by-side editor pane.
+ * Enough room for three rows of switches *and* a usable grid. Below it the
+ * switches take space from the grid they configure, so they fold away, which
+ * keeps the page usable in a side-by-side editor pane.
  */
 const ROOMY_VIEWPORT = "(min-width: 1100px) and (min-height: 820px)";
 
@@ -418,7 +418,7 @@ export function PlaygroundExample() {
               - 5 000 rows · virtualized · state persisted to localStorage
             </Text>
           </Text>
-          {/* Outside the grid, which is the point of the `api` prop: the pills
+          {/* Outside the grid, which is what the `api` prop is for: the pills
               read the same filter state the panel writes. */}
           <TMDataGrid.FilterPills api={grid} />
         </Group>

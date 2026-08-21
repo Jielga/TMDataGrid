@@ -1,9 +1,9 @@
 # Filtering
 
-Per-column filters, built out of an operator and a value. The reader adds them
-from the filter panel or a column menu; you shape what each column offers
-through `meta.type`, and replace the value control when the default input is
-not the right one.
+Per-column filters, built out of an operator and a value. Users add them from
+the filter panel or a column menu. You control what each column offers through
+`meta.type`, and can replace the value control when the default input is not
+the right one.
 
 For one box across every column instead, see [Quick search](/docs/quick-search).
 
@@ -30,9 +30,10 @@ array only under `isAnyOf` / `isNoneOf` (the set the cell is tested against) and
 `between` (a `[min, max]` pair, an empty string leaving that end open). See
 [Server-side data](/docs/server-side#sending-filters).
 
-A filter with an empty value stays in state, so the panel keeps showing its row
-while the reader types. It matches every row, does not light the header's filter
-indicator, and gets no pill. `isFilterActive(value)` is the test for that state.
+A filter with an empty value stays in state, so the panel keeps its row while
+the user types. It matches every row, does not set the header's filter
+indicator, and produces no pill. `isFilterActive(value)` tests for that
+state.
 
 ## Operators
 
@@ -60,7 +61,7 @@ indicator, and gets no pill. `isFilterActive(value)` is the test for that state.
 | `isNotEmpty` | is not empty | every type |
 
 String comparisons are case-insensitive. Date comparisons are by calendar day,
-and `equals` on a `date` column plays the role of "is". On a `multiSelect`
+so `equals` on a `date` column matches the same day. On a `multiSelect`
 column, whose cells hold arrays, `isAnyOf` is an intersection test and
 `isNoneOf` its complement, and an empty cell array counts as empty for
 `isEmpty`. `between` is inclusive at both ends; the panel renders a From/To
@@ -68,7 +69,7 @@ pair and either end may stay empty to leave the interval open on that side.
 
 `meta.filter.defaultOperator` sets which one a fresh filter opens on: a salary
 column can start on `between` rather than `equals`. It must be one of the
-type's own operators.
+operators that type offers.
 
 ```tsx
 columnHelper.accessor("salary", {
@@ -88,8 +89,8 @@ file: columns/FilterPills.tsx
 ```
 
 `openColumnFilter(api, columnId)` opens the panel on a column, seeding an empty
-row if it has none yet - the same thing "Filter" in the column menu does. That
-is how a chip elsewhere on the page can hand the reader back to the panel.
+row if it has none yet, the same as "Filter" in the column menu. Use it to send
+the user back to the panel from a control elsewhere on the page.
 
 ### The panel and the pills
 
@@ -100,13 +101,13 @@ stays a toggle. It is rendered by `TMDataGrid.Table` and positions itself
 against the nearest positioned ancestor.
 
 Closing only hides the panel; the filters stay. **Clear all** drops every
-filter, half-typed ones included, and closes the panel - the same exit as
-removing the last filter row by hand.
+filter, half-typed ones included, and closes the panel, the same as removing the
+last filter row by hand.
 
 `TMDataGrid.FilterPills` renders one pill per active filter -
 `First name: Sofia ✕` - where the ✕ clears that filter and a click on the label
-reopens the panel on its column. Half-typed filters are left out: a filter that
-is not narrowing anything yet has nothing to report. The label spells the
+reopens the panel on its column. Half-typed filters are left out. The label
+spells the
 operator out unless it is the column type's default - `Age is greater than 30`,
 but `First name: Sofia`.
 
@@ -118,8 +119,8 @@ but `First name: Sofia`.
 | `onPillClick` | `(columnId) => void` | – | Replaces the default click behaviour. |
 | `className` | `string` | – | Added to the wrapper class. |
 
-It is also exported as `TMDataGridFilterPills`, which is the import to use when
-nothing else in the file touches `TMDataGrid`.
+It is also exported as `TMDataGridFilterPills`. Use that import when nothing
+else in the file touches `TMDataGrid`.
 
 ## Replacing the value control
 
@@ -144,9 +145,9 @@ meta: {
 ```
 
 Pair the range-shaped ones with `defaultOperator: "between"` so the filter
-opens on them. For operators outside their shape every built-in falls back to
-`TMDataGridFilterValueInput`, the default control, which is exported for custom
-controls that want the same escape.
+opens on them. For an operator they do not cover, every built-in falls back to
+`TMDataGridFilterValueInput`, the default control, which is exported so custom
+controls can fall back the same way.
 
 ```demo
 file: columns/BuiltInFilterControls.tsx
@@ -155,11 +156,11 @@ hint: Open the filter panel and compare each row's control with the plain input 
 
 ### Writing your own
 
-`meta.filter.control` is a **component** - rendered as JSX, so hooks are legal
-inside - receiving `TMDataGridFilterControlArgs`. It is a **value-only
-contract**: the control reads `operator` to shape itself and writes the bare
-value through `onChange`, and the grid composes the stored `{ operator, value }`
-around it. The column and operator dropdowns stay the panel's.
+`meta.filter.control` is a **component**, rendered as JSX, so hooks may be used
+inside. It receives `TMDataGridFilterControlArgs` and handles the value only:
+it reads `operator` to shape itself and writes the bare value through
+`onChange`, and the grid stores the `{ operator, value }` pair around it. The
+column and operator dropdowns remain the panel's.
 
 ```tsx
 const SalaryFilter: TMDataGridFilterControlComponent = ({
@@ -178,8 +179,8 @@ meta: { filter: { control: SalaryFilter, defaultOperator: "between" } }
 
 Define controls at module scope so their identity is stable. `args.options`
 arrives pre-resolved through `resolveColumnOptions` for a column that declares
-`meta.options` or is select-shaped; `args.table` is the escape hatch for the
-rare control that must reach further.
+`meta.options` or is select-shaped. `args.table` is available to a control that
+needs more than that.
 
 ```demo
 file: columns/CustomFilterControl.tsx
@@ -188,9 +189,9 @@ hint: Open the filter panel - Status offers chips, every other column the built-
 
 ## Custom matching
 
-To give a column its own matching logic rather than its own control, set
-`filterFn` on the column definition. The grid only provides `"tmDataGrid"` as
-the default.
+To give a column its own matching logic instead of its own control, set
+`filterFn` on the column definition. The grid provides only `"tmDataGrid"`,
+which is the default.
 
 ## Turning it off
 
@@ -212,10 +213,10 @@ menu item and its entry in the panel's column list.
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button opening the panel, with an active count. |
 | `TMDataGrid.FilterPills` | Component | takes `api` | – | Active filters as removable pills, renderable anywhere. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Opens the panel on a column, seeding an empty row. |
-| `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value is doing anything. |
+| `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
-| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator wants. |
+| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator expects. |
 | `DgRangeSliderFilter` · `DgDateRangeFilter` · `DgAutocompleteFilter` · `DgTriStateFilter` | Exports | components | – | The four ready-made controls. |

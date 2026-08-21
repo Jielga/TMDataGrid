@@ -88,10 +88,10 @@ export function moveColumn({
  * on the left before every consumer column, the edit lane after all of them.
  *
  * `column.pin("right")` appends, so pinning a column right would otherwise drop
- * it outside the edit lane - the row's Save and Delete would no longer be the
- * last thing in the row. Pinning left appends too, which is already the right
- * answer there, but the same pass keeps both lanes honest whatever a consumer
- * writes into `columnPinning` directly.
+ * it outside the edit lane, so the row's Save and Delete would no longer be
+ * last in the row. Pinning left appends too, which is already correct there,
+ * but the same pass keeps both lanes in place whatever a consumer writes into
+ * `columnPinning` directly.
  *
  * Relative order is preserved inside each part, so a user's own arrangement of
  * the pinned columns survives.

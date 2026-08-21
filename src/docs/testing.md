@@ -2,29 +2,29 @@
 
 The grid publishes a fixed set of roles, ARIA attributes and `data-*` hooks so
 that a consumer's suite can be written against structure rather than against
-copy or class names. Everything on this page is a supported contract; anything
-else in the DOM is internal plumbing and may change without notice.
+copy or class names. Everything on this page is supported. Anything else in the
+DOM is internal and may change without notice.
 
 > During the `1.0.0-beta` line the contract is still provisional. It freezes at
 > `1.0.0`.
 
 ## Why not `data-testid`
 
-The grid does not mint `data-testid` of its own, and neither do its
-dependencies - `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
+The grid defines no `data-testid` of its own, and neither do its
+dependencies: `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
 testing-framework convention that belongs to your app: Playwright's
 `testIdAttribute` is configurable, so a codebase standardised on `data-qa` or
 `data-cy` could not use `getByTestId()` on our nodes without breaking its own.
 
-Instead the grid names its pieces the way MUI X and AG Grid do - with semantic
-attributes it owns:
+Instead the grid names its parts the way MUI X and AG Grid do, with semantic
+attributes of its own:
 
 - **`data-dg-part`** - *what* an element is (`"row"`, `"filter-button"`)
 - **`data-row-id` / `data-column-id`** - *which* one, using your own ids
 - **roles and ARIA** - framework-neutral, and the same thing a screen reader reads
 
-`<TMDataGrid data-testid>` is the one exception, because that value is yours,
-not ours.
+`<TMDataGrid data-testid>` is the one exception, because that value is supplied
+by you.
 
 ## Naming a grid
 
@@ -57,20 +57,18 @@ the `grid` role.
 | Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-striped` |
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
 
-**The role flips with cell selection.** `enableCellSelection` turns the grid's
-`table` into a `grid` and every `cell` into a `gridcell` - a widget with a
-keyboard cursor is not the same thing as a table of content, and saying `grid`
-without one would promise arrow keys that do nothing. A suite written on
+**The role changes with cell selection.** `cellSelection` turns the grid's
+`table` into a `grid` and every `cell` into a `gridcell`, because a widget with
+a keyboard cursor is not a static table. A suite written on
 `getByRole("cell")` therefore breaks when the feature is switched on. Query
-cells by their coordinates instead, which do not move:
+cells by their coordinates instead:
 
 ```ts
 const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
 ```
 
-Body cells carry no `data-dg-part`: the coordinate pair already names them, and
-one attribute per cell is the one place where a virtualized grid's DOM weight
-is worth counting.
+Body cells carry no `data-dg-part`: the coordinate pair already identifies them,
+and one fewer attribute per cell matters in a virtualized grid.
 
 ## Parts
 
@@ -107,7 +105,7 @@ so a part that repeats is addressed by adding the coordinate.
 
 | `data-dg-part` | What it is |
 | --- | --- |
-| `row` | A body row, wherever it sits |
+| `row` | A body row, pinned or not |
 | `entry-row` | An open entry row in the new-row block |
 | `details` | A row's detail panel |
 | `select-row` | Its selection checkbox |
@@ -139,7 +137,7 @@ Within a filter row the three controls are `filter-column`,
 
 A column declaring `meta.filter.control` or `meta.edit.editor` renders your component
 in that slot, so `filter-value` and `editor-input` cover the built-ins only.
-`filter-row` and `editor` still hold - scope your own queries through them.
+`filter-row` and `editor` still apply; scope your own queries through them.
 
 `editor-input` is also where the grid puts the caret when an editor opens. An
 editor that does not publish it is focused on the first focusable element inside
@@ -147,8 +145,8 @@ its `editor` instead, so a custom editor needs the attribute only to name which
 of several inputs the caret should land in.
 
 Every icon-only control also carries an `aria-label` drawn from `labels`. Those
-are yours to translate, so they make brittle selectors; prefer the parts above
-unless your grid runs in one language.
+are translated, so they make brittle selectors. Prefer the parts above unless
+your grid runs in one language.
 
 ## Virtualization
 
@@ -157,40 +155,39 @@ in the DOM. A row at index 500 has no element, and Playwright cannot scroll to
 what it cannot find. Two things follow.
 
 **Count rows off the grid, not off the DOM.** `aria-rowcount` includes the
-header and summary rows; `data-dg-row-count` is the body rows alone - the
-current page under pagination, everything the filters left otherwise.
+header and summary rows. `data-dg-row-count` counts the body rows alone: the
+current page under pagination, or everything the filters left otherwise.
 
 ```ts
 const grid = orders.getByRole("table");
 await expect(grid).toHaveAttribute("data-dg-row-count", "3");
 ```
 
-**Reach a row by narrowing to it.** Filtering or searching is faster and far
-more stable than scrolling, and it is what a user would do:
+**Reach a row by narrowing to it.** Filtering or searching is faster and more
+stable than scrolling:
 
 ```ts
 await orders.locator('[data-dg-part="search"]').fill("Nordkvist");
 await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 ```
 
-**Or scroll to it.** When the row has to be reached where it is - testing the
-scroll itself, or a grid with no search - `scrollToRow` moves the virtualizer,
-which is the only thing that can put an element there:
+**Or scroll to it.** When the row must be reached in place, such as when testing
+the scroll itself or on a grid with no search, `scrollToRow` moves the
+virtualizer, which is the only way to get an element rendered there:
 
 ```ts
 const found = grid.scrollToRow({ rowId: "42", align: "center" });
 ```
 
-It answers `false` when the row is not in the current view - filtered out, on
-another page, or an unknown id - and scrolls nothing. From a Playwright test
-that means going through the page, since the api lives in React:
+It returns `false` when the row is not in the current view (filtered out, on
+another page, or an unknown id) and scrolls nothing. From a Playwright test it
+has to be called through the page, since the API lives in React:
 
 ```ts
 await page.evaluate(() => window.__ordersGrid.scrollToRow({ rowId: "42" }));
 ```
 
-which needs the app to expose it. Narrowing needs no such hook, which is why it
-is the default advice.
+which requires the app to expose it. Narrowing needs no such hook.
 
 ## Waiting
 
@@ -203,12 +200,12 @@ await expect(grid).not.toHaveAttribute("aria-busy");
 ```
 
 Quick search debounces (250 ms by default, `debounce` on `TMDataGrid.Search`).
-Assert on `data-dg-row-count` rather than adding a timeout - Playwright retries
+Assert on `data-dg-row-count` rather than adding a timeout. Playwright retries
 the assertion until the debounce lands.
 
 ## A page object
 
-One helper turns the parts into something as short as `getByTestId`:
+One helper makes the parts as convenient as `getByTestId`:
 
 ```ts
 import { type Locator, type Page, expect } from "@playwright/test";
@@ -306,5 +303,5 @@ expect(rowCount).toBe(3);
 ```
 
 Mantine's transitions never settle under jsdom, so a Popover's dropdown mounts
-empty - the filter and column panels among them. Render inside
+empty, including the filter and column panels. Render inside
 `<MantineProvider env="test">`.

@@ -1,9 +1,9 @@
 # TMDataGrid
 
-A data grid for React built on [TanStack Table v9](https://tanstack.com/table) and
-[Mantine](https://mantine.dev). Rows are always virtualized, columns are resizable,
-reorderable, sortable, filterable, hideable and pinnable, and every piece of grid
-chrome is a component you opt into.
+A data grid for React built on [TanStack Table v9](https://tanstack.com/table)
+and [Mantine](https://mantine.dev). Rows are always virtualized, columns are
+resizable, reorderable, sortable, filterable, hideable and pinnable, and every
+part of the grid interface is a component you render yourself.
 
 ## Installation
 
@@ -79,18 +79,16 @@ export function Employees({ data }: { data: Employee[] }) {
 ```
 
 Only the parts you render exist, and only the features you enable have state.
-Pagination is opt-in via `enablePagination` (implied by `manualPagination`) -
-by default every row renders, virtualized. A column that defines no filter
-shows no filter control.
+Pagination is opt in through `enablePagination` (implied by `manualPagination`);
+by default every row renders, virtualized. A column that defines no filter shows
+no filter control.
 
 ## Documentation
 
-The documentation is written as markdown under [`src/docs/`](src/docs) and served by the
-demo site:
-
-One page per touchpoint: the prose, the demos that show it, and the reference
-table for everything that page owns. [`docsPages.ts`](src/docs/docsPages.ts) is
-the registry and the sidebar order.
+The documentation is markdown under [`src/docs/`](src/docs), served by the demo
+site. There is one page per topic, each holding the prose, its demos and a
+reference table. [`docsPages.ts`](src/docs/docsPages.ts) is the registry and the
+sidebar order.
 
 | Section              | Pages                                                            |
 | -------------------- | ---------------------------------------------------------------- |
@@ -109,10 +107,10 @@ is the demo site that documents it.
 
 | Path                | Contents                                                     |
 | ------------------- | ------------------------------------------------------------ |
-| `index.ts`          | The public API - the only entry point the package exposes     |
+| `index.ts`          | The public API, and the only entry point the package exposes  |
 | `useTMDataGrid.tsx` | The hook that builds the table, and the types it is built on  |
 | `core/`             | Headless logic: filtering, ordering, persistence, capabilities |
-| `components/`       | The React chrome and its co-located CSS modules               |
+| `components/`       | The React components and their co-located CSS modules         |
 
 ### Examples
 
@@ -122,14 +120,14 @@ The demo site's examples live in [`src/examples/`](src/examples):
 | ----------------- | -------------------------------------------------------------- |
 | `demoRegistry.ts` | Pairs each demo module with its own source through `import.meta.glob` |
 | `demos/`          | One file per demo: one idea, no headings, no explanation        |
-| `data/`           | Shared datasets, and the column set for demos about other things |
-| `playground/`     | The kitchen sink, every feature at once behind switches          |
+| `data/`           | Shared datasets, and the column set used by unrelated demos     |
+| `playground/`     | Every feature at once, behind switches                          |
 
-Adding a demo is adding a file under `demos/` and naming it from a ` ```demo `
-fence on the docs page that explains it. The registry pairs each module with
-its own source, so the code on screen cannot drift from the code running.
-[`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo,
-so a demo that stops working fails the suite whether or not it still compiles.
+To add a demo, add a file under `demos/` and name it from a ` ```demo ` fence on
+the docs page that explains it. The registry pairs each module with its own
+source, so the code on screen cannot drift from the code running.
+[`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo, so
+a demo that stops working fails the suite whether or not it still compiles.
 
 ```sh
 npm install
@@ -141,8 +139,8 @@ npm run test:watch
 
 ## Testing
 
-For testing an application that *uses* the grid - the test ids, roles and ARIA
-attributes it publishes, and how to drive it from Playwright - see
+For testing an application that *uses* the grid, including the test ids, roles
+and ARIA attributes it publishes and how to drive it from Playwright, see
 [Testing](src/docs/testing.md). What follows is about this repo's own suite.
 
 Vitest with React Testing Library, in jsdom. Tests sit next to the code they
@@ -150,11 +148,11 @@ cover as `*.test.ts(x)` and are excluded from both the package and the
 declaration build; shared fixtures live in [`src/test/`](src/test) so they stay
 out of `src/tmdatagrid/` entirely.
 
-Two things worth knowing before adding to them:
+Two things to know before adding to them:
 
-- `vitest.setup.ts` installs what jsdom does not provide - an in-memory
-  `Storage`, `matchMedia`, `ResizeObserver`, and element sizes. The last one
-  matters: without a measurable box, the virtualizer renders no rows at all.
+- `vitest.setup.ts` installs what jsdom does not provide: an in-memory
+  `Storage`, `matchMedia`, `ResizeObserver`, and element sizes. Element sizes
+  matter, because without a measurable box the virtualizer renders no rows.
 - The Mantine provider in the harness runs with `env="test"`, which disables
   transitions. Without it a popover never finishes mounting and its panel is
   never found.
@@ -183,8 +181,8 @@ works everywhere without putting `.js` extensions in the sources.
 ## Publishing
 
 Releases are managed by [Changesets](https://github.com/changesets/changesets).
-Nothing publishes from an ordinary push - a release happens only when the
-version PR is merged.
+Nothing publishes from an ordinary push. A release happens only when the version
+PR is merged.
 
 Describe your change in the same PR that makes it:
 
@@ -196,9 +194,9 @@ That writes a markdown file under `.changeset/`. Commit it alongside the code.
 
 Once on `main`, [`release.yml`](.github/workflows/release.yml) opens a
 **chore: version packages** PR that collects every pending changeset, bumps
-`package.json`, writes `CHANGELOG.md` and syncs the skills. The PR is the
-release proposal: review the version it picked and the changelog it wrote, then
-merge it to publish to npm with provenance.
+`package.json`, writes `CHANGELOG.md` and syncs the skills. Review the version it
+picked and the changelog it wrote, then merge it to publish to npm with
+provenance.
 
 The package build runs from `prepublishOnly` rather than as a workflow step, so
 `npm publish` cannot ship a stale `dist` whether it runs in CI or by hand.
@@ -212,7 +210,7 @@ The package build runs from `prepublishOnly` rather than as a workflow step, so
 Intent reports a skill as stale when its `library_version` trails the package
 version, so without that step every release would leave every skill stale.
 Because it runs inside the version command, the bump and the skill sync land in
-the same PR and are reviewed together.
+the same PR.
 
 To check what a release would contain without publishing anything:
 

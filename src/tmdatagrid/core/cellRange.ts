@@ -36,11 +36,11 @@ export type ResolveRangeBoundsArgs = {
  * Turns a range into the rectangle to paint and copy, or `null` when either
  * corner no longer exists.
  *
- * A corner goes missing whenever a filter drops its row or a column is hidden,
- * and the honest answer then is that there is no rectangle - better than
- * guessing at a replacement corner and quietly copying cells the user never
- * selected. The range itself is left alone: clearing it here would throw away
- * a selection that comes straight back when the filter is lifted.
+ * A corner goes missing whenever a filter drops its row or a column is hidden.
+ * There is then no rectangle, rather than a guessed replacement corner that
+ * would copy cells the user never selected. The range itself is left alone:
+ * clearing it here would discard a selection that returns as soon as the filter
+ * is cleared.
  */
 export function resolveRangeBounds({
   range,
@@ -94,7 +94,7 @@ export function boundsCellCount(bounds: TMDataGridRangeBounds | null): number {
 }
 
 /**
- * Which edges of the rectangle a cell sits on, for the outline.
+ * Which edges of the rectangle a cell lies on, for the outline.
  *
  * The border is drawn per cell rather than as one box over the top, because the
  * body is a scrolling CSS grid with sticky columns in it: an overlay would have

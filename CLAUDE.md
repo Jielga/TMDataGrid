@@ -74,7 +74,12 @@ A broken demo or a dead link fails the suite, so run the tests after touching do
 Docs are markdown under [src/docs/](src/docs), registered in [docsPages.ts](src/docs/docsPages.ts).
 They stay plain markdown: `intent.docs` publishes them and the `SKILL.md` files cite them as sources, so no MDX.
 
-One touchpoint, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
+One topic, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
+
+Write them as reference documentation for a library, and nothing looser.
+State what an option does and what its default is; give a reason only where it changes a decision.
+The person using the grid is "the user", the person reading the page is "you", and nobody is "the reader".
+No closing flourishes, no design commentary, no jokes - `check:style` refuses a handful of the phrases outright.
 
 A demo is one file under `src/examples/demos/` holding code and nothing else: no headings, no prose, nothing you would not paste.
 Prose lives in the docs page that shows it.

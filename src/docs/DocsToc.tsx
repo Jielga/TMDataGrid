@@ -13,9 +13,9 @@ import { extractHeadings } from "./headings";
  */
 
 /**
- * Marks the heading the reader is at. `rootMargin` pulls the observation band
- * up to a strip near the top of the viewport, so the active entry is the
- * heading you are reading under rather than whichever one is merely on screen.
+ * Marks the heading currently being read. `rootMargin` pulls the observation
+ * band up to a strip near the top of the viewport, so the active entry is the
+ * heading the text belongs to rather than whichever one is merely on screen.
  */
 function useActiveHeading(slugKey: string): string | undefined {
   const [active, setActive] = useState<string>();

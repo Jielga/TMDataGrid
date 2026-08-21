@@ -1,12 +1,12 @@
 # Grouping
 
 Grouping collapses the rows into a tree: one row per distinct value, with the
-records that share it folded underneath. Use it when the interesting unit is
-the category rather than the record - headcount per department, orders per
-customer - and the reader wants to open one and look inside.
+records that share it folded underneath. Use it when the unit of interest is
+the category rather than the record, such as headcount per department or orders
+per customer.
 
-It is on by default. Nothing changes until a column is grouped, and the reader
-does that from **Group by …** in any column menu.
+It is on by default. Nothing changes until a column is grouped, which users do
+from **Group by …** in any column menu.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });
@@ -29,8 +29,8 @@ hint: “Group by …” lives in every column menu. Group by Location as well a
 
 ## What grouping does to the grid
 
-Grouping a column **removes it** - its values have moved into the tree lane -
-and a generated **Group** column appears at the front, pinned beside the
+Grouping a column **removes it**, since its values have moved into the tree
+lane, and a generated **Group** column appears at the front, pinned beside the
 checkbox lane. Each group row shows its value, how many records are under it,
 and a chevron. Group again from a second column's menu to nest.
 
@@ -39,14 +39,13 @@ tree column's menu, one item per grouped column. **Expand all groups** and
 **Collapse all groups** are in every column menu while a grouping is active.
 
 To keep a grouped column in the grid instead of removing it, pass
-`groupedColumnMode: "reorder"` - TanStack's own default, which moves grouped
-columns to the front rather than taking them out.
+`groupedColumnMode: "reorder"`, which is TanStack's own default and moves
+grouped columns to the front.
 
 ## Aggregation
 
-Off unless asked for. A grouped grid is a tree, not a summary: a group row
-leaves every cell blank except the tree lane. Give a column an `aggregationFn`
-and it fills in.
+Off by default. A group row leaves every cell blank except the tree lane. Give
+a column an `aggregationFn` and its group cells fill in.
 
 ```tsx
 columnHelper.accessor("salary", {
@@ -67,7 +66,7 @@ rows.
 > numeric columns. Setting `aggregationFn: "auto"` yourself restores it.
 
 For a total across the whole grid rather than per group, give the column a
-`footer` instead - see [Summary row](/docs/summary-row).
+`footer` instead. See [Summary row](/docs/summary-row).
 
 ### Sorting a grouped grid
 
@@ -82,19 +81,19 @@ A group row's checkbox selects every record under it, at any depth, including
 records inside collapsed sub-groups. It shows a tick once all of them are
 selected and a dash while only some are.
 
-Only the records are written to `rowSelection` - a group row is never in it, so
-`getSelectedRowModel()` and the toolbar count are unaffected by how the tree is
+Only the records are written to `rowSelection`. A group row is never in it, so
+`getSelectedRowModel()` and the toolbar count do not depend on how the tree is
 arranged.
 
-Under `enableMultiRowSelection: false` group rows carry no checkbox: one box
-cannot stand for several rows.
+Under `enableMultiRowSelection: false` group rows carry no checkbox, since one
+box cannot stand for several rows.
 
 ## Group rows are not data rows
 
 A group row does not fire `onRowClick` and cannot be highlighted. TanStack
-builds it on top of its first child's record, so a click would hand you a
-real-looking row that is the wrong one. The same reasoning keeps group rows out
-of [row pinning](/docs/row-pinning) and gives them no details panel.
+builds it on its first child's record, so a click would hand you a row that
+looks real but is the wrong one. For the same reason group rows cannot be
+[pinned](/docs/row-pinning) and have no details panel.
 
 Rows carry `data-grouped` and `data-depth` for styling, and
 `--dg-row-group-bg` sets their background.
@@ -103,22 +102,22 @@ Rows carry `data-grouped` and `data-depth` for styling, and
 
 **Grouping and the built-in pager do not work together, and grouping wins.** As
 soon as a column is grouped the grid renders the whole tree and relies on
-virtualization; `TMDataGrid.Footer` greys its pager out, replaces the range with
-`Grouped · all N rows`, and explains itself on hover. Ungroup and paging resumes
+virtualization. `TMDataGrid.Footer` greys its pager out, replaces the range with
+`Grouped · all N rows`, and explains why on hover. Ungroup and paging resumes
 where it left off.
 
-This is deliberate rather than a limitation worked around. A page can only count
-one kind of thing, and once the rows are a tree neither answer is usable:
+This is deliberate. A page can only count one kind of thing, and once the rows
+are a tree neither option works:
 
 - Counting **every row** splits a group across a page boundary, so opening one
-  group fills the page with its children and strands every group after it on
-  pages the user has to go looking for.
-- Counting **top-level rows** quietly redefines "rows per page" as groups per
-  page, so a page of 25 can hold thousands of rows and the number in the footer
-  stops meaning anything.
+  group fills the page with its children and pushes every group after it onto
+  later pages.
+- Counting **top-level rows** redefines "rows per page" as groups per page, so a
+  page of 25 can hold thousands of rows and the footer's number stops meaning
+  anything.
 
-Rendering the whole tree is also the grid's default mode - pagination is the
-opt-in - so nothing is lost but the pager.
+Rendering the whole tree is the grid's default mode in any case, so only the
+pager is lost.
 
 If you need both, page on the server: group the rows there and feed the grid one
 page of a tree at a time with `manualPagination` and `manualGrouping`.
@@ -138,8 +137,8 @@ out the same way:
 
 `manualPagination: true` turns grouping off, because the client holds one page
 and would build groups out of an arbitrary slice. A grid that groups
-server-side can set `enableGrouping: true` alongside `manualGrouping: true` -
-see [Server-side data](/docs/server-side).
+server-side can set `enableGrouping: true` alongside `manualGrouping: true`. See
+[Server-side data](/docs/server-side).
 
 ## Reference
 
@@ -149,12 +148,12 @@ see [Server-side data](/docs/server-side).
 | `groupedColumnMode` | Table option | `"reorder" \| "remove" \| false` | `"remove"` | Whether a grouped column leaves the grid or moves to the front. |
 | `manualGrouping` | Table option | `boolean` | `false` | The rows arrive grouped. Required to group a server-paged grid. |
 | `initialState.grouping` | Table option | `string[]` | `[]` | Column ids to group on at mount. A settings slice, so it persists. |
-| `aggregationFn` | Column option | `TMDataGridAggregationName \| fn` | – | How a column fills in its group rows. Unset means blank. |
+| `aggregationFn` | Column option | `TMDataGridAggregationName \| fn` | – | How a column fills in its group cells. Unset leaves them blank. |
 | `aggregatedCell` | Column option | `(ctx) => ReactNode` | The `cell` renderer | Renders a group row's value differently from a data row's. |
 | `GROUP_COLUMN_ID` | Export | `"__group__"` | – | Id of the generated tree column. |
 | `formatGroupValue` | Export | `(value) => string` | – | How the tree lane renders a group's value. |
 | `getGroupDataRows` | Export | `(row) => Row[]` | – | Every record under a group row, at any depth. |
-| `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything - `false` while grouped. |
+| `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything. `false` while grouped. |
 | `--dg-row-group-bg` | CSS variable | colour | Themed | Group row background. |
 | `data-grouped` | Data attribute | – | – | On every group row. |
 | `data-depth` | Data attribute | `number` | – | Nesting level, on every row. |

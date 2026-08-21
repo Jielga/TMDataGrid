@@ -6,9 +6,8 @@ import { getColumnLabel, isControlColumn } from "./columnUtils";
 
 /**
  * The byte order mark Excel looks for before it will read a file as UTF-8.
- * Built from its code point rather than pasted in: a literal BOM is invisible
- * in a source file, and an invisible character nobody can see is one somebody
- * eventually deletes.
+ * Built from its code point rather than pasted in, because a literal BOM is
+ * invisible in a source file and easily deleted by accident.
  */
 const UTF8_BOM = String.fromCharCode(0xfeff);
 
@@ -264,9 +263,9 @@ export function toClipboardText(matrix: TMDataGridCellMatrix): string {
  * | UTF-8 BOM | without it Excel reads the file as ANSI, and å ä ö arrive broken |
  * | CRLF line endings | what Excel writes, and what its importer is happiest with |
  *
- * The `sep=` line is Excel's alone; other readers show it as a first row. That
- * is the trade this makes - the file is for Excel, and "it just opens" is worth
- * more than being a well-behaved CSV nobody was going to feed to a parser.
+ * The `sep=` line is Excel's alone; other readers show it as a first row. This
+ * export targets Excel, so opening correctly there takes priority over strict
+ * CSV.
  */
 export function toExcelCsv(
   matrix: TMDataGridCellMatrix,
@@ -284,7 +283,7 @@ export function toExcelCsv(
  * The async clipboard API only resolves for a document that has the focus and a
  * user gesture behind it - both true when this runs off Ctrl+C or a menu item.
  * It is still allowed to reject (a permissions policy, a page that lost focus
- * mid-copy), so the result is a boolean rather than a promise nobody checks.
+ * mid-copy), so the result is a boolean the caller can act on.
  */
 export async function writeClipboardText(text: string): Promise<boolean> {
   try {

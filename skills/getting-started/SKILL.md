@@ -169,10 +169,10 @@ Pass the row type so `onRowClick` stays typed:
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-`renderRowContextMenu` fills the dropdown of a Mantine `Menu` the grid opens at the
-pointer on a right-click (or a long press). The grid owns the `Menu` - opening,
-positioning, and closing on Escape, outside click, body scroll or an item pick -
-so the render prop only says what goes in it:
+`renderRowContextMenu` fills the dropdown of a Mantine `Menu` that the grid
+opens at the pointer on a right-click (or a long press). The grid renders the
+`Menu`, positions it, and closes it on Escape, an outside click, a body scroll
+or an item pick, so the render prop supplies only the contents:
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -192,11 +192,11 @@ so the render prop only says what goes in it:
 />
 ```
 
-`cell` is the one that was right-clicked, `table` is there for actions that read
-the selection, and `close` is for dropdown content that is not a `Menu.Item`
-(those close themselves). Return `null` to leave a row without a menu. It is
-called during render, and only for the open row, so it must stay pure - put the
-work in the item handlers. Right-clicking does not change the selection or the
+`cell` is the one that was right-clicked, `table` is for actions that read the
+selection, and `close` is for dropdown content that is not a `Menu.Item` (those
+close themselves). Return `null` to leave a row without a menu. It is called
+during render, and only for the open row, so it must stay pure: put the work in
+the item handlers. Right-clicking does not change the selection or the
 highlight; the row carries `data-context-menu` while its menu is open. Pass
 `rowContextMenuProps` for `width`, `shadow`, `position` and the rest.
 

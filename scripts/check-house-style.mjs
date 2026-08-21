@@ -54,12 +54,42 @@ const EM_DASH = "\u2014";
  */
 const DASH_IN_HEADING = /^#{1,6} .* - /;
 
+/**
+ * Phrases that are always the wrong register here. The documentation is
+ * reference material for a library: it states what an option does and what the
+ * default is. A person using the grid is a user, and a person reading the page
+ * is you; the rest are closing flourishes and design commentary, which say
+ * nothing an instruction needs.
+ *
+ * Each is a phrase, not a word, so an ordinary use of "worth" or "point" is
+ * untouched.
+ */
+const BANNED_PHRASES = [
+  ["the", "reader"],
+  ["that", "is", "the", "whole"],
+  ["is", "the", "whole", "point"],
+  ["which", "is", "the", "point"],
+  ["worth", "naming"],
+  ["worth", "knowing"],
+  // Split into words so this file does not fail itself, the same reason the em
+  // dash above is written as an escape.
+].map((words) => words.join(" "));
+
 const RULES = [
   {
     what: "an em dash",
     fix: "use a plain dash, a colon or a full stop",
     applies: () => true,
     hit: (line) => line.includes(EM_DASH),
+  },
+  {
+    what: "a phrase from the banned list",
+    fix: 'say "the user" or "you", and drop the flourish',
+    applies: () => true,
+    hit: (line) => {
+      const lower = line.toLowerCase();
+      return BANNED_PHRASES.some((phrase) => lower.includes(phrase));
+    },
   },
   {
     what: "a spaced dash in a docs heading",

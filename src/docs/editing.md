@@ -1,9 +1,9 @@
 # Editing
 
 Set `editMode` and the grid's cells open editors. One TanStack Form is created
-per editing row (*one row, one form*), and **the grid never mutates `data`**:
-`onEditCommit` applies the change wherever the data actually lives, and the new
-rows flow back in through `data` as always.
+per editing row, and **the grid never mutates `data`**: `onEditCommit` applies
+the change wherever the data lives, and the updated rows come back in through
+`data`.
 
 ```tsx
 const grid = useTMDataGrid({
@@ -21,8 +21,8 @@ const grid = useTMDataGrid({
 
 ## What requires what
 
-The editing options travel together, and the types enforce it: each line below
-is a compile error, not an option that silently does nothing.
+The editing options depend on each other, and the types enforce it. Each line
+below is a compile error, not an option that silently does nothing.
 
 | This option | Requires | Because |
 | --- | --- | --- |
@@ -35,12 +35,12 @@ back to the per-row `onEditCommit` loop.
 
 ## The four modes
 
-All four run the same engine and the same forms. `editMode` decides two things:
-what counts as a commit, and what chrome asks for it.
+All four use the same engine and the same forms. `editMode` sets two things:
+what counts as a commit, and which controls trigger it.
 
 | Mode | Commit | Cancel | Chrome |
 | --- | --- | --- | --- |
-| `"cell"` | Enter, Tab, blur - as in Sheets | Escape | none |
+| `"cell"` | Enter, Tab or blur | Escape | none |
 | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape | ✓ / ✕ beside the input |
 | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape | generated edit lane |
 | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` | `TMDataGridEditActions` |
@@ -51,23 +51,21 @@ hint: Double-click a cell - or press Enter, F2, or just start typing on it.
 height: 440
 ```
 
-**Opening an editor**: double-click, or with the cell cursor on the cell -
-Enter, F2, or just typing, where the character replaces the value as it would
-in a spreadsheet. Every one of those gestures puts the caret in the cell it
-named, and the grid places it rather than leaving it to the editor, so a
-`meta.edit.editor` gets the caret without doing anything to earn it. A row
-added with `edit.addRow()` opens the same way, caret in its first editable
-cell.
-Delete or Backspace clears the value and commits without opening anything.
-Editing brings cell selection along: `cellSelection` defaults to `"single"`
-while `editMode` is set.
+**Opening an editor**: double-click, or, with the cell cursor on the cell,
+Enter, F2, or typing, where the first character replaces the value as it would
+in a spreadsheet. The grid places the caret in the cell that was opened, so a
+`meta.edit.editor` receives focus without handling it itself. A row added with
+`edit.addRow()` opens the same way, with the caret in its first editable cell.
+
+Delete or Backspace clears the value and commits without opening an editor.
+Editing implies cell selection: `cellSelection` defaults to `"single"` while
+`editMode` is set.
 
 ### Row editing
 
-The pencil opens every cell of the row at once and ✓ saves them as **one
-commit** - which is where a cross-field rule can finally live, because the
-whole row is being validated together.
-Double-clicking a cell opens the same whole row, with the caret in the cell
+The pencil opens every cell of the row at once, and ✓ saves them as **one
+commit**. Cross-field rules belong here, since the whole row is validated
+together. Double-clicking a cell opens the whole row, with the caret in the cell
 that was clicked.
 
 Rows **accumulate**: opening a second row leaves the first one open, and each
@@ -75,20 +73,20 @@ row's ✓ and ✕ act on that row alone.
 
 ```demo
 file: editing/RowEditing.tsx
-hint: Put a Sales row over 60 000 kr and Save will tell you why it will not.
+hint: Put a Sales row over 60 000 kr and Save reports why it is rejected.
 height: 440
 ```
 
 ### Batch editing
 
-Under `"batch"` nothing commits until you say so. Enter and Tab **park** the
+Under `"batch"` nothing commits until you ask for it. Enter and Tab **park** the
 draft (dirty-marked, Tab moving on to the next editable cell), Escape drops the
 one draft, and drafts accumulate across rows - surviving filters, sorts and
 scrolling, since they live outside the DOM.
 
-`TMDataGrid.EditActions` in the toolbar is the chrome: Save with the dirty-row
-count, and Discard. `renderActions` replaces the pair while handing over its
-pieces - `state.pendingCount`, `state.isSubmitting`, the `save` and `discard`
+`TMDataGrid.EditActions` in the toolbar provides the controls: Save with the
+dirty-row count, and Discard. `renderActions` replaces the pair and hands over
+its pieces: `state.pendingCount`, `state.isSubmitting`, the `save` and `discard`
 actions, and `Controls.Save` / `Controls.Discard` as the built-in buttons:
 
 ```tsx
@@ -105,11 +103,11 @@ actions, and `Controls.Save` / `Controls.Discard` as the built-in buttons:
 
 ```demo
 file: editing/BatchEditing.tsx
-hint: Edit cells, add rows in the sticky entry block, mark deletions with the trash - nothing leaves the grid until Save.
+hint: Edit cells, add rows in the sticky entry block, mark deletions with the trash. Nothing leaves the grid until Save.
 height: 440
 ```
 
-`edit.submitAll()` commits every open row - through the per-row `onEditCommit`
+`edit.submitAll()` commits every open row, through the per-row `onEditCommit`
 loop by default, or through one `onEditCommitBatch({ rows, added, deleted })`
 call when that is set. Rows failing validation stay open either way, and a
 rejected batch keeps every draft.
@@ -118,8 +116,8 @@ rejected batch keeps every draft.
 
 A column is editable when it maps to a data path: its `accessorKey`, or
 `meta.edit.field` for a column built on `accessorFn`. Dot paths reach into
-nested records - `accessorKey: "address.city"` edits `values.address.city`, and
-a nested schema's issues land on the right column.
+nested records: `accessorKey: "address.city"` edits `values.address.city`, and
+issues from a nested schema map to the right column.
 
 | Gate | Effect |
 | --- | --- |
@@ -131,7 +129,7 @@ Group rows and the generated lanes never edit.
 
 ```demo
 file: editing/EditableGating.tsx
-hint: ID never edits · Salary refuses on Terminated rows · rows under 25 are closed entirely · Full name is computed but writes to Last name.
+hint: ID never edits · Salary is closed on Terminated rows · rows under 25 are closed entirely · Full name is computed but writes to Last name.
 height: 440
 ```
 
@@ -141,15 +139,14 @@ Forms live outside the DOM, keyed by row id. Scrolling an editing row away
 unmounts the editor; the form keeps its values, dirty state and errors, and the
 editor remounts over the same form when the row returns.
 
-Cell corners mark the state meanwhile: blue for a dirty draft, red for a
-validation error.
+Cell corners show the state: blue for a dirty draft, red for a validation
+error.
 
 ## Adding and deleting rows
 
-`edit.addRow()` opens an **entry row** in a sticky block under the header - the
-one place stickiness is genuinely required, since a row being typed into exists
-nowhere else to scroll back to. Entry cells are real editors over a form seeded
-from `newRowDefaults`. Enter, or the lane's ✓, commits the add through
+`edit.addRow()` opens an **entry row** in a sticky block under the header, so a
+row being typed into stays in view. Entry cells are ordinary editors over a form
+seeded from `newRowDefaults`. Enter, or the lane's ✓, commits the add through
 `onRowAdd` under the immediate modes, while batch parks it for `submitAll`.
 Escape, or ✕, discards the entry.
 
@@ -165,37 +162,36 @@ useTMDataGrid({
 <Button onClick={() => grid.edit.addRow()}>Add row</Button>
 ```
 
-`edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` straight away under
-the immediate modes - confirmation, if you want it, belongs in that callback.
-Under batch it toggles a mark instead: the row renders struck through and inert
+`edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` immediately under
+the immediate modes; put any confirmation in that callback. Under batch it
+toggles a mark instead: the row renders struck through and inert
 (`data-deleted`), the lane's trash becomes a restore, and `submitAll` reports
-the ids in `deleted`. Setting `onRowDelete` puts the trash can in the edit lane,
-which appears in any mode that has a use for it.
+the ids in `deleted`. Setting `onRowDelete` puts the trash can in the edit lane.
 
-The grid still never mutates `data`: adds and deletes are applied by you, and
-the new rows arrive back through `data`. The engine's `tempId` (`__new__1`, …)
-never needs to become a real id - mint one when you create the record.
+The grid still never mutates `data`: you apply adds and deletes, and the new
+rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not
+need to become a real id; assign one when you create the record.
 
 ## The engine: `edit`
 
-Everything the chrome does goes through `edit`, which is public.
+Everything the built-in controls do goes through `edit`, which is public.
 
 | Member | Does |
 | --- | --- |
 | `edit.begin({ rowId, columnId })` | Opens an editor |
-| `edit.commit(rowId)` | Commits - resolves `false` if blocked |
+| `edit.commit(rowId)` | Commits. Resolves `false` if blocked |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts |
 | `edit.submitAll()` | Commits every open row (batch) |
-| `edit.addRow()` / `edit.deleteRow(rowId)` | Rows in and out |
+| `edit.addRow()` / `edit.deleteRow(rowId)` | Adds or removes a row |
 | `edit.getForm(rowId)` | The row's live `FormApi` |
 | `edit.store` | Open rows, active cell, dirty and error projections, entry rows, deletion marks |
 
-`getForm` is the *one row, one form* promise made public: render the same form
-in a drawer or side panel and it shares values, dirty state and errors with the
-inline cells, because it is the same `FormApi`.
+`getForm` exposes the row's form: render it in a drawer or side panel and it
+shares values, dirty state and errors with the inline cells, because it is the
+same `FormApi`.
 
-For the inverse - a `@tanstack/react-form` form *around* the grid, owning the
-row array - see [A query builder inside a form](/docs/query-builder).
+For the inverse, a `@tanstack/react-form` form *around* the grid holding the row
+array, see [A query builder inside a form](/docs/query-builder).
 
 ## Reference
 

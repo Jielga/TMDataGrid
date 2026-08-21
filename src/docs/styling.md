@@ -33,7 +33,7 @@ file: getting-started/DensityAndLayout.tsx
 ```
 
 Row height is also required by the virtualizer **as a number**, so it cannot be
-defined in CSS alone. `SIZE_ROW_HEIGHT` is the exported source of these values
+defined in CSS alone. `SIZE_ROW_HEIGHT` is the exported source of these values,
 and the stylesheet mirrors them. To use a height outside the scale, set
 `meta.rowHeight` rather than the variable.
 
@@ -51,14 +51,14 @@ from a stylesheet.
 | `--dg-summary-height` | From `size` | [Summary row](/docs/summary-row) height |
 | `--dg-entry-height` | From `size` | The sticky [entry block](/docs/editing#adding-and-deleting-rows) |
 | `--dg-font-size` | From `size` | Cell and header font size |
-| `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are exempt - they are fixed 36px tracks that centre their control. |
-| `--dg-radius` | `--mantine-radius-md` | The frame's corner radius. `0` squares the grid off; the root clips its overflow, so the header and the last row follow it. |
+| `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are excluded: they are fixed 36px tracks that centre their control. |
+| `--dg-radius` | `--mantine-radius-md` | The frame's corner radius. `0` squares the grid off. The root clips its overflow, so the header and the last row follow it. |
 
 ### Colours
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `--row-bg` | – | One row's own background. Set this, never `background` - see [Row styling](/docs/row-styling#set---row-bg-not-background). |
+| `--row-bg` | – | One row's own background. Set this, never `background`. See [Row styling](/docs/row-styling#set---row-bg-not-background). |
 | `--dg-row-selected-bg` | `--mantine-primary-color-light` | [Selected](/docs/row-selection) rows |
 | `--dg-row-highlight-bg` | Themed | The highlighted row |
 | `--dg-row-striped-bg` | Themed | Every second row under `striped` |
@@ -72,7 +72,7 @@ from a stylesheet.
 | --- | --- | --- |
 | `--dg-sticky-edge-range` | `20px` | How far the pinned-lane band takes to fade in |
 | `--dg-edge-top` · `-bottom` · `-left` · `-right` | – | Set by the grid to mark [cell-range](/docs/cell-selection) borders |
-| `--dg-z-header` · `-pinned-cell` · `-summary-row` · … | – | The stacking ladder. Change these only to slot something of your own between two layers. |
+| `--dg-z-header` · `-pinned-cell` · `-summary-row` · … | – | The stacking order. Change these only to place something of your own between two layers. |
 
 ## The stylesheet
 
@@ -89,7 +89,8 @@ sit at a known place in that order. Import **one** of the two, never both.
 ## Layout
 
 The grid fills the box you give it and scrolls inside it. It does not size
-itself to its content - a virtualized grid has no content height to measure.
+itself to its content, because a virtualized grid has no content height to
+measure.
 
 ```tsx
 <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -99,9 +100,9 @@ itself to its content - a virtualized grid has no content height to measure.
 </div>
 ```
 
-`minHeight: 0` is the part everyone forgets. A flex item's default
-`min-height: auto` refuses to shrink below its content, so without it the grid
-grows past the viewport instead of scrolling.
+`minHeight: 0` is required. A flex item's default `min-height: auto` will not
+shrink below its content, so without it the grid grows past the viewport instead
+of scrolling.
 
 ## Reference
 
@@ -112,6 +113,6 @@ grows past the viewport instead of scrolling.
 | `style` | Prop | `CSSProperties` + `--*` | – | Root element styles, including the variables above. |
 | `id` | Prop | `string` | – | Set on the root element. |
 | `meta.rowHeight` | Option | `number` | From `size` | A row height outside the scale. |
-| `SIZE_ROW_HEIGHT` | Export | `Record<MantineSize, number>` | – | The row heights the table above lists. |
+| `SIZE_ROW_HEIGHT` | Export | `Record<MantineSize, number>` | – | The row heights listed in the table above. |
 | `SIZE_CONTROL_SIZE` | Export | `Record<MantineSize, MantineSize>` | – | Which control size each grid size uses. |
 | `DEFAULT_TMDATAGRID_SIZE` | Export | `"md"` | – | The default. |

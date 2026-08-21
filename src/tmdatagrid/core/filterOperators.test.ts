@@ -242,7 +242,7 @@ describe("formatFilterLabel", () => {
     ).toBe("Salary: 40");
   });
 
-  it("spells out any operator the reader could not guess", () => {
+  it("spells out any operator that is not the type's default", () => {
     expect(
       formatFilterLabel({
         label: "First name",

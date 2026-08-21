@@ -314,11 +314,11 @@ export type TMDataGridEditEngineContext = {
  * The data path a column edits, or `null` for a column that has none.
  *
  * `accessorKey` is the true path and Form addresses fields by dot-path, so
- * nested rows work for free: `accessorKey: "address.city"` edits
- * `values.address.city`. A column built on `accessorFn` has no path and is
- * not editable unless `meta.edit.field` names one. TanStack's default column
- * id turns dots into underscores - which is why this starts from
- * `accessorKey`, never from `id`.
+ * nested rows need no extra handling: `accessorKey: "address.city"` edits
+ * `values.address.city`. A column built on `accessorFn` has no path and is not
+ * editable unless `meta.edit.field` names one. TanStack's default column id
+ * turns dots into underscores, which is why this starts from `accessorKey` and
+ * never from `id`.
  */
 export function getEditFieldName(column: {
   columnDef: { meta?: { edit?: { field?: string } } };

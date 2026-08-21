@@ -28,7 +28,7 @@ export function TMDataGridNumberEditor({ field, column, size }: TMDataGridEditor
       onChange={(next) => {
         if (inputRef.current !== null) remember(inputRef.current);
         // Mantine reports a number once one can be parsed, and a string while
-        // it cannot. An empty cell is `null` - the honest "no value".
+        // it cannot. An empty cell is `null`, meaning no value.
         field.handleChange(
           typeof next === "number" ? next : next === "" ? null : Number(next),
         );

@@ -1,15 +1,14 @@
 # Defining columns
 
-A column says where its value comes from, what kind of value it is, and how to
-render it. Everything else - which filter operators it offers, which editor it
-opens, how it sorts - follows from `meta.type` rather than being configured
-again per feature.
+A column declares where its value comes from, what kind of value it is, and how
+to render it. Everything else - which filter operators it offers, which editor
+it opens, how it sorts - follows from `meta.type`, and is not configured again
+per feature.
 
 ## The column helper
 
 `createTMDataGridColumnHelper<TData>()` returns a TanStack column helper bound
-to the grid's feature set, which is what gives `meta` and `filterFn` their
-correct types.
+to the grid's feature set, so that `meta` and `filterFn` are correctly typed.
 
 ```tsx
 const columnHelper = createTMDataGridColumnHelper<Employee>();
@@ -30,22 +29,21 @@ const columns = columnHelper.columns([
 ```
 
 **Define columns at module scope.** A new array on every render rebuilds the
-table's column model, and takes the reader's widths and order with it.
+table's column model and discards the user's column widths and order.
 
 ```demo
 file: getting-started/ColumnDefinitions.tsx
 ```
 
 An accessor may be a key of the row or a function over it. A function needs an
-explicit `id`, and, because there is no key to name it, a `meta.label`, which is
-what menus and the columns panel show.
+explicit `id`, and a `meta.label` for the name shown in menus and the columns
+panel.
 
 ## meta
 
 `meta` carries what a TanStack column definition has no field for. What the
-column **is** sits at the top level; what a stage **does** with it sits in that
-stage's own namespace, `filter` and `edit`, named after the `filter` panel and
-the `edit` engine you drive at runtime.
+column **is** sits at the top level; what the filter panel and the edit engine
+do with it sits in the `filter` and `edit` namespaces.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -61,8 +59,7 @@ the `edit` engine you drive at runtime.
 
 `type` and `options` stay at the top level because both stages read them: one
 `type` picks the filter operators and the cell editor, and one `options` list
-feeds the filter panel's dropdown and the select editor. Declaring either twice
-is the bug the shared field exists to prevent.
+feeds both the filter panel's dropdown and the select editor.
 
 ### meta.filter
 
@@ -100,9 +97,8 @@ meta: {
 }
 ```
 
-A column that wants the defaults declares neither namespace: any column mapping
-to a data path is editable once `editMode` is on, and every column filters by
-its type.
+Omit both namespaces to get the defaults: any column mapping to a data path is
+editable once `editMode` is on, and every column filters by its type.
 
 `enableOrdering` and `autoSize` live in `meta` because they are the two
 behaviours TanStack defines no column option for.
@@ -117,8 +113,8 @@ declaration picks the editor.
 
 Dates may be `Date` instances or ISO `YYYY-MM-DD` strings in the data; the
 comparison is by calendar day either way, and filter values always travel as ISO
-strings. No `@mantine/dates` involved - the date control is the native
-`<input type="date">`.
+strings. The date control is the native `<input type="date">`; `@mantine/dates`
+is not used.
 
 ### Options
 
@@ -139,8 +135,8 @@ meta: {
 // The distinct values present in the data (low-cardinality columns):
 meta: { type: "select", options: "faceted" }
 
-// Computed - `row` is set when a cell editor asks, absent for the filter
-// panel, which is what row-dependent options key off:
+// Computed. `row` is set when a cell editor asks and absent for the filter
+// panel, so row-dependent options can branch on it:
 meta: {
   type: "select",
   options: ({ row }) => citiesFor(row?.original.country),
@@ -151,9 +147,9 @@ meta: {
 exported for custom chrome; `optionsToComboboxData` turns the result into what
 Mantine's `Select` and `MultiSelect` take, `group` fields included.
 
-A select column that declares nothing still filters: the panel falls back to the
-faceted values. Mantine's dropdowns are not virtualized, so very large sets want
-the function form rather than `"faceted"`.
+A select column that declares no options still filters: the panel falls back to
+the faceted values. Mantine's dropdowns are not virtualized, so use the function
+form for very large sets.
 
 ## Header groups
 
@@ -165,7 +161,7 @@ file: getting-started/HeaderGroups.tsx
 hint: Sort, filter and resize the leaves; the group header follows them.
 ```
 
-Columns inside a group cannot be reordered, whatever `meta.enableOrdering` says:
+Columns inside a group cannot be reordered, regardless of `meta.enableOrdering`:
 `columnOrder` sequences leaf columns, so moving one would leave the group header
 spanning columns that no longer belong to it.
 
@@ -188,9 +184,9 @@ Sizing, pinning, ordering and visibility are covered on
 
 ## The generated columns
 
-Five lanes the grid adds for itself when a feature asks for them. All are
-**system lanes**: fixed width, no column menu, no resize handle, never exported,
-never hidden, and never listed in the columns panel.
+Five lanes the grid adds when a feature needs them. All are **system lanes**:
+fixed width, no column menu, no resize handle, never exported, never hidden and
+never listed in the columns panel.
 
 | Id | Appears when | Where |
 | --- | --- | --- |
@@ -200,12 +196,12 @@ never hidden, and never listed in the columns panel.
 | `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. See [Row details](/docs/row-details). |
 | `EDIT_COLUMN_ID` | `editMode: "row"` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
 
-Hiding one is not offered: each holds a control the grid needs - the row's
-checkbox, its Save and Delete - or tracks a feature's state rather than a
-setting of its own.
+They cannot be hidden. Each one either holds a control the grid needs, such as
+the row's checkbox or its Save and Delete buttons, or tracks feature state
+rather than a setting of its own.
 
-The checkbox lane cannot be moved, which is what anchors the left pinned region:
-no column can be placed in front of it.
+The checkbox lane cannot be moved. It anchors the left pinned region: no column
+can be placed in front of it.
 
 ## Reference
 

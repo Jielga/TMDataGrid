@@ -36,6 +36,17 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Versioned documentation** - **done 2026-08-21**. The docs site publishes
+several complete builds under one Pages root, held on a `gh-pages` branch:
+the latest stable release at the root, the tip of main at `next/`, one
+directory per minor line at `v1.1/`, and previews at `b/<branch>/` while a pull
+request carries the `docs-preview` label. The header's version badge became the
+menu that moves between them, carrying the page you are on across. What a run
+publishes is decided against the branch's own state rather than against git
+history, so a run is idempotent and a missed line is picked up by the next push.
+Copies built before the menu existed get a standalone one injected, which is
+what keeps the root reachable while it serves 1.1.1.
+
 **Column meta namespaces (2.0)** - **done 2026-08-20**, breaking. `meta.edit`
 and `meta.filter` group the fields belonging to those stages, leaving `label`,
 `type`, `options`, `flex`, `align`, `autoSize` and `enableOrdering` at the top

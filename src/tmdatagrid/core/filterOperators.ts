@@ -4,9 +4,9 @@ import type { Row, RowData, TableFeatures } from "@tanstack/react-table";
  * The value shape stored in `columnFilters` for every TMDataGrid column.
  *
  * TanStack resolves `filterFn` statically per column, so the operator travels
- * inside the filter *value* instead. That keeps the whole filter model plain,
- * serialisable JSON - which is what makes it portable to a server-side
- * `manualFiltering` table (just forward `columnFilters` to the API).
+ * inside the filter *value* instead. That keeps the filter model plain,
+ * serialisable JSON, so a server-side `manualFiltering` table can forward
+ * `columnFilters` to the API unchanged.
  *
  * `value` is a string array under `isAnyOf` / `isNoneOf` (the set the cell is
  * tested against), a `[min, max]` pair under `between` (an empty string means
@@ -385,9 +385,9 @@ export function matchesFilter(
       break;
   }
 
-  // A Date compares by its calendar day, which is what makes `equals` on a
-  // date column mean "is this day" rather than a doomed string comparison
-  // against the Date's default stringification.
+  // A Date compares by its calendar day, so `equals` on a date column means
+  // "is this day" rather than a string comparison against the Date's default
+  // stringification.
   const cellText = (
     cellValue instanceof Date
       ? (toIsoDay(cellValue) ?? "")

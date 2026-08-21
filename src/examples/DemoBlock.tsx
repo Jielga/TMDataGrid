@@ -8,9 +8,9 @@ import classes from "./DemoBlock.module.css";
  * The frame around one demo: what it is, the thing itself, and the source that
  * produced it.
  *
- * Deliberately dumb. Controls a demo needs (a mode switch, a toggle) live
- * inside the demo component, so they appear in the source the reader copies
- * rather than in a frame that quietly makes the demo work.
+ * Deliberately minimal. Controls a demo needs (a mode switch, a toggle) live
+ * inside the demo component, so they appear in the source shown beside it
+ * rather than in a frame that is not part of the copied code.
  */
 
 /** Tall enough for a header, a handful of rows and a footer. */

@@ -502,8 +502,8 @@ export function TMDataGridHeaderCell({
       // A control lane is a fixed track, so it cannot take the cell padding the
       // scale grows for text. See isControlColumn.
       data-control-column={isControlColumn(column.id)}
-      // Only meaningful on a sortable column: "none" advertises that this
-      // header sorts, which is a lie on one that doesn't.
+      // Only meaningful on a sortable column: "none" announces that this
+      // header sorts, which is wrong on one that does not.
       aria-sort={
         canSort
           ? isSorted
@@ -588,10 +588,10 @@ export function TMDataGridHeaderCell({
             <ActionIcon
               className={`${classes.headerAction} ${classes.sortAction}`}
               data-pinned-visible={isSorted}
-              // The arrow is the whole signal now that the title no longer
-              // tints, so it takes the colour while the sort holds. On an
-              // unsorted column it is only the hover affordance, and stays a
-              // faded grey so the two never read alike.
+              // The arrow is the only sort indicator now that the title no
+              // longer tints, so it takes the colour while the sort holds. On
+              // an unsorted column it is only the hover affordance, and stays a
+              // faded grey so the two are not confused.
               data-sorted={isSorted}
               variant="subtle"
               color={isSorted ? undefined : "gray"}

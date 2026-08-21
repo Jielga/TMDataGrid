@@ -1,8 +1,8 @@
 # Toolbar composition
 
-The toolbar is a flex row and nothing more. There is no slots API, no
-`actions` prop and no configuration object - your buttons sit beside the
-built-in ones because they are all just children.
+The toolbar is a flex row. There is no slots API, no `actions` prop and no
+configuration object: your buttons sit beside the built-in ones because they are
+all children of the same element.
 
 ```tsx
 <TMDataGrid.Toolbar>
@@ -17,8 +17,7 @@ built-in ones because they are all just children.
 </TMDataGrid.Toolbar>
 ```
 
-`TMDataGrid.Spacer` pushes everything after it to the right. That is the whole
-layout system.
+`TMDataGrid.Spacer` pushes everything after it to the right.
 
 ```demo
 file: customization/ToolbarComposition.tsx
@@ -41,8 +40,8 @@ toolbar with only `Search` has only a search box.
 | `TMDataGridEditActions` | Save and Discard under [batch editing](/docs/editing#batch-editing) |
 
 Each renders nothing when its feature is off, so a read-only grid needs no
-conditionals in your toolbar - `FilterButton` under
-`enableColumnFilters: false` is simply absent.
+conditionals in the toolbar: `FilterButton` under `enableColumnFilters: false`
+renders nothing at all.
 
 ## Buttons of your own
 
@@ -61,13 +60,13 @@ function ExportButton() {
 }
 ```
 
-Anything rendered inside `TMDataGrid` can call it -
+Anything rendered inside `TMDataGrid` can call it. It returns
 `{ table, ui, features, labels, controlSize, resetSettings }`.
 
 ### Hiding a button the same way the built-ins do
 
-The built-in parts disappear when their feature is off, and yours can use the
-same checks rather than re-deriving them:
+The built-in parts disappear when their feature is off. Your own can use the
+same checks instead of re-deriving them:
 
 ```tsx
 import { getGridCapabilities, useTMDataGridContext } from "@jielga/tmdatagrid";
@@ -90,10 +89,10 @@ function ExportButton() {
 | `canReorderAny` | At least one leaf column can be moved |
 | `canGroupAny` | At least one leaf column can be grouped on |
 | `canSelectRows` | `enableRowSelection` is not `false` and the mode is not `"highlight"` |
-| `canPaginate` | Paging is configured - see [`isPagingActive`](/docs/pagination#grouping-suspends-it) for whether it is doing anything |
+| `canPaginate` | Paging is configured. See [`isPagingActive`](/docs/pagination#grouping-suspends-it) for whether it is slicing anything |
 | `canSearch` | At least one leaf column takes part in the quick search |
 
-`getColumnCapabilities(column, features)` answers the same for one column, as
+`getColumnCapabilities(column, features)` returns the same for one column, as
 `canSort`, `canFilter`, `canHide`, `canPin`, `canResize`, `canReorder` and
 `canGroup`.
 
@@ -105,11 +104,11 @@ methods because it is what makes the result reactive.
 
 `column.getCanSort()` is a method call on a column object whose identity is
 preserved across an options change. Under the React Compiler that call is
-memoized - so a grid whose `enableSorting` flipped to `false` would carry on
+memoized, so a grid whose `enableSorting` changed to `false` would carry on
 rendering sort indicators. Passing `features` supplies a value that *changes*,
 while `getCanX()` still decides the outcome and applies per-column overrides.
 
-The same rule applies anywhere else in your application: read state through
+The same rule applies elsewhere in your application: read state through
 `useSelector(table.store, …)` and options through `features`, rather than
 calling methods on a long-lived object.
 
@@ -122,6 +121,6 @@ calling methods on a long-lived object.
 | `TMDataGrid.FilterButton` | Component | – | – | Opens the filter panel, with an active count. |
 | `TMDataGrid.ColumnsButton` | Component | – | – | Opens the columns panel. |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | `{ table, ui, features, labels, controlSize, resetSettings }`. |
-| `getGridCapabilities` | Export | `(table, features) => TMDataGridCapabilities` | – | What this grid can do, reactively. |
+| `getGridCapabilities` | Export | `(table, features) => TMDataGridCapabilities` | – | What this grid can do. Reactive to option changes. |
 | `getColumnCapabilities` | Export | `(column, features) => TMDataGridColumnCapabilities` | – | The same for one column. |
 | `readFeatureFlags` | Export | `(options) => TMDataGridFeatureFlags` | – | Derives the flags from an options object. |

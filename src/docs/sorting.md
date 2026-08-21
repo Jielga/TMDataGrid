@@ -1,8 +1,7 @@
 # Sorting
 
 On by default. Click a header to sort it, click again to reverse, click a third
-time to clear. The same three steps live in the column menu, for anyone
-without a pointer.
+time to clear. The column menu has the same three actions.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });
@@ -17,8 +16,7 @@ hint: Click a header to sort, Shift+click a second to append - the badge beside 
 
 Shift+click a second header to **add** it to the sort rather than replace it.
 While more than one column sorts, each sorted header shows its priority - 1, 2,
-… - beside the arrow, so the order the grid is applying them in is visible
-rather than guessed.
+… - beside the arrow, so the order they are applied in is visible.
 
 A plain click still replaces the whole sort, and the menu's Sort items do the
 same.
@@ -46,9 +44,8 @@ the menu items everywhere; on a column it removes them for that column alone.
 columnHelper.accessor("avatar", { header: "", enableSorting: false });
 ```
 
-A column whose menu has no remaining items renders no menu button at all and
-takes no right-click, so the browser's own menu comes up there instead -
-nothing is left as an empty shell.
+A column whose menu has no remaining items renders no menu button and does not
+handle right-click, so the browser's own menu opens instead.
 
 ## Where the state lives
 
@@ -63,13 +60,13 @@ const grid = useTMDataGrid({
 });
 ```
 
-It is a **data** slice - it names a column and a direction over the data in
-front of the reader - so a [persisted](/docs/use-tm-data-grid#persist) grid
-comes back sorted the way it was left, under `dataKey`. For a server that does the sorting,
-see [Server-side data](/docs/server-side).
+It is a **data** slice: it names a column and a direction over the data itself,
+so a [persisted](/docs/use-tm-data-grid#persist) grid comes back sorted the way
+it was left, under `dataKey`. For a server that does the sorting, see
+[Server-side data](/docs/server-side).
 
-Sorting interacts with grouping: grouping runs first, so a grouped grid sorts
-rows within each group and orders the groups by their aggregated value - see
+Grouping runs first, so a grouped grid sorts rows within each group and orders
+the groups by their aggregated value. See
 [Grouping](/docs/grouping#sorting-a-grouped-grid).
 
 ## Custom comparators
@@ -88,8 +85,8 @@ columnHelper.accessor("priority", {
 ## The header menu
 
 The menu opens from the ⋮ button on the header, or from a right-click anywhere
-on it - the same items either way, at the pointer for the right-click.
-Dividers are never left stranded at the end of a menu.
+on it. The items are the same either way; a right-click opens it at the
+pointer.
 
 ## Reference
 

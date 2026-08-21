@@ -1,13 +1,13 @@
 # Server-side data
 
-When the client holds one page and the server does the work: paging, sorting
-and filtering all become round trips, and the grid stops doing them itself.
+When the client holds one page and the server does the work, paging, sorting and
+filtering all become round trips and the grid stops doing them itself.
 
 The grid reads rows through `getPaginatedRowModel()` and totals through
 `getRowCount()` and `getPageCount()`, all of which respect TanStack's manual
 modes. A server-driven grid therefore requires only the standard `manual*`
-configuration - `manualPagination: true` also switches the grid's pagination
-flag on, so `TMDataGrid.Footer` renders its pager without `enablePagination`.
+configuration. `manualPagination: true` also switches the grid's pagination flag
+on, so `TMDataGrid.Footer` renders its pager without `enablePagination`.
 
 When the total is unknown, declare `pageCount: -1`: the next button stays
 enabled and the `pagination` render prop receives `pageCount: -1`.
@@ -109,9 +109,9 @@ const selectedIds = Object.keys(grid.table.store.state.rowSelection);
 
 ## Infinite scroll
 
-The pager's alternative: keep every fetched row in `data` and let the scroll
-ask for more. `onReachEnd` on `TMDataGrid.Table` fires as the scroll nears the
-last row - append the next page and the virtualizer keeps its position:
+An alternative to the pager: keep every fetched row in `data` and load more as
+the user scrolls. `onReachEnd` on `TMDataGrid.Table` fires as the scroll nears
+the last row. Append the next page and the virtualizer keeps its position:
 
 ```tsx
 const [rows, setRows] = useState<Order[]>([]);
@@ -130,29 +130,28 @@ const grid = useTMDataGrid({
 
 ```demo
 file: data/InfiniteScroll.tsx
-hint: Scroll to the bottom and keep going - 100 rows arrive at a time and the scroll position holds.
+hint: Scroll to the bottom and keep going. 100 rows arrive at a time and the scroll position holds.
 extraSources: data/orders.ts
 height: 460
 ```
 
-Fetch page zero yourself on mount - `onReachEnd` stays quiet on an empty
-grid, since "the end" of nothing is not a scroll position.
+Fetch page zero yourself on mount. `onReachEnd` does not fire on an empty grid.
 
-`onReachEnd` fires once per row count, so a pending fetch is not asked again
-until its rows land; `reachEndThreshold` (default 10) sets how many rows
-before the end it fires. `TMDataGrid.LoadingIndicator` in the toolbar is the
-natural fetch signal - the body keeps showing the rows it has.
+`onReachEnd` fires once per row count, so a pending fetch is not requested again
+until its rows land. `reachEndThreshold` (default 10) sets how many rows before
+the end it fires. `TMDataGrid.LoadingIndicator` in the toolbar shows the fetch,
+since the body keeps showing the rows it already has.
 
-Two rules come with the pattern:
+Two constraints apply:
 
 - **Sorting and filtering must be server-side** (`manualSorting` /
-  `manualFiltering`) or disabled - the client only holds a prefix of the
-  data, so a client-side sort would order a fraction of it and present the
-  result as the whole. When a server-side sort or filter changes, reset the
-  accumulated rows and start from page zero.
-- **Not compatible with `enablePagination`** - the pager slices the same
-  scroll the callback watches, so the end it reaches is the page's. The grid
-  warns once if both are set.
+  `manualFiltering`) or disabled. The client only holds a prefix of the data, so
+  a client-side sort would order that prefix and present it as the whole. When a
+  server-side sort or filter changes, reset the accumulated rows and start from
+  page zero.
+- **Not compatible with `enablePagination`.** The pager slices the same scroll
+  the callback watches, so the end reached is the page's rather than the data's.
+  The grid warns once if both are set.
 
 ## Reference
 

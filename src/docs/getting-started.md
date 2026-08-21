@@ -24,8 +24,8 @@ The grid must be rendered inside a Mantine `MantineProvider`.
 import "@jielga/tmdatagrid/styles.css";
 ```
 
-One stylesheet, imported once. There is a layered form too -
-see [Styling](/docs/styling#the-stylesheet).
+Import it once. A layered stylesheet is also published; see
+[Styling](/docs/styling#the-stylesheet).
 
 > **TanStack Table v9 is still in beta.** The grid is built against
 > `^9.0.0-beta.21` and uses its feature-registry API, which beta releases may
@@ -39,7 +39,7 @@ file: getting-started/Minimal.tsx
 extraSources: data/employees.ts
 ```
 
-Data, columns, a table. Every row is virtualized without being asked.
+Rows are virtualized by default. There is no option to switch it on.
 
 ```tsx
 import {
@@ -79,15 +79,14 @@ export function Employees({ data }: { data: Employee[] }) {
 Two things to get right from the start:
 
 - **Define `columns` at module scope.** A new array on every render rebuilds the
-  table's column model, and takes the reader's widths and order with it.
+  table's column model and discards the user's column widths and order.
 - **Give the grid a bounded height.** `style={{ flex: 1, minHeight: 0 }}` inside
   a flex parent, or a fixed height. A virtualized grid has no content height to
   size itself from - see [Layout](/docs/styling#layout).
 
-## What you get for free
+## Enabled by default
 
-Nothing in the table below is switched on. It is what a grid does out of the
-box.
+None of the behaviour below has to be switched on.
 
 | Behaviour | Notes |
 | --- | --- |
@@ -99,11 +98,10 @@ box.
 | [Hiding and pinning](/docs/column-layout) | From the column menu, or the columns panel. |
 | [Row selection](/docs/row-selection) | A checkbox column, and three other modes. |
 | [Grouping](/docs/grouping) | **Group by** in any column menu. |
-| The column menu | On hover, or right-click a header. Only ever shows items that apply. |
+| The column menu | On hover, or right-click a header. Shows only the items that apply. |
 
-Everything is bound to a capability check, so switching a feature off through
-the standard TanStack option also removes its interface - no empty menus, no
-dead buttons.
+Every control is bound to a capability check, so switching a feature off
+through its TanStack option also removes the interface for it.
 
 ## Adding the chrome
 
@@ -113,18 +111,18 @@ The grid renders only the parts you put in it.
 file: getting-started/ToolbarAndFooter.tsx
 ```
 
-`Toolbar` and `Footer` are plain composition - see
+`Toolbar` and `Footer` are ordinary composition. See
 [Grid anatomy](/docs/anatomy) for what each part is, and
-[Toolbar](/docs/toolbar) for putting your own buttons among them.
+[Toolbar](/docs/toolbar) for adding your own buttons among them.
 
 ## Where to go next
 
 - **[Defining columns](/docs/columns)** - accessors, `meta.type`, and what each
-  type decides for you.
+  type configures.
 - **[Grid anatomy](/docs/anatomy)** - the hook's return value, and every
   component you can render.
 - **[Editing](/docs/editing)** - four modes, from single cells to a whole grid.
 - **[Server-side data](/docs/server-side)** - when the server does the work.
 - **[The playground](/playground)** - every feature at once, behind switches.
 
-Press <kbd>Ctrl</kbd> <kbd>K</kbd> to search all of it.
+Press <kbd>Ctrl</kbd> <kbd>K</kbd> to search the documentation.

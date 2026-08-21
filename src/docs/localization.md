@@ -1,6 +1,6 @@
 # Localization
 
-Every string the grid renders - menu items, panels, tooltips, the pager, and
+Every string the grid renders - menu items, panels, tooltips, the pager and
 every `aria-label` - comes from one labels object. English by default.
 
 ```tsx
@@ -19,9 +19,9 @@ file: customization/Localization.tsx
 extraSources: data/employeeColumns.tsx
 ```
 
-## A whole language
+## A complete translation
 
-A complete Swedish dictionary ships as `TMDATAGRID_LABELS_SV`:
+A full Swedish dictionary ships as `TMDATAGRID_LABELS_SV`:
 
 ```tsx
 import { TMDATAGRID_LABELS_SV } from "@jielga/tmdatagrid";
@@ -30,13 +30,12 @@ const grid = useTMDataGrid({ data, columns, labels: TMDATAGRID_LABELS_SV });
 ```
 
 `TMDATAGRID_LABELS_EN` is the English base, and `TMDataGridLabels` is the full
-dictionary type - which is what makes a new translation a typed exercise rather
-than a guess at what needs covering.
+dictionary type, so a missing key in a new translation is a compile error.
 
 ## Labels that carry a value
 
-They are functions, so a language can put the value where its grammar wants it
-rather than where English happens to put it:
+These labels are functions, so each language can place the value where its
+grammar requires:
 
 ```tsx
 labels: {
@@ -47,8 +46,9 @@ labels: {
 
 ## Keep the object stable
 
-Module scope, or `useMemo`. The chrome re-renders when the labels object changes
-identity, and an inline literal is a new object every render.
+Define it at module scope, or memoize it. The grid re-renders when the labels
+object changes identity, and an inline literal is a new object on every
+render.
 
 ```tsx
 const labels = { noResults: "Inga träffar" } satisfies TMDataGridLabelsOverride;
@@ -57,16 +57,15 @@ const labels = { noResults: "Inga träffar" } satisfies TMDataGridLabelsOverride
 ## Reading them yourself
 
 The resolved dictionary comes back from the hook as `grid.labels`, and from
-context as `useTMDataGridContext().labels` - so a
-[toolbar component of your own](/docs/toolbar) uses the same strings the
-built-in chrome does, in whatever language is configured.
+context as `useTMDataGridContext().labels`, so a
+[toolbar component of your own](/docs/toolbar) uses the same strings as the
+built-in parts, in whatever language is configured.
 
-`mergeLabels(base, override)` is the merge itself, exported for anyone
-composing dictionaries before handing one over.
+`mergeLabels(base, override)` is the merge itself, exported for composing
+dictionaries before passing one in.
 
-`meta.noResultsLabel` still works as a per-instance override of
-`labels.noResults`, for the common case of one grid wanting a more specific
-empty message than the rest.
+`meta.noResultsLabel` remains as a per-instance override of `labels.noResults`,
+for one grid needing a more specific empty message than the rest.
 
 ## Reference
 
@@ -76,7 +75,7 @@ empty message than the rest.
 | `grid.labels` | Hook return | `TMDataGridLabels` | – | The resolved dictionary. |
 | `TMDATAGRID_LABELS_EN` | Export | `TMDataGridLabels` | – | The English base. |
 | `TMDATAGRID_LABELS_SV` | Export | `TMDataGridLabels` | – | A complete Swedish dictionary. |
-| `TMDataGridLabels` | Export | type | – | The full dictionary - what a new translation must cover. |
+| `TMDataGridLabels` | Export | type | – | The full dictionary. What a new translation must cover. |
 | `TMDataGridLabelsOverride` | Export | type | – | A partial dictionary. |
 | `mergeLabels` | Export | `(base, override) => TMDataGridLabels` | – | The merge, for composing dictionaries. |
 | `meta.noResultsLabel` | Option | `string` | `labels.noResults` | Per-instance override of the filtered-empty message. |

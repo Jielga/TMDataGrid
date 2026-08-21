@@ -278,9 +278,9 @@ function TMDataGridBodyCell({
   });
   return (
     <div
-      // `gridcell` rather than `cell` is the whole promise of cell selection:
-      // it is what tells a screen reader the arrow keys move a cursor here, so
-      // it is set together with the tab stop rather than always.
+      // `gridcell` rather than `cell` is what tells a screen reader the arrow
+      // keys move a cursor here, so it is set together with the tab stop rather
+      // than always.
       role={nav ? "gridcell" : "cell"}
       aria-colindex={nav?.columnIndex}
       tabIndex={nav?.tabIndex}
@@ -354,10 +354,10 @@ function TMDataGridBodyCell({
       {editor ?? (
         <span className={classes.cellContent}>
           {(() => {
-            // Highlighting replicates the *default* renderer - value, then
-            // `toString` - with the matched slices marked. A column with its
-            // own `cell` opts out by existing: its renderer's identity is not
-            // the default's, and the grid will not rummage inside its output.
+            // Highlighting reproduces the *default* renderer, value then
+            // `toString`, with the matched parts marked. A column with its own
+            // `cell` is excluded: its renderer is not the default one, and the
+            // grid does not modify a custom renderer's output.
             if (
               highlightNeedles !== undefined &&
               contentOverride === undefined &&
@@ -648,9 +648,9 @@ export type TMDataGridTableProps<TData extends RowData> = {
    */
   reachEndThreshold?: number;
   /**
-   * Accessible name for the grid - what a screen reader announces on entry,
-   * and what `getByRole("grid", { name })` matches. Worth setting on any page
-   * holding more than one grid; without it they are all just "grid".
+   * Accessible name for the grid: what a screen reader announces on entry, and
+   * what `getByRole("grid", { name })` matches. Set it on any page holding more
+   * than one grid; without it they are all announced as "grid".
    */
   "aria-label"?: string;
   /** As {@link "aria-label"}, pointing at an element that already names it. */
@@ -659,9 +659,9 @@ export type TMDataGridTableProps<TData extends RowData> = {
 
 /**
  * The scrollable grid surface. Always virtualized: only the rows inside the
- * viewport (plus overscan) are mounted - which is what makes the default
- * no-pagination mode viable at any row count. Pagination is opt-in via
- * `enablePagination` (or implied by `manualPagination`).
+ * viewport (plus overscan) are mounted, which is what makes the default
+ * no-pagination mode work at any row count. Pagination is opt in through
+ * `enablePagination`, or implied by `manualPagination`.
  */
 export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   onRowClick,
@@ -771,12 +771,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    * `meta.autoSize` columns, sized once each after the first rows are in the
    * DOM.
    *
-   * The wait is the whole point. The virtualizer measures its scroll element in
-   * an effect and mounts its first rows in the render that follows, so on the
-   * mounting commit this column has a header and no cells - and autosize would
-   * fit the header alone, which is the width it kept for the rest of the
-   * session. So the ids are held in a set and each one is dropped only once it
-   * has actually been measured against mounted content.
+   * The wait is required. The virtualizer measures its scroll element in an
+   * effect and mounts its first rows in the render that follows, so on the
+   * mounting commit this column has a header and no cells, and autosize would
+   * fit the header alone and keep that width for the rest of the session. The
+   * ids are therefore held in a set, and each one is dropped only once it has
+   * been measured against mounted content.
    *
    * A ref rather than an effect dependency: a column is sized once per mount,
    * and only while no persisted or user width covers it - autosizing again on a
@@ -1930,10 +1930,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     : null;
 
   /**
-   * The two halves, in the order they are about: the cells first, since the
+   * The two halves, in the order they apply to: the cells first, since the
    * right-click landed on one, then whatever the consumer offers for the row.
-   * Unless the consumer took the composition over, in which case what they
-   * returned is the whole menu.
+   * When the consumer takes the composition over, what they returned is the
+   * entire menu.
    */
   const contextMenuContent = tookOverMenu
     ? rowMenuContent
@@ -1969,8 +1969,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   /**
    * The context menu's dropdown is anchored to a fixed viewport point, so it
    * does not travel with the row when the body scrolls - and under
-   * virtualization the row it belongs to may unmount entirely. Closing is
-   * the honest answer, and matches what every desktop context menu does.
+   * virtualization the row it belongs to may unmount entirely. It therefore
+   * closes on scroll, as a desktop context menu does.
    *
    * The edge callbacks share the handler. Reading scroll offsets here costs
    * no layout; the 1px tolerance absorbs fractional offsets under browser
@@ -2146,8 +2146,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   //
                   // `data-index` is how the virtualizer maps the observed
                   // element back to its item. The panel is inside this element,
-                  // so what gets measured is the row *and* its detail - which
-                  // is the whole reason no second virtual item is needed.
+                  // so what gets measured is the row *and* its detail, which
+                  // is why no second virtual item is needed.
                   data-index={
                     renderDetails && viewIndex >= 0 ? viewIndex : undefined
                   }
@@ -2225,9 +2225,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // Keyboard parity with the checkbox the row replaces.
                   tabIndex={takesKeyboard ? 0 : undefined}
                   // Shift-click extends the browser's text selection across
-                  // every row it passes. `user-select: none` would fix it too,
-                  // but at the cost of ever copying a cell value, so the smear
-                  // is stopped at the one gesture that causes it.
+                  // every row it passes. `user-select: none` would fix that too,
+                  // but would also stop cell values being copied, so it is
+                  // prevented on the one gesture that causes it.
                   onMouseDown={
                     selectsOnRowClick && !isGroupRow
                       ? (event) => {

@@ -1,11 +1,11 @@
 # Clicks and context menus
 
-Reacting to what the reader does in the body: clicking a row, clicking a cell,
-double-clicking, and right-clicking for a menu.
+Handling clicks in the body: a row click, a cell click, a double-click, and a
+right-click for a menu.
 
 Every handler here **composes** with what the click already does. Setting
-`onRowClick` does not replace selection or the highlight - both still happen,
-and yours runs in addition.
+`onRowClick` does not replace selection or the highlight; both still happen,
+and your handler runs as well.
 
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
@@ -27,16 +27,16 @@ hint: Click, double-click and right-click anywhere in the body.
 | `onCellDoubleClick` | same | A double-click that opens an editor still does. |
 | `onCellContextMenu` | same | `renderRowContextMenu` and the cell-selection menu still open. |
 
-Group rows sit out all four. TanStack builds a group row on top of its first
-child's record, so a handler would receive a real-looking row that is the wrong
-one.
+None of the four fires on a group row. TanStack builds a group row on its first
+child's record, so a handler would receive a row that looks real but is the
+wrong one.
 
 ## Context menus
 
-Right-clicking a row opens a Mantine `Menu` at the pointer. The grid owns the
-`Menu` and its `Menu.Dropdown` - opening it at the cursor, closing it on
-Escape, on an outside click, on a body scroll, and after an item is picked. The
-render prop only says what goes inside, so anything valid in a dropdown works:
+Right-clicking a row opens a Mantine `Menu` at the pointer. The grid renders the
+`Menu` and its `Menu.Dropdown`, opens it at the cursor, and closes it on Escape,
+on an outside click, on a body scroll, and after an item is picked. The render
+prop supplies only the contents, so anything valid in a dropdown works:
 `Menu.Item`, `Menu.Label`, `Menu.Divider`, `Menu.Sub`, or your own components.
 
 ```tsx
@@ -63,13 +63,13 @@ render prop only says what goes inside, so anything valid in a dropdown works:
 
 | Argument | Type | Description |
 | --- | --- | --- |
-| `table` | `Table<TMDataGridFeatures, TData>` | For actions that read the wider state - `getSelectedRowModel()`, for instance. |
+| `table` | `Table<TMDataGridFeatures, TData>` | For actions that read wider state, such as `getSelectedRowModel()`. |
 | `row` | `Row<TMDataGridFeatures, TData>` | The right-clicked row. |
 | `cell` | `Cell<…> \| null` | The cell under the pointer, so a per-cell action such as "copy value" is possible. `null` only if a custom cell renderer stopped the event. |
 | `close` | `() => void` | Closes the menu. `Menu.Item` already closes on click, so this is for content that is not a menu item. |
 
 The render prop is called **during render**, and only for the row whose menu is
-open - so keep it a pure function of its arguments and do the work in the item
+open. Keep it a pure function of its arguments and do the work in the item
 handlers.
 
 Return `null` to leave a row without a menu. The browser's own context menu
@@ -81,8 +81,8 @@ renderRowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit
 
 ### Right-clicking does not select
 
-It only marks the row with `data-context-menu` while its menu is open, which is
-what gives it the hover background. An action that should apply to a
+It marks the row with `data-context-menu` while its menu is open, which gives it
+the hover background. An action that should apply to a
 multi-selection can read it off `table` and fall back to the clicked row:
 
 ```tsx
@@ -96,12 +96,13 @@ renderRowContextMenu={({ table, row }) => {
 ### Taking the whole menu
 
 Under `cellSelection: "range"` a right-click inside the selection opens the
-copy and export items too. By default they go above a divider and yours below,
-which is what happens when the render prop never mentions `internalItems` - see
-[Cell selection](/docs/cell-selection#copy-and-export).
+copy and export items too. By default they appear above a divider and yours
+below, which is what happens when the render prop does not use `internalItems`.
+See [Cell selection](/docs/cell-selection#copy-and-export).
 
-`internalItems` is those built-in items, and **reading it hands the composition
-over**: the menu becomes exactly what you return, wherever you put them.
+`internalItems` is those built-in items. **Using it takes over the
+composition**: the menu becomes exactly what you return, in the order you
+return it.
 
 ```tsx
 renderRowContextMenu={({ row, internalItems }) => (
@@ -113,13 +114,13 @@ renderRowContextMenu={({ row, internalItems }) => (
 )}
 ```
 
-Reading it without rendering it is how you drop the built-in half entirely -
-taking the handback means owning the result.
+Accept `internalItems` without rendering it to drop the built-in items
+entirely.
 
 ### Menu options
 
-`rowContextMenuProps` reaches the Mantine `Menu` untouched apart from its open
-state:
+`rowContextMenuProps` is passed to the Mantine `Menu` unchanged, apart from its
+open state:
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -129,20 +130,19 @@ state:
 ```
 
 On touch devices a long press (500 ms) opens the same menu. Mantine sets
-`user-select: none` on the element it hangs a context menu off, so body cell
-text is no longer selectable with the mouse in a grid that has one - the trade
-for a long press opening the menu rather than selecting text.
+`user-select: none` on the element it attaches a context menu to, so body cell
+text is not selectable with the mouse in a grid that has one.
 
-One `Menu` serves the whole body, not one per row: a closed Mantine `Popover`
-still runs its hooks on every render, and the virtualized body re-renders on
-every scroll frame.
+One `Menu` serves the whole body rather than one per row: a closed Mantine
+`Popover` still runs its hooks on every render, and the virtualized body
+re-renders on every scroll frame.
 
 ## Reference
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `onRowClick` | Table prop | `(row) => void` | – | Row click. Adds a pointer cursor. |
-| `onCellClick` | Table prop | `(args) => void` | – | Cell click - `{ cell, row, column, event }`. |
+| `onCellClick` | Table prop | `(args) => void` | – | Cell click. Receives `{ cell, row, column, event }`. |
 | `onCellDoubleClick` | Table prop | `(args) => void` | – | Cell double-click. |
 | `onCellContextMenu` | Table prop | `(args) => void` | – | Cell right-click. |
 | `renderRowContextMenu` | Table prop | `({ table, row, cell, close, internalItems }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |

@@ -33,17 +33,17 @@ All are props of `TMDataGrid.Table`, not hook options.
 | `onCellContextMenu` | `(args) => void` | Cell right-click. |
 | `renderRowContextMenu` | `({ table, row, cell, close, internalItems }) => ReactNode` | Contents of the row's context menu. `null` for no menu. Reading `internalItems` hands the composition over. |
 | `renderColumnMenuItems` | `({ column, table, internalItems }) => ReactNode[]` | Contents of a column's menu. An empty list removes the button. |
-| `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` untouched apart from its open state. |
+| `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` unchanged, apart from its open state. |
 
 `TMDataGridCellEventArgs` is `{ cell, row, column, event }`. The context-menu
 slot's `cell` is `null` only when a custom cell renderer stopped the
-event. One `Menu` serves the whole body: a closed Mantine `Popover` still runs
-its hooks on every render, and the virtualized body re-renders every scroll
-frame.
+event. One `Menu` serves the whole body rather than one per row: a closed
+Mantine `Popover` still runs its hooks on every render, and the virtualized body
+re-renders on every scroll frame.
 
 On touch devices a long press (500 ms) opens the same menu. Mantine sets
-`user-select: none` on the element it hangs a context menu off, so body cell
-text stops being mouse-selectable in a grid that has one.
+`user-select: none` on the element it attaches a context menu to, so body cell
+text is not selectable with the mouse in a grid that has one.
 
 ## Styling
 

@@ -1,8 +1,9 @@
 # Visibility, pinning, ordering and size
 
-Four things the reader can do to the shape of the grid, and one button that
-puts them all back. All four write state that [persists](/docs/use-tm-data-grid#persist)
-together, so a grid comes back arranged the way it was left.
+Four things a user can change about the layout of the grid, and one button that
+resets them. All four write state that
+[persists](/docs/use-tm-data-grid#persist) together, so a grid comes back
+arranged the way it was left.
 
 ```demo
 file: columns/ColumnLayout.tsx
@@ -24,8 +25,8 @@ nothing else. Show/hide all covers the same list, so a column switched off this
 way keeps whatever visibility it was given. The state is TanStack's
 `columnVisibility`.
 
-The generated lanes are all `enableHiding: false` and so never appear: the
-checkbox and edit lanes hold controls the grid needs to work, the tree column
+The generated lanes are all `enableHiding: false` and never appear in the panel.
+The checkbox and edit lanes hold controls the grid needs, the tree column
 follows the grouping state, and the row-number gutter follows
 `enableRowNumbers`. None of them is a user setting.
 
@@ -33,8 +34,8 @@ follows the grouping state, and the row-number gutter follows
 
 **Pin to left** and **Pin to right** are in each column menu. The current
 position is marked, and choosing it again unpins. Pinned columns are sticky
-within the scroll container, and the boundary is marked with a divider and a
-short gradient band that fades in only while it is actually covering something.
+within the scroll container. The boundary is marked with a divider and a short
+gradient band, which fades in only while it is covering content.
 
 Headers, cells and grid tracks are ordered left, centre, right from the same
 source, so pinning does not change a column's position relative to its group.
@@ -43,40 +44,38 @@ A pinned column also becomes fixed-width: sticky offsets are computed from
 `getSize()`, which cannot resolve an `fr` value. The grid stores the column's
 rendered width in `columnSizing` at the moment it is pinned, so nothing jumps.
 
-The generated lanes keep the outside of both pinned lanes: pinning a column
-right puts it to the left of the edit lane, so the row's Save, Cancel and
-Delete stay the last thing in the row.
+The generated lanes stay outside both pinned lanes: pinning a column right puts
+it to the left of the edit lane, so the row's Save, Cancel and Delete remain
+last in the row.
 
 ## Ordering
 
-Drag a column header sideways to move it: the header being dragged dims and a
+Drag a column header sideways to move it. The header being dragged dims, and a
 bar marks the edge the column will land against. **Move left** and **Move
-right** in the column menu do the same thing one step at a time, which is the
-path that works without a pointer. Both move the header, its cells and its
-filter entry together.
+right** in the column menu do the same one step at a time, without a pointer.
+Both move the header, its cells and its filter entry together.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns, enableColumnOrdering: false });
 ```
 
-`enableColumnOrdering` is one of two switches the grid defines itself -
-TanStack ships the state and the APIs for ordering but no `enable` option,
-since reordering is entirely a matter of interface. The per-column form is
-`meta.enableOrdering`, for the same reason.
+`enableColumnOrdering` is defined by the grid rather than by TanStack, which
+ships the ordering state and APIs but no `enable` option. The per-column form is
+`meta.enableOrdering`.
 
 ### Regions
 
-A column can only move **within its own pinned region**, so a header in another
-region never accepts the drop. This follows TanStack's ordering pipeline:
+A column can only move **within its own pinned region**; a header in another
+region does not accept the drop. This follows TanStack's ordering pipeline:
 pinning splits the grid into left, centre and right, then `columnOrder`
 sequences the centre while `columnPinning.left` and `.right` sequence the
 pinned lanes. Unpin a column first to move it out of one.
 
-A neighbour that cannot be moved acts as a wall rather than being stepped over.
-The checkbox column sets `meta.enableOrdering: false`, so nothing can be placed
-in front of it.
+A neighbour that cannot be moved blocks the move; it is not stepped over. The
+checkbox column sets `meta.enableOrdering: false`, so nothing can be placed in
+front of it.
 
-Columns inside a header group are not movable either, in either direction:
+Columns inside a header group cannot be moved either, in either direction:
 `columnOrder` sequences leaf columns, so moving one would leave the group header
 spanning columns that no longer belong to it.
 
@@ -91,8 +90,8 @@ moveColumnByStep({ table, columnId: "salary", direction: 1 });
 
 Both are no-ops for a move that is not allowed, including one across regions.
 `getStepTargetColumn({ table, columnId, direction })` returns the column a step
-would swap with, or `null` at the edge of a region - that is what the menu items
-use to disable themselves.
+would swap with, or `null` at the edge of a region. The menu items use it to
+decide whether to disable themselves.
 
 ### State
 
@@ -118,22 +117,19 @@ it is resized or pinned, and the width is stored in `columnSizing`.
 
 ### Autosizing
 
-Double-click a column's resize divider and it sizes itself to its widest
-mounted content - the spreadsheet gesture. **Autosize column** in the column
-menu does the same without a pointer, and `meta.autoSize: true` runs it once
-after the first rows render, unless a persisted or user-set width already covers
-the column.
+Double-click a column's resize divider to size it to its widest mounted
+content. **Autosize column** in the column menu does the same without a
+pointer, and `meta.autoSize: true` runs it once after the first rows render,
+unless a persisted or user-set width already applies to the column.
 
-**Mounted content only.** Under virtualization the unmounted rows do not exist
-to be measured, so the width fits the visible window plus overscan - the same
-trade AG Grid's autosize makes. The result is clamped to `minSize`/`maxSize` and
-written into `columnSizing`, so it persists with the other widths and a later
-drag takes over from it.
+**Mounted content only.** Under virtualization the unmounted rows cannot be
+measured, so the width fits the visible window plus overscan. The result is
+clamped to `minSize`/`maxSize` and written into `columnSizing`, so it persists
+with the other widths and a later drag overrides it.
 
-`meta.autoSize` waits for content: on a grid whose rows are fetched, the first
-render has a header and no cells, and a width measured there would fit the title
-alone. The column is sized on the render its first cells appear in, whenever
-that is.
+`meta.autoSize` waits for content. On a grid whose rows are fetched, the first
+render has a header and no cells, and a width measured there would fit only the
+title, so the column is sized on the render its first cells appear in.
 
 `autosizeColumn({ table, columnId, container })` is exported for menus and
 consumer code; `container` is the grid's scroll container, or any ancestor of
@@ -141,8 +137,8 @@ the column's cells.
 
 ## The column menu
 
-Every affordance above reaches the reader through a column's menu, and
-`renderColumnMenuItems` on `TMDataGrid.Table` decides what is in it. It receives
+Everything above is reachable from a column's menu, and
+`renderColumnMenuItems` on `TMDataGrid.Table` sets what is in it. It receives
 the items the grid would have rendered and returns the list to render:
 
 ```tsx
@@ -157,20 +153,18 @@ the items the grid would have rendered and returns the list to render:
 />
 ```
 
-`internalItems` is the built-in list in order, dividers included - so returning
-it unchanged is the default menu, splicing around it extends the menu, and
-returning something else replaces it. Return an empty list and the column has
-no menu button at all, exactly as if its every feature were switched off.
+`internalItems` is the built-in list in order, dividers included. Returning it
+unchanged gives the default menu, splicing around it extends the menu, and
+returning something else replaces it. Return an empty list and the column has no
+menu button at all, as if every one of its features were switched off.
 
 It runs for every column that has a menu, so branch on `column.id` for a
-per-column menu. A trailing divider is dropped for you, whichever side left it
-there.
+per-column menu. A trailing divider is dropped automatically.
 
 ## Putting it back
 
 `resetSettings()` from the hook clears visibility, order, pinning and widths in
-one go - and the columns panel offers it as **Reset layout**, so the reader
-never has to undo four things by hand.
+one call. The columns panel offers it as **Reset layout**.
 
 ```tsx
 const { resetSettings } = useTMDataGrid({ data, columns });
