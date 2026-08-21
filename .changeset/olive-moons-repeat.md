@@ -11,5 +11,8 @@ Generated lanes are no longer user settings.
   `table.toggleAllColumnsVisible`, which writes every leaf column: "show all"
   published the tree column and "hide all" forced it visible.
 - A column pinned right lands to the left of the edit lane.
+- A stale `columnVisibility` entry for a generated lane - persisted before
+  this release, or passed in `initialState` - is dropped at mount and on
+  Reset layout, since nothing in the grid could bring the lane back.
 
 New export: `keepGeneratedColumnsOutermost`, `isGeneratedColumn`.

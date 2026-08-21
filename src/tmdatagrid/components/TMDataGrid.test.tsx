@@ -250,6 +250,30 @@ describe("column visibility", () => {
     expect(part("select-all")).toBeInTheDocument();
     expect(header("city")).toBeInTheDocument();
   });
+
+  // enableHiding: false only gates toggleVisibility - TanStack applies a
+  // `columnVisibility` entry regardless - so without the scrub a stale `false`
+  // would hide a lane the panel no longer lists and cannot bring back.
+  it("ignores a visibility entry for a control lane in initialState", () => {
+    renderGridUi({
+      initialState: { columnVisibility: { [SELECT_COLUMN_ID]: false } },
+    });
+
+    expect(part("select-all")).toBeInTheDocument();
+  });
+
+  it("ignores a persisted visibility entry for a control lane", () => {
+    // The payload a pre-2.1 session left behind, when the lane was hideable.
+    localStorage.setItem(
+      "s",
+      JSON.stringify({ __v: 1, columnVisibility: { [SELECT_COLUMN_ID]: false, city: false } }),
+    );
+    renderGridUi({ persist: { settingsKey: "s" } });
+
+    expect(part("select-all")).toBeInTheDocument();
+    // The user's own hidden column still restores.
+    expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
+  });
 });
 
 describe("row numbers", () => {
