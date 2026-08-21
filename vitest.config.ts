@@ -12,7 +12,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
+    // The deploy scripts are plain ESM run by the workflow, not part of a
+    // build, so their tests sit beside them rather than under src/.
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
     restoreMocks: true,
   },
 });

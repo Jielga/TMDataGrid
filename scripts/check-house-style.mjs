@@ -9,9 +9,15 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 
+/**
+ * Build output and tooling state, none of it written by hand. `.types-tmp`
+ * holds the declarations the dts rollup reads, and a stale copy of it failed
+ * this check on a comment its source no longer had.
+ */
 const SKIP_DIRS = new Set([
   ".git",
   ".playwright-mcp",
+  ".types-tmp",
   "coverage",
   "dist",
   "dist-demo",

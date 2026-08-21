@@ -10,6 +10,7 @@
 // Usage: node scripts/docs-manifest.mjs <site-dir>
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { compareVersions } from "./semver.mjs";
 
 const site = process.argv[2];
 if (!site) {
@@ -45,44 +46,6 @@ function readMeta(path) {
     // describe, which is the same answer as it not being there.
     return null;
   }
-}
-
-/** Semver precedence, enough of it to order the lines against each other. */
-function compareVersions(a, b) {
-  const parse = (version) => {
-    const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/.exec(
-      version ?? "",
-    );
-    if (!match) return null;
-    return {
-      release: [Number(match[1]), Number(match[2]), Number(match[3])],
-      pre: match[4] ? match[4].split(".") : [],
-    };
-  };
-
-  const left = parse(a);
-  const right = parse(b);
-  if (!left || !right) return 0;
-
-  for (let i = 0; i < 3; i++) {
-    if (left.release[i] !== right.release[i]) {
-      return left.release[i] - right.release[i];
-    }
-  }
-  // Same release: a prerelease ranks below the release it leads up to.
-  if (left.pre.length === 0 || right.pre.length === 0) {
-    return left.pre.length === 0 ? (right.pre.length > 0 ? 1 : 0) : -1;
-  }
-  for (let i = 0; i < Math.min(left.pre.length, right.pre.length); i++) {
-    const one = left.pre[i];
-    const other = right.pre[i];
-    const numeric = /^\d+$/.test(one) && /^\d+$/.test(other);
-    if (numeric && Number(one) !== Number(other)) {
-      return Number(one) - Number(other);
-    }
-    if (!numeric && one !== other) return one < other ? -1 : 1;
-  }
-  return left.pre.length - right.pre.length;
 }
 
 const entries = [];

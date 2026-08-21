@@ -5,10 +5,10 @@ import { isRecord, useJson } from "./useJson";
  * it.
  *
  * The site is published as several complete builds under one Pages root: the
- * latest stable release at the root, the tip of main at `next/`, one directory
- * per minor line at `v1.1/`, and labelled pull request previews at
- * `b/<branch>/`. Each build is compiled against its own `--base`, so switching
- * version is a full page load to another bundle, never a router navigation.
+ * newest release at the root, the tip of main at `next/`, one directory per
+ * minor line at `v1.1/`, and labelled pull request previews at `b/<branch>/`.
+ * Each build is compiled against its own `--base`, so switching version is a
+ * full page load to another bundle, never a router navigation.
  *
  * The identity of a copy is stamped at build time, unlike the registry figures
  * in `packageStatus.ts`: a build genuinely is one version's documentation for

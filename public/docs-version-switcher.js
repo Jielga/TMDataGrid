@@ -1,7 +1,7 @@
 // The version switcher for documentation copies built before the header had
 // one.
 //
-// The root of the site serves the latest stable release, and that release can
+// The root of the site serves the newest release, and that release can
 // predate this feature: without this script the page everyone links to would be
 // the one page with no way to reach the other versions. The deploy injects a
 // tag for this file into any build made from a ref whose header cannot switch

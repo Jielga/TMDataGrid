@@ -36,16 +36,17 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
-**Versioned documentation** - **done 2026-08-21**. The docs site publishes
-several complete builds under one Pages root, held on a `gh-pages` branch:
-the latest stable release at the root, the tip of main at `next/`, one
-directory per minor line at `v1.1/`, and previews at `b/<branch>/` while a pull
-request carries the `docs-preview` label. The header's version badge became the
-menu that moves between them, carrying the page you are on across. What a run
-publishes is decided against the branch's own state rather than against git
-history, so a run is idempotent and a missed line is picked up by the next push.
-Copies built before the menu existed get a standalone one injected, which is
-what keeps the root reachable while it serves 1.1.1.
+**Versioned documentation** - **done 2026-08-21**, corrected the same day.
+The docs site publishes several complete builds under one Pages root, held on a `gh-pages` branch: the newest release at the root, the tip of main at `next/`, one directory per minor line at `v1.1/`, and previews at `b/<branch>/` while a pull request carries the `docs-preview` label.
+The header's version badge became the menu that moves between them, carrying the page you are on across.
+What a run publishes is decided against the branch's own state rather than against git history, so a run is idempotent and a missed line is picked up by the next push.
+Copies built before the menu existed get a standalone one injected, which is what keeps an older release reachable when that is what the root serves.
+
+The first deploy left the site's entry point answering 404.
+Mirroring to the root required a stable release, the 2.0 prerelease wave produces none, and the manual seeding run meant to cover the gap was never made, so `next/` and `v2.0/` were the only copies and nothing served the root.
+An empty root now takes whatever a run is publishing, the decision moved into `scripts/docs-plan.mjs` as a pure function with tests, and the two deploy scripts share one prerelease-aware comparison so a stable release can take the root from the prerelease it led up to.
+
+Two steps are left, both wanting repository access rather than a commit: `v1.0` and `v1.1` have never been published and want a `workflow_dispatch` each, and pull request previews cannot deploy until the `github-pages` environment allows branches other than `main`.
 
 **Column meta namespaces (2.0)** - **done 2026-08-20**, breaking. `meta.edit`
 and `meta.filter` group the fields belonging to those stages, leaving `label`,

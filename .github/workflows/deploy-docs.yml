@@ -2,7 +2,7 @@ name: Deploy docs
 
 # The site is published as several complete builds under one Pages root:
 #
-#   /TMDataGrid/              the latest stable release
+#   /TMDataGrid/              the newest release, or the newest line there is
 #   /TMDataGrid/next/         the tip of main
 #   /TMDataGrid/v2.0/         one directory per minor line
 #   /TMDataGrid/b/<branch>/   previews, while a pull request is labelled
@@ -16,7 +16,7 @@ name: Deploy docs
 #
 # A versioned snapshot hangs off the push to main rather than off a tag, because
 # Changesets creates tags with GITHUB_TOKEN and events raised by that token do
-# not start workflow runs. See scripts/docs-targets.mjs for the rules.
+# not start workflow runs. See scripts/docs-plan.mjs for the rules.
 
 on:
   push:
@@ -119,7 +119,8 @@ jobs:
           # tooling is put out of reach of the checkout first.
           tools="$RUNNER_TEMP/docs-deploy"
           mkdir -p "$tools"
-          cp scripts/docs-manifest.mjs public/docs-version-switcher.js "$tools/"
+          cp -a scripts/. "$tools/"
+          cp public/docs-version-switcher.js "$tools/"
 
           head_sha=$(git rev-parse HEAD)
           current=""
