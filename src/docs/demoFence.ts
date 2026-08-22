@@ -92,16 +92,98 @@ export function parseDemoFence(body: string): DemoBlockDemo {
   };
 }
 
+export type DocsSegment =
+  | { kind: "prose"; markdown: string }
+  | { kind: "demo"; demo: DemoBlockDemo };
+
+type FenceOpening = { marker: string; info: string };
+
+const fenceOpening = (line: string): FenceOpening | undefined => {
+  const match = /^(`{3,})(.*)$/.exec(line);
+  return match ? { marker: match[1], info: match[2].trim() } : undefined;
+};
+
+/** A closing fence carries no info string and at least the opener's length. */
+const closesFence = (line: string, opening: FenceOpening): boolean => {
+  const match = /^(`{3,})\s*$/.exec(line);
+  return match !== null && match[1].length >= opening.marker.length;
+};
+
 /**
- * Every demo fence in a markdown source, in the order they appear.
+ * A page split at its demo fences: the prose between them, in order, with each
+ * demo parsed.
  *
- * `\r?` rather than `\n`: a Windows checkout under `core.autocrlf` hands these
- * pages over with CRLF endings, and an LF-only pattern then finds no fences at
- * all - which surfaces as demos being orphaned rather than as anything naming
- * line endings.
+ * Line-by-line rather than one regex because only a *top-level* fence is a
+ * demo: a page showing the fence syntax inside a ````markdown block means it
+ * as text, and a pattern blind to the enclosing fence would lift the example
+ * out and render it.
+ *
+ * `\r?\n`: a Windows checkout under `core.autocrlf` hands these pages over
+ * with CRLF endings, and an LF-only split then finds no fences at all - which
+ * surfaces as demos being orphaned rather than as anything naming line
+ * endings.
  */
+export function splitDemoFences(source: string): Array<DocsSegment> {
+  const segments: Array<DocsSegment> = [];
+  const prose: Array<string> = [];
+  const lines = source.split(/\r?\n/);
+
+  const flushProse = () => {
+    const markdown = prose.join("\n");
+    prose.length = 0;
+    if (markdown.trim().length > 0) {
+      segments.push({ kind: "prose", markdown });
+    }
+  };
+
+  let index = 0;
+  let openFence: FenceOpening | undefined;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    // Inside an ordinary fence everything is text, including ```demo lines.
+    if (openFence) {
+      prose.push(line);
+      if (closesFence(line, openFence)) {
+        openFence = undefined;
+      }
+      index += 1;
+      continue;
+    }
+
+    const opening = fenceOpening(line);
+
+    if (opening?.info === "demo") {
+      const body: Array<string> = [];
+      index += 1;
+      while (index < lines.length && !closesFence(lines[index], opening)) {
+        body.push(lines[index]);
+        index += 1;
+      }
+      if (index === lines.length) {
+        throw new Error(`Demo fence never closed: "${body.join(" ").trim()}".`);
+      }
+      index += 1;
+      flushProse();
+      segments.push({ kind: "demo", demo: parseDemoFence(body.join("\n")) });
+      continue;
+    }
+
+    if (opening) {
+      openFence = opening;
+    }
+    prose.push(line);
+    index += 1;
+  }
+
+  flushProse();
+  return segments;
+}
+
+/** Every demo fence in a markdown source, in the order they appear. */
 export function findDemoFences(source: string): Array<DemoBlockDemo> {
-  return [...source.matchAll(/^```demo\r?\n([\s\S]*?)^```/gm)].map((match) =>
-    parseDemoFence(match[1]),
+  return splitDemoFences(source).flatMap((segment) =>
+    segment.kind === "demo" ? [segment.demo] : [],
   );
 }
