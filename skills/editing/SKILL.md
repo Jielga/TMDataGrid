@@ -68,16 +68,9 @@ const grid = useTMDataGrid({
 </TMDataGrid>;
 ```
 
-The editing options depend on each other, and the types enforce it. Each line
-below is a compile error, not an option that silently does nothing.
-
-| This option | Requires |
-| --- | --- |
-| `editing.onCommit` · `editing.onCommitBatch` · `editing.isRowEditable` · `editing.rowValidators` · `editing.newRowDefaults` · `editing.onRowAdd` · `editing.onRowDelete` | `editing.mode` |
-| `editing` | `getRowId` |
-| `editing.onCommitBatch` | `editing.mode: "batch"` |
-
-`editing.mode: "batch"` without `editing.onCommitBatch` is fine: `submitAll`
+Two rules are compile errors, not options that silently do nothing: `editing`
+requires `getRowId`, and `editing.onCommitBatch` exists only under
+`editing.mode: "batch"`. Batch _without_ `onCommitBatch` is fine: `submitAll`
 falls back to the per-row `editing.onCommit` loop.
 
 ## The four modes
@@ -266,18 +259,11 @@ while editing is off, and works under any mode, not only batch.
 
 `grid.edit` is public, and everything the built-in controls do goes through it:
 `begin` and `commit`, `cancel` / `cancelAll`, `submitAll`, `addRow` /
-`deleteRow`, `getForm`, and `store` for `useSelector`. Every member with its
-signature, the gates, `clearCell`, `deactivate`, and the `edit.store` shape are
-in [references/editing-api.md](references/editing-api.md#the-edit-engine).
-
-```tsx
-import { useSelector } from "@tanstack/react-store";
-
-const pendingCount = useSelector(
-  grid.edit.store,
-  (state) => state.openRowIds.length + state.deletedRowIds.length,
-);
-```
+`deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
+[Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
+Every member with its signature, the gates, `clearCell`, `deactivate`, and the
+`edit.store` shape are in
+[references/editing-api.md](references/editing-api.md#the-edit-engine).
 
 `getForm` exposes the row's form: render it in a drawer and it shares values,
 dirty state and errors with the inline cells, because it is the same
@@ -316,24 +302,8 @@ useTMDataGrid({
 });
 ```
 
-Correct:
-
-```tsx
-useTMDataGrid({
-  data: employees,
-  columns,
-  getRowId,
-  editing: {
-    mode: "cell",
-    onCommit: ({ rowId, value }) =>
-      setEmployees((previous) =>
-        previous.map((employee) =>
-          String(employee.id) === rowId ? value : employee,
-        ),
-      ),
-  },
-});
-```
+Correct: wire `editing.onCommit` to apply the change where the data lives, as
+in [Setup](#setup).
 
 Source: `src/docs/editing.md`, `src/tmdatagrid/core/editEngine.ts`.
 
@@ -456,14 +426,8 @@ onCommit: async ({ rowId, changes }) => {
 },
 ```
 
-Correct:
-
-```tsx
-// Reject: the form stays open with the error on the row.
-onCommit: async ({ rowId, changes }) => {
-  await api.patch(rowId, changes);
-},
-```
+Correct: no `catch` - let the rejection propagate, and the form stays open
+with the error on the row.
 
 Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 
