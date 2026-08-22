@@ -1,5 +1,54 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.1
+
+### Major Changes
+
+- [`c662c8a`](https://github.com/Jielga/TMDataGrid/commit/c662c8a36e97bea7e47f58dea437555d1690df3f) Thanks [@Psvensso](https://github.com/Psvensso)! - The editing options of `useTMDataGrid` are namespaced under one `editing`
+  object, matching the 2.0 `meta.edit` column namespacing.
+
+  - `editMode: X` becomes `editing: { mode: X }`
+  - `onEditCommit` becomes `editing.onCommit`
+  - `onEditCommitBatch` becomes `editing.onCommitBatch`
+  - `rowValidators`, `isRowEditable`, `newRowDefaults`, `onRowAdd` and
+    `onRowDelete` keep their names and move inside `editing`
+  - `getRowId` stays top-level and is still required once `editing` is set
+
+  `TMDataGridEditingOptions` is now the type of the `editing` object itself.
+  `TMDataGridEditMode`, the `edit` engine and the feature flags are unchanged.
+
+### Minor Changes
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`acd8b0c`](https://github.com/Jielga/TMDataGrid/commit/acd8b0cdc1adfd8682f16d07a488a5375826a2d0) Thanks [@Psvensso](https://github.com/Psvensso)! - Generated lanes are no longer user settings.
+
+  - The checkbox and edit lanes are `enableHiding: false`, like the other three.
+  - "Manage columns" lists only hideable columns; a column with
+    `enableHiding: false` is left out rather than shown disabled.
+  - Show/hide all writes only the columns it lists. It used
+    `table.toggleAllColumnsVisible`, which writes every leaf column: "show all"
+    published the tree column and "hide all" forced it visible.
+  - A column pinned right lands to the left of the edit lane.
+  - A stale `columnVisibility` entry for a generated lane - persisted before
+    this release, or passed in `initialState` - is dropped at mount and on
+    Reset layout, since nothing in the grid could bring the lane back.
+
+  New export: `keepGeneratedColumnsOutermost`, `isGeneratedColumn`.
+
+### Patch Changes
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`acc190b`](https://github.com/Jielga/TMDataGrid/commit/acc190b169792f36e673453c3440c62071fe55e9) Thanks [@Psvensso](https://github.com/Psvensso)! - `--dg-radius` sets the frame's corner radius, defaulting to
+  `--mantine-radius-md`.
+
+  ```tsx
+  <TMDataGrid {...grid} style={{ "--dg-radius": 0 }} />
+  ```
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`aa3aeac`](https://github.com/Jielga/TMDataGrid/commit/aa3aeac4b84fafed7b95072cccfb4f056741699d) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.autoSize` waits for the column's first cells.
+
+  It ran once on the mounting commit, so a grid whose rows are fetched had a
+  header and no cells to measure and the column kept that width. The
+  double-click gesture and the **Autosize column** menu item are unchanged.
+
 ## 2.0.0-beta.0
 
 ### Major Changes
