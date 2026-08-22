@@ -39,13 +39,13 @@ describe("readFeatureFlags", () => {
   });
 
   it("brings the cell cursor along with editing, unless told otherwise", () => {
-    expect(readFeatureFlags({ editMode: "cell" })).toMatchObject({
+    expect(readFeatureFlags({ editing: { mode: "cell" } })).toMatchObject({
       editing: true,
       editMode: "cell",
       cellSelectionMode: "single",
     });
     expect(
-      readFeatureFlags({ editMode: "cell", cellSelection: "range" }),
+      readFeatureFlags({ editing: { mode: "cell" }, cellSelection: "range" }),
     ).toMatchObject({ cellSelectionMode: "range" });
     expect(readFeatureFlags({})).toMatchObject({ cellSelectionMode: "none" });
   });

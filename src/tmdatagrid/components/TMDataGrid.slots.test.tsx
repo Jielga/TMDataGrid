@@ -259,8 +259,7 @@ describe("renderRowContextMenu", () => {
 
 describe("EditActions renderActions", () => {
   const editable = {
-    editMode: "cell" as const,
-    onEditCommit: vi.fn(),
+    editing: { mode: "cell" as const, onCommit: vi.fn() },
   };
 
   it("hands over the pending count and the built-in buttons", () => {

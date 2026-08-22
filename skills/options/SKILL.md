@@ -47,7 +47,7 @@ rather than forwarded to TanStack.
 | --- | --- | --- | --- |
 | `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo`. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
-| `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. Required once `editMode` is set. |
+| `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. Required once `editing` is set. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
 | `selectionMode` | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a row click does. Defined by the grid - see the `rows` skill. |
 | `showSelectedBackground` | `boolean` | Follows the mode | Background tint on selected rows: off for `"checkbox"`, on for `"row"`. Colour is `--dg-row-selected-bg`. Defined by the grid. |
@@ -65,7 +65,7 @@ rather than forwarded to TanStack.
 | `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
-| `editMode` | `"cell" \| "cellConfirm" \| "row" \| "batch"` | off | Turns editing on. Brings `rowValidators`, `isRowEditable`, `onEditCommit`, `onEditCommitBatch`, `newRowDefaults`, `onRowAdd` and `onRowDelete` with it - see the `editing` skill. |
+| `editing` | `TMDataGridEditingOptions` | off | Turns editing on. `mode` (`"cell" \| "cellConfirm" \| "row" \| "batch"`) picks the commit policy; the object also holds `onCommit`, `onCommitBatch`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `onRowAdd` and `onRowDelete` - see the `editing` skill. |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings and `aria-label`s. |
 
 ### Default initial state
@@ -152,7 +152,7 @@ persistence is skipped rather than throwing.
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
-| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editMode` is set. See the `editing` skill. |
+| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See the `editing` skill. |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read on each render. |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. |
 | `resetSettings` | `() => void` | Puts the settings state back to a clean first visit. |

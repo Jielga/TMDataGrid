@@ -388,7 +388,7 @@ export type TMDataGridApi<TData extends RowData> = {
    * The edit engine - open forms, dirty/error projections, and the verbs
    * (`begin`, `commit`, `cancel`, `submitAll`). `edit.getForm(rowId)` hands
    * out the same TanStack Form the inline editors write through, so a drawer
-   * or detail panel can share a row's draft. Inert until `editMode` is set.
+   * or detail panel can share a row's draft. Inert until `editing` is set.
    */
   edit: TMDataGridEditApi;
   /** Table-level feature switches, re-read from options on every render. */
@@ -437,14 +437,8 @@ export type TMDataGridApi<TData extends RowData> = {
   scrollerRef: MutableRefObject<TMDataGridScroller>;
 };
 
-/** The editing callbacks every mode shares. See {@link TMDataGridEditingOptions}. */
+/** The editing members every mode shares. See {@link TMDataGridEditingOptions}. */
 type TMDataGridEditingCallbacks<TData extends RowData> = {
-  /**
-   * `getRowId` stops being optional once editing is on: the forms are keyed
-   * by row id and live outside the DOM, and the index fallback points at a
-   * different record after any sort.
-   */
-  getRowId: NonNullable<TableOptions<TMDataGridFeatures, TData>["getRowId"]>;
   /**
    * Form-level validators for the whole editing row - where cross-field
    * rules live. TanStack Form's own vocabulary, Standard Schema included:
@@ -473,9 +467,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    * `changes` is the per-field diff (one entry in cell mode), for a PATCH.
    * `value` is the entire edited row, for saving a record.
    */
-  onEditCommit?: (
-    args: TMDataGridEditCommitArgs<TData>,
-  ) => void | Promise<void>;
+  onCommit?: (args: TMDataGridEditCommitArgs<TData>) => void | Promise<void>;
   /**
    * Seed values for `edit.addRow()` - the entry row's starting point. A
    * function is called per added row (fresh timestamps, empty arrays).
@@ -497,14 +489,9 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
 };
 
 /**
- * The editing options travel together, and the type states it: without
- * `editMode` none of them has anything to act on, so passing one is a
- * compile error rather than a dead option; with it, `getRowId` becomes
- * required; and `onEditCommitBatch` exists only under `"batch"` - the one
- * mode whose `submitAll` calls it.
- *
- * `editMode` itself turns cell editing on and picks how commits happen. Off
- * by default.
+ * The `editing` option: one object that turns editing on and holds
+ * everything about it. `mode` picks what counts as a commit and which
+ * controls trigger it; the other members act within that mode.
  *
  * | Mode | Commit | Cancel |
  * | ---- | ------ | ------ |
@@ -513,6 +500,14 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
  * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
  *
+ * Setting `editing` makes `getRowId` required - drafts are keyed by row id,
+ * and the index fallback would name a different record after any sort - and
+ * `onCommitBatch` exists only under `mode: "batch"`, the one mode whose
+ * `submitAll` calls it.
+ *
+ * The object may be written inline: the callbacks are read through a ref
+ * every render, so its identity does not matter.
+ *
  * One TanStack Form per editing row; drafts survive scrolling because the
  * forms live outside the DOM, keyed by row id. Which columns edit, and with
  * what, is declared per column under `meta.edit`: `meta.type` picks the
@@ -520,39 +515,46 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * override the rest.
  */
 export type TMDataGridEditingOptions<TData extends RowData> =
-  | (TMDataGridEditingCallbacks<TData> & {
-      editMode: "batch";
-      /**
-       * Batch mode's save, called once by `edit.submitAll()` with every
-       * valid dirty row. Without it, `submitAll` falls back to the per-row
-       * {@link TMDataGridEditingCallbacks.onEditCommit} loop. Rows failing
-       * validation stay open either way; a rejection keeps every draft.
-       */
-      onEditCommitBatch?: (
-        args: TMDataGridEditCommitBatchArgs<TData>,
-      ) => void | Promise<void>;
-    })
-  | (TMDataGridEditingCallbacks<TData> & {
-      editMode: Exclude<TMDataGridEditMode, "batch">;
-      /** Only `"batch"`'s `submitAll` ever calls it - see the other branch. */
-      onEditCommitBatch?: never;
-    })
-  | {
-      editMode?: never;
-      rowValidators?: never;
-      isRowEditable?: never;
-      onEditCommit?: never;
-      onEditCommitBatch?: never;
-      newRowDefaults?: never;
-      onRowAdd?: never;
-      onRowDelete?: never;
-    };
+  TMDataGridEditingCallbacks<TData> &
+    (
+      | {
+          mode: "batch";
+          /**
+           * Batch mode's save, called once by `edit.submitAll()` with every
+           * valid dirty row. Without it, `submitAll` falls back to the per-row
+           * {@link TMDataGridEditingCallbacks.onCommit} loop. Rows failing
+           * validation stay open either way; a rejection keeps every draft.
+           */
+          onCommitBatch?: (
+            args: TMDataGridEditCommitBatchArgs<TData>,
+          ) => void | Promise<void>;
+        }
+      | {
+          mode: Exclude<TMDataGridEditMode, "batch">;
+          /** Only `"batch"`'s `submitAll` ever calls it - see the other branch. */
+          onCommitBatch?: never;
+        }
+    );
 
 export type UseTMDataGridOptions<TData extends RowData> = Omit<
   TableOptions<TMDataGridFeatures, TData>,
   "features"
 > &
-  TMDataGridEditingOptions<TData> & {
+  (
+    | { editing?: undefined }
+    | {
+        /** Turns editing on. See {@link TMDataGridEditingOptions}. */
+        editing: TMDataGridEditingOptions<TData>;
+        /**
+         * Required once `editing` is set: the forms are keyed by row id and
+         * live outside the DOM, and the index fallback points at a different
+         * record after any sort.
+         */
+        getRowId: NonNullable<
+          TableOptions<TMDataGridFeatures, TData>["getRowId"]
+        >;
+      }
+  ) & {
   /**
    * Restore and persist table state across mounts. Two keys, because the two
    * kinds of state have different lifetimes - see {@link TMDataGridPersistence}.
@@ -870,19 +872,16 @@ export function useTMDataGrid<TData extends RowData>({
   onHighlightedRowChange,
   cellSelection,
   onFocusedCellChange,
-  editMode,
-  rowValidators,
-  isRowEditable,
-  onEditCommit,
-  onEditCommitBatch,
-  newRowDefaults,
-  onRowAdd,
-  onRowDelete,
+  editing,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
+  // The one place `editing` is unpacked - the engine and the flags keep their
+  // own vocabulary (`editMode`, `onEditCommit`), so the mapping lives here.
+  const editMode = editing?.mode;
+
   // Derived up here, rather than just before the return, because the rest of the
   // hook needs `selectColumn` - one place decides what each mode means.
   //
@@ -897,7 +896,7 @@ export function useTMDataGrid<TData extends RowData>({
     selectionMode,
     showSelectedBackground,
     cellSelection,
-    editMode,
+    editing,
   });
 
   // Resolved on the override's identity, so a module-scope dictionary costs one
@@ -913,10 +912,10 @@ export function useTMDataGrid<TData extends RowData>({
   // Row mode's Save sits at the end of the row - the lane is its chrome. It
   // also appears wherever the trash can has somewhere to report to.
   const editColumnEnabled =
-    editMode !== undefined &&
-    (editMode === "row" ||
-      onRowDelete !== undefined ||
-      (editMode === "batch" && onEditCommitBatch !== undefined));
+    editing !== undefined &&
+    (editing.mode === "row" ||
+      editing.onRowDelete !== undefined ||
+      (editing.mode === "batch" && editing.onCommitBatch !== undefined));
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
   // depends on the strings rather than on the labels object - a fresh
@@ -1086,16 +1085,18 @@ export function useTMDataGrid<TData extends RowData>({
   editContextRef.current = {
     table: table as unknown as TMDataGridTable<TMDataGridRowData>,
     editMode: editMode ?? "cell",
-    rowValidators,
-    isRowEditable: isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
+    rowValidators: editing?.rowValidators,
+    isRowEditable:
+      editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:
-      onEditCommit as TMDataGridEditEngineContext["onEditCommit"],
+      editing?.onCommit as TMDataGridEditEngineContext["onEditCommit"],
     onEditCommitBatch:
-      onEditCommitBatch as TMDataGridEditEngineContext["onEditCommitBatch"],
+      editing?.onCommitBatch as TMDataGridEditEngineContext["onEditCommitBatch"],
     newRowDefaults:
-      newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
-    onRowAdd: onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
-    onRowDelete: onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
+      editing?.newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
+    onRowAdd: editing?.onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
+    onRowDelete:
+      editing?.onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
   };
   const [edit] = useState(() =>
     createEditEngine(() => editContextRef.current),
@@ -1114,9 +1115,9 @@ export function useTMDataGrid<TData extends RowData>({
   // Editing without stable ids points every draft at whatever record slides
   // into that index after a sort. Loud, once, in development.
   useEffect(() => {
-    if (editMode !== undefined && options.getRowId === undefined) {
+    if (editing !== undefined && options.getRowId === undefined) {
       console.error(
-        "TMDataGrid: editMode requires getRowId - drafts are keyed by row id, and the index fallback names a different record after any sort or filter.",
+        "TMDataGrid: editing requires getRowId - drafts are keyed by row id, and the index fallback names a different record after any sort or filter.",
       );
     }
     // The check is a mount-time contract, not something to re-run per render.

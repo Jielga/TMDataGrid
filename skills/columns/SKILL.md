@@ -99,7 +99,7 @@ meta: {
 ```
 
 `enableOrdering` lives in `meta` because column ordering is the one feature
-TanStack defines no column option for. `meta.edit` only acts once `editMode` is
+TanStack defines no column option for. `meta.edit` only acts once `editing` is
 set: see the `editing` skill. `meta.filter` belongs to the `filtering` skill.
 
 ### Column types
@@ -246,7 +246,7 @@ asks for it.
 | Checkbox | `SELECT_COLUMN_ID` | Selection is on and the mode has checkboxes |
 | Tree | `GROUP_COLUMN_ID` | A column is grouped |
 | Details | `DETAILS_COLUMN_ID` | `renderDetails` is set |
-| Edit | `EDIT_COLUMN_ID` | Row mode, `onRowDelete`, or batch with `onEditCommitBatch` |
+| Edit | `EDIT_COLUMN_ID` | Row mode, `editing.onRowDelete`, or batch with `editing.onCommitBatch` |
 
 They are structural: fixed width, no column menu, and they cannot be sorted,
 filtered, resized, re-pinned or moved. The checkbox lane anchors the left pinned

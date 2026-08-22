@@ -118,7 +118,7 @@ export type TMDataGridFeatureFlags = {
    * its own grouping can still say `enableGrouping: true` to override.
    */
   grouping: boolean;
-  /** Whether cells can be edited at all - `editMode` was set. */
+  /** Whether cells can be edited at all - the `editing` option was set. */
   editing: boolean;
   /** The commit policy, or `null` while editing is off. */
   editMode: TMDataGridEditMode | null;
@@ -157,7 +157,7 @@ export function readFeatureFlags<TData extends RowData>(
     | "enablePagination"
     | "manualPagination"
     | "enableGrouping"
-    | "editMode"
+    | "editing"
     | "enableRowNumbers"
     | "enableRowPinning"
     | "enableMatchHighlighting"
@@ -168,7 +168,7 @@ export function readFeatureFlags<TData extends RowData>(
   // address "the focused cell", which only exists under cell selection. An
   // explicit `cellSelection` still wins, `"range"` included.
   const cellSelectionMode =
-    options.cellSelection ?? (options.editMode !== undefined ? "single" : "none");
+    options.cellSelection ?? (options.editing !== undefined ? "single" : "none");
   // `"highlight"` is the master-detail mode: no selection to speak of, so the
   // checkbox column and the click-to-select behaviour both fall away. Otherwise
   // `enableRowSelection` still has the final say, including its predicate form.
@@ -202,8 +202,8 @@ export function readFeatureFlags<TData extends RowData>(
     pagination:
       options.enablePagination === true || options.manualPagination === true,
     grouping: options.enableGrouping ?? options.manualPagination !== true,
-    editing: options.editMode !== undefined,
-    editMode: options.editMode ?? null,
+    editing: options.editing !== undefined,
+    editMode: options.editing?.mode ?? null,
     rowNumbers: options.enableRowNumbers === true,
     // A predicate counts as on - some rows may still pin.
     rowPinning:

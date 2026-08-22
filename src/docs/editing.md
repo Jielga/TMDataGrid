@@ -2,38 +2,41 @@
 
 `@tanstack/react-form` becomes a peer dependency once editing is used.
 
-Set `editMode` and `onEditCommit` on the config and the grid shows editors in the cells when a row/cell gets open for edit. Each row gets a TanStack form wrapper that hold the local form state and calls `onEditCommit` once the form data is committed. So edit works in an uncontrolled React manner by providing data > onEditCommit (onChange).
+Everything about editing lives in one config option: `editing`. Its `mode`
+picks how commits happen, `onCommit` receives them, and the grid shows editors
+in the cells when a row/cell gets open for edit. Each row gets a TanStack form
+wrapper that holds the local form state and calls `onCommit` once the form data
+is committed. So edit works in an uncontrolled React manner by providing data >
+`onCommit` (onChange).
 
 ```tsx
 const grid = useTMDataGrid({
   data,
   columns,
   getRowId: (row) => String(row.id),
-  editMode: "cell",
-  onEditCommit: async ({ rowId, value, changes }) => {
-    await api.patch(rowId, changes);
+  editing: {
+    mode: "cell",
+    onCommit: async ({ rowId, value, changes }) => {
+      await api.patch(rowId, changes);
+    },
   },
 });
 ```
 
-## What requires what
+Two requirements, both compile errors rather than options that silently do
+nothing: `editing` requires `getRowId`, because drafts are keyed by row id and
+the index fallback would name a different record after any sort; and
+`onCommitBatch` exists only under `mode: "batch"`, since `submitAll` is its
+only caller. `mode: "batch"` _without_ `onCommitBatch` is fine: `submitAll`
+falls back to the per-row `onCommit` loop.
 
-The editing options depend on each other, and the types enforce it. Each line
-below is a compile error, not an option that silently does nothing.
-
-| This option                                                                                                              | Requires            | Because                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------- | ----------------------------------------------------------------------------------------------- |
-| `onEditCommit` · `onEditCommitBatch` · `isRowEditable` · `rowValidators` · `newRowDefaults` · `onRowAdd` · `onRowDelete` | `editMode`          | Without a mode there is no editing for them to act on                                           |
-| `editMode`                                                                                                               | `getRowId`          | Drafts are keyed by row id, and the index fallback would name a different record after any sort |
-| `onEditCommitBatch`                                                                                                      | `editMode: "batch"` | `submitAll` is its only caller                                                                  |
-
-`editMode: "batch"` _without_ `onEditCommitBatch` is fine: `submitAll` falls
-back to the per-row `onEditCommit` loop.
+The `editing` object may be written inline - its callbacks are read through a
+ref every render, so its identity does not matter.
 
 ## The four modes
 
-All four use the same engine and the same forms. `editMode` sets two things:
-what counts as a commit, and which controls trigger it.
+All four use the same engine and the same forms. `editing.mode` sets two
+things: what counts as a commit, and which controls trigger it.
 
 | Mode            | Commit                                | Cancel             | Chrome                  |
 | --------------- | ------------------------------------- | ------------------ | ----------------------- |
@@ -56,7 +59,7 @@ in a spreadsheet. The grid places the caret in the cell that was opened, so a
 
 Delete or Backspace clears the value and commits without opening an editor.
 Editing implies cell selection: `cellSelection` defaults to `"single"` while
-`editMode` is set.
+`editing` is set.
 
 ### Row editing
 
@@ -104,10 +107,10 @@ hint: Edit cells, add rows in the sticky entry block, mark deletions with the tr
 height: 440
 ```
 
-`edit.submitAll()` commits every open row, through the per-row `onEditCommit`
-loop by default, or through one `onEditCommitBatch({ rows, added, deleted })`
-call when that is set. Rows failing validation stay open either way, and a
-rejected batch keeps every draft.
+`edit.submitAll()` commits every open row, through the per-row `onCommit` loop
+by default, or through one `onCommitBatch({ rows, added, deleted })` call when
+that is set. Rows failing validation stay open either way, and a rejected batch
+keeps every draft.
 
 ## Which cells edit
 
@@ -116,11 +119,11 @@ A column is editable when it maps to a data path: its `accessorKey`, or
 nested records: `accessorKey: "address.city"` edits `values.address.city`, and
 issues from a nested schema map to the right column.
 
-| Gate                                  | Effect                       |
-| ------------------------------------- | ---------------------------- |
-| `meta.edit.enabled: false`            | The column never edits       |
-| `meta.edit.enabled: (row) => boolean` | Per row, per column          |
-| `isRowEditable: (row) => boolean`     | The whole row, in every mode |
+| Gate                                          | Effect                       |
+| --------------------------------------------- | ---------------------------- |
+| `meta.edit.enabled: false`                    | The column never edits       |
+| `meta.edit.enabled: (row) => boolean`         | Per row, per column          |
+| `editing.isRowEditable: (row) => boolean`     | The whole row, in every mode |
 
 Group rows and the generated lanes never edit.
 
@@ -149,10 +152,12 @@ Escape, or ✕, discards the entry.
 
 ```tsx
 useTMDataGrid({
-  editMode: "batch",
-  newRowDefaults: () => ({ id: 0, name: "", hired: today() }),
-  onEditCommitBatch: async ({ rows, added, deleted }) => {
-    await api.saveBatch({ rows, added, deleted });
+  editing: {
+    mode: "batch",
+    newRowDefaults: () => ({ id: 0, name: "", hired: today() }),
+    onCommitBatch: async ({ rows, added, deleted }) => {
+      await api.saveBatch({ rows, added, deleted });
+    },
   },
 });
 
@@ -194,14 +199,16 @@ array, see [A query builder inside a form](/docs/query-builder).
 
 | Name                          | Kind           | Type                                             | Default           | What it does                                                                                     |
 | ----------------------------- | -------------- | ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `editMode`                    | Option         | `"cell" \| "cellConfirm" \| "row" \| "batch"`    | –                 | Turns editing on and picks how commits happen.                                                   |
-| `getRowId`                    | Table option   | `(row) => string`                                | –                 | Required once `editMode` is set. Drafts are keyed by it.                                         |
-| `isRowEditable`               | Option         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
-| `onEditCommit`                | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |
-| `onEditCommitBatch`           | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | Batch only. One call for the whole save.                                                         |
-| `newRowDefaults`              | Option         | `() => TData`                                    | –                 | Seeds the entry row's form.                                                                      |
-| `onRowAdd`                    | Callback       | `({ row }) => void \| Promise`                   | –                 | Commits an added row.                                                                            |
-| `onRowDelete`                 | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row, and puts the trash in the edit lane.                                              |
+| `editing`                     | Option         | `TMDataGridEditingOptions`                       | –                 | Turns editing on. One object holding the mode and every editing callback.                        |
+| `editing.mode`                | Member         | `"cell" \| "cellConfirm" \| "row" \| "batch"`    | –                 | Picks what counts as a commit and which controls trigger it.                                     |
+| `getRowId`                    | Table option   | `(row) => string`                                | –                 | Required once `editing` is set. Drafts are keyed by it.                                          |
+| `editing.isRowEditable`       | Member         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
+| `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
+| `editing.onCommit`            | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |
+| `editing.onCommitBatch`       | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | Batch only. One call for the whole save.                                                         |
+| `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
+| `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |
+| `editing.onRowDelete`         | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row, and puts the trash in the edit lane.                                              |
 | `meta.edit.enabled`           | Column meta    | `boolean \| (row) => boolean`                    | `true`            | Whether a column's cells edit.                                                                   |
 | `meta.edit.field`             | Column meta    | `string`                                         | The `accessorKey` | The data path an edit writes to.                                                                 |
 | `meta.edit.mapValue`          | Column meta    | `({ value, previous, row, column }) => unknown`  | –                 | Maps each value an editor writes. See [Editors](/docs/editors#mapping-the-value-as-it-is-typed). |

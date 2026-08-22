@@ -114,8 +114,10 @@ describe("rendering", () => {
         data: emptyRows,
         columns: testColumns,
         getRowId: (row) => String(row.id),
-        editMode: "batch",
-        newRowDefaults: () => ({ ...testRows[0]!, id: 0 }),
+        editing: {
+          mode: "batch",
+          newRowDefaults: () => ({ ...testRows[0]!, id: 0 }),
+        },
       } as UseTMDataGridOptions<TestRow>);
       return (
         <TMDataGrid {...grid}>
@@ -518,7 +520,7 @@ describe("column menu", () => {
 describe("column pinning", () => {
   it("keeps the edit lane outside a column the user pins right", async () => {
     const user = userEvent.setup();
-    renderGridUi({ editMode: "row", onEditCommit: () => {} });
+    renderGridUi({ editing: { mode: "row", onCommit: () => {} } });
 
     await clickMenuItem(user, "City", "Pin to right");
 
@@ -993,9 +995,11 @@ describe("testing contract", () => {
         data,
         columns,
         getRowId: (row) => String(row.id),
-        editMode: "row",
+        editing: {
+          mode: "row",
+          onCommit: (args) => void commits.push({ rowId: args.rowId }),
+        },
         selectionMode: "highlight",
-        onEditCommit: (args) => void commits.push({ rowId: args.rowId }),
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>

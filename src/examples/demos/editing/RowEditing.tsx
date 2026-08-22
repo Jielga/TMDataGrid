@@ -57,7 +57,7 @@ export function RowEditing() {
   const [employees, setEmployees] = useState(() => makeEmployees(30, 1000));
 
   // One call per row, however many cells changed.
-  const onEditCommit = useCallback(
+  const onCommit = useCallback(
     ({ rowId, value }: TMDataGridEditCommitArgs<Employee>) => {
       setEmployees((previous) =>
         previous.map((employee) =>
@@ -72,10 +72,12 @@ export function RowEditing() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    // The edit lane (pencil, ✓, ✕) is generated and pinned right.
-    editMode: "row",
-    rowValidators,
-    onEditCommit,
+    editing: {
+      // The edit lane (pencil, ✓, ✕) is generated and pinned right.
+      mode: "row",
+      rowValidators,
+      onCommit,
+    },
     selectionMode: "highlight",
     enableGrouping: false,
   });

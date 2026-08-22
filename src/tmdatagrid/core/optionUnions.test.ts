@@ -20,41 +20,46 @@ export function useCompileTimeContracts() {
     data,
     columns,
     getRowId,
-    editMode: "batch",
-    onEditCommitBatch: async () => {},
+    editing: { mode: "batch", onCommitBatch: async () => {} },
   });
   // Legal: batch without it - `submitAll` falls back to the per-row loop.
-  useTMDataGrid<Person>({ data, columns, getRowId, editMode: "batch" });
+  useTMDataGrid<Person>({ data, columns, getRowId, editing: { mode: "batch" } });
   // Legal: an immediate mode with the per-row commit.
   useTMDataGrid<Person>({
     data,
     columns,
     getRowId,
-    editMode: "cell",
-    onEditCommit: () => {},
+    editing: { mode: "cell", onCommit: () => {} },
   });
-  // Legal: no editing, no editing options.
+  // Legal: no editing at all.
   useTMDataGrid<Person>({ data, columns });
+  // Legal: editing switched off by a condition - the object may be undefined.
+  useTMDataGrid<Person>({ data, columns, getRowId, editing: undefined });
 
   // @ts-expect-error -- editing requires getRowId: the forms are keyed by row
   // id, and the index fallback points at a different record after any sort.
-  useTMDataGrid<Person>({ data, columns, editMode: "cell" });
+  useTMDataGrid<Person>({ data, columns, editing: { mode: "cell" } });
 
-  // @ts-expect-error -- onEditCommitBatch exists only under editMode "batch";
-  // no other mode's submitAll ever calls it.
   useTMDataGrid<Person>({
     data,
     columns,
     getRowId,
-    editMode: "cell",
-    onEditCommitBatch: async () => {},
+    editing: {
+      mode: "cell",
+      // @ts-expect-error -- onCommitBatch exists only under mode "batch"; no
+      // other mode's submitAll ever calls it.
+      onCommitBatch: async () => {},
+    },
   });
 
-  // @ts-expect-error -- an editing callback without editMode acts on nothing.
-  useTMDataGrid<Person>({ data, columns, onEditCommit: () => {} });
-
-  // @ts-expect-error -- same for the entry-row options.
-  useTMDataGrid<Person>({ data, columns, onRowAdd: async () => {} });
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    // @ts-expect-error -- `mode` is what the rest of the object acts on, so
+    // an editing object without one is a compile error, not a dead option.
+    editing: { onCommit: () => {} },
+  });
 }
 
 describe("option unions", () => {

@@ -49,7 +49,7 @@ const columns = columnHelper.columns([
 export function EditableGating() {
   const [employees, setEmployees] = useState(() => makeEmployees(50));
 
-  const onEditCommit = useCallback(
+  const onCommit = useCallback(
     ({ rowId, value }: TMDataGridEditCommitArgs<Employee>) => {
       setEmployees((previous) =>
         previous.map((employee) =>
@@ -64,11 +64,13 @@ export function EditableGating() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "cell",
-    onEditCommit,
-    // The whole-row gate, checked before any column's own. Every row under 25
-    // here is a probation record this demo treats as read-only.
-    isRowEditable: (row) => row.original.age >= 25,
+    editing: {
+      mode: "cell",
+      onCommit,
+      // The whole-row gate, checked before any column's own. Every row under 25
+      // here is a probation record this demo treats as read-only.
+      isRowEditable: (row) => row.original.age >= 25,
+    },
     selectionMode: "highlight",
   });
 

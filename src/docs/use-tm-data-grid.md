@@ -22,7 +22,7 @@ cannot be overridden.
 `persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode`,
 `showSelectedBackground`, `defaultHighlightedRowId`, `onHighlightedRowChange`,
 `renderDetails`, `renderDetailsEstHeight`, `overscan`, `cellSelection`,
-`onFocusedCellChange`, `quickSearchMode`, `labels` and the editing options
+`onFocusedCellChange`, `quickSearchMode`, `labels` and `editing`
 (see [Editing](/docs/editing)) are the grid's own options and are consumed here
 rather than forwarded to TanStack.
 
@@ -227,7 +227,7 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
-| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editMode` is set. See [Editing](/docs/editing). |
+| `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See [Editing](/docs/editing). |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#why-features-is-a-second-argument). |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |

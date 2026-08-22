@@ -98,7 +98,7 @@ meta: {
 ```
 
 Omit both namespaces to get the defaults: any column mapping to a data path is
-editable once `editMode` is on, and every column filters by its type.
+editable once `editing` is set, and every column filters by its type.
 
 `enableOrdering` and `autoSize` live in `meta` because they are the two
 behaviours TanStack defines no column option for.
@@ -194,7 +194,7 @@ never listed in the columns panel.
 | `SELECT_COLUMN_ID` | A checkbox selection mode | First, pinned left. See [Row selection](/docs/row-selection). |
 | `GROUP_COLUMN_ID` | A column is grouped | Front, beside the checkbox lane. See [Grouping](/docs/grouping). |
 | `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. See [Row details](/docs/row-details). |
-| `EDIT_COLUMN_ID` | `editMode: "row"` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
+| `EDIT_COLUMN_ID` | `editing.mode: "row"` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
 
 They cannot be hidden. Each one either holds a control the grid needs, such as
 the row's checkbox or its Save and Delete buttons, or tracks feature state

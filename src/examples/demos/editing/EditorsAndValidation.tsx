@@ -102,7 +102,7 @@ const columns = columnHelper.columns([
 export function EditorsAndValidation() {
   const [employees, setEmployees] = useState(() => makeEmployees(40));
 
-  const onEditCommit = useCallback(
+  const onCommit = useCallback(
     ({ rowId, value }: TMDataGridEditCommitArgs<Employee>) => {
       setEmployees((previous) =>
         previous.map((employee) =>
@@ -117,8 +117,7 @@ export function EditorsAndValidation() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "cellConfirm",
-    onEditCommit,
+    editing: { mode: "cellConfirm", onCommit },
     selectionMode: "highlight",
   });
 

@@ -167,31 +167,33 @@ function ConditionsGrid({
     data: value,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "row",
-    rowValidators,
-    // Map by row id, never by index - a sort or a delete moves the index,
-    // and the draft is keyed by id.
-    onEditCommit: ({ rowId, value: row }) =>
-      onChange(
-        value.map((condition) =>
-          String(condition.id) === rowId ? row : condition,
+    editing: {
+      mode: "row",
+      rowValidators,
+      // Map by row id, never by index - a sort or a delete moves the index,
+      // and the draft is keyed by id.
+      onCommit: ({ rowId, value: row }) =>
+        onChange(
+          value.map((condition) =>
+            String(condition.id) === rowId ? row : condition,
+          ),
         ),
-      ),
-    // New rows count down from -1; the server mints real ids on save.
-    // Math.min(0, ...) so an emptied grid starts at -1, not -Infinity.
-    onRowAdd: ({ value: row }) =>
-      onChange([
-        ...value,
-        { ...row, id: Math.min(0, ...value.map((c) => c.id)) - 1 },
-      ]),
-    onRowDelete: ({ rowId }) =>
-      onChange(value.filter((condition) => String(condition.id) !== rowId)),
-    newRowDefaults: (): QueryCondition => ({
-      id: 0,
-      field: "title",
-      operator: "contains",
-      value: "",
-    }),
+      // New rows count down from -1; the server mints real ids on save.
+      // Math.min(0, ...) so an emptied grid starts at -1, not -Infinity.
+      onRowAdd: ({ value: row }) =>
+        onChange([
+          ...value,
+          { ...row, id: Math.min(0, ...value.map((c) => c.id)) - 1 },
+        ]),
+      onRowDelete: ({ rowId }) =>
+        onChange(value.filter((condition) => String(condition.id) !== rowId)),
+      newRowDefaults: (): QueryCondition => ({
+        id: 0,
+        field: "title",
+        operator: "contains",
+        value: "",
+      }),
+    },
     enableRowSelection: false,
     enableGrouping: false,
   });

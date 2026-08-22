@@ -204,7 +204,7 @@ function EditLaneCell<TData extends RowData>({
 
 /**
  * The generated edit lane, appended and pinned right under
- * `editMode: "row"` - the row's Save at the end of the row, mirroring the
+ * `editing: { mode: "row" }` - the row's Save at the end of the row, mirroring the
  * checkbox lane's build on the left.
  */
 export function createEditColumn<TData extends RowData>(

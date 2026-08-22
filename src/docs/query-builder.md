@@ -28,15 +28,17 @@ function ConditionsGrid({ value, onChange }: {
     data: value,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "row",
-    rowValidators,
-    onEditCommit: ({ rowId, value: row }) =>
-      onChange(value.map((c) => (String(c.id) === rowId ? row : c))),
-    onRowAdd: ({ value: row }) =>
-      onChange([...value, { ...row, id: Math.min(0, ...value.map((c) => c.id)) - 1 }]),
-    onRowDelete: ({ rowId }) =>
-      onChange(value.filter((c) => String(c.id) !== rowId)),
-    newRowDefaults: () => ({ id: 0, field: "title", operator: "contains", value: "" }),
+    editing: {
+      mode: "row",
+      rowValidators,
+      onCommit: ({ rowId, value: row }) =>
+        onChange(value.map((c) => (String(c.id) === rowId ? row : c))),
+      onRowAdd: ({ value: row }) =>
+        onChange([...value, { ...row, id: Math.min(0, ...value.map((c) => c.id)) - 1 }]),
+      onRowDelete: ({ rowId }) =>
+        onChange(value.filter((c) => String(c.id) !== rowId)),
+      newRowDefaults: () => ({ id: 0, field: "title", operator: "contains", value: "" }),
+    },
   });
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
@@ -76,8 +78,8 @@ Three details matter:
 - **New rows count down from `-1`.** `Math.min(0, ...ids) - 1`, so an emptied
   grid starts at `-1` rather than `-Infinity`, existing negative ids keep
   descending, and the server can tell unsaved rows from real ones. The grid's
-  `tempId` never leaves the grid: the id you assign in `onRowAdd` is the one the
-  form sees.
+  `tempId` never leaves the grid: the id you assign in `editing.onRowAdd` is the
+  one the form sees.
 
 ## Which half validates what
 
@@ -86,7 +88,7 @@ needs the other rows, or the collection as a whole, belongs to the form.**
 
 | Rule | Owner | Written as |
 | --- | --- | --- |
-| "The condition needs a value" | Grid | `rowValidators.onSubmit` |
+| "The condition needs a value" | Grid | `editing.rowValidators.onSubmit` |
 | "A date, for a date field" | Grid | `meta.edit.editor` per column |
 | "At least one condition" | Form | the `conditions` field's `onChange` validator |
 | "No two conditions repeat a field and operator" | Form | the same place |
@@ -127,8 +129,8 @@ mid-edit switches them immediately. See
 
 ## Which mode
 
-`editMode: "row"`. A condition is approved as a unit: the pencil opens the
-whole row, Save commits it, and `onEditCommit` hands the form one finished
+`editing.mode: "row"`. A condition is approved as a unit: the pencil opens the
+whole row, Save commits it, and `editing.onCommit` hands the form one finished
 condition. The form's rules run at that point.
 
 **Not `"batch"`.** Batch parks every draft inside the grid and calls nothing
@@ -157,8 +159,8 @@ const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0
 
 The alternative is to flush instead of block. `await grid.edit.submitAll()`
 before `form.handleSubmit()` commits every open row through the normal
-`onEditCommit` path, in every mode and not only batch. Rows that fail their own
-validation stay open, so the submit fails.
+`editing.onCommit` path, in every mode and not only batch. Rows that fail their
+own validation stay open, so the submit fails.
 
 Two things to know about putting a native `<form>` around a grid:
 
@@ -173,6 +175,6 @@ This page introduces no API of its own. The pieces it composes:
 
 | Piece | Documented on |
 | --- | --- |
-| `data`, `getRowId`, `editMode`, `onEditCommit`, `onRowAdd`, `onRowDelete`, `newRowDefaults`, `edit.store` | [Editing](/docs/editing) |
-| `rowValidators`, `meta.edit.editor`, the editor contract | [Editors and validation](/docs/editors) |
+| `data`, `getRowId`, `editing.mode`, `editing.onCommit`, `editing.onRowAdd`, `editing.onRowDelete`, `editing.newRowDefaults`, `edit.store` | [Editing](/docs/editing) |
+| `editing.rowValidators`, `meta.edit.editor`, the editor contract | [Editors and validation](/docs/editors) |
 | `useForm`, `form.Field`, field validators | TanStack Form's own docs |

@@ -7,6 +7,7 @@ import {
   createTMDataGridColumnHelper,
   useTMDataGrid,
   type TMDataGridEditCommitArgs,
+  type TMDataGridEditingOptions,
   type UseTMDataGridOptions,
 } from "../index";
 
@@ -60,17 +61,18 @@ const tasks: Array<Task> = [
 
 type Commit = TMDataGridEditCommitArgs<Task>;
 
-function EditorGrid({
-  onEditCommit,
-  ...options
-}: Partial<UseTMDataGridOptions<Task>>) {
+/** `editing` is partial here: the tests override members of the default. */
+type EditorGridProps = Omit<Partial<UseTMDataGridOptions<Task>>, "editing"> & {
+  editing?: Partial<TMDataGridEditingOptions<Task>>;
+};
+
+function EditorGrid({ editing, ...options }: EditorGridProps) {
   const grid = useTMDataGrid<Task>({
     data: tasks,
     columns: taskColumns,
     getRowId: (row) => String(row.id),
-    editMode: "cell",
+    editing: { mode: "cell", ...editing },
     selectionMode: "highlight",
-    onEditCommit,
     ...options,
   } as UseTMDataGridOptions<Task>);
   return (
@@ -92,7 +94,9 @@ function cell(container: HTMLElement, columnId: string) {
 function renderEditorGrid() {
   const commits: Array<Commit> = [];
   const rendered = renderWithMantine(
-    <EditorGrid onEditCommit={(args) => void commits.push(args as Commit)} />,
+    <EditorGrid
+      editing={{ onCommit: (args) => void commits.push(args as Commit) }}
+    />,
   );
   return { ...rendered, commits };
 }
@@ -254,9 +258,11 @@ describe("mapping the value on its way in", () => {
         data: codeRows,
         columns,
         getRowId: (row) => String(row.id),
-        editMode: "cell",
+        editing: {
+          mode: "cell",
+          onCommit: (args) => void commits.push(args as CodeCommit),
+        },
         selectionMode: "highlight",
-        onEditCommit: (args) => void commits.push(args as CodeCommit),
       } as UseTMDataGridOptions<Code>);
       return (
         <TMDataGrid {...grid}>

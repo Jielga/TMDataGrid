@@ -7,24 +7,25 @@ kind.
 
 | Name | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `editMode` | `"cell" \| "cellConfirm" \| "row" \| "batch"` | off | Turns editing on and picks the commit policy. |
-| `getRowId` | `(row) => string` | – | A TanStack table option, required once `editMode` is set. Drafts are keyed by it. |
-| `isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
-| `rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
-| `newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
-| `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while editing | Editing turns the cell cursor on; set it explicitly to override. |
+| `editing` | `TMDataGridEditingOptions` | off | The editing namespace. Setting it turns editing on. |
+| `editing.mode` | `"cell" \| "cellConfirm" \| "row" \| "batch"` | – | Picks the commit policy. |
+| `getRowId` | `(row) => string` | – | A TanStack table option, required once `editing` is set. Drafts are keyed by it. |
+| `editing.isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
+| `editing.rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
+| `editing.newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
+| `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while `editing` is set | Editing turns the cell cursor on; set it explicitly to override. |
 
-Passing any editing option without `editMode` is a compile error, and
-`onEditCommitBatch` exists only in the `"batch"` branch of the type.
+Passing any other member of `editing` without `mode` is a compile error, and
+`onCommitBatch` exists only in the `"batch"` branch of the type.
 
 ## Callbacks
 
 | Name | Argument | What it does |
 | --- | --- | --- |
-| `onEditCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
-| `onEditCommitBatch` | `{ rows, added, deleted }` | Batch only. One call for the entire save. Without it, `submitAll` loops `onEditCommit`. |
-| `onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
-| `onRowDelete` | `{ rowId, row }` | Deletes a row under the immediate modes, and puts the trash can in the edit lane. |
+| `editing.onCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
+| `editing.onCommitBatch` | `{ rows, added, deleted }` | Batch only. One call for the entire save. Without it, `submitAll` loops `editing.onCommit`. |
+| `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
+| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row under the immediate modes, and puts the trash can in the edit lane. |
 
 `changes` entries are `{ columnId, field, previous, next }`; `field` is the data
 path, which may be dotted.
@@ -54,7 +55,7 @@ path, which may be dotted.
 | `submitAll` | `() => Promise<boolean>` | Batch's save. `true` when every row landed. |
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
 | `addRow` | `() => string` | Opens an entry row, returns its `tempId`. |
-| `deleteRow` | `(rowId) => void` | `onRowDelete` under the immediate modes, a deletion mark under batch. |
+| `deleteRow` | `(rowId) => void` | `editing.onRowDelete` under the immediate modes, a deletion mark under batch. |
 | `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
 | `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
@@ -108,11 +109,12 @@ Types: `TMDataGridEditMode`, `TMDataGridEditApi`, `TMDataGridEditState`,
 Generated, pinned right, id `EDIT_COLUMN_ID`. It appears when any of these
 holds:
 
-- `editMode: "row"` - the lane is Save and Cancel's home
-- `onRowDelete` is set - the trash can has somewhere to report to
-- `editMode: "batch"` **and** `onEditCommitBatch` is set
+- `editing.mode: "row"` - the lane is Save and Cancel's home
+- `editing.onRowDelete` is set - the trash can has somewhere to report to
+- `editing.mode: "batch"` **and** `editing.onCommitBatch` is set
 
-`"cell"` and `"cellConfirm"` have no lane unless `onRowDelete` asks for one.
+`"cell"` and `"cellConfirm"` have no lane unless `editing.onRowDelete` asks for
+one.
 
 ## Styling and test hooks
 

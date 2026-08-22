@@ -16,6 +16,7 @@ import { TMDataGrid } from "./TMDataGrid";
 import {
   createTMDataGridColumnHelper,
   useTMDataGrid,
+  type TMDataGridEditingOptions,
   type UseTMDataGridOptions,
 } from "../useTMDataGrid";
 
@@ -51,12 +52,18 @@ describe("cell editing", () => {
     ]);
   })();
 
-  function EditGrid(options: Partial<UseTMDataGridOptions<Employee>> = {}) {
+  /** `editing` is partial here: the tests override members of the default. */
+  type EditGridProps = Omit<
+    Partial<UseTMDataGridOptions<Employee>>,
+    "editing"
+  > & { editing?: Partial<TMDataGridEditingOptions<Employee>> };
+
+  function EditGrid({ editing, ...options }: EditGridProps = {}) {
     const grid = useTMDataGrid<Employee>({
       data: editRows,
       columns: editColumns,
       getRowId: (row) => String(row.id),
-      editMode: "cell",
+      editing: { mode: "cell", ...editing },
       selectionMode: "highlight",
       ...options,
     } as UseTMDataGridOptions<Employee>);
@@ -76,7 +83,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
     await user.dblClick(cellAt(0, 0));
@@ -102,7 +109,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
     await user.click(cellAt(0, 0));
@@ -163,7 +170,7 @@ describe("cell editing", () => {
     renderWithMantine(
       <EditGrid
         columns={customColumns}
-        onEditCommit={(args) => void commits.push(args)}
+        editing={{ onCommit: (args) => void commits.push(args) }}
       />,
     );
 
@@ -184,7 +191,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
     await user.dblClick(cellAt(0, 0));
@@ -203,7 +210,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
     await user.dblClick(cellAt(0, 0));
@@ -234,8 +241,10 @@ describe("cell editing", () => {
     const commits: unknown[] = [];
     renderWithMantine(
       <EditGrid
-        editMode="cellConfirm"
-        onEditCommit={(args) => void commits.push(args)}
+        editing={{
+          mode: "cellConfirm",
+          onCommit: (args) => void commits.push(args),
+        }}
       />,
     );
 
@@ -263,8 +272,7 @@ describe("cell editing", () => {
     const commits: unknown[] = [];
     renderWithMantine(
       <EditGrid
-        editMode="row"
-        onEditCommit={(args) => void commits.push(args)}
+        editing={{ mode: "row", onCommit: (args) => void commits.push(args) }}
       />,
     );
 
@@ -300,8 +308,10 @@ describe("cell editing", () => {
     const commits: Array<{ rowId: string }> = [];
     renderWithMantine(
       <EditGrid
-        editMode="row"
-        onEditCommit={(args) => void commits.push(args as { rowId: string })}
+        editing={{
+          mode: "row",
+          onCommit: (args) => void commits.push(args as { rowId: string }),
+        }}
       />,
     );
 
@@ -349,7 +359,7 @@ describe("cell editing", () => {
 
   it("row mode puts the caret in the cell the gesture named, not on the cell", async () => {
     const user = userEvent.setup();
-    renderWithMantine(<EditGrid editMode="row" onEditCommit={() => {}} />);
+    renderWithMantine(<EditGrid editing={{ mode: "row", onCommit: () => {} }} />);
 
     // The whole row opens, and Age - the cell double-clicked - holds the
     // caret. The focused-cell ring lands on the same cell, so it has nothing
@@ -371,7 +381,7 @@ describe("cell editing", () => {
 
   it("places the caret from the keyboard's open gestures too", async () => {
     const user = userEvent.setup();
-    renderWithMantine(<EditGrid editMode="row" onEditCommit={() => {}} />);
+    renderWithMantine(<EditGrid editing={{ mode: "row", onCommit: () => {} }} />);
 
     // Enter on the cell cursor's cell, not the row's first.
     await user.click(cellAt(0, 1));
@@ -420,9 +430,8 @@ describe("cell editing", () => {
         data: editRows,
         columns: bareColumns,
         getRowId: (row) => String(row.id),
-        editMode: "row",
+        editing: { mode: "row", onCommit: () => {} },
         selectionMode: "highlight",
-        onEditCommit: () => {},
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>
@@ -455,9 +464,8 @@ describe("cell editing", () => {
         data: hideSecond ? firstRowOnly : editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
-        editMode: "row",
+        editing: { mode: "row", onCommit: () => {} },
         selectionMode: "highlight",
-        onEditCommit: () => {},
       } as UseTMDataGridOptions<Employee>);
       return (
         <>
@@ -502,8 +510,7 @@ describe("cell editing", () => {
     const commits: unknown[] = [];
     renderWithMantine(
       <EditGrid
-        editMode="row"
-        onEditCommit={(args) => void commits.push(args)}
+        editing={{ mode: "row", onCommit: (args) => void commits.push(args) }}
       />,
     );
 
@@ -526,13 +533,15 @@ describe("cell editing", () => {
     const commits: unknown[] = [];
     renderWithMantine(
       <EditGrid
-        editMode="row"
-        rowValidators={{
-          onSubmit: z
-            .object({ name: z.string(), age: z.number() })
-            .refine((row) => row.age < 100, { message: "Nobody is that old" }),
+        editing={{
+          mode: "row",
+          rowValidators: {
+            onSubmit: z
+              .object({ name: z.string(), age: z.number() })
+              .refine((row) => row.age < 100, { message: "Nobody is that old" }),
+          },
+          onCommit: (args) => void commits.push(args),
         }}
-        onEditCommit={(args) => void commits.push(args)}
       />,
     );
 
@@ -551,18 +560,13 @@ describe("cell editing", () => {
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
 
-  function BatchGrid({
-    onEditCommit,
-  }: {
-    onEditCommit: (args: unknown) => void;
-  }) {
+  function BatchGrid({ onCommit }: { onCommit: (args: unknown) => void }) {
     const grid = useTMDataGrid<Employee>({
       data: editRows,
       columns: editColumns,
       getRowId: (row) => String(row.id),
-      editMode: "batch",
+      editing: { mode: "batch", onCommit },
       selectionMode: "highlight",
-      onEditCommit,
     } as UseTMDataGridOptions<Employee>);
     return (
       <TMDataGrid {...grid}>
@@ -578,7 +582,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <BatchGrid onEditCommit={(args) => void commits.push(args)} />,
+      <BatchGrid onCommit={(args) => void commits.push(args)} />,
     );
 
     // Two rows edited; Enter parks each draft instead of committing.
@@ -607,7 +611,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <BatchGrid onEditCommit={(args) => void commits.push(args)} />,
+      <BatchGrid onCommit={(args) => void commits.push(args)} />,
     );
 
     await user.dblClick(cellAt(0, 0));
@@ -631,10 +635,12 @@ describe("cell editing", () => {
         data: editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
-        editMode: "batch",
+        editing: {
+          mode: "batch",
+          onCommitBatch: (args) => void batches.push(args),
+          newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+        },
         selectionMode: "highlight",
-        onEditCommitBatch: (args) => void batches.push(args),
-        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>
@@ -691,12 +697,14 @@ describe("cell editing", () => {
         data: editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
-        editMode: "cell",
+        editing: {
+          mode: "cell",
+          onRowAdd: (args) => void adds.push(args),
+          // The lane needs a reason to exist outside row mode.
+          onRowDelete: () => {},
+          newRowDefaults: () => ({ id: 0, name: "Ny", age: 20, note: "" }),
+        },
         selectionMode: "highlight",
-        onRowAdd: (args) => void adds.push(args),
-        // The lane needs a reason to exist outside row mode.
-        onRowDelete: () => {},
-        newRowDefaults: () => ({ id: 0, name: "Ny", age: 20, note: "" }),
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>
@@ -726,7 +734,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <EditGrid onEditCommit={(args) => void commits.push(args)} />,
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
     await user.click(cellAt(1, 0));
@@ -746,9 +754,11 @@ describe("cell editing", () => {
         data: editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
-        editMode: "cell",
+        editing: {
+          mode: "cell",
+          newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+        },
         selectionMode: "highlight",
-        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>
@@ -798,9 +808,11 @@ describe("cell editing", () => {
         data: editRows,
         columns: bareColumns,
         getRowId: (row) => String(row.id),
-        editMode: "cell",
+        editing: {
+          mode: "cell",
+          newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
+        },
         selectionMode: "highlight",
-        newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
       } as UseTMDataGridOptions<Employee>);
       return (
         <TMDataGrid {...grid}>

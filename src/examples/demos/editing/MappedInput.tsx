@@ -67,7 +67,7 @@ export function MappedInput() {
   const [assets, setAssets] = useState(ASSETS);
   const [lastCommit, setLastCommit] = useState("-");
 
-  const onEditCommit = useCallback(
+  const onCommit = useCallback(
     ({ rowId, value, changes }: TMDataGridEditCommitArgs<Asset>) => {
       setAssets((previous) =>
         previous.map((asset) => (String(asset.id) === rowId ? value : asset)),
@@ -86,9 +86,8 @@ export function MappedInput() {
     data: assets,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "cell",
+    editing: { mode: "cell", onCommit },
     selectionMode: "highlight",
-    onEditCommit,
   });
 
   return (

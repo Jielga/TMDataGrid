@@ -48,6 +48,15 @@ An empty root now takes whatever a run is publishing, the decision moved into `s
 
 Two steps are left, both wanting repository access rather than a commit: `v1.0` and `v1.1` have never been published and want a `workflow_dispatch` each, and pull request previews cannot deploy until the `github-pages` environment allows branches other than `main`.
 
+**Editing options namespace (2.0)** - **done 2026-08-22**, breaking. The flat
+editing options of `useTMDataGrid` moved under one `editing` object:
+`editMode` became `editing.mode`, `onEditCommit`/`onEditCommitBatch` became
+`editing.onCommit`/`editing.onCommitBatch`, and the rest moved in unchanged.
+The two cross-option rules - `getRowId` required with `editing`, and
+`onCommitBatch` batch-only - stay compile errors, now local to the object
+instead of a three-branch union across the whole options bag. The docs'
+"What requires what" matrix reduced to two sentences.
+
 **Column meta namespaces (2.0)** - **done 2026-08-20**, breaking. `meta.edit`
 and `meta.filter` group the fields belonging to those stages, leaving `label`,
 `type`, `options`, `flex`, `align`, `autoSize` and `enableOrdering` at the top

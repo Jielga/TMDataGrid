@@ -100,7 +100,7 @@ returned.
 | --- | --- |
 | `table` | The TanStack table instance. State lives in `table.store`. |
 | `ui` | The grid's own UI store - panels, drag state, focused cell, cell range. |
-| `edit` | The [editing engine](/docs/editing#the-engine-edit). Inert until `editMode` is set. |
+| `edit` | The [editing engine](/docs/editing#the-engine-edit). Inert until `editing` is set. |
 | `features` | Feature flags, re-derived each render. See [why](/docs/toolbar#why-features-is-a-second-argument). |
 | `labels` | The resolved [dictionary](/docs/localization). |
 | `resetSettings` | [Clears the layout](/docs/column-layout#putting-it-back). |

@@ -187,22 +187,24 @@ column factories: it turns a bare schema into Form's validator shape.
 
 ## Row validation
 
-`rowValidators` is form-level, and where cross-field rules live.
+`editing.rowValidators` is form-level, and where cross-field rules live.
 
 ```tsx
 const grid = useTMDataGrid({
   data: employees,
   columns,
   getRowId: (row) => String(row.id),
-  editMode: "row",
-  rowValidators: {
-    onSubmit: z
-      .object({ salary: z.number().positive(), status: z.string() })
-      .refine((row) => row.status !== "Terminated" || row.salary === 0, {
-        message: "A terminated employee has no salary",
-      }),
+  editing: {
+    mode: "row",
+    rowValidators: {
+      onSubmit: z
+        .object({ salary: z.number().positive(), status: z.string() })
+        .refine((row) => row.status !== "Terminated" || row.salary === 0, {
+          message: "A terminated employee has no salary",
+        }),
+    },
+    onCommit,
   },
-  onEditCommit,
 });
 ```
 
@@ -216,8 +218,8 @@ unedited value and cannot pass. Use `"row"` or `"batch"`.
 
 ## Server-side errors
 
-`rowValidators.onSubmitAsync` returns TanStack Form's `{ form, fields }` shape,
-so an API's field errors land on the right cells without translation.
+`editing.rowValidators.onSubmitAsync` returns TanStack Form's `{ form, fields }`
+shape, so an API's field errors land on the right cells without translation.
 
 ```tsx
 rowValidators: {
@@ -233,7 +235,8 @@ rowValidators: {
 ```
 
 A commit blocked by validation keeps the editor open with the message on the
-input. A rejected `onEditCommit` keeps the draft too, with the error on the row.
+input. A rejected `editing.onCommit` keeps the draft too, with the error on the
+row.
 
 ## Where the state shows
 

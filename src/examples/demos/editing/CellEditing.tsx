@@ -39,7 +39,7 @@ export function CellEditing() {
 
   // Nothing is written until this is called. The grid holds a draft; the data
   // is yours, and stays yours.
-  const onEditCommit = useCallback(
+  const onCommit = useCallback(
     ({ rowId, value, changes }: TMDataGridEditCommitArgs<Employee>) => {
       setEmployees((previous) =>
         previous.map((employee) =>
@@ -60,8 +60,7 @@ export function CellEditing() {
     // outside the DOM, and the index fallback points at a different record
     // after any sort.
     getRowId: (row) => String(row.id),
-    editMode: mode,
-    onEditCommit,
+    editing: { mode, onCommit },
     selectionMode: "highlight",
   });
 

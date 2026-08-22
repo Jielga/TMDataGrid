@@ -38,7 +38,7 @@ const grid = useTMDataGrid({ data, columns, cellSelection: "range" });
 | `"single"` | One focused cell, moved with the arrow keys |
 | `"range"` | As `"single"`, plus a rectangle, Ctrl+C and the export menu |
 
-Setting `editMode` defaults `cellSelection` to `"single"`, since editing
+Setting `editing` defaults `cellSelection` to `"single"`, since editing
 navigates by cursor. An explicit `cellSelection` always wins.
 
 Turning it on changes three things about the body:
@@ -179,7 +179,7 @@ Source: `src/docs/cell-selection.md` (One tab stop).
 
 The grid reports `grid` and `gridcell` once cell selection is on, so a test or a
 query written against `getByRole("cell")` stops resolving the moment the option
-is set - including when `editMode` turns it on implicitly.
+is set - including when `editing` turns it on implicitly.
 
 Source: `src/docs/cell-selection.md`, and the `testing` skill.
 
@@ -218,7 +218,7 @@ Source: `src/docs/cell-selection.md` (Copy and export).
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"`, or `"single"` under `editMode` | Turns the cursor, and the rectangle, on. |
+| `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"`, or `"single"` under `editing` | Turns the cursor, and the rectangle, on. |
 | `onFocusedCellChange` | Callback | `(cell \| null) => void` | – | Follows the cursor. |
 | `cellExport` | Table prop | `TMDataGridCellExportOptions` | Nordic Excel | Separator, decimal mark, headers, file name. |
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |

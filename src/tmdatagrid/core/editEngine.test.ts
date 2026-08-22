@@ -12,6 +12,7 @@ import {
   createTMDataGridColumnHelper,
   useTMDataGrid,
   type TMDataGridApi,
+  type TMDataGridEditingOptions,
   type TMDataGridRowData,
   type UseTMDataGridOptions,
 } from "../index";
@@ -50,7 +51,7 @@ const people: Array<Person> = [
 ];
 
 function renderEditGrid(
-  options: Partial<UseTMDataGridOptions<Person>> = {},
+  editing: Partial<TMDataGridEditingOptions<Person>> = {},
 ) {
   const { result } = renderHook(
     () =>
@@ -58,8 +59,7 @@ function renderEditGrid(
         data: people,
         columns,
         getRowId: (row) => String(row.id),
-        editMode: "cell",
-        ...options,
+        editing: { mode: "cell", ...editing },
       } as UseTMDataGridOptions<Person>),
     { wrapper: MantineWrapper },
   );
@@ -142,17 +142,17 @@ describe("edit engine", () => {
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
   });
 
-  it("commits through onEditCommit with the per-field diff, then drops the form", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ onEditCommit });
+  it("commits through onCommit with the per-field diff, then drops the form", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "city" });
 
     edit.getForm("1")?.setFieldValue("address.city", "Uppsala");
     await expect(edit.commit("1")).resolves.toBe(true);
 
-    expect(onEditCommit).toHaveBeenCalledTimes(1);
-    const args = onEditCommit.mock
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
       .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
     expect(args.rowId).toBe("1");
     expect(args.source).toBe("cell");
@@ -171,20 +171,20 @@ describe("edit engine", () => {
   });
 
   it("drops a pristine form on commit without calling the consumer", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
 
     await expect(edit.commit("1")).resolves.toBe(true);
 
-    expect(onEditCommit).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual([]);
   });
 
   it("keeps the form open when the consumer rejects, with the error on the row", async () => {
     const grid = renderEditGrid({
-      onEditCommit: () => Promise.reject(new Error("server said no")),
+      onCommit: () => Promise.reject(new Error("server said no")),
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -199,9 +199,9 @@ describe("edit engine", () => {
   });
 
   it("blocks the commit on a real Zod row schema, pathed issues onto fields", async () => {
-    const onEditCommit = vi.fn();
+    const onCommit = vi.fn();
     const grid = renderEditGrid({
-      onEditCommit,
+      onCommit,
       rowValidators: {
         onSubmit: z.object({
           name: z.string().min(2, "Too short"),
@@ -215,19 +215,19 @@ describe("edit engine", () => {
 
     await expect(edit.commit("1")).resolves.toBe(false);
 
-    expect(onEditCommit).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
     expect(edit.state.rows["1"]?.errorFields).toContain("name");
 
     // Fixing the value lets the same commit through.
     edit.getForm("1")?.setFieldValue("name", "Annika");
     await expect(edit.commit("1")).resolves.toBe(true);
-    expect(onEditCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledTimes(1);
   });
 
   it("commits the row being left when cell mode begins on another row", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
@@ -235,14 +235,14 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     // begin's implicit commit is async; give it a microtask.
     await vi.waitFor(() => {
-      expect(onEditCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledTimes(1);
       expect(edit.state.openRowIds).toEqual(["2"]);
       expect(edit.state.active).toEqual({ rowId: "2", columnId: "name" });
     });
   });
 
   it("accumulates drafts across rows under cellConfirm", () => {
-    const grid = renderEditGrid({ editMode: "cellConfirm" });
+    const grid = renderEditGrid({ mode: "cellConfirm" });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
@@ -254,7 +254,7 @@ describe("edit engine", () => {
   });
 
   it("row mode opens a second row alongside a dirty first one", () => {
-    const grid = renderEditGrid({ editMode: "row" });
+    const grid = renderEditGrid({ mode: "row" });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: null });
@@ -272,8 +272,8 @@ describe("edit engine", () => {
   });
 
   it("row mode commits and cancels one open row without touching the others", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ editMode: "row", onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ mode: "row", onCommit });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: null });
@@ -284,8 +284,8 @@ describe("edit engine", () => {
 
     // Row 2's Save is row 2's alone: one commit, and row 1's draft intact.
     await expect(edit.commit("2")).resolves.toBe(true);
-    expect(onEditCommit).toHaveBeenCalledTimes(1);
-    const committed = onEditCommit.mock
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const committed = onCommit.mock
       .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
     expect(committed.rowId).toBe("2");
     expect(edit.state.openRowIds).toEqual(["1"]);
@@ -294,12 +294,12 @@ describe("edit engine", () => {
     // And row 1's Cancel drops only row 1.
     edit.cancel("1");
     expect(edit.state.openRowIds).toEqual([]);
-    expect(onEditCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledTimes(1);
   });
 
   it("submitAll commits every dirty row through the per-row loop", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ editMode: "batch", onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ mode: "batch", onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
@@ -308,17 +308,17 @@ describe("edit engine", () => {
 
     await expect(edit.submitAll()).resolves.toBe(true);
 
-    expect(onEditCommit).toHaveBeenCalledTimes(2);
+    expect(onCommit).toHaveBeenCalledTimes(2);
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("submitAll with onEditCommitBatch makes one consumer call for the lot", async () => {
-    const onEditCommit = vi.fn();
-    const onEditCommitBatch = vi.fn();
+  it("submitAll with onCommitBatch makes one consumer call for the lot", async () => {
+    const onCommit = vi.fn();
+    const onCommitBatch = vi.fn();
     const grid = renderEditGrid({
-      editMode: "batch",
-      onEditCommit,
-      onEditCommitBatch,
+      mode: "batch",
+      onCommit,
+      onCommitBatch,
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -328,9 +328,9 @@ describe("edit engine", () => {
 
     await expect(edit.submitAll()).resolves.toBe(true);
 
-    expect(onEditCommit).not.toHaveBeenCalled();
-    expect(onEditCommitBatch).toHaveBeenCalledTimes(1);
-    const { rows: batchRows } = onEditCommitBatch.mock.calls[0]?.[0] as {
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onCommitBatch).toHaveBeenCalledTimes(1);
+    const { rows: batchRows } = onCommitBatch.mock.calls[0]?.[0] as {
       rows: Array<TMDataGridEditCommitArgs<Person>>;
     };
     expect(batchRows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
@@ -339,8 +339,8 @@ describe("edit engine", () => {
 
   it("a rejected batch keeps every draft", async () => {
     const grid = renderEditGrid({
-      editMode: "batch",
-      onEditCommitBatch: () => Promise.reject(new Error("no")),
+      mode: "batch",
+      onCommitBatch: () => Promise.reject(new Error("no")),
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -392,7 +392,7 @@ describe("edit engine", () => {
     expect(onRowDelete).toHaveBeenCalledTimes(1);
     expect(onRowDelete.mock.calls[0]?.[0]).toMatchObject({ rowId: "1" });
 
-    const batch = renderEditGrid({ editMode: "batch", onRowDelete: vi.fn() });
+    const batch = renderEditGrid({ mode: "batch", onRowDelete: vi.fn() });
     batch.current.edit.deleteRow("1");
     expect(batch.current.edit.state.deletedRowIds).toEqual(["1"]);
     batch.current.edit.deleteRow("1");
@@ -401,7 +401,7 @@ describe("edit engine", () => {
 
   it("deleteRow on an uncommitted entry row just discards the entry", () => {
     const onRowDelete = vi.fn();
-    const grid = renderEditGrid({ editMode: "batch", onRowDelete });
+    const grid = renderEditGrid({ mode: "batch", onRowDelete });
     const { edit } = grid.current;
     const tempId = edit.addRow();
 
@@ -413,10 +413,10 @@ describe("edit engine", () => {
   });
 
   it("submitAll's batch payload carries rows, added and deleted together", async () => {
-    const onEditCommitBatch = vi.fn();
+    const onCommitBatch = vi.fn();
     const grid = renderEditGrid({
-      editMode: "batch",
-      onEditCommitBatch,
+      mode: "batch",
+      onCommitBatch,
       newRowDefaults: () => ({
         id: 0,
         name: "Ny",
@@ -432,8 +432,8 @@ describe("edit engine", () => {
 
     await expect(edit.submitAll()).resolves.toBe(true);
 
-    expect(onEditCommitBatch).toHaveBeenCalledTimes(1);
-    const args = onEditCommitBatch.mock.calls[0]?.[0] as {
+    expect(onCommitBatch).toHaveBeenCalledTimes(1);
+    const args = onCommitBatch.mock.calls[0]?.[0] as {
       rows: Array<{ rowId: string }>;
       added: Array<{ tempId: string; value: Person }>;
       deleted: Array<string>;
@@ -447,27 +447,27 @@ describe("edit engine", () => {
   });
 
   it("cancel drops the draft without a consumer call", () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
 
     edit.cancel("1");
 
-    expect(onEditCommit).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual([]);
     expect(edit.state.rows["1"]).toBe(undefined);
   });
 
   it("clearCell writes the type's empty value and commits it", async () => {
-    const onEditCommit = vi.fn();
-    const grid = renderEditGrid({ onEditCommit });
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
     const { edit } = grid.current;
 
     await expect(edit.clearCell("1", "age")).resolves.toBe(true);
 
-    const args = onEditCommit.mock
+    const args = onCommit.mock
       .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
     expect(args.changes).toEqual([
       { columnId: "age", field: "age", previous: 34, next: null },
@@ -475,12 +475,12 @@ describe("edit engine", () => {
   });
 
   it("cancelAll drops every draft, mark and entry in one motion", () => {
-    const onEditCommit = vi.fn();
-    const onEditCommitBatch = vi.fn();
+    const onCommit = vi.fn();
+    const onCommitBatch = vi.fn();
     const grid = renderEditGrid({
-      editMode: "batch",
-      onEditCommitBatch,
-      onEditCommit,
+      mode: "batch",
+      onCommitBatch,
+      onCommit,
       onRowDelete: vi.fn(),
     });
     const { edit } = grid.current;
@@ -498,8 +498,8 @@ describe("edit engine", () => {
     expect(edit.state.deletedRowIds).toEqual([]);
     expect(edit.state.active).toBe(null);
     expect(edit.getForm("1")).toBe(undefined);
-    expect(onEditCommit).not.toHaveBeenCalled();
-    expect(onEditCommitBatch).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onCommitBatch).not.toHaveBeenCalled();
   });
 
   it("canDeleteRows follows the handlers the mode can deliver to", () => {
@@ -511,10 +511,10 @@ describe("edit engine", () => {
 
     // Batch can also deliver deletions through the batch commit.
     expect(
-      renderEditGrid({ editMode: "batch" }).current.edit.canDeleteRows(),
+      renderEditGrid({ mode: "batch" }).current.edit.canDeleteRows(),
     ).toBe(false);
     expect(
-      renderEditGrid({ editMode: "batch", onEditCommitBatch: vi.fn() })
+      renderEditGrid({ mode: "batch", onCommitBatch: vi.fn() })
         .current.edit.canDeleteRows(),
     ).toBe(true);
   });

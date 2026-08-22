@@ -57,7 +57,7 @@ export function BatchEditing() {
 
   // Everything pending (edits, additions, deletions) arrives here at once, so
   // the server can apply it as a single transaction.
-  const onEditCommitBatch = useCallback(
+  const onCommitBatch = useCallback(
     ({ rows, added, deleted }: TMDataGridEditCommitBatchArgs<Employee>) => {
       setEmployees((previous) => {
         const edited = previous.map(
@@ -87,9 +87,11 @@ export function BatchEditing() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    editMode: "batch",
-    onEditCommitBatch,
-    newRowDefaults: newEmployee,
+    editing: {
+      mode: "batch",
+      onCommitBatch,
+      newRowDefaults: newEmployee,
+    },
     selectionMode: "highlight",
     enableGrouping: false,
   });
