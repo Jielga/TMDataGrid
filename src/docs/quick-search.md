@@ -31,8 +31,7 @@ const grid = useTMDataGrid({ data, columns, quickSearchMode: "contains" });
 ```
 
 `"contains"` restores plain substring matching. An explicit `globalFilterFn`
-overrides both, and switches the rank ordering off with it, since the grid no
-longer knows how well a row matched.
+overrides both, and switches the rank ordering off with it.
 
 `fuzzyGlobalFilterFn` is exported for building your own input over the same
 matching.
@@ -48,17 +47,15 @@ const grid = useTMDataGrid({ data, columns, enableMatchHighlighting: true });
 ```
 
 What is marked is the **contiguous, case-insensitive** occurrence of the search
-term. Under the fuzzy search a typo-match with no contiguous occurrence is
-therefore not highlighted. Equality operators highlight nothing, since marking
-the whole cell would add nothing.
+term, so a fuzzy typo-match with no contiguous occurrence is not highlighted.
+Equality operators highlight nothing.
 
 **Default-rendered cells only.** A column with its own `cell` renderer is
 excluded: the grid reproduces the default value-to-string render with the marks
 added, and does not modify a custom renderer's output.
 
 The mark colour is `--dg-match-highlight-bg`, a yellow that follows the Mantine
-colour scheme. While the feature is off (the default) it costs one flag check
-per render.
+colour scheme.
 
 ## Opting columns out
 

@@ -24,9 +24,9 @@ Turning it on changes three things about the body:
 - The tab stop moves from the row to a cell, so the whole grid is **one** Tab
   stop and the arrow keys move within it.
 - The grid reports itself as a `grid` of `gridcell`s rather than a `table` of
-  `cell`s, which tells a screen reader those keys are live.
+  `cell`s, which is what tells a screen reader the arrow keys are live.
 - The focused cell takes `data-focused`, and the selected ones `data-selected`
-  and `data-edge-*`, which is what the stylesheet paints.
+  and `data-edge-*`, which the stylesheet styles.
 
 ## Keys
 
@@ -48,16 +48,14 @@ moving the cursor while focus is inside it.
 
 ## One tab stop
 
-Tab from a cell leaves the grid, and Shift+Tab leaves it backwards. This works
-because the controls inside body cells - the checkbox, the tree chevron, the
-details chevron - take `tabindex="-1"` while cell selection is on. Left
-tabbable, Tab would stop at one per mounted row, and how many that is depends on
-the scroll position.
+Tab from a cell leaves the grid, and Shift+Tab leaves it backwards. The
+controls inside body cells - the checkbox, the tree chevron, the details
+chevron - take `tabindex="-1"` while cell selection is on.
 
 They remain reachable: Enter or F2 steps into the cell, Escape steps back out,
 and Space ticks the row from any of its cells without stepping in. Header
-controls are unaffected, since the header row is not part of cell navigation, so
-Tab is the only way to its sort buttons and menus.
+controls are unaffected: the header row is not part of cell navigation, so Tab
+is the only way to its sort buttons and menus.
 
 A custom cell containing a control needs the same treatment:
 
@@ -80,11 +78,12 @@ cell works either way.
 is two of them: the anchor and the moving corner. They hold **ids rather than
 indices**, so sorting, filtering and column reordering move the selection with
 the cells instead of leaving it over whatever took those positions. A range
-whose corner is filtered away paints nothing, and returns when the filter is
+whose corner is filtered away is not shown, and returns when the filter is
 cleared.
 
 Move either with `ui.actions.setFocusedCell` / `setCellRange`, follow them with
-`onFocusedCellChange`, or read them with `useSelector`:
+`onFocusedCellChange`, or read them with TanStack Store's
+[`useSelector`](https://tanstack.com/store/latest/docs/framework/react/reference):
 
 ```tsx
 const focusedCell = useSelector(grid.ui, (state) => state.focusedCell);
@@ -97,9 +96,8 @@ supported.
 
 The generated lanes (checkbox, tree, details) are part of the selection. They
 take the tint and the outline, so the block stays a rectangle and the arrow keys
-still reach the checkbox. They are never *exported*, because they hold controls
-rather than values. A block covering nothing else has nothing to copy, and the
-Copy and Export items are disabled.
+still reach the checkbox. They are never exported. A block covering nothing else
+has nothing to copy, and the Copy and Export items are disabled.
 
 ## Copy and export
 
@@ -117,9 +115,7 @@ Right-clicking inside the selection opens a menu with **Copy**, **Export as CSV
 for Excel** and an **Include headers** toggle. A right-click outside it moves the
 selection there first, as a spreadsheet does. Your own
 [`renderRowContextMenu`](/docs/row-interaction#context-menus) items are appended
-below a divider, so turning cell selection on removes nothing. Those three items
-are also what that slot's `internalItems` contains, if you would rather place
-them yourself.
+below a divider, so turning cell selection on removes nothing. Those three items are also what that slot's `internalItems` contains.
 
 ### The CSV
 
@@ -133,9 +129,8 @@ opens straight into columns with å ä ö intact.
 <TMDataGrid.Table cellExport={{ separator: ",", decimalComma: false, fileName: "employees" }} />
 ```
 
-What is written is the cell's **value**, not what it renders, since a cell often
-renders a badge or a link rather than the value itself. Dates are written in the
-`sv-SE` form (`2026-07-31`), which Excel reads as a date.
+What is written is the cell's **value**, not what it renders. Dates are written
+in the `sv-SE` form (`2026-07-31`), which Excel reads as a date.
 
 `exportGridToCsv({ table, options })` takes **every filtered row** instead of the
 selected block, with the same options and defaults. There is no built-in button

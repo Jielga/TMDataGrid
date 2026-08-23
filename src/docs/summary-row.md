@@ -35,9 +35,6 @@ aggregateColumn({ table, columnId: "age", fn: "mean" });        // average
 aggregateColumn({ table, columnId: "location", fn: "uniqueCount" });
 ```
 
-It follows the filters deliberately. A total that does not change as the user
-narrows the grid is misleading.
-
 ## Layout
 
 Pinned columns keep their lanes in the summary row, and the row sits under the

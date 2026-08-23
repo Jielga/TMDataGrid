@@ -58,7 +58,7 @@ from a stylesheet.
 
 | Variable | Default | Applies to |
 | --- | --- | --- |
-| `--row-bg` | – | One row's own background. Set this, never `background`. See [Row styling](/docs/row-styling#set---row-bg-not-background). |
+| `--row-bg` | – | One row's own background. Set this, never `background`. See [Row styling](/docs/row-styling#set-the-row-background). |
 | `--dg-row-selected-bg` | `--mantine-primary-color-light` | [Selected](/docs/row-selection) rows |
 | `--dg-row-highlight-bg` | Themed | The highlighted row |
 | `--dg-row-striped-bg` | Themed | Every second row under `striped` |
@@ -89,8 +89,7 @@ sit at a known place in that order. Import **one** of the two, never both.
 ## Layout
 
 The grid fills the box you give it and scrolls inside it. It does not size
-itself to its content, because a virtualized grid has no content height to
-measure.
+itself to its content: a virtualized grid has no content height to measure.
 
 ```tsx
 <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>

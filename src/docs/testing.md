@@ -8,23 +8,17 @@ DOM is internal and may change without notice.
 > Renaming or dropping anything on this page is a breaking change, so it moves
 > only with a major version.
 
-## Why not `data-testid`
+## Selector attributes
 
-The grid defines no `data-testid` of its own, and neither do its
-dependencies: `@mantine/core` and `@tanstack/*` ship none. `data-testid` is a
-testing-framework convention that belongs to your app: Playwright's
-`testIdAttribute` is configurable, so a codebase standardised on `data-qa` or
-`data-cy` could not use `getByTestId()` on our nodes without breaking its own.
+The grid publishes three kinds of selector, and no `data-testid` of its own:
 
-Instead the grid names its parts the way MUI X and AG Grid do, with semantic
-attributes of its own:
+- `data-dg-part` - what an element is (`"row"`, `"filter-button"`)
+- `data-row-id` and `data-column-id` - which one, using your own ids
+- roles and ARIA - the same thing a screen reader reads
 
-- **`data-dg-part`** - *what* an element is (`"row"`, `"filter-button"`)
-- **`data-row-id` / `data-column-id`** - *which* one, using your own ids
-- **roles and ARIA** - framework-neutral, and the same thing a screen reader reads
-
-`<TMDataGrid data-testid>` is the one exception, because that value is supplied
-by you.
+`data-testid` is left to your suite, whose `testIdAttribute` may be `data-qa` or
+`data-cy` rather than `data-testid`. The one exception is
+`<TMDataGrid data-testid>`, which sets the value you pass.
 
 ## Naming a grid
 
@@ -58,17 +52,15 @@ the `grid` role.
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
 
 **The role changes with cell selection.** `cellSelection` turns the grid's
-`table` into a `grid` and every `cell` into a `gridcell`, because a widget with
-a keyboard cursor is not a static table. A suite written on
-`getByRole("cell")` therefore breaks when the feature is switched on. Query
-cells by their coordinates instead:
+`table` into a `grid` and every `cell` into a `gridcell`, so a suite written on
+`getByRole("cell")` breaks when the feature is switched on. Query cells by their
+coordinates instead:
 
 ```ts
 const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
 ```
 
-Body cells carry no `data-dg-part`: the coordinate pair already identifies them,
-and one fewer attribute per cell matters in a virtualized grid.
+Body cells carry no `data-dg-part`; the coordinate pair identifies them.
 
 ## Parts
 
@@ -152,7 +144,7 @@ your grid runs in one language.
 
 The grid is always virtualized: only the rows in the viewport plus overscan are
 in the DOM. A row at index 500 has no element, and Playwright cannot scroll to
-what it cannot find. Two things follow.
+what it cannot find.
 
 **Count rows off the grid, not off the DOM.** `aria-rowcount` includes the
 header and summary rows. `data-dg-row-count` counts the body rows alone: the
@@ -172,8 +164,7 @@ await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 ```
 
 **Or scroll to it.** When the row must be reached in place, such as when testing
-the scroll itself or on a grid with no search, `scrollToRow` moves the
-virtualizer, which is the only way to get an element rendered there:
+the scroll itself, `scrollToRow` moves the virtualizer:
 
 ```ts
 const found = grid.scrollToRow({ rowId: "42", align: "center" });
@@ -187,7 +178,8 @@ has to be called through the page, since the API lives in React:
 await page.evaluate(() => window.__ordersGrid.scrollToRow({ rowId: "42" }));
 ```
 
-which requires the app to expose it. Narrowing needs no such hook.
+which requires the app to expose the grid on `window`. Narrowing needs no such
+hook.
 
 ## Waiting
 
@@ -205,7 +197,7 @@ the assertion until the debounce lands.
 
 ## A page object
 
-One helper makes the parts as convenient as `getByTestId`:
+A helper class wraps the parts:
 
 ```ts
 import { type Locator, type Page, expect } from "@playwright/test";

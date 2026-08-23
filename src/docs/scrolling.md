@@ -32,7 +32,7 @@ const grid = useTMDataGrid({ data, columns, meta: { rowHeight: 64 } });
 [Row details](/docs/row-details) are the exception: a row showing a panel is as
 tall as the panel, so those rows are measured after they mount.
 `renderDetailsEstHeight` is what the virtualizer assumes for one it has not
-measured yet. A grid without `renderDetails` mounts no observers.
+measured yet.
 
 ## Scrolling to a row
 
@@ -65,22 +65,22 @@ For loading more rows, use [`onReachEnd`](/docs/server-side#infinite-scroll)
 instead. It fires a number of rows before the bottom, and latches per row count
 so a pending fetch is not requested twice.
 
-## The depth cues
+## Scroll shadows
 
-Two soft shadows, both scroll-driven animations run on the compositor, with no
-scroll listener, no state and no React render.
+Two soft shadows, both driven by `animation-timeline: scroll(…)` rather than by
+a scroll listener.
 
 **Under the header.** Once body rows scroll beneath the sticky header, a shadow
 appears along its bottom edge, indicating rows above the viewport. A grid with
 nothing to scroll shows none. `--dg-header-shadow-color` recolours it.
 
-**Beside a pinned lane.** A [pinned column](/docs/column-layout#pinning) casts a
+**Beside a pinned lane.** A [pinned column](/docs/column-layout#pinning) shows a
 band over the data next to it, and only while it is covering content: it fades
 in over the first 20px of horizontal scroll and fades out again at the far
 end.
 
-Both use `animation-timeline: scroll(…)`. Where that is unsupported, the
-header's own border draws the boundary and the pinned band is always on.
+Where `animation-timeline` is unsupported, the header's own border draws the
+boundary and the pinned band is always on.
 
 ## Reference
 

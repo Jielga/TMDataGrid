@@ -25,10 +25,8 @@ nothing else. Show/hide all covers the same list, so a column switched off this
 way keeps whatever visibility it was given. The state is TanStack's
 `columnVisibility`.
 
-The generated lanes are all `enableHiding: false` and never appear in the panel.
-The checkbox and edit lanes hold controls the grid needs, the tree column
-follows the grouping state, and the row-number gutter follows
-`enableRowNumbers`. None of them is a user setting.
+The generated lanes are all `enableHiding: false` and never appear in the
+panel. Each follows the feature that adds it rather than a setting of its own.
 
 ## Pinning
 
@@ -40,9 +38,9 @@ gradient band, which fades in only while it is covering content.
 Headers, cells and grid tracks are ordered left, centre, right from the same
 source, so pinning does not change a column's position relative to its group.
 
-A pinned column also becomes fixed-width: sticky offsets are computed from
-`getSize()`, which cannot resolve an `fr` value. The grid stores the column's
-rendered width in `columnSizing` at the moment it is pinned, so nothing jumps.
+A pinned column also becomes fixed-width, since sticky offsets cannot be
+computed from an `fr` value. The grid writes the column's rendered width into
+`columnSizing` as it is pinned, so nothing jumps.
 
 The generated lanes stay outside both pinned lanes: pinning a column right puts
 it to the left of the edit lane, so the row's Save, Cancel and Delete remain
@@ -127,9 +125,9 @@ measured, so the width fits the visible window plus overscan. The result is
 clamped to `minSize`/`maxSize` and written into `columnSizing`, so it persists
 with the other widths and a later drag overrides it.
 
-`meta.autoSize` waits for content. On a grid whose rows are fetched, the first
-render has a header and no cells, and a width measured there would fit only the
-title, so the column is sized on the render its first cells appear in.
+`meta.autoSize` waits for content: on a grid whose rows are fetched, the first
+render has a header and no cells, so the column is sized on the render its
+first cells appear in.
 
 `autosizeColumn({ table, columnId, container })` is exported for menus and
 consumer code; `container` is the grid's scroll container, or any ancestor of
@@ -155,13 +153,12 @@ the items the grid would have rendered and returns the list to render:
 
 `internalItems` is the built-in list in order, dividers included. Returning it
 unchanged gives the default menu, splicing around it extends the menu, and
-returning something else replaces it. Return an empty list and the column has no
-menu button at all, as if every one of its features were switched off.
+returning something else replaces it. An empty list removes the menu button.
 
 It runs for every column that has a menu, so branch on `column.id` for a
 per-column menu. A trailing divider is dropped automatically.
 
-## Putting it back
+## Reset the layout
 
 `resetSettings()` from the hook clears visibility, order, pinning and widths in
 one call. The columns panel offers it as **Reset layout**.

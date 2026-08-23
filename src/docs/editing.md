@@ -2,12 +2,10 @@
 
 `@tanstack/react-form` becomes a peer dependency once editing is used.
 
-Everything about editing lives in one config option: `editing`. Its `mode`
-picks how commits happen, `onCommit` receives them, and the grid shows editors
-in the cells when a row/cell gets open for edit. Each row gets a TanStack form
-wrapper that holds the local form state and calls `onCommit` once the form data
-is committed. So edit works in an uncontrolled React manner by providing data >
-`onCommit` (onChange).
+Editing is configured through one option, `editing`. `mode` decides what counts
+as a commit, and `onCommit` receives it. Each open row gets its own TanStack
+Form instance holding the draft; the grid never mutates `data`, so you apply
+the commit and the new values arrive back through `data`.
 
 ```tsx
 const grid = useTMDataGrid({
@@ -23,22 +21,21 @@ const grid = useTMDataGrid({
 });
 ```
 
-Two requirements, both compile errors rather than options that silently do
-nothing: `editing` requires `getRowId`, because drafts are keyed by row id and
-the index fallback would name a different record after any sort; and
-`onCommitBatch` exists only under `mode: "batch"`, since `submitAll` is its
-only caller. `mode: "batch"` _without_ `onCommitBatch` is fine: `submitAll`
-falls back to the per-row `onCommit` loop.
+`editing` requires `getRowId`: drafts are keyed by row id, and the index
+fallback would name a different record after any sort. `onCommitBatch` is
+accepted only under `mode: "batch"`. Both are compile errors rather than options
+that silently do nothing. `mode: "batch"` without `onCommitBatch` is fine:
+`submitAll` falls back to the per-row `onCommit` loop.
 
-The `editing` object may be written inline - its callbacks are read through a
-ref every render, so its identity does not matter.
+The `editing` object may be written inline. Its callbacks are read through a ref
+on every render, so its identity does not matter.
 
 ## The four modes
 
-All four use the same engine and the same forms. `editing.mode` sets two
-things: what counts as a commit, and which controls trigger it.
+All four use the same engine and the same forms. `editing.mode` sets what
+counts as a commit and which controls trigger it.
 
-| Mode            | Commit                                | Cancel             | Chrome                  |
+| Mode            | Commit                                | Cancel             | Controls                |
 | --------------- | ------------------------------------- | ------------------ | ----------------------- |
 | `"cell"`        | Enter, Tab or blur                    | Escape             | none                    |
 | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape        | ✓ / ✕ beside the input  |
@@ -47,7 +44,7 @@ things: what counts as a commit, and which controls trigger it.
 
 ```demo
 file: editing/CellEditing.tsx
-hint: Double-click a cell - or press Enter, F2, or just start typing on it.
+hint: Double-click a cell, or press Enter or F2, or start typing on it.
 height: 440
 ```
 
@@ -79,10 +76,10 @@ height: 440
 
 ### Batch editing
 
-Under `"batch"` nothing commits until you ask for it. Enter and Tab **park** the
+Under `"batch"` nothing commits until you ask for it. Enter and Tab **hold** the
 draft (dirty-marked, Tab moving on to the next editable cell), Escape drops the
-one draft, and drafts accumulate across rows - surviving filters, sorts and
-scrolling, since they live outside the DOM.
+one draft, and drafts accumulate across rows, surviving filters, sorts and
+scrolling.
 
 `TMDataGrid.EditActions` in the toolbar provides the controls: Save with the
 dirty-row count, and Discard. `renderActions` replaces the pair and hands over
@@ -133,7 +130,7 @@ hint: ID never edits · Salary is closed on Terminated rows · rows under 25 are
 height: 440
 ```
 
-## Drafts survive scrolling
+## Draft lifetime
 
 Forms live outside the DOM, keyed by row id. Scrolling an editing row away
 unmounts the editor; the form keeps its values, dirty state and errors, and the
@@ -147,7 +144,7 @@ error.
 `edit.addRow()` opens an **entry row** in a sticky block under the header, so a
 row being typed into stays in view. Entry cells are ordinary editors over a form
 seeded from `newRowDefaults`. Enter, or the lane's ✓, commits the add through
-`onRowAdd` under the immediate modes, while batch parks it for `submitAll`.
+`onRowAdd` under the immediate modes, while batch holds it for `submitAll`.
 Escape, or ✕, discards the entry.
 
 ```tsx
@@ -176,7 +173,7 @@ need to become a real id; assign one when you create the record.
 
 ## The engine: `edit`
 
-Everything the built-in controls do goes through `edit`, which is public.
+The built-in controls do everything through `edit`, which is public.
 
 | Member                                    | Does                                                                            |
 | ----------------------------------------- | ------------------------------------------------------------------------------- |
@@ -188,9 +185,8 @@ Everything the built-in controls do goes through `edit`, which is public.
 | `edit.getForm(rowId)`                     | The row's live `FormApi`                                                        |
 | `edit.store`                              | Open rows, active cell, dirty and error projections, entry rows, deletion marks |
 
-`getForm` exposes the row's form: render it in a drawer or side panel and it
-shares values, dirty state and errors with the inline cells, because it is the
-same `FormApi`.
+`getForm` returns the row's own `FormApi`. Render it in a drawer or side panel
+and it shares values, dirty state and errors with the inline cells.
 
 For the inverse, a `@tanstack/react-form` form _around_ the grid holding the row
 array, see [A query builder inside a form](/docs/query-builder).

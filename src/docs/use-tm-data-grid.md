@@ -1,8 +1,5 @@
 # useTMDataGrid
 
-The complete option list. Each option is explained on the page for the feature
-it belongs to; this page is the lookup, and links there.
-
 Creates the table instance and the state used by the grid interface.
 
 ```tsx
@@ -28,12 +25,12 @@ rather than forwarded to TanStack.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `data` | `TData[]` | – | Row data. Keep the reference stable with `useMemo` - an array rebuilt every render makes TanStack rebuild the row models every render, which wastes work and can loop the grid indefinitely. |
+| `data` | `TData[]` | – | Row data. When the reference changes the table reprocesses the row models, so keep it stable with `useMemo`. |
 | `columns` | `ColumnDef[]` | – | Created with `createTMDataGridColumnHelper`. |
 | `getRowId` | `(row, index) => string` | Row index | Used by row selection and virtualization. |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `true` | `false` removes row selection and its checkbox column. |
 | `selectionMode` | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a bare row click does. Defined by the grid, see [Row selection](/docs/row-selection). |
-| `showSelectedBackground` | `boolean` | Follows the mode | Highlight background on selected rows: on for `"row"`, off for `"checkbox"`. Colour is the `--dg-row-selected-bg` CSS variable. Defined by the grid, see [Row selection](/docs/row-selection). |
+| `showSelectedBackground` | `boolean` | On for `"row"`, off for `"checkbox"` | Determines whether selected rows take a background tint, coloured by `--dg-row-selected-bg`. Defined by the grid, see [Row selection](/docs/row-selection). |
 | `defaultHighlightedRowId` | `string \| null` | – | Row highlighted on mount, under a mode with a highlight. Read once, like `initialState`. |
 | `onHighlightedRowChange` | `(rowId: string \| null) => void` | – | Follows the highlighted row, from clicks and from `ui.actions.setHighlightedRow`. |
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
@@ -48,14 +45,14 @@ rather than forwarded to TanStack.
 | `quickSearchMode` | `"fuzzy" \| "contains"` | `"fuzzy"` | How `Search` matches. Fuzzy forgives typos and orders unsorted results by match quality; `"contains"` is plain substring matching. Defined by the grid, see [Quick search](/docs/quick-search). |
 | `enableMatchHighlighting` | `boolean` | `false` | Cells mark the matched text while a contains-family filter or the quick search is active. Defined by the grid, see [Quick search](/docs/quick-search#match-highlighting). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it turns row details on and adds the pinned chevron lane. Defined by the grid, see [Row details](/docs/row-details). |
-| `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured, so an approximate value is enough. |
+| `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured once mounted, so an approximation is enough. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Cell selection](/docs/cell-selection). |
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
-| `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
-| `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
-| `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
+| `initialState` | `Partial<TableState>` | – | Merged over the [grid defaults](#default-initial-state). |
+| `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
+| `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
 
 ### Default initial state
@@ -68,7 +65,7 @@ rather than forwarded to TanStack.
 
 ## meta
 
-Grid configuration passed through the `meta` option.
+Grid configuration, passed through the `meta` option.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -123,10 +120,8 @@ toolbar components can read the same strings as the built-in parts.
 ## persist
 
 Restores table state on mount and writes it back on every change. State is
-split across two keys because the two groups have different lifetimes. Column
-configuration remains valid indefinitely, while filters and pagination can
-become stale as the underlying data changes. Separate keys allow one group to
-be cleared without affecting the other.
+split across two keys: `settingsKey` for the column layout, `dataKey` for
+filters, sorting and pagination. Either can be cleared without the other.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -181,11 +176,9 @@ Only the selected slices are read back. A payload written before the selection
 was narrowed cannot reintroduce slices you have since opted out of. Unrecognised
 keys are ignored.
 
-Payloads carry a version stamp (the exported `PERSIST_PAYLOAD_VERSION`). A
+Payloads carry a version stamp, the exported `PERSIST_PAYLOAD_VERSION`. A
 payload from a different version, including anything written by a 0.x build,
-which had no stamp, is dropped whole rather than migrated. The cost is one lost
-layout, which is preferable to interpreting a shape the current code no longer
-understands.
+which had no stamp, is dropped whole rather than migrated.
 
 Restored state is realigned against the columns that exist. Entries naming a
 column removed between deploys are dropped: a stale id in the order, a width for
@@ -193,33 +186,18 @@ a column that no longer exists, or a sort or filter that would be active with no
 column to show it. New columns need no handling, since TanStack appends columns
 missing from `columnOrder` in definition order.
 
-`resetSettings()` on the returned api puts the settings state back to what a
-first visit with clean storage would have shown - your `initialState` plus
-the structural lanes - and, with persistence configured, writes through to
-storage like any other change. The columns panel's **Reset layout** button
-calls it. Note that TanStack's own `resetColumnX()` family cannot
-do it on a persisted grid: those reset to `initialState`, which the mount
-built *from* the restored payload.
+`resetSettings()` on the returned API puts the settings state back to what a
+first visit with clean storage would have shown - your `initialState` plus the
+structural lanes - and, with persistence configured, writes through to storage
+like any other change. The columns panel's **Reset layout** button calls it.
+TanStack's own `resetColumnX()` family cannot do it on a persisted grid: those
+reset to `initialState`, which the mount built from the restored payload.
 
 All storage access is guarded. If storage is unavailable, disabled or full,
 persistence is skipped rather than throwing.
 
 Storage keys are not namespaced automatically. Include a tenant or user
 identifier if several users can share a browser profile.
-
-### Relationship to useLocalStorage
-
-Persistence does not use Mantine's `useLocalStorage`. That hook holds a piece of
-state and returns `[value, setValue]`, whereas here the table already holds the
-state and storage only mirrors it. Routing writes through the hook would keep a
-second copy and trigger a React state update on every change, including every
-pointer move during a column resize. Its defaults also conflict with this use:
-`getInitialValueInEffect: true` delivers the stored value after mount, while
-`initialState` is only read on the first render, and `sync: true` would let two
-open tabs overwrite each other's column layout.
-
-The option names follow Mantine's `UseStorageOptions` where they apply, and
-`storageMode` takes the same values as its `StorageType`.
 
 ## Return value
 
@@ -228,7 +206,7 @@ The option names follow Mantine's `UseStorageOptions` where they apply, and
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
 | `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See [Editing](/docs/editing). |
-| `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#why-features-is-a-second-argument). |
+| `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
 | `renderDetails` | `TMDataGridDetailsRenderer<TData> \| undefined` | The detail renderer, passed through for `TMDataGrid.Table` to call. |
 | `renderDetailsEstHeight` | `number` | The estimate, resolved to its default when the option was not set. |
@@ -250,10 +228,9 @@ grid.scrollToRow({ rowId: "42", align: "center" });
 `align` is TanStack Virtual's: `"auto"` (the default: nearest edge, leaving a
 visible row where it is), `"start"`, `"center"` or `"end"`.
 
-It returns whether the row could be reached. `false` means it is not in the
-current view (filtered out, on another page, or an id matching no row) and
-nothing scrolled. Paging or clearing the filter first is the caller's decision.
-A pinned row returns `true` without scrolling, since it is already at an edge.
+It returns whether the row could be reached. `false` means the row is not in the
+current view - filtered out, on another page, or an id matching no row - and
+nothing scrolled. A pinned row returns `true` without scrolling.
 
 The identity is stable, so it is safe in a dependency array. Before
 `TMDataGrid.Table` has mounted there is nothing to scroll and it returns
@@ -273,9 +250,8 @@ const selectedCount = useSelector(
 const filterPanelOpen = useSelector(grid.ui, (state) => state.filterPanelOpen);
 ```
 
-Read state with `useSelector` rather than accessing `grid.table.store.state`
-during render. A direct read does not subscribe the component, so it will not
-re-render when the value changes.
+Read state with `useSelector` rather than `grid.table.store.state`. A direct
+read does not subscribe the component to the store.
 
 ### ui actions
 
@@ -299,7 +275,7 @@ when it is off screen.
 
 `startColumnDrag` and `endColumnDrag` are called by the header cells while a
 column is being dragged. `ui.draggedColumnId` holds the column being moved,
-because browsers keep `dataTransfer` unreadable until the drop.
+since `dataTransfer` is unreadable until the drop.
 
 `openColumnFilter(grid, columnId)` combines two steps used by the column menu:
 it adds an empty filter row for the column if none exists, then opens the panel.
@@ -311,10 +287,9 @@ so setting the standard table or column option removes the corresponding
 interface. Empty menus and inactive buttons are never rendered.
 
 Column ordering and pagination are the two exceptions: TanStack ships state and
-APIs for both but no `enable` option, so the grid defines
-`enableColumnOrdering` (with `meta.enableOrdering`) and `enablePagination`
-itself. Ordering behaves like the options around it. Pagination is the only one
-that defaults to off.
+APIs for both but no `enable` option, so the grid defines `enableColumnOrdering`
+(with `meta.enableOrdering`) and `enablePagination` itself. Pagination defaults
+to off; ordering, like the options around it, defaults to on.
 
 | Option | Level | Interface removed |
 | --- | --- | --- |

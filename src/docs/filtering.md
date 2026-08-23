@@ -107,9 +107,8 @@ last filter row by hand.
 `TMDataGrid.FilterPills` renders one pill per active filter -
 `First name: Sofia ✕` - where the ✕ clears that filter and a click on the label
 reopens the panel on its column. Half-typed filters are left out. The label
-spells the
-operator out unless it is the column type's default - `Age is greater than 30`,
-but `First name: Sofia`.
+spells the operator out unless it is the column type's default -
+`Age is greater than 30`, but `First name: Sofia`.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |

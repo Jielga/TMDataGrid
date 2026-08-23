@@ -1,8 +1,7 @@
 # Loading and empty states
 
-There are four ways a grid can have nothing to show, and they mean different
-things to the user. A grid still fetching is not empty, and a grid emptied by a
-filter is not the same as one with no data at all.
+A grid can have nothing to show for four different reasons, and the body says
+which one it is: still fetching, emptied by a filter, or holding no data.
 
 ```demo
 file: data/LoadingAndEmpty.tsx
@@ -10,7 +9,7 @@ hint: Switch to loaded, then search for something that cannot match, to see the 
 extraSources: data/employeeColumns.tsx
 ```
 
-## What wins
+## Precedence
 
 An empty body shows exactly one thing, decided in this order:
 
@@ -20,8 +19,7 @@ An empty body shows exactly one thing, decided in this order:
    only, with no message beside the form.
 3. **`renderEmptyState`** - your node, centred where the message would be.
 4. **Filtered-empty** - a filter or search is active: a search icon and
-   `labels.noResults` ("No rows match your filters"), since clearing the filter
-   will bring rows back.
+   `labels.noResults` ("No rows match your filters").
 5. **Truly-empty** - no data at all: `labels.noRows` ("No rows to show").
 
 ## Replacing the message
@@ -49,9 +47,6 @@ two different messages:
   }
 />
 ```
-
-An empty grid is a good place to offer the action that fills it, such as
-clearing the filters or creating the first record.
 
 ## Loading with rows on screen
 

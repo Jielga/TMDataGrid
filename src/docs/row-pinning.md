@@ -23,9 +23,8 @@ A **lane of your own**, a display column whose cell is a pin button:
 
 ```tsx
 function PinToggle({ row }: { row: Row<TMDataGridFeatures, Employee> }) {
-  // Subscribed rather than called in the component body: the `row` identity
-  // survives a pin, so the React Compiler would cache the call along with it
-  // and the icon would never fill in.
+  // Subscribed rather than called in the component body: the React Compiler
+  // caches a bare call along with the stable `row` identity.
   const pinned = useSelector(row.table.store, () => row.getIsPinned());
   return (
     <ActionIcon
@@ -60,8 +59,8 @@ const pinColumn = columnHelper.display({
 });
 ```
 
-Or the **row context menu**, which reaches a row at either edge as easily as
-one in the body:
+Or the **row context menu**, which reaches a row at either edge as well as one
+in the body:
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -78,8 +77,7 @@ one in the body:
 />
 ```
 
-Whichever you build, include a way to unpin. A pin control with no unpin leaves
-the row stuck at its edge.
+Include a way to unpin.
 
 ```demo
 file: rows/PinningAndNumbers.tsx
@@ -91,7 +89,7 @@ are TanStack's own APIs; the state is `rowPinning: { top: string[], bottom:
 string[] }`, settable wholesale with `table.setRowPinning()` or seeded through
 `initialState`.
 
-### They are still body rows
+### Pinned row behaviour
 
 Selection, editing, details, the context menu and per-row styling all behave as
 they do in the body. Pinned rows are excluded only from the features that
@@ -105,11 +103,10 @@ Also note:
 - A pinned id whose row leaves `data` (a delete, a server-side page swap) is not
   shown. It stays in state and the row returns to its edge if its data comes
   back.
-- **Group rows never pin.** A group row is built on its first child's record, so
-  pinning one would move an arbitrary data row's identity to the edge. A leaf
-  whose group is collapsed stays hidden while pinned.
-- `rowPinning` is **not** persisted by `settingsKey`: row ids are data, and the
-  layout store outlives any one data set.
+- **Group rows never pin.** A leaf whose group is collapsed stays hidden while
+  pinned.
+- `rowPinning` is **not** persisted. Row ids are data, and the settings group
+  holds layout only.
 
 ## Numbering rows
 
@@ -121,11 +118,9 @@ const grid = useTMDataGrid({ data, columns, enableRowNumbers: true });
 ```
 
 It numbers **the current view**: sorted, filtered, and continuing across pages
-rather than restarting on each one. The number is a position in the current
-view, not an identifier for the record. Group rows and pinned rows take no
-number.
-
-For a stable identifier, add a column of your own over the record's id.
+rather than restarting on each one. The number is a position, not an identifier
+for the record; for that, add a column of your own over the record's id. Group
+rows and pinned rows take no number.
 
 ## Reference
 

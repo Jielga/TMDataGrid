@@ -1,9 +1,7 @@
 # Grouping
 
 Grouping collapses the rows into a tree: one row per distinct value, with the
-records that share it folded underneath. Use it when the unit of interest is
-the category rather than the record, such as headcount per department or orders
-per customer.
+records that share it folded underneath.
 
 It is on by default. Nothing changes until a column is grouped, which users do
 from **Group by …** in any column menu.
@@ -85,42 +83,25 @@ Only the records are written to `rowSelection`. A group row is never in it, so
 `getSelectedRowModel()` and the toolbar count do not depend on how the tree is
 arranged.
 
-Under `enableMultiRowSelection: false` group rows carry no checkbox, since one
-box cannot stand for several rows.
+Under `enableMultiRowSelection: false` group rows carry no checkbox.
 
-## Group rows are not data rows
+## Group rows
 
-A group row does not fire `onRowClick` and cannot be highlighted. TanStack
-builds it on its first child's record, so a click would hand you a row that
-looks real but is the wrong one. For the same reason group rows cannot be
-[pinned](/docs/row-pinning) and have no details panel.
+A group row is built on its first child's record rather than on one of its own,
+so it does not fire `onRowClick`, cannot be highlighted, cannot be
+[pinned](/docs/row-pinning) and has no details panel.
 
 Rows carry `data-grouped` and `data-depth` for styling, and
 `--dg-row-group-bg` sets their background.
 
-## Grouping suspends pagination
+## Grouping and pagination
 
-**Grouping and the built-in pager do not work together, and grouping wins.** As
-soon as a column is grouped the grid renders the whole tree and relies on
-virtualization. `TMDataGrid.Footer` greys its pager out, replaces the range with
-`Grouped · all N rows`, and explains why on hover. Ungroup and paging resumes
-where it left off.
+While a column is grouped the grid renders the whole tree and relies on
+virtualization. `TMDataGrid.Footer` greys its pager out and replaces the range
+with `Grouped · all N rows`. Ungroup and paging resumes where it left off.
 
-This is deliberate. A page can only count one kind of thing, and once the rows
-are a tree neither option works:
-
-- Counting **every row** splits a group across a page boundary, so opening one
-  group fills the page with its children and pushes every group after it onto
-  later pages.
-- Counting **top-level rows** redefines "rows per page" as groups per page, so a
-  page of 25 can hold thousands of rows and the footer's number stops meaning
-  anything.
-
-Rendering the whole tree is the grid's default mode in any case, so only the
-pager is lost.
-
-If you need both, page on the server: group the rows there and feed the grid one
-page of a tree at a time with `manualPagination` and `manualGrouping`.
+To page a grouped grid, group and page on the server: feed the grid one page of
+a tree at a time with `manualPagination` and `manualGrouping`.
 
 `isPagingActive(table, features)` is exported, so a custom pager can grey itself
 out the same way:
@@ -135,8 +116,8 @@ out the same way:
 
 ## Server-side grids
 
-`manualPagination: true` turns grouping off, because the client holds one page
-and would build groups out of an arbitrary slice. A grid that groups
+`manualPagination: true` turns grouping off: the client holds one page, and
+grouping it would build groups out of an arbitrary slice. A grid that groups
 server-side can set `enableGrouping: true` alongside `manualGrouping: true`. See
 [Server-side data](/docs/server-side).
 

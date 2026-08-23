@@ -1,10 +1,9 @@
 # Row selection
 
-Picking rows out of the grid, and reading back what was picked. "Selected" can
-mean two things: *these rows are the subject of the next bulk action*, or *this
-row is the one being looked at*. The grid supports either or both.
-
-`selectionMode` sets which, and defaults to `"checkbox"`.
+Picking rows out of the grid, and reading back what was picked. The grid
+separates two things: a set of rows for a bulk action, and a single highlighted
+row. `selectionMode` sets which of them a click drives, and defaults to
+`"checkbox"`.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns });                        // "checkbox"
@@ -18,9 +17,9 @@ file: rows/SelectionModes.tsx
 
 ## The four modes
 
-`selectionMode` sets what selecting looks like *and* what a bare row click
-does. It is one option rather than two because the pair cannot vary freely: a
-click can toggle a multi-selection or move a highlight, but not both.
+`selectionMode` sets what selecting looks like and what a bare row click does.
+A click can toggle a multi-selection or move a highlight, not both, so the two
+are one option rather than two.
 
 | Mode | Checkbox column | Row click |
 | ---- | --------------- | --------- |
@@ -32,19 +31,19 @@ click can toggle a multi-selection or move a highlight, but not both.
 The first two write to TanStack's `rowSelection`, so the toolbar count,
 `getSelectedRowModel()` and persistence all behave the same either way.
 
-Under `"row"` the click follows the usual desktop-list conventions: a plain click
-makes the selection this row, Ctrl/Cmd toggles it and leaves the rest, Shift
-selects the range from the anchor, Ctrl+Shift adds that range. Rows are
+Under `"row"` the click follows the usual desktop-list conventions: a plain
+click replaces the selection with this row, Ctrl/Cmd toggles it and leaves the
+rest, Shift selects the range from the anchor, Ctrl+Shift adds that range. Rows are
 focusable in this mode, and Space or Enter toggles the focused row.
 
 `enableRowSelection: false` removes the checkbox column and row-click
 selection in any mode. It has no effect under `"highlight"`, which selects
 nothing.
 
-## The highlight is not a selection
+## The highlighted row
 
-The highlight is state of its own, not a slice of `rowSelection`. That is what
-lets `"checkboxAndHighlight"` run both at once: tick rows for a bulk action,
+The highlighted row is state of its own rather than a slice of `rowSelection`,
+so `"checkboxAndHighlight"` runs both at once: tick rows for a bulk action,
 click one to open its detail panel beside the grid.
 
 `defaultHighlightedRowId` seeds it and `onHighlightedRowChange` follows it,
@@ -60,17 +59,16 @@ const grid = useTMDataGrid({
 });
 ```
 
-A highlight-driven side panel and [row details](/docs/row-details) suit
-different cases. Row details keep the record in place and in context, which
-works for a handful of fields; a side panel has more room and stays put while
-the grid scrolls. A grid can use both.
+For a panel that opens under the row instead of beside the grid, see
+[Row details](/docs/row-details). A grid can use both.
 
 ## Acting on a selection
 
-Read the selection through the table store rather than by calling a method
-directly. The identity of `table` is stable across renders, so the React
-Compiler caches a bare `getSelectedRowModel()` call and the toolbar stops
-updating.
+Read the selection through the table store with TanStack Store's
+[`useSelector`](https://tanstack.com/store/latest/docs/framework/react/reference), rather
+than by calling a method directly. The table identity is stable across renders,
+so the React Compiler caches a bare `getSelectedRowModel()` call and the
+toolbar stops updating.
 
 ```tsx
 const selected = useSelector(
@@ -86,10 +84,9 @@ hint: Tick a few rows - the toolbar turns into a bulk-action bar and back.
 
 ## Highlighting selected rows
 
-`showSelectedBackground` follows the mode: on for `"row"`, where the background
-is the only feedback a click gives, and off for `"checkbox"`, where the box
-already shows it. Set it explicitly to override that, for checkboxes *and* a
-background, or row selection with no background change.
+`showSelectedBackground` follows the mode: on for `"row"`, off for
+`"checkbox"`. Set it explicitly for checkboxes and a background, or for row
+selection with no background change.
 
 ```tsx
 const grid = useTMDataGrid({ data, columns, showSelectedBackground: true });

@@ -1,9 +1,8 @@
 # Defining columns
 
 A column declares where its value comes from, what kind of value it is, and how
-to render it. Everything else - which filter operators it offers, which editor
-it opens, how it sorts - follows from `meta.type`, and is not configured again
-per feature.
+to render it. Which filter operators it offers, which editor it opens and how
+it sorts all follow from `meta.type`.
 
 ## The column helper
 
@@ -42,8 +41,8 @@ panel.
 ## meta
 
 `meta` carries what a TanStack column definition has no field for. What the
-column **is** sits at the top level; what the filter panel and the edit engine
-do with it sits in the `filter` and `edit` namespaces.
+column is sits at the top level; what the filter panel and the edit engine do
+with it sits in the `filter` and `edit` namespaces.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -56,10 +55,6 @@ do with it sits in the `filter` and `edit` namespaces.
 | `enableOrdering` | `boolean` | `true` | `false` keeps the column where it is. |
 | `filter` | `TMDataGridColumnFilterOptions` | - | How this column filters. See [meta.filter](#metafilter). |
 | `edit` | `TMDataGridColumnEditOptions` | - | How this column is edited. See [meta.edit](#metaedit). |
-
-`type` and `options` stay at the top level because both stages read them: one
-`type` picks the filter operators and the cell editor, and one `options` list
-feeds both the filter panel's dropdown and the select editor.
 
 ### meta.filter
 
@@ -100,16 +95,13 @@ meta: {
 Omit both namespaces to get the defaults: any column mapping to a data path is
 editable once `editing` is set, and every column filters by its type.
 
-`enableOrdering` and `autoSize` live in `meta` because they are the two
-behaviours TanStack defines no column option for.
-
 ## Column types
 
-`meta.type` declares what a column's values are, and the chrome follows: the
-filter panel offers that type's operators and renders a matching value control -
-a date input for `date`, a Yes/No dropdown for `boolean`, a multi-select of the
-column's options for `select` and `multiSelect`. With editing on, the same
-declaration picks the editor.
+`meta.type` declares what a column's values are. The filter panel offers that
+type's operators and renders a matching value control: a date input for `date`,
+a Yes/No dropdown for `boolean`, a multi-select of the column's options for
+`select` and `multiSelect`. With editing on, the same declaration picks the
+editor.
 
 Dates may be `Date` instances or ISO `YYYY-MM-DD` strings in the data; the
 comparison is by calendar day either way, and filter values always travel as ISO
@@ -144,7 +136,7 @@ meta: {
 ```
 
 `resolveColumnOptions({ table, column, row? })` normalises all three forms and is
-exported for custom chrome; `optionsToComboboxData` turns the result into what
+exported for custom controls; `optionsToComboboxData` turns the result into what
 Mantine's `Select` and `MultiSelect` take, `group` fields included.
 
 A select column that declares no options still filters: the panel falls back to
@@ -196,12 +188,8 @@ never listed in the columns panel.
 | `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. See [Row details](/docs/row-details). |
 | `EDIT_COLUMN_ID` | `editing.mode: "row"` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
 
-They cannot be hidden. Each one either holds a control the grid needs, such as
-the row's checkbox or its Save and Delete buttons, or tracks feature state
-rather than a setting of its own.
-
-The checkbox lane cannot be moved. It anchors the left pinned region: no column
-can be placed in front of it.
+The checkbox lane cannot be moved: it anchors the left pinned region, and no
+column can be placed in front of it.
 
 ## Reference
 
@@ -216,6 +204,6 @@ can be placed in front of it.
 | `meta.edit` | Column meta | `TMDataGridColumnEditOptions` | – | How the column edits: `enabled`, `field`, `editor`, `validate`, `mapValue`. |
 | `resolveColumnOptions` | Export | `({ table, column, row? }) => options` | – | Normalises all three `meta.options` forms. |
 | `optionsToComboboxData` | Export | `(options) => ComboboxData` | – | Options as Mantine `Select` data. |
-| `getColumnLabel` · `getColumnType` · `isControlColumn` | Exports | `(column) => …` | – | What the chrome uses to read a column. |
+| `getColumnLabel` · `getColumnType` · `isControlColumn` | Exports | `(column) => …` | – | How the built-in controls read a column. |
 | `isGeneratedColumn` | Export | `(columnId) => boolean` | – | Whether the grid generated the column - the four control lanes plus the tree column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | `string` | – | Ids of the five generated lanes. |

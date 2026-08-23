@@ -20,16 +20,15 @@ hint: Click, double-click and right-click anywhere in the body.
 
 ## The click handlers
 
-| Handler | Argument | Notes |
+| Prop | Argument | Notes |
 | --- | --- | --- |
 | `onRowClick` | `row` | Rows show a pointer cursor when set. |
 | `onCellClick` | `{ cell, row, column, event }` | The cell cursor still moves. |
 | `onCellDoubleClick` | same | A double-click that opens an editor still does. |
 | `onCellContextMenu` | same | `renderRowContextMenu` and the cell-selection menu still open. |
 
-None of the four fires on a group row. TanStack builds a group row on its first
-child's record, so a handler would receive a row that looks real but is the
-wrong one.
+None of the four fires on a group row: a group row is built on its first
+child's record rather than on one of its own.
 
 ## Context menus
 
@@ -79,11 +78,12 @@ stays suppressed over the grid either way:
 renderRowContextMenu={({ row }) => (row.original.locked ? null : <Menu.Item>Edit</Menu.Item>)}
 ```
 
-### Right-clicking does not select
+### The right-clicked row
 
-It marks the row with `data-context-menu` while its menu is open, which gives it
-the hover background. An action that should apply to a
-multi-selection can read it off `table` and fall back to the clicked row:
+A right-click does not select or highlight the row. The grid marks it with
+`data-context-menu` while its menu is open, which gives it the hover background.
+An action that should apply to a multi-selection can read the selection off
+`table` and fall back to the clicked row:
 
 ```tsx
 renderRowContextMenu={({ table, row }) => {
@@ -132,10 +132,6 @@ open state:
 On touch devices a long press (500 ms) opens the same menu. Mantine sets
 `user-select: none` on the element it attaches a context menu to, so body cell
 text is not selectable with the mouse in a grid that has one.
-
-One `Menu` serves the whole body rather than one per row: a closed Mantine
-`Popover` still runs its hooks on every render, and the virtualized body
-re-renders on every scroll frame.
 
 ## Reference
 

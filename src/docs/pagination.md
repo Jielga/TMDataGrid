@@ -1,9 +1,9 @@
 # Pagination
 
 **Off by default.** The grid renders every filtered and sorted row and relies
-on [virtualization](/docs/scrolling), which handles any row count. Paging is
-not needed for performance. Turn it on when users should move through the data
-a page at a time.
+on [virtualization](/docs/scrolling), which handles any row count. Turn paging
+on when users should move through the data a page at a time, not to keep a
+large grid responsive.
 
 There are three modes.
 
@@ -42,8 +42,7 @@ extraSources: data/employeeColumns.tsx
 ```
 
 `enablePagination` is defined by the grid rather than by TanStack, which ships
-the pagination state and APIs but no `enable` option. It is the only grid
-option that defaults to **off**.
+the pagination state and APIs but no `enable` option.
 
 ## Replacing the pager
 
@@ -70,9 +69,9 @@ built-in pieces, already wired.
 />
 ```
 
-The default footer renders `PageSize`, `Range` and `Pager`, in that order.
-Keep the ones you want and replace the rest; the ones you keep behave exactly
-as before, including greying out while a grouping suspends paging.
+The default footer renders `PageSize`, `Range` and `Pager`, in that order. A
+control kept from `Controls` behaves as it does in the default footer, including
+greying out while a grouping suspends paging.
 
 | Member | Renders |
 | --- | --- |
@@ -90,12 +89,11 @@ outside the Footer, for a pager that lives elsewhere on the page. `Controls` is
 not included: those components are bound to the grid's context and work only
 inside the slot.
 
-## Grouping suspends it
+## Grouping
 
-**Grouping and the built-in pager do not work together, and grouping wins.**
-The pager greys itself out and the range is replaced with `Grouped · all N
-rows`. The reasoning, and what to do if you need both, is on
-[Grouping](/docs/grouping#grouping-suspends-pagination).
+While a column is grouped the pager greys itself out and the range is replaced
+with `Grouped · all N rows`. See
+[Grouping](/docs/grouping#grouping-and-pagination).
 
 A custom pager can grey itself out the same way:
 

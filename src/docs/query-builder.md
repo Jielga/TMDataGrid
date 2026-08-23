@@ -11,9 +11,8 @@ hint: Add a condition and pick Status - the value editor becomes a select. Delet
 height: 560
 ```
 
-**The form holds the array; the grid holds the row being edited.** The grid
-never mutates `data`, so the form's state is only ever what the user has
-approved, and the grid's per-row form holds whatever is mid-edit.
+The form holds the array; the grid holds the row being edited. The grid never
+mutates `data`, so the form's state is only ever what the user has approved.
 
 ## Wrapping the grid as a field
 
@@ -64,27 +63,24 @@ And handed to the form as a field:
 </form.Field>
 ```
 
-`field.handleChange` **is** the `onChange`: it writes the array into the form
-and runs the field's validators. `onChange` carries the whole next array rather
-than a diff, because the array belongs to the form.
-
-Three details matter:
+`field.handleChange` is the `onChange`: it writes the array into the form and
+runs the field's validators. `onChange` carries the whole next array rather than
+a diff.
 
 - **Map by row id, never by index.** A sort or a delete moves the index; the
   draft is keyed by the id.
 - **`data` identity stays stable.** `field.state.value` changes identity only
-  when a row is actually written, which is what `data` requires. See
-  [useTMDataGrid](/docs/use-tm-data-grid).
+  when a row is written, which is what `data` requires.
+  See [useTMDataGrid](/docs/use-tm-data-grid).
 - **New rows count down from `-1`.** `Math.min(0, ...ids) - 1`, so an emptied
-  grid starts at `-1` rather than `-Infinity`, existing negative ids keep
-  descending, and the server can tell unsaved rows from real ones. The grid's
-  `tempId` never leaves the grid: the id you assign in `editing.onRowAdd` is the
-  one the form sees.
+  grid starts at `-1` rather than `-Infinity` and existing negative ids keep
+  descending. The grid's `tempId` never leaves the grid: the id you assign in
+  `editing.onRowAdd` is the one the form sees.
 
-## Which half validates what
+## Where validation belongs
 
-**A rule that can be decided from one row belongs to the grid. A rule that
-needs the other rows, or the collection as a whole, belongs to the form.**
+A rule that can be decided from one row belongs to the grid. A rule that needs
+the other rows, or the collection as a whole, belongs to the form.
 
 | Rule | Owner | Written as |
 | --- | --- | --- |
@@ -93,11 +89,9 @@ needs the other rows, or the collection as a whole, belongs to the form.**
 | "At least one condition" | Form | the `conditions` field's `onChange` validator |
 | "No two conditions repeat a field and operator" | Form | the same place |
 
-This follows from what each side can see. A row's form is seeded with that
-row's values only, so it cannot see the array, and the grid's `edit.store`
-publishes field names but not values, so the form cannot see a draft. It also
-keeps the form's validators cheap: they run once per approved row, not per
-keystroke.
+A row's form is seeded with that row's values only, so it cannot see the array,
+and the grid's `edit.store` publishes field names but not values, so the form
+cannot see a draft.
 
 ## Editors that follow the row
 
@@ -122,7 +116,8 @@ const FieldEditor: TMDataGridEditorComponent = ({ field, form, size }) => (
 );
 ```
 
-The operator and value editors read the sibling with
+The operator and value editors read the sibling with TanStack Store's
+[`useSelector`](https://tanstack.com/store/latest/docs/framework/react/reference):
 `useSelector(form.store, (state) => state.values.field)`, so switching Field
 mid-edit switches them immediately. See
 [Editors and validation](/docs/editors) for the editor's full API.
@@ -133,21 +128,20 @@ mid-edit switches them immediately. See
 whole row, Save commits it, and `editing.onCommit` hands the form one finished
 condition. The form's rules run at that point.
 
-**Not `"batch"`.** Batch parks every draft inside the grid and calls nothing
-until `edit.submitAll()`. The form's array goes stale the moment typing
+**Not `"batch"`.** Batch holds every draft inside the grid and calls nothing
+until `edit.submitAll()`, so the form's array goes stale the moment typing
 starts: "at least one condition" counts rows the user may have marked for
 deletion, a duplicate sitting in a draft passes unseen, and the form's submit
-would save an array missing every pending edit. Batch already defines a
-transaction boundary, and a form around it adds a second one over the same data.
+saves an array missing every pending edit.
 
-If you need batch anyway, invert where the save happens:
-`grid.edit.submitAll()` becomes the only way rows reach the form, and the
-form's submit is gated on the grid holding no draft -
+To use batch anyway, invert where the save happens: `grid.edit.submitAll()`
+becomes the only way rows reach the form, and the form's submit is gated on the
+grid holding no draft -
 `useSelector(grid.edit.store, (s) => s.openRowIds.length === 0)`.
 
 ## Submitting
 
-**The form submits only while the grid holds no draft.**
+The form submits only while the grid holds no draft.
 
 ```tsx
 const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0);
@@ -162,7 +156,7 @@ before `form.handleSubmit()` commits every open row through the normal
 `editing.onCommit` path, in every mode and not only batch. Rows that fail their
 own validation stay open, so the submit fails.
 
-Two things to know about putting a native `<form>` around a grid:
+Two constraints apply to a native `<form>` around a grid:
 
 - The grid's buttons cannot submit it. Mantine buttons default to
   `type="button"`, so only your own `type="submit"` button submits.
@@ -171,7 +165,7 @@ Two things to know about putting a native `<form>` around a grid:
 
 ## Reference
 
-This page introduces no API of its own. The pieces it composes:
+The pieces this recipe composes:
 
 | Piece | Documented on |
 | --- | --- |

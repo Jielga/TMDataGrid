@@ -1,8 +1,7 @@
 # Toolbar composition
 
-The toolbar is a flex row. There is no slots API, no `actions` prop and no
-configuration object: your buttons sit beside the built-in ones because they are
-all children of the same element.
+The toolbar is a flex row. Your own buttons are children of it, beside the
+built-in ones; there is no slots API and no `actions` prop.
 
 ```tsx
 <TMDataGrid.Toolbar>
@@ -63,7 +62,7 @@ function ExportButton() {
 Anything rendered inside `TMDataGrid` can call it. It returns
 `{ table, ui, features, labels, controlSize, resetSettings }`.
 
-### Hiding a button the same way the built-ins do
+### Hide a button when its feature is off
 
 The built-in parts disappear when their feature is off. Your own can use the
 same checks instead of re-deriving them:
@@ -89,28 +88,25 @@ function ExportButton() {
 | `canReorderAny` | At least one leaf column can be moved |
 | `canGroupAny` | At least one leaf column can be grouped on |
 | `canSelectRows` | `enableRowSelection` is not `false` and the mode is not `"highlight"` |
-| `canPaginate` | Paging is configured. See [`isPagingActive`](/docs/pagination#grouping-suspends-it) for whether it is slicing anything |
+| `canPaginate` | Paging is configured. See [`isPagingActive`](/docs/pagination#grouping) for whether it is slicing anything |
 | `canSearch` | At least one leaf column takes part in the quick search |
 
 `getColumnCapabilities(column, features)` returns the same for one column, as
 `canSort`, `canFilter`, `canHide`, `canPin`, `canResize`, `canReorder` and
 `canGroup`.
 
-### Why `features` is a second argument
+### Reading options reactively
 
-`features` is returned by `useTMDataGrid` and re-derived from the options object
-on every render. It is required **in addition to** TanStack's `getCanX()`
-methods because it is what makes the result reactive.
+`features` is re-derived from the options object on every render, and both
+capability helpers take it alongside the table or column. A bare
+`column.getCanSort()` is memoized against a column identity that survives an
+options change, so a grid whose `enableSorting` turned `false` would keep
+rendering sort indicators; `features` is the value that changes.
 
-`column.getCanSort()` is a method call on a column object whose identity is
-preserved across an options change. Under the React Compiler that call is
-memoized, so a grid whose `enableSorting` changed to `false` would carry on
-rendering sort indicators. Passing `features` supplies a value that *changes*,
-while `getCanX()` still decides the outcome and applies per-column overrides.
-
-The same rule applies elsewhere in your application: read state through
-`useSelector(table.store, …)` and options through `features`, rather than
-calling methods on a long-lived object.
+Read state through TanStack Store's
+[`useSelector(table.store, …)`](https://tanstack.com/store/latest/docs/framework/react/reference)
+and options through `features`, rather than calling methods on a long-lived
+object.
 
 ## Reference
 

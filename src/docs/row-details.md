@@ -28,16 +28,11 @@ scrollbar accurate for rows that open off screen.
 
 Setting `renderDetails` prepends a generated chevron column,
 `DETAILS_COLUMN_ID` (`"__details__"`), pinned to the left after the checkbox
-and tree columns - `[checkbox, tree, details, …]`. It comes last of the three
-because it acts on a single record.
+and tree columns - `[checkbox, tree, details, …]`.
 
-Like the other two it is structural: fixed width, and it cannot be hidden,
-moved, resized or unpinned.
-
-It is a system lane, as wide as the chevron it holds, with no resize handle and
-no column menu. Its header is a control rather than a title: the chevron
-expands and collapses every panel, as the checkbox column's header selects and
-clears every row.
+It is a system lane: as wide as the chevron it holds, with no resize handle and
+no column menu, and it cannot be hidden, moved, resized or unpinned. Its header
+is a control rather than a title, expanding and collapsing every panel at once.
 
 Group rows get no chevron: they expand into their children from the tree lane.
 
@@ -50,9 +45,11 @@ one - a context menu item, a double-click, a button in your own cell:
 <Menu.Item onClick={() => row.toggleExpanded()}>Show details</Menu.Item>
 ```
 
-Anything that *reads* `row.getIsExpanded()` inside a cell has to subscribe to
-the store, or the React Compiler will cache the call along with the `row`
-identity and the control will never update:
+Anything reading `row.getIsExpanded()` inside a cell has to subscribe to the
+store with TanStack Store's
+[`useSelector`](https://tanstack.com/store/latest/docs/framework/react/reference), or the
+React Compiler caches the call along with the `row` identity and the control
+never updates:
 
 ```tsx
 const expanded = useSelector(row.table.store, () => row.getIsExpanded());
@@ -98,9 +95,7 @@ not select or highlight the row underneath. It carries
 `data-dg-part="details"` with the row's `data-row-id`. See
 [Testing](/docs/testing).
 
-Group rows have no panel. Expanding one opens its children, and the record a
-group row is built from is an arbitrary one of them, which is also why group
-rows do not fire `onRowClick`.
+Group rows have no panel. Expanding one opens its children.
 
 ## Reference
 

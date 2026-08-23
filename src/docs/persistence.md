@@ -3,14 +3,13 @@
 Restores table state on mount and writes it back on every change, so users
 return to the grid as they left it.
 
-State is split across **two keys**, because the two groups have different
-lifetimes. Column configuration stays valid indefinitely; filters and pagination
-go stale as the data underneath them changes. Separate keys let one be cleared
+State is split across **two keys**: `settingsKey` for the column layout, which
+stays valid indefinitely, and `dataKey` for filters, sorting and pagination,
+which go stale as the data underneath them changes. Either can be cleared
 without touching the other.
 
 ```tsx
-// Module scope: the object is a dependency of the write subscription, and a
-// new identity every render would resubscribe on every render.
+// Module scope: the object is a dependency of the write subscription.
 const persist = {
   dataKey: "employees.data",
   settingsKey: "employees.settings",
@@ -63,9 +62,7 @@ API is persisted too.
 
 **A payload from another version is dropped whole**, not migrated. Payloads
 carry the exported `PERSIST_PAYLOAD_VERSION`, and anything else, including
-everything written by a 0.x build, which had no stamp, is discarded. The cost is
-one lost layout, which is preferable to interpreting a shape the current code no
-longer understands.
+everything written by a 0.x build, which had no stamp, is discarded.
 
 **Restored state is realigned against the columns that exist.** Entries naming a
 column removed between deploys are dropped: a stale id in the order, a width for
@@ -89,19 +86,12 @@ The columns panel's **Reset layout** button calls it.
 TanStack's own `resetColumnX()` family cannot do it on a persisted grid: those
 reset to `initialState`, which the mount built *from* the restored payload.
 
-## Why not `useLocalStorage`
+## Relation to Mantine
 
-Mantine's hook holds a piece of state and returns `[value, setValue]`. Here the
-table already holds the state and storage only mirrors it. Routing writes
-through the hook would keep a second copy and trigger a React state update on
-every change, including every pointer move during a column resize.
-
-Its defaults conflict too: `getInitialValueInEffect: true` delivers the stored
-value after mount, while `initialState` is only read on the first render, and
-`sync: true` would let two open tabs overwrite each other's column layout.
-
-The option names follow Mantine's `UseStorageOptions` where they apply, and
-`storageMode` takes the same values as its `StorageType`.
+Persistence does not use Mantine's `useLocalStorage`; the table owns the state
+and storage only mirrors it. The option names follow Mantine's
+`UseStorageOptions` where they apply, and `storageMode` takes the same values as
+its `StorageType`.
 
 ## Reference
 

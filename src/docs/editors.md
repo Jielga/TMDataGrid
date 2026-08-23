@@ -13,8 +13,7 @@ height: 440
 ## The built-in editors
 
 `meta.type` picks one, and `meta.options` feeds the select editors from the same
-source the filter panel reads. Neither lives under `meta.edit`, because one
-declaration of each serves both the filter panel and the editor.
+source the filter panel reads. Neither lives under `meta.edit`.
 
 | `meta.type` | Editor |
 | --- | --- |
@@ -49,8 +48,7 @@ meta: { edit: { editor: SalaryEditor } }
 ```
 
 **Define editors at module scope.** An inline arrow function gets a new identity
-on every render, which remounts the editor mid-edit and discards what was being
-typed.
+on every render, which remounts the editor mid-edit and discards what was typed.
 
 ## Mapping the value as it is typed
 
@@ -75,24 +73,18 @@ meta: {
 ```
 
 What it returns is what the cell shows, what the validators check and what is
-committed. There is no second pass.
+committed.
 
 The map is applied inside the editor host, around the field every editor writes
 through, so one declaration covers all six built-in editors, your own
 `meta.edit.editor`, and the character that opened the editor when typing started
 the edit.
 
-Two writes are deliberately not mapped:
-
-- **The value the editor opens with.** Mapping it would rewrite stored data
-  nobody edited, mark a pristine row dirty, and cancel the select-all that lets
-  the first keystroke replace the value.
-- **`edit.clearCell()`, which is the Delete key.** It writes the type's empty
-  value through the form rather than through an editor, so there is no user
-  input to map.
-
-An editor calling `field.setValue` instead of `field.handleChange` also bypasses
-the map. `handleChange` is the mapped path.
+Two writes are not mapped: the value the editor opens with, and
+`edit.clearCell()`, the Delete key, which writes the type's empty value through
+the form rather than through an editor. An editor calling `field.setValue`
+instead of `field.handleChange` also bypasses the map. `handleChange` is the
+mapped path.
 
 The map receives the row and column as well, so it can depend on the record
 being edited:
@@ -115,8 +107,7 @@ order to tell an insertion from a deletion.
 
 A mapped value differs from the one the input holds, so React writes the new
 value into the DOM node and the browser collapses the selection to the end of
-the field. Without correction, typing into the middle of a value would jump to
-the end on every keystroke.
+the field.
 
 The built-in string and number editors restore the caret to where it was typed,
 shifted by however much the map changed the length, so a mask that inserts or

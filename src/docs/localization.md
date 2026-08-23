@@ -11,8 +11,7 @@ const grid = useTMDataGrid({
 });
 ```
 
-`labels` takes **any subset** and merges it over the defaults, so overriding one
-string does not mean supplying the other hundred.
+`labels` takes **any subset** and merges it over the defaults.
 
 ```demo
 file: customization/Localization.tsx
@@ -47,8 +46,7 @@ labels: {
 ## Keep the object stable
 
 Define it at module scope, or memoize it. The grid re-renders when the labels
-object changes identity, and an inline literal is a new object on every
-render.
+object changes identity.
 
 ```tsx
 const labels = { noResults: "Inga träffar" } satisfies TMDataGridLabelsOverride;
@@ -64,8 +62,8 @@ built-in parts, in whatever language is configured.
 `mergeLabels(base, override)` is the merge itself, exported for composing
 dictionaries before passing one in.
 
-`meta.noResultsLabel` remains as a per-instance override of `labels.noResults`,
-for one grid needing a more specific empty message than the rest.
+`meta.noResultsLabel` remains as a per-instance override of
+`labels.noResults`.
 
 ## Reference
 

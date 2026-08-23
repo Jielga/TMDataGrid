@@ -1,7 +1,6 @@
 # Row styling
 
-Colouring rows by their contents: an overdue invoice in red, a draft greyed
-out, a terminated employee struck through.
+Colouring rows by their contents, such as an overdue invoice in red.
 
 ```tsx
 <TMDataGrid.Table<Employee>
@@ -16,15 +15,12 @@ file: rows/RowStyling.tsx
 hint: Select and hover a coloured row - both still show through the row background.
 ```
 
-## Set `--row-bg`, not `background`
+## Set the row background
 
-A row is not a single element. It is a strip of cells, some of them sticky in
-pinned lanes, and several things paint on top of it: hover, selection, the
-highlight, the cell range and striping.
-
-Setting `background` overrides all of them, so a coloured row stops responding
-to hover and selection. Setting `--row-bg` sets the variable those layers are
-composed against, so they keep working on top of your colour.
+Set `--row-bg` rather than `background`. Hover, selection, the highlight, the
+cell range and striping each add a background over the row and are composed
+against `--row-bg`; `background` overrides all of them, so a coloured row stops
+responding to hover and selection.
 
 ```tsx
 rowStyle={() => ({ background: "pink" })}          // hover and selection hidden
@@ -62,8 +58,7 @@ virtualization rather than sticking to particular records.
 <TMDataGrid.Table striped />
 ```
 
-Pinned rows are not striped. They have left the scrolling order, so there is no
-"every second row" for them to be part of.
+Pinned rows are not striped: they have left the scrolling order.
 
 ## Styling by state
 
