@@ -1,6 +1,7 @@
 import anatomyDoc from "./anatomy.md?raw";
 import cellSelectionDoc from "./cell-selection.md?raw";
 import columnLayoutDoc from "./column-layout.md?raw";
+import componentsDoc from "./components.md?raw";
 import columnsDoc from "./columns.md?raw";
 import editingDoc from "./editing.md?raw";
 import editorsDoc from "./editors.md?raw";
@@ -254,6 +255,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "useTMDataGrid",
     description: "The complete option list",
     source: useTMDataGridDoc,
+  },
+  {
+    id: "components",
+    section: "Reference",
+    label: "Components and hooks",
+    description: "Every export, and its props",
+    source: componentsDoc,
   },
   {
     id: "testing",
