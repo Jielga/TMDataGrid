@@ -75,9 +75,8 @@ const REDIRECTS: ReadonlyArray<{ path: string; docId: string }> = [
   // Routes the site shipped with before the examples became a tree.
   { path: "/editable-grid", docId: "editing" },
   { path: "/infinite-scroll", docId: "server-side" },
-  // Two pages that were dissolved into the topics they used to collect.
+  // A page that was dissolved into the topics it used to collect.
   { path: "/docs/features", docId: "anatomy" },
-  { path: "/docs/components", docId: "anatomy" },
 ];
 
 const redirectRoutes = [
