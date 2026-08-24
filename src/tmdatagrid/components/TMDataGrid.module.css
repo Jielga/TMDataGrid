@@ -71,6 +71,13 @@
     var(--mantine-color-text) 3.5%,
     var(--mantine-color-body)
   );
+  /* A confirmed entry row under draft mode - entered, awaiting Save all. A
+     whisper of green over the body, one declaration for both themes. */
+  --dg-row-new-bg: color-mix(
+    in srgb,
+    var(--mantine-color-green-6) 8%,
+    var(--mantine-color-body)
+  );
 
   /* The stacking ladder, stated once. Body cells sit at auto (0); everything
      sticky stacks over them in this order, and a sticky row crossing a sticky

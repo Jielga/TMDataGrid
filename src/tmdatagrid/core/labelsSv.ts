@@ -107,6 +107,10 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   discardNewRow: "Släng ny rad",
   deleteRow: "Ta bort rad",
   restoreRow: "Återställ rad",
+  revertRow: "Ångra ändringar",
+  rowStateNew: "Ny rad",
+  rowStateEdited: "Ändrad rad",
+  rowStateDeleted: "Markerad för borttagning",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",

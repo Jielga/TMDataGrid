@@ -142,6 +142,21 @@ describe("edit engine", () => {
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
   });
 
+  it("projects the row as drafted, so a cell can render the draft", () => {
+    const grid = renderEditGrid();
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+
+    expect(edit.state.rows["1"]?.values).toEqual(people[0]);
+
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    expect(edit.state.rows["1"]?.values["name"]).toBe("Annika");
+    // The form's own values object, which is what makes the projection
+    // reference-stable across meta-only form events.
+    expect(edit.state.rows["1"]?.values).toBe(edit.getForm("1")?.state.values);
+  });
+
   it("commits through onCommit with the per-field diff, then drops the form", async () => {
     const onCommit = vi.fn();
     const grid = renderEditGrid({ onCommit });
@@ -297,9 +312,79 @@ describe("edit engine", () => {
     expect(onCommit).toHaveBeenCalledTimes(1);
   });
 
+  it("draft mode parks a commit: validated, kept, and no consumer call", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    // Nothing reaches the consumer until submitAll; the draft stays open and
+    // dirty, and the editor it was made in closes.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+    expect(edit.state.active).toBe(null);
+  });
+
+  it("a parked commit still validates, and a failing one keeps its errors", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({
+      mode: "draft",
+      onCommit,
+      rowValidators: {
+        onSubmit: z.object({
+          name: z.string().min(2, "Too short"),
+          age: z.number(),
+        }),
+      },
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "A");
+
+    await expect(edit.commit("1")).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.errorFields).toContain("name");
+  });
+
+  it("drops a pristine row under draft too, without a consumer call", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("every mode but draft reports a commit to the consumer", async () => {
+    // The regression guard for the park: parking is draft's policy alone.
+    for (const mode of ["cell", "cellConfirm", "row"] as const) {
+      const onCommit = vi.fn();
+      const grid = renderEditGrid({ mode, onCommit });
+      const { edit } = grid.current;
+      edit.begin({ rowId: "1", columnId: "name" });
+      edit.getForm("1")?.setFieldValue("name", "Annika");
+
+      await expect(edit.commit("1")).resolves.toBe(true);
+
+      expect(onCommit, mode).toHaveBeenCalledTimes(1);
+      expect(onCommit.mock.calls[0]?.[0], mode).toMatchObject({ source: mode });
+      expect(edit.state.openRowIds, mode).toEqual([]);
+    }
+  });
+
   it("submitAll commits every dirty row through the per-row loop", async () => {
     const onCommit = vi.fn();
-    const grid = renderEditGrid({ mode: "batch", onCommit });
+    const grid = renderEditGrid({ mode: "draft", onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
@@ -312,13 +397,13 @@ describe("edit engine", () => {
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("submitAll with onCommitBatch makes one consumer call for the lot", async () => {
+  it("submitAll with onCommitDrafts makes one consumer call for the lot", async () => {
     const onCommit = vi.fn();
-    const onCommitBatch = vi.fn();
+    const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "batch",
+      mode: "draft",
       onCommit,
-      onCommitBatch,
+      onCommitDrafts,
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -329,18 +414,18 @@ describe("edit engine", () => {
     await expect(edit.submitAll()).resolves.toBe(true);
 
     expect(onCommit).not.toHaveBeenCalled();
-    expect(onCommitBatch).toHaveBeenCalledTimes(1);
-    const { rows: batchRows } = onCommitBatch.mock.calls[0]?.[0] as {
+    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
+    const { rows: draftRows } = onCommitDrafts.mock.calls[0]?.[0] as {
       rows: Array<TMDataGridEditCommitArgs<Person>>;
     };
-    expect(batchRows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
+    expect(draftRows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("a rejected batch keeps every draft", async () => {
+  it("a rejected save keeps every draft", async () => {
     const grid = renderEditGrid({
-      mode: "batch",
-      onCommitBatch: () => Promise.reject(new Error("no")),
+      mode: "draft",
+      onCommitDrafts: () => Promise.reject(new Error("no")),
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -368,7 +453,7 @@ describe("edit engine", () => {
     const { edit } = grid.current;
 
     const tempId = edit.addRow();
-    expect(edit.state.newRows).toEqual([{ tempId }]);
+    expect(edit.state.newRows).toEqual([{ tempId, confirmed: false }]);
     expect(edit.getForm(tempId)?.state.values["age"]).toBe(18);
 
     edit.getForm(tempId)?.setFieldValue("name", "Ny Person");
@@ -385,23 +470,53 @@ describe("edit engine", () => {
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("deleteRow reports immediately outside batch, toggles the mark under it", () => {
+  it("draft mode confirms an entry row instead of adding it, and re-opens it", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({
+      mode: "draft",
+      onRowAdd,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny Person",
+        age: 18,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+    const tempId = edit.addRow();
+
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    // Entered, awaiting Save all: the form stays, the entry is marked
+    // confirmed, and nothing was added anywhere.
+    expect(onRowAdd).not.toHaveBeenCalled();
+    expect(edit.state.newRows).toEqual([{ tempId, confirmed: true }]);
+    expect(edit.state.openRowIds).toEqual([tempId]);
+
+    // The re-edit gesture: begin re-arms the entry's editors.
+    edit.begin({ rowId: tempId, columnId: "name" });
+
+    expect(edit.state.newRows).toEqual([{ tempId, confirmed: false }]);
+    expect(edit.state.active).toEqual({ rowId: tempId, columnId: "name" });
+  });
+
+  it("deleteRow reports immediately outside draft, toggles the mark under it", () => {
     const onRowDelete = vi.fn();
     const immediate = renderEditGrid({ onRowDelete });
     immediate.current.edit.deleteRow("1");
     expect(onRowDelete).toHaveBeenCalledTimes(1);
     expect(onRowDelete.mock.calls[0]?.[0]).toMatchObject({ rowId: "1" });
 
-    const batch = renderEditGrid({ mode: "batch", onRowDelete: vi.fn() });
-    batch.current.edit.deleteRow("1");
-    expect(batch.current.edit.state.deletedRowIds).toEqual(["1"]);
-    batch.current.edit.deleteRow("1");
-    expect(batch.current.edit.state.deletedRowIds).toEqual([]);
+    const draft = renderEditGrid({ mode: "draft", onRowDelete: vi.fn() });
+    draft.current.edit.deleteRow("1");
+    expect(draft.current.edit.state.deletedRowIds).toEqual(["1"]);
+    draft.current.edit.deleteRow("1");
+    expect(draft.current.edit.state.deletedRowIds).toEqual([]);
   });
 
   it("deleteRow on an uncommitted entry row just discards the entry", () => {
     const onRowDelete = vi.fn();
-    const grid = renderEditGrid({ mode: "batch", onRowDelete });
+    const grid = renderEditGrid({ mode: "draft", onRowDelete });
     const { edit } = grid.current;
     const tempId = edit.addRow();
 
@@ -412,11 +527,11 @@ describe("edit engine", () => {
     expect(onRowDelete).not.toHaveBeenCalled();
   });
 
-  it("submitAll's batch payload carries rows, added and deleted together", async () => {
-    const onCommitBatch = vi.fn();
+  it("submitAll's draft payload carries rows, added and deleted together", async () => {
+    const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "batch",
-      onCommitBatch,
+      mode: "draft",
+      onCommitDrafts,
       newRowDefaults: () => ({
         id: 0,
         name: "Ny",
@@ -432,8 +547,8 @@ describe("edit engine", () => {
 
     await expect(edit.submitAll()).resolves.toBe(true);
 
-    expect(onCommitBatch).toHaveBeenCalledTimes(1);
-    const args = onCommitBatch.mock.calls[0]?.[0] as {
+    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
+    const args = onCommitDrafts.mock.calls[0]?.[0] as {
       rows: Array<{ rowId: string }>;
       added: Array<{ tempId: string; value: Person }>;
       deleted: Array<string>;
@@ -444,6 +559,95 @@ describe("edit engine", () => {
     expect(edit.state.openRowIds).toEqual([]);
     expect(edit.state.newRows).toEqual([]);
     expect(edit.state.deletedRowIds).toEqual([]);
+  });
+
+  it("submitAll adds a confirmed entry row through onRowAdd on the per-row path", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({
+      mode: "draft",
+      onRowAdd,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny",
+        age: 20,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+    const tempId = edit.addRow();
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    expect(onRowAdd).not.toHaveBeenCalled();
+
+    await expect(edit.submitAll()).resolves.toBe(true);
+
+    // Confirming is not adding - the add happens here, at Save all.
+    expect(onRowAdd).toHaveBeenCalledTimes(1);
+    expect(onRowAdd.mock.calls[0]?.[0]).toMatchObject({
+      tempId,
+      value: { name: "Ny" },
+    });
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("submitAll carries a confirmed entry row in the drafts payload's added", async () => {
+    const onCommitDrafts = vi.fn();
+    const grid = renderEditGrid({
+      mode: "draft",
+      onCommitDrafts,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny",
+        age: 20,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+    const tempId = edit.addRow();
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    await expect(edit.submitAll()).resolves.toBe(true);
+
+    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
+    const args = onCommitDrafts.mock.calls[0]?.[0] as {
+      added: Array<{ tempId: string; value: Person }>;
+    };
+    expect(args.added.map((add) => add.tempId)).toEqual([tempId]);
+    expect(args.added[0]?.value.name).toBe("Ny");
+    expect(edit.state.newRows).toEqual([]);
+  });
+
+  it("keeps a confirmed entry row that no longer validates at submitAll", async () => {
+    const onCommitDrafts = vi.fn();
+    const grid = renderEditGrid({
+      mode: "draft",
+      onCommitDrafts,
+      rowValidators: {
+        onSubmit: z.object({
+          name: z.string().min(2, "Too short"),
+          age: z.number(),
+        }),
+      },
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny",
+        age: 20,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+    const tempId = edit.addRow();
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    // The same form the entry's editors write through - a consumer holding it
+    // in a drawer writes here too, and a confirmed row is not frozen.
+    edit.getForm(tempId)?.setFieldValue("name", "N");
+
+    await expect(edit.submitAll()).resolves.toBe(false);
+
+    // Nothing valid to report, and the entry is still there to be fixed.
+    expect(onCommitDrafts).not.toHaveBeenCalled();
+    expect(edit.state.newRows).toEqual([{ tempId, confirmed: true }]);
+    expect(edit.state.rows[tempId]?.errorFields).toContain("name");
   });
 
   it("cancel drops the draft without a consumer call", () => {
@@ -474,12 +678,26 @@ describe("edit engine", () => {
     ]);
   });
 
+  it("clearCell parks the cleared value under draft", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.clearCell("1", "age")).resolves.toBe(true);
+
+    // Delete writes the empty value and parks it like any other edit.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["age"]);
+    expect(edit.getForm("1")?.state.values["age"]).toBe(null);
+  });
+
   it("cancelAll drops every draft, mark and entry in one motion", () => {
     const onCommit = vi.fn();
-    const onCommitBatch = vi.fn();
+    const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "batch",
-      onCommitBatch,
+      mode: "draft",
+      onCommitDrafts,
       onCommit,
       onRowDelete: vi.fn(),
     });
@@ -499,7 +717,7 @@ describe("edit engine", () => {
     expect(edit.state.active).toBe(null);
     expect(edit.getForm("1")).toBe(undefined);
     expect(onCommit).not.toHaveBeenCalled();
-    expect(onCommitBatch).not.toHaveBeenCalled();
+    expect(onCommitDrafts).not.toHaveBeenCalled();
   });
 
   it("canDeleteRows follows the handlers the mode can deliver to", () => {
@@ -509,12 +727,12 @@ describe("edit engine", () => {
       renderEditGrid({ onRowDelete: vi.fn() }).current.edit.canDeleteRows(),
     ).toBe(true);
 
-    // Batch can also deliver deletions through the batch commit.
+    // Draft can also deliver deletions through the drafts commit.
     expect(
-      renderEditGrid({ mode: "batch" }).current.edit.canDeleteRows(),
+      renderEditGrid({ mode: "draft" }).current.edit.canDeleteRows(),
     ).toBe(false);
     expect(
-      renderEditGrid({ mode: "batch", onCommitBatch: vi.fn() })
+      renderEditGrid({ mode: "draft", onCommitDrafts: vi.fn() })
         .current.edit.canDeleteRows(),
     ).toBe(true);
   });

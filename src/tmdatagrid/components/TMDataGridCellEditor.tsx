@@ -43,7 +43,7 @@ const BUILT_IN_EDITORS: Record<
 export type TMDataGridCellEditorClose =
   | { committed: true; via: "enter" | "tab" | "shift-tab" | "pick" }
   | { committed: false; via: "escape" }
-  /** Batch: the editor closed, the draft stays - Enter parks, Tab moves on. */
+  /** Draft: the editor closed, the draft stays - Enter parks, Tab moves on. */
   | { committed: false; via: "defer" | "defer-tab" | "defer-shift-tab" };
 
 /**
@@ -59,6 +59,7 @@ export function TMDataGridCellEditor({
   row,
   takeSeedText,
   onClose,
+  inEntryBlock = false,
 }: {
   cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>;
   row: Row<TMDataGridFeatures, TMDataGridRowData>;
@@ -66,6 +67,13 @@ export function TMDataGridCellEditor({
   takeSeedText: () => string | undefined;
   /** After the editor closed itself - the table moves the focus. */
   onClose: (args: TMDataGridCellEditorClose) => void;
+  /**
+   * Hosted by the entry block rather than a body cell. Under draft the keys
+   * change meaning there: Enter confirms the whole entry (the engine parks
+   * it), and Tab stays the browser's, walking the entry row's own inputs the
+   * way row mode's do.
+   */
+  inEntryBlock?: boolean;
 }) {
   const { table, edit, features, labels, controlSize } = useTMDataGridContext();
   // Row mode mounts one host per editable cell of the row; every key that
@@ -164,7 +172,7 @@ export function TMDataGridCellEditor({
     onClose({ committed: false, via: "escape" });
   };
 
-  /** Batch: the key closes the editor and leaves the draft for submitAll. */
+  /** Draft: the key closes the editor and leaves the draft for submitAll. */
   const deferAndClose = (via: "defer" | "defer-tab" | "defer-shift-tab") => {
     if (closingRef.current) return;
     closingRef.current = true;
@@ -173,23 +181,27 @@ export function TMDataGridCellEditor({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const isBatch = features.editMode === "batch";
+    const isDraft = features.editMode === "draft";
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
       // In row mode Enter (and Ctrl+Enter, the documented pair) saves the
-      // row; in batch nothing commits until submitAll, so Enter just parks
-      // the draft.
-      if (isBatch) deferAndClose("defer");
+      // row; in draft nothing reaches a callback until submitAll, so Enter
+      // parks the draft - and in the entry block it confirms the entry, which
+      // the engine parks the same way.
+      if (isDraft && !inEntryBlock) deferAndClose("defer");
       else void commitAndClose("enter");
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       cancelAndClose();
-    } else if (event.key === "Tab" && !isRowMode) {
+    } else if (event.key === "Tab" && !isRowMode && !(isDraft && inEntryBlock)) {
+      // In the draft entry block Tab stays the browser's: every editable
+      // cell's editor is mounted, so it walks the row's inputs as row mode's
+      // does.
       event.preventDefault();
       event.stopPropagation();
-      if (isBatch) {
+      if (isDraft) {
         deferAndClose(event.shiftKey ? "defer-shift-tab" : "defer-tab");
       } else {
         void commitAndClose(event.shiftKey ? "shift-tab" : "tab");

@@ -121,8 +121,16 @@ export type TMDataGridLabels = {
   discardNewRow: string;
   /** The lane's trash can. */
   deleteRow: string;
-  /** The lane's undo on a row marked deleted (batch). */
+  /** The lane's undo on a row marked deleted (draft). */
   restoreRow: string;
+  /** The lane's undo on a row with a dirty draft (draft) - drops it. */
+  revertRow: string;
+  /** The lane's state icon on a confirmed entry row (draft). */
+  rowStateNew: string;
+  /** The lane's state icon on a row with a dirty draft (draft). */
+  rowStateEdited: string;
+  /** The lane's state icon on a row marked deleted (draft). */
+  rowStateDeleted: string;
 
   // Cell selection menu
   cellCount: (count: number) => string;
@@ -239,6 +247,10 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   discardNewRow: "Discard new row",
   deleteRow: "Delete row",
   restoreRow: "Restore row",
+  revertRow: "Revert changes",
+  rowStateNew: "New row",
+  rowStateEdited: "Edited row",
+  rowStateDeleted: "Marked for deletion",
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",

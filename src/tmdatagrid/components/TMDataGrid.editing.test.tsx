@@ -20,8 +20,10 @@ import {
   type UseTMDataGridOptions,
 } from "../useTMDataGrid";
 
+type UserEvent = ReturnType<typeof userEvent.setup>;
+
 /**
- * Cell, row and batch editing through the real grid. Split from
+ * Cell, row and draft editing through the real grid. Split from
  * TMDataGrid.test.tsx for worker parallelism; the shared scaffolding lives
  * in the harness. The typed editors' own behaviour is in
  * TMDataGridCellEditor.test.tsx.
@@ -259,6 +261,8 @@ describe("cell editing", () => {
       screen.queryByRole("textbox", { name: "Edit Name" }),
     ).not.toBeInTheDocument();
     expect(cellAt(0, 0)).toHaveAttribute("data-dirty", "true");
+    // The kept draft is what the cell shows - `data` still says "Anna".
+    expect(cellAt(0, 0)).toHaveTextContent("Annika");
 
     // Reopen and confirm through the ✓.
     await user.dblClick(cellAt(0, 0));
@@ -560,17 +564,48 @@ describe("cell editing", () => {
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
 
-  function BatchGrid({ onCommit }: { onCommit: (args: unknown) => void }) {
+  /**
+   * Draft mode's grid: the toolbar's Save all and Discard, plus an add button
+   * for the entry block - `addRow` has no chrome of its own.
+   */
+  function DraftGrid({
+    columns = editColumns,
+    onCommit,
+    onCommitDrafts,
+    onRowAdd,
+    onRowDelete,
+    newRowDefaults,
+    newRowsSticky,
+  }: {
+    columns?: UseTMDataGridOptions<Employee>["columns"];
+    onCommit?: (args: unknown) => void;
+    onCommitDrafts?: (args: unknown) => void;
+    onRowAdd?: (args: unknown) => void;
+    onRowDelete?: () => void;
+    newRowDefaults?: () => Employee;
+    newRowsSticky?: boolean;
+  }) {
     const grid = useTMDataGrid<Employee>({
       data: editRows,
-      columns: editColumns,
+      columns,
       getRowId: (row) => String(row.id),
-      editing: { mode: "batch", onCommit },
+      editing: {
+        mode: "draft",
+        onCommit,
+        onCommitDrafts,
+        onRowAdd,
+        onRowDelete,
+        newRowDefaults,
+        newRowsSticky,
+      },
       selectionMode: "highlight",
     } as UseTMDataGridOptions<Employee>);
     return (
       <TMDataGrid {...grid}>
         <TMDataGrid.Toolbar>
+          <button type="button" onClick={() => grid.edit.addRow()}>
+            add
+          </button>
           <TMDataGrid.EditActions />
         </TMDataGrid.Toolbar>
         <TMDataGrid.Table<Employee> />
@@ -578,11 +613,36 @@ describe("cell editing", () => {
     );
   }
 
-  it("batch mode parks drafts on Enter and saves them through EditActions", async () => {
+  /** Name through a renderer of its own - what a parked draft renders with. */
+  const starColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Employee>();
+    return helper.columns([
+      helper.accessor("name", {
+        header: "Name",
+        cell: ({ getValue }) => `*${String(getValue())}*`,
+      }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+    ]);
+  })();
+
+  const entryDefaults = (): Employee => ({ id: 0, name: "", age: 20, note: "" });
+
+  /** Opens an entry row and types a name into it, stopping short of the ✓. */
+  async function typeIntoEntryRow(user: UserEvent, name: string) {
+    await user.click(screen.getByRole("button", { name: "add" }));
+    await user.type(
+      within(part("entry-row", { rowId: "__new__1" })).getByRole("textbox", {
+        name: "Edit Name",
+      }),
+      name,
+    );
+  }
+
+  it("draft mode parks drafts on Enter and saves them through EditActions", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <BatchGrid onCommit={(args) => void commits.push(args)} />,
+      <DraftGrid onCommit={(args) => void commits.push(args)} />,
     );
 
     // Two rows edited; Enter parks each draft instead of committing.
@@ -611,7 +671,7 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
-      <BatchGrid onCommit={(args) => void commits.push(args)} />,
+      <DraftGrid onCommit={(args) => void commits.push(args)} />,
     );
 
     await user.dblClick(cellAt(0, 0));
@@ -627,17 +687,179 @@ describe("cell editing", () => {
     expect(cellAt(0, 0)).not.toHaveAttribute("data-dirty");
   });
 
-  it("adds rows through the entry block and reports them with edits and deletions in one batch", async () => {
+  it("shows a parked draft through the column's own renderer, marked in the lane", async () => {
     const user = userEvent.setup();
-    const batches: unknown[] = [];
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <DraftGrid
+        columns={starColumns}
+        onCommit={(args) => void commits.push(args)}
+        onRowDelete={() => {}}
+      />,
+    );
+
+    // Clean: `data` through the renderer, and the lane offers the trash.
+    expect(cellAt(0, 0)).toHaveTextContent("*Anna*");
+    expect(queryPart("delete-row", { rowId: "1" })).toBeInTheDocument();
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.clear(input);
+    await user.type(input, "Annika");
+    await user.keyboard("{Enter}");
+
+    // The draft renders through the same `cell` the committed value does.
+    expect(commits.length).toBe(0);
+    expect(cellAt(0, 0)).toHaveTextContent("*Annika*");
+    expect(bodyRows()[0]).toHaveAttribute("data-dirty", "true");
+
+    // The lane is the marker and the revert - no per-row save, and the trash
+    // stands down until the row is clean again.
+    const marker = part("row-state", { rowId: "1" });
+    expect(marker).toHaveAttribute("data-state", "edited");
+    expect(marker).toHaveAttribute("aria-label", "Edited row");
+    expect(part("revert-row", { rowId: "1" })).toHaveAttribute(
+      "aria-label",
+      "Revert changes",
+    );
+    expect(queryPart("save-row", { rowId: "1" })).not.toBeInTheDocument();
+    expect(queryPart("cancel-row", { rowId: "1" })).not.toBeInTheDocument();
+    expect(queryPart("delete-row", { rowId: "1" })).not.toBeInTheDocument();
+  });
+
+  it("reverts one row's draft from the lane", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <DraftGrid
+        columns={starColumns}
+        onCommit={(args) => void commits.push(args)}
+        onRowDelete={() => {}}
+      />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    await user.clear(editorInput());
+    await user.type(editorInput(), "Annika");
+    await user.keyboard("{Enter}");
+    expect(cellAt(0, 0)).toHaveTextContent("*Annika*");
+
+    await user.click(part("revert-row", { rowId: "1" }));
+
+    expect(commits.length).toBe(0);
+    expect(cellAt(0, 0)).toHaveTextContent("*Anna*");
+    expect(bodyRows()[0]).toHaveAttribute("data-dirty", "false");
+    expect(queryPart("row-state", { rowId: "1" })).not.toBeInTheDocument();
+    expect(queryPart("delete-row", { rowId: "1" })).toBeInTheDocument();
+  });
+
+  it("confirms an entry row into a value row in the flow block", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    renderWithMantine(
+      <DraftGrid
+        onRowAdd={(args) => void adds.push(args)}
+        newRowDefaults={entryDefaults}
+      />,
+    );
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    // Entered, awaiting Save all: a value row, still in the entry block's
+    // markup but out of the sticky part of it.
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(entryRow).toHaveAttribute("data-new", "true");
+    expect(within(entryRow).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(entryRow).toHaveTextContent("Ny Person");
+    expect(adds.length).toBe(0);
+    expect(part("row-state", { rowId: "__new__1" })).toHaveAttribute(
+      "data-state",
+      "new",
+    );
+    expect(entryRow.closest("[data-dg-entry-flow-block]")).not.toBeNull();
+    expect(entryRow.closest("[data-dg-entry-block]")).toBeNull();
+  });
+
+  it("confirms an entry row on Enter inside its editor", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    renderWithMantine(
+      <DraftGrid
+        onRowAdd={(args) => void adds.push(args)}
+        newRowDefaults={entryDefaults}
+      />,
+    );
+
+    // Enter in the entry block confirms the entry - it does not park a cell
+    // the way Enter in a body row does.
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.keyboard("{Enter}");
+
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(within(entryRow).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(entryRow).toHaveTextContent("Ny Person");
+    expect(adds.length).toBe(0);
+  });
+
+  it("keeps a confirmed entry row sticky when newRowsSticky is set", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(
+      <DraftGrid newRowDefaults={entryDefaults} newRowsSticky />,
+    );
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(entryRow.closest("[data-dg-entry-block]")).not.toBeNull();
+    expect(entryRow.closest("[data-dg-entry-flow-block]")).toBeNull();
+  });
+
+  it("re-opens a confirmed entry row from the lane's pencil", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<DraftGrid newRowDefaults={entryDefaults} />);
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    await user.click(part("edit-row", { rowId: "__new__1" }));
+
+    // The editors come back over the same form, draft and all.
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(entryRow).toHaveAttribute("data-confirmed", "false");
+    expect(
+      within(entryRow).getByRole("textbox", { name: "Edit Name" }),
+    ).toHaveValue("Ny Person");
+    expect(queryPart("row-state", { rowId: "__new__1" })).not.toBeInTheDocument();
+  });
+
+  it("discards a confirmed entry row from the lane", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<DraftGrid newRowDefaults={entryDefaults} />);
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    await user.click(part("discard-new-row", { rowId: "__new__1" }));
+
+    expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
+  });
+
+  it("adds rows through the entry block and reports them with edits and deletions in one save", async () => {
+    const user = userEvent.setup();
+    const saves: unknown[] = [];
     function EntryGrid() {
       const grid = useTMDataGrid<Employee>({
         data: editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
         editing: {
-          mode: "batch",
-          onCommitBatch: (args) => void batches.push(args),
+          mode: "draft",
+          onCommitDrafts: (args) => void saves.push(args),
           newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
         },
         selectionMode: "highlight",
@@ -672,24 +894,28 @@ describe("cell editing", () => {
     expect(
       within(bodyRows()[1]!).getByRole("button", { name: "Restore row" }),
     ).toBeInTheDocument();
+    expect(part("row-state", { rowId: "2" })).toHaveAttribute(
+      "data-state",
+      "deleted",
+    );
 
-    // Save: the batch carries the add and the deletion together.
+    // Save: the payload carries the add and the deletion together.
     await user.click(screen.getByRole("button", { name: "Save 2 rows" }));
-    await waitFor(() => expect(batches.length).toBe(1));
-    const batch = batches[0] as {
+    await waitFor(() => expect(saves.length).toBe(1));
+    const saved = saves[0] as {
       rows: unknown[];
       added: Array<{ value: { name: string } }>;
       deleted: string[];
     };
-    expect(batch.rows).toEqual([]);
-    expect(batch.added.map((add) => add.value.name)).toEqual(["Ny Person"]);
-    expect(batch.deleted).toEqual(["2"]);
+    expect(saved.rows).toEqual([]);
+    expect(saved.added.map((add) => add.value.name)).toEqual(["Ny Person"]);
+    expect(saved.deleted).toEqual(["2"]);
     // The entry block is gone and the mark is cleared.
     expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
     expect(bodyRows()[1]).not.toHaveAttribute("data-deleted", "true");
   });
 
-  it("adds immediately from the entry row's check outside batch", async () => {
+  it("adds immediately from the entry row's check outside draft", async () => {
     const user = userEvent.setup();
     const adds: unknown[] = [];
     function EntryGrid() {

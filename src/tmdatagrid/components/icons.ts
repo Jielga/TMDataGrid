@@ -27,6 +27,7 @@ export {
   IconArrowBackUp as RestoreIcon,
   IconCheck as CheckIcon,
   IconMenu2 as BurgerIcon,
+  IconPlus as PlusIcon,
   IconTrash as TrashIcon,
   IconPencil as PencilIcon,
   IconPinnedOff as PinOffIcon,

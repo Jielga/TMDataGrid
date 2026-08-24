@@ -32,6 +32,7 @@ describe("readFeatureFlags", () => {
       grouping: true,
       editing: false,
       editMode: null,
+      editNewRowsSticky: false,
       rowNumbers: false,
       rowPinning: false,
       matchHighlighting: false,
@@ -48,6 +49,17 @@ describe("readFeatureFlags", () => {
       readFeatureFlags({ editing: { mode: "cell" }, cellSelection: "range" }),
     ).toMatchObject({ cellSelectionMode: "range" });
     expect(readFeatureFlags({})).toMatchObject({ cellSelectionMode: "none" });
+  });
+
+  it("keeps confirmed entry rows sticky only where draft mode asks for it", () => {
+    expect(readFeatureFlags({}).editNewRowsSticky).toBe(false);
+    expect(
+      readFeatureFlags({ editing: { mode: "draft" } }).editNewRowsSticky,
+    ).toBe(false);
+    expect(
+      readFeatureFlags({ editing: { mode: "draft", newRowsSticky: true } })
+        .editNewRowsSticky,
+    ).toBe(true);
   });
 
   it("reads the cell selection mode", () => {

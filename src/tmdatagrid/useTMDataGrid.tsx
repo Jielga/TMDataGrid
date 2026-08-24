@@ -51,7 +51,7 @@ import {
   createEditEngine,
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
-  type TMDataGridEditCommitBatchArgs,
+  type TMDataGridEditCommitDraftsArgs,
   type TMDataGridEditEngineContext,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
@@ -475,13 +475,13 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
   newRowDefaults?: TData | (() => TData);
   /**
    * Called when an entry row commits: `Enter` or the lane's ✓ under the
-   * immediate modes, `submitAll` under batch. Create the record and let it
+   * immediate modes, `submitAll` under draft. Create the record and let it
    * arrive back through `data`; the engine's `tempId` never leaves the grid.
    */
   onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
   /**
    * Called by `edit.deleteRow` under the immediate modes - confirmation, if
-   * any, belongs in here. Under batch, deletions accumulate in
+   * any, belongs in here. Under draft, deletions accumulate in
    * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
    * Setting this also puts the trash can in the edit lane.
    */
@@ -498,11 +498,11 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * | `"cell"` | Enter, Tab, blur - Sheets | Escape |
  * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
  * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
- * | `"batch"` | `edit.submitAll()` | `edit.cancelAll()` |
+ * | `"draft"` | `edit.submitAll()` | `edit.cancelAll()` |
  *
  * Setting `editing` makes `getRowId` required - drafts are keyed by row id,
  * and the index fallback would name a different record after any sort - and
- * `onCommitBatch` exists only under `mode: "batch"`, the one mode whose
+ * `onCommitDrafts` exists only under `mode: "draft"`, the one mode whose
  * `submitAll` calls it.
  *
  * The object may be written inline: the callbacks are read through a ref
@@ -518,21 +518,31 @@ export type TMDataGridEditingOptions<TData extends RowData> =
   TMDataGridEditingCallbacks<TData> &
     (
       | {
-          mode: "batch";
+          mode: "draft";
           /**
-           * Batch mode's save, called once by `edit.submitAll()` with every
+           * Draft mode's save, called once by `edit.submitAll()` with every
            * valid dirty row. Without it, `submitAll` falls back to the per-row
            * {@link TMDataGridEditingCallbacks.onCommit} loop. Rows failing
            * validation stay open either way; a rejection keeps every draft.
            */
-          onCommitBatch?: (
-            args: TMDataGridEditCommitBatchArgs<TData>,
+          onCommitDrafts?: (
+            args: TMDataGridEditCommitDraftsArgs<TData>,
           ) => void | Promise<void>;
+          /**
+           * Keep confirmed entry rows pinned in the sticky entry block until
+           * Save all. Off by default: a confirmed row joins the scrolling
+           * flow above the body rows instead - the block a row is *typed*
+           * into is always sticky, but entered rows scroll, so entering many
+           * cannot fill the viewport with sticky chrome.
+           */
+          newRowsSticky?: boolean;
         }
       | {
-          mode: Exclude<TMDataGridEditMode, "batch">;
-          /** Only `"batch"`'s `submitAll` ever calls it - see the other branch. */
-          onCommitBatch?: never;
+          mode: Exclude<TMDataGridEditMode, "draft">;
+          /** Only `"draft"`'s `submitAll` ever calls it - see the other branch. */
+          onCommitDrafts?: never;
+          /** Confirmed entry rows exist only under `"draft"` - see there. */
+          newRowsSticky?: never;
         }
     );
 
@@ -910,12 +920,15 @@ export function useTMDataGrid<TData extends RowData>({
   // `renderDetails` has nothing for it to open.
   const detailsColumnEnabled = renderDetails !== undefined;
   // Row mode's Save sits at the end of the row - the lane is its chrome. It
-  // also appears wherever the trash can has somewhere to report to.
+  // also appears wherever the trash can has somewhere to report to, and
+  // always under draft mode, where it is the change marker and the per-row
+  // revert - with or without `onCommitDrafts`, since the per-row `submitAll`
+  // fallback is a first-class configuration.
   const editColumnEnabled =
     editing !== undefined &&
     (editing.mode === "row" ||
-      editing.onRowDelete !== undefined ||
-      (editing.mode === "batch" && editing.onCommitBatch !== undefined));
+      editing.mode === "draft" ||
+      editing.onRowDelete !== undefined);
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
   // depends on the strings rather than on the labels object - a fresh
@@ -926,6 +939,9 @@ export function useTMDataGrid<TData extends RowData>({
   const editColumnLabel = labels.editColumnLabel;
   const rowNumberColumnLabel = labels.rowNumberColumnLabel;
   const rowNumbersEnabled = features.rowNumbers;
+  // Draft mode's lane holds three controls (state icon, undo, trash) where
+  // the other modes hold two - it gets the wider track.
+  const editIsDraftMode = editing?.mode === "draft";
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -955,7 +971,9 @@ export function useTMDataGrid<TData extends RowData>({
         : []),
       ...base,
       // Last and pinned right - the row's Save belongs at the end of the row.
-      ...(editColumnEnabled ? [createEditColumn<TData>(editColumnLabel)] : []),
+      ...(editColumnEnabled
+        ? [createEditColumn<TData>(editColumnLabel, editIsDraftMode)]
+        : []),
     ];
   }, [
     options.columns,
@@ -964,6 +982,7 @@ export function useTMDataGrid<TData extends RowData>({
     detailsColumnEnabled,
     groupColumnEnabled,
     editColumnEnabled,
+    editIsDraftMode,
     rowNumberColumnLabel,
     selectColumnLabel,
     groupColumnLabel,
@@ -1090,8 +1109,8 @@ export function useTMDataGrid<TData extends RowData>({
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:
       editing?.onCommit as TMDataGridEditEngineContext["onEditCommit"],
-    onEditCommitBatch:
-      editing?.onCommitBatch as TMDataGridEditEngineContext["onEditCommitBatch"],
+    onEditCommitDrafts:
+      editing?.onCommitDrafts as TMDataGridEditEngineContext["onEditCommitDrafts"],
     newRowDefaults:
       editing?.newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
     onRowAdd: editing?.onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
@@ -1103,8 +1122,8 @@ export function useTMDataGrid<TData extends RowData>({
   );
 
   // Switching modes mid-flight drops every draft: the policies disagree about
-  // what an open form means, and carrying one across is how a "batch" draft
-  // silently commits under "cell".
+  // what an open form means, and carrying one across is how a draft parked
+  // under "draft" silently commits under "cell".
   const previousEditModeRef = useRef(editMode);
   useEffect(() => {
     if (previousEditModeRef.current === editMode) return;

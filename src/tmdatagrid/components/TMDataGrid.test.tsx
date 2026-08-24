@@ -115,7 +115,7 @@ describe("rendering", () => {
         columns: testColumns,
         getRowId: (row) => String(row.id),
         editing: {
-          mode: "batch",
+          mode: "draft",
           newRowDefaults: () => ({ ...testRows[0]!, id: 0 }),
         },
       } as UseTMDataGridOptions<TestRow>);

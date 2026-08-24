@@ -122,6 +122,13 @@ export type TMDataGridFeatureFlags = {
   editing: boolean;
   /** The commit policy, or `null` while editing is off. */
   editMode: TMDataGridEditMode | null;
+  /**
+   * Whether a confirmed entry row stays pinned in the sticky entry block
+   * until Save all - `editing.newRowsSticky`, draft mode only. Off by
+   * default: a confirmed row joins the scrolling flow instead, so entering
+   * many rows cannot fill the viewport with sticky chrome.
+   */
+  editNewRowsSticky: boolean;
   /** The generated row-number gutter - `enableRowNumbers`. Off by default. */
   rowNumbers: boolean;
   /**
@@ -204,6 +211,9 @@ export function readFeatureFlags<TData extends RowData>(
     grouping: options.enableGrouping ?? options.manualPagination !== true,
     editing: options.editing !== undefined,
     editMode: options.editing?.mode ?? null,
+    editNewRowsSticky:
+      options.editing?.mode === "draft" &&
+      options.editing.newRowsSticky === true,
     rowNumbers: options.enableRowNumbers === true,
     // A predicate counts as on - some rows may still pin.
     rowPinning:

@@ -35,6 +35,7 @@ import {
 } from "./TMDataGridCellEditor";
 import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
 import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import { draftCellContext } from "../core/draftCellContext";
 import {
   getEditFieldName,
   type TMDataGridEditState,
@@ -266,6 +267,7 @@ function TMDataGridBodyCell({
   const { table, edit } = useTMDataGridContext();
   const fieldName = getEditFieldName(cell.column);
   const cellRowId = cell.row.id;
+  const isControl = isControlColumn(cell.column.id);
   const isDirty = useSelector(edit.store, (state) => {
     if (fieldName === null) return false;
     const projection = state.rows[cellRowId];
@@ -276,6 +278,13 @@ function TMDataGridBodyCell({
     const projection = state.rows[cellRowId];
     return projection !== undefined && projection.errorFields.includes(fieldName);
   });
+  // The whole draft, not one field: a computed or custom renderer may read any
+  // field off the row, so every data cell of a drafted row repaints together
+  // when its draft moves - and only then, `values` being reference-stable
+  // across meta-only form events. `undefined` everywhere else.
+  const draftValues = useSelector(edit.store, (state) =>
+    isControl ? undefined : state.rows[cellRowId]?.values,
+  );
   return (
     <div
       // `gridcell` rather than `cell` is what tells a screen reader the arrow
@@ -319,7 +328,7 @@ function TMDataGridBodyCell({
       data-align={getColumnAlign(cell.column)}
       // A control lane is a fixed track, so it cannot take the cell padding the
       // scale grows for text. See isControlColumn.
-      data-control-column={isControlColumn(cell.column.id)}
+      data-control-column={isControl}
       onContextMenu={onContextMenu}
       className={[
         classes.bodyCell,
@@ -354,6 +363,17 @@ function TMDataGridBodyCell({
       {editor ?? (
         <span className={classes.cellContent}>
           {(() => {
+            // A row with a live form shows its draft, not `data`: the column's
+            // own renderer over a context reading the form's values. Parked
+            // drafts - draft mode, cellConfirm's kept-on-blur - are the point;
+            // group cells are excluded because no group row ever has a form.
+            const draftContext =
+              draftValues !== undefined &&
+              contentOverride === undefined &&
+              !cell.getIsPlaceholder() &&
+              !cell.getIsAggregated()
+                ? draftCellContext(cell, draftValues)
+                : undefined;
             // Highlighting reproduces the *default* renderer, value then
             // `toString`, with the matched parts marked. A column with its own
             // `cell` is excluded: its renderer is not the default one, and the
@@ -365,10 +385,16 @@ function TMDataGridBodyCell({
               !cell.getIsAggregated() &&
               cell.column.columnDef.cell === table.getDefaultColumnDef().cell
             ) {
-              const value = cell.renderValue();
+              const value =
+                draftContext !== undefined
+                  ? draftContext.renderValue()
+                  : cell.renderValue();
               if (typeof value === "string" || typeof value === "number") {
                 return withMatchHighlights(String(value), highlightNeedles);
               }
+            }
+            if (draftContext !== undefined) {
+              return flexRender(cell.column.columnDef.cell, draftContext);
             }
             return contentOverride ?? renderCellContent(cell);
           })()}
@@ -716,6 +742,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const editOpenRowIds = useSelector(edit.store, (state) => state.openRowIds);
   const newRowCount = useSelector(edit.store, (state) => state.newRows.length);
   const deletedRowIds = useSelector(edit.store, (state) => state.deletedRowIds);
+  // Rows carrying a dirty draft, for the row-level marker. Derived from the
+  // same projections the cells subscribe to; the array's identity churns with
+  // `openRowIds`' own per-publish churn, so this adds no new render class.
+  const editDirtyRowIds = useSelector(edit.store, (state) =>
+    state.openRowIds.filter(
+      (id) => (state.rows[id]?.dirtyFields.length ?? 0) > 0,
+    ),
+  );
 
   const { loading, noResultsLabel = labels.noResults } =
     table.options.meta ?? {};
@@ -1497,7 +1531,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     close: TMDataGridCellEditorClose,
   ) => {
     // Where the keyboard goes: Enter moves down, Tab to the next editable
-    // cell (the deferring batch variants move the same way, draft in tow) -
+    // cell (the deferring draft variants move the same way, draft in tow) -
     // everything else, and a saved row, goes back to where the edit was.
     const move =
       close.via === "enter"
@@ -2188,10 +2222,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   data-highlighted={
                     features.highlightRow && row.id === highlightedRowId
                   }
-                  // Marked deleted under batch: struck through and inert
+                  // Marked deleted under draft: struck through and inert
                   // until submitAll reports it, or the mark is toggled back.
                   data-deleted={
                     deletedRowIds.length > 0 && deletedRowIds.includes(row.id)
+                  }
+                  // Carrying a dirty draft - the row-level face of the cells'
+                  // own data-dirty markers, for row-scoped styling.
+                  data-dirty={
+                    editDirtyRowIds.length > 0 &&
+                    editDirtyRowIds.includes(row.id)
                   }
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is

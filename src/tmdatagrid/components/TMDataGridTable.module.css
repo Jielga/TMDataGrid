@@ -329,12 +329,18 @@
   padding: var(--mantine-spacing-xl);
 }
 
-/* Marked deleted under batch: struck through and inert until submitAll
-   reports it. Interaction off wholesale - a row about to go away must not
-   keep taking edits. */
+/* Marked deleted under draft: struck through and inert until submitAll
+   reports it - a row about to go away must not keep taking edits. Interaction
+   comes off the data cells, not the row: `pointer-events: none` on the row
+   would also kill the edit lane's Restore, which is the one control the row
+   still needs (jsdom does not enforce pointer-events, so only a real browser
+   ever saw that bug). */
 .bodyRow[data-deleted="true"] {
   text-decoration: line-through;
   opacity: 0.55;
+}
+
+.bodyRow[data-deleted="true"] .bodyCell:not([data-control-column="true"]) {
   pointer-events: none;
 }
 
@@ -354,6 +360,15 @@
 }
 
 .entryRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+/* Confirmed entry rows in the scrolling flow (the default; `newRowsSticky`
+   keeps them in the sticky block instead). Same tracks, no stickiness - they
+   sit above the body rows and scroll with them. */
+.entryFlowBlock {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
@@ -405,6 +420,35 @@
 .entryCell[data-control-column="true"] {
   padding: 0;
   justify-content: center;
+}
+
+/* A confirmed entry row - entered, awaiting Save all. It reads as a value
+   row: text padding, the body's border weight, and the "new" tint instead of
+   the editing underline. */
+.entryRow[data-confirmed="true"] .entryCell {
+  padding: 0 var(--dg-padding);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  background-color: var(--dg-row-new-bg, var(--mantine-color-body));
+}
+
+.entryRow[data-confirmed="true"] .entryCell[data-control-column="true"] {
+  padding: 0;
+}
+
+/* Draft mode's change marker in the edit lane - dimmed beside the buttons
+   that act, red when validation blocks the row. */
+.rowStateIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: var(--mantine-color-dimmed);
+}
+
+.rowStateIndicator[data-error] {
+  color: var(--mantine-color-error);
 }
 
 .entryCell[data-align="right"] {

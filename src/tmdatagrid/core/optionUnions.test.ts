@@ -15,15 +15,15 @@ declare const columns: UseTMDataGridOptions<Person>["columns"];
 declare const getRowId: (row: Person) => string;
 
 export function useCompileTimeContracts() {
-  // Legal: batch with its batch save.
+  // Legal: draft with its bulk save.
   useTMDataGrid<Person>({
     data,
     columns,
     getRowId,
-    editing: { mode: "batch", onCommitBatch: async () => {} },
+    editing: { mode: "draft", onCommitDrafts: async () => {} },
   });
-  // Legal: batch without it - `submitAll` falls back to the per-row loop.
-  useTMDataGrid<Person>({ data, columns, getRowId, editing: { mode: "batch" } });
+  // Legal: draft without it - `submitAll` falls back to the per-row loop.
+  useTMDataGrid<Person>({ data, columns, getRowId, editing: { mode: "draft" } });
   // Legal: an immediate mode with the per-row commit.
   useTMDataGrid<Person>({
     data,
@@ -46,8 +46,20 @@ export function useCompileTimeContracts() {
     getRowId,
     editing: {
       mode: "cell",
-      // @ts-expect-error -- onCommitBatch exists only under mode "batch"; no
+      // @ts-expect-error -- onCommitDrafts exists only under mode "draft"; no
       // other mode's submitAll ever calls it.
+      onCommitDrafts: async () => {},
+    },
+  });
+
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    editing: {
+      mode: "draft",
+      // @ts-expect-error -- the rename left no alias behind: `onCommitBatch`
+      // is not an option under any mode.
       onCommitBatch: async () => {},
     },
   });

@@ -22,7 +22,7 @@ import type { TMDataGridSize } from "./sizes";
  * How commits happen - one axis, each mode a thin policy over the same
  * engine. See `editMode` on `UseTMDataGridOptions`.
  */
-export type TMDataGridEditMode = "cell" | "cellConfirm" | "row" | "batch";
+export type TMDataGridEditMode = "cell" | "cellConfirm" | "row" | "draft";
 
 /**
  * One editing row's live form. TanStack Form's `FormApi`, not a wrapper: the
@@ -113,6 +113,12 @@ export type TMDataGridEditRowProjection = {
   /** A row-level error - a pathless `.refine()`, or a rejected commit. */
   hasRowError: boolean;
   isSubmitting: boolean;
+  /**
+   * The row as drafted - the form's `state.values`. Reference-stable while no
+   * value changes, so a cell may subscribe to it and repaint only when its
+   * row's draft actually moves.
+   */
+  values: TMDataGridRowData;
 };
 
 /**
@@ -130,13 +136,18 @@ export type TMDataGridEditState = {
   active: { rowId: string; columnId: string | null } | null;
   /**
    * Rows with a live form. In cell mode at most one; in row, cellConfirm and
-   * batch, as many as the user opened - which rows are editing.
+   * draft, as many as the user opened - which rows are editing.
    */
   openRowIds: ReadonlyArray<string>;
   rows: Record<string, TMDataGridEditRowProjection>;
-  /** Phase 4 - rows being created, not yet in `data`. */
-  newRows: ReadonlyArray<{ tempId: string }>;
-  /** Phase 4 - rows marked deleted under batch mode. */
+  /**
+   * Rows being created, not yet in `data`. `confirmed` is draft mode's
+   * "entered, awaiting Save all": the entry row renders as a value row until
+   * `begin` re-opens it. Under the immediate modes a confirm commits through
+   * `onRowAdd` and the entry is dropped, so there it never turns `true`.
+   */
+  newRows: ReadonlyArray<{ tempId: string; confirmed: boolean }>;
+  /** Rows marked deleted under draft mode. */
   deletedRowIds: ReadonlyArray<string>;
 };
 
@@ -278,13 +289,13 @@ export type TMDataGridRowDeleteArgs<TData extends RowData> = {
   row: Row<TMDataGridFeatures, TData>;
 };
 
-/** What `submitAll` hands `onEditCommitBatch` - everything pending at once. */
-export type TMDataGridEditCommitBatchArgs<TData extends RowData> = {
+/** What `submitAll` hands `onEditCommitDrafts` - everything pending at once. */
+export type TMDataGridEditCommitDraftsArgs<TData extends RowData> = {
   /** Every valid dirty existing row. */
   rows: Array<TMDataGridEditCommitArgs<TData>>;
   /** Every valid new row from the entry block. */
   added: Array<TMDataGridRowAddArgs<TData>>;
-  /** Ids marked deleted while the batch accumulated. */
+  /** Ids marked deleted while the drafts accumulated. */
   deleted: Array<string>;
 };
 
@@ -297,8 +308,8 @@ export type TMDataGridEditEngineContext = {
   onEditCommit?: (
     args: TMDataGridEditCommitArgs<TMDataGridRowData>,
   ) => void | Promise<void>;
-  onEditCommitBatch?: (
-    args: TMDataGridEditCommitBatchArgs<TMDataGridRowData>,
+  onEditCommitDrafts?: (
+    args: TMDataGridEditCommitDraftsArgs<TMDataGridRowData>,
   ) => void | Promise<void>;
   /** Seed values for `addRow`. A function is called per added row. */
   newRowDefaults?: TMDataGridRowData | (() => TMDataGridRowData);
@@ -387,7 +398,7 @@ export type TMDataGridEditApi = {
   deactivate: () => void;
   /** Drops every draft. */
   cancelAll: () => void;
-  /** Commits every open row - batch mode's save. `true` when all landed. */
+  /** Commits every open row - draft mode's save. `true` when all landed. */
   submitAll: () => Promise<boolean>;
   /** Writes the type's empty value into a cell and commits it - Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
@@ -395,12 +406,12 @@ export type TMDataGridEditApi = {
    * Opens a new entry row (the sticky block under the header) seeded from
    * `newRowDefaults`. Returns its temporary id - a form with no backing row
    * yet. Committing it calls `onRowAdd` (immediate modes) or joins
-   * `submitAll`'s `added` (batch).
+   * `submitAll`'s `added` (draft).
    */
   addRow: () => string;
   /**
    * Deletes a row: `onRowDelete` straight away under the immediate modes;
-   * under batch it toggles the id in `deletedRowIds` - the row renders
+   * under draft it toggles the id in `deletedRowIds` - the row renders
    * struck through until `submitAll` reports it. On an uncommitted entry
    * row it just discards the entry.
    */
@@ -467,6 +478,13 @@ export function createEditEngine(
     isNew: boolean;
     /** Set by the wrapped onSubmit when the consumer's commit resolved. */
     lastSubmitOk: boolean;
+    /**
+     * Draft mode's park: this submit validates and holds the draft in the
+     * grid instead of calling the consumer. Set by `commit` per attempt -
+     * `true` only under draft outside `submitAll`, which is what closes the
+     * per-row escape hatches (the lane's ✓, Delete-to-clear) at the engine.
+     */
+    parkOnly: boolean;
     /** A commit already running - Enter and blur race on the same edit. */
     pendingCommit: Promise<boolean> | null;
     unsubscribe: () => void;
@@ -474,15 +492,17 @@ export function createEditEngine(
   };
   const forms = new Map<string, FormEntry>();
   let newRowCounter = 0;
+  /** Lets `commit` tell `submitAll`'s per-row loop apart from a lone call. */
+  let submitAllRunning = false;
 
   /**
-   * While `submitAll` runs with an `onEditCommitBatch`, each row's wrapped
+   * While `submitAll` runs with an `onEditCommitDrafts`, each row's wrapped
    * onSubmit contributes its args here instead of calling `onEditCommit` -
    * validation stays per row (Form's), the consumer call becomes one.
    */
-  let batchCollector: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> | null =
+  let draftCollector: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> | null =
     null;
-  let batchAddCollector: Array<TMDataGridRowAddArgs<TMDataGridRowData>> | null =
+  let draftAddCollector: Array<TMDataGridRowAddArgs<TMDataGridRowData>> | null =
     null;
 
   const editableColumns = (): Array<ErasedColumn> =>
@@ -530,6 +550,7 @@ export function createEditEngine(
       errorFields,
       hasRowError: hasAnyError(state.errors),
       isSubmitting: state.isSubmitting,
+      values: state.values as TMDataGridRowData,
     };
   };
 
@@ -545,6 +566,19 @@ export function createEditEngine(
 
   const setActive = (active: TMDataGridEditState["active"]) => {
     store.setState((prev) => ({ ...prev, active }));
+  };
+
+  const setNewRowConfirmed = (tempId: string, confirmed: boolean) => {
+    store.setState((prev) => {
+      const target = prev.newRows.find((newRow) => newRow.tempId === tempId);
+      if (target === undefined || target.confirmed === confirmed) return prev;
+      return {
+        ...prev,
+        newRows: prev.newRows.map((newRow) =>
+          newRow.tempId === tempId ? { ...newRow, confirmed } : newRow,
+        ),
+      };
+    });
   };
 
   const drop = (rowId: string) => {
@@ -578,6 +612,7 @@ export function createEditEngine(
       original,
       isNew,
       lastSubmitOk: false,
+      parkOnly: false,
       pendingCommit: null,
       unsubscribe: () => {},
       unmount: () => {},
@@ -594,8 +629,13 @@ export function createEditEngine(
               tempId: rowId,
               value: value as TMDataGridRowData,
             };
-            if (batchAddCollector !== null) {
-              batchAddCollector.push(addArgs);
+            if (draftAddCollector !== null) {
+              draftAddCollector.push(addArgs);
+              entry.lastSubmitOk = true;
+              return;
+            }
+            // Parked: validated and held for Save all - no consumer call.
+            if (entry.parkOnly) {
               entry.lastSubmitOk = true;
               return;
             }
@@ -618,8 +658,13 @@ export function createEditEngine(
             changes,
             source: getContext().editMode,
           };
-          if (batchCollector !== null) {
-            batchCollector.push(args);
+          if (draftCollector !== null) {
+            draftCollector.push(args);
+            entry.lastSubmitOk = true;
+            return;
+          }
+          // Parked: validated and held for Save all - no consumer call.
+          if (entry.parkOnly) {
             entry.lastSubmitOk = true;
             return;
           }
@@ -691,6 +736,7 @@ export function createEditEngine(
     // block `canSubmit` forever. The validator puts back whatever still holds.
     clearFormSourcedFieldErrors(entry.form);
     entry.lastSubmitOk = false;
+    entry.parkOnly = getContext().editMode === "draft" && !submitAllRunning;
     entry.pendingCommit = (async () => {
       try {
         await entry.form.handleSubmit();
@@ -698,6 +744,15 @@ export function createEditEngine(
         entry.pendingCommit = null;
       }
       if (!entry.lastSubmitOk) return false;
+      if (entry.parkOnly) {
+        // The draft stays in the grid until Save all. An entry row becomes
+        // "entered": rendered as a value row until `begin` re-opens it.
+        if (entry.isNew) setNewRowConfirmed(rowId, true);
+        store.setState((prev) =>
+          prev.active?.rowId === rowId ? { ...prev, active: null } : prev,
+        );
+        return true;
+      }
       drop(rowId);
       return true;
     })();
@@ -705,6 +760,14 @@ export function createEditEngine(
   };
 
   const beginOn = (rowId: string, columnId: string | null) => {
+    // An entry row has no backing row in the table; opening one re-arms its
+    // editors - under draft, that is how a confirmed row is edited again.
+    const entryForm = forms.get(rowId);
+    if (entryForm?.isNew === true) {
+      setNewRowConfirmed(rowId, false);
+      setActive({ rowId, columnId });
+      return;
+    }
     const row = getRow(rowId);
     if (row === undefined) return;
     if (columnId !== null) {
@@ -724,7 +787,7 @@ export function createEditEngine(
     // | Mode | Another row open |
     // | ---- | ---------------- |
     // | cell | committed - Sheets; a failed commit keeps holding the edit |
-    // | row, cellConfirm, batch | accumulates. Every draft waits for its own
+    // | row, cellConfirm, draft | accumulates. Every draft waits for its own
     //   save, so a second row opening can neither discard the first nor be
     //   refused by it - nothing about one row's form bears on another's |
     if (editMode === "cell") {
@@ -763,7 +826,7 @@ export function createEditEngine(
     createForm(tempId, defaults, true);
     store.setState((prev) => ({
       ...prev,
-      newRows: [...prev.newRows, { tempId }],
+      newRows: [...prev.newRows, { tempId, confirmed: false }],
     }));
     return tempId;
   };
@@ -776,7 +839,7 @@ export function createEditEngine(
       return;
     }
     const context = getContext();
-    if (context.editMode === "batch") {
+    if (context.editMode === "draft") {
       // A toggle: the second press unmarks - the mark is a draft too.
       store.setState((prev) => ({
         ...prev,
@@ -794,10 +857,10 @@ export function createEditEngine(
 
   const canDeleteRows = (): boolean => {
     const context = getContext();
-    if (context.editMode === "batch") {
+    if (context.editMode === "draft") {
       return (
         context.onRowDelete !== undefined ||
-        context.onEditCommitBatch !== undefined
+        context.onEditCommitDrafts !== undefined
       );
     }
     return context.onRowDelete !== undefined;
@@ -813,7 +876,18 @@ export function createEditEngine(
   };
 
   const submitAll = async (): Promise<boolean> => {
-    if (getContext().onEditCommitBatch === undefined) {
+    // While this runs, `commit` really commits - under draft it parks
+    // otherwise. Single-threaded flag, same idiom as the collectors.
+    submitAllRunning = true;
+    try {
+      return await submitAllInner();
+    } finally {
+      submitAllRunning = false;
+    }
+  };
+
+  const submitAllInner = async (): Promise<boolean> => {
+    if (getContext().onEditCommitDrafts === undefined) {
       // The default: the per-row loop - edits through `onEditCommit`, entry
       // rows through `onRowAdd`, marked deletions through `onRowDelete`.
       const results = await Promise.all(
@@ -830,12 +904,12 @@ export function createEditEngine(
 
     // One consumer call for the lot. Validation stays Form's, per row: rows
     // that fail keep their forms and markers; the valid ones travel
-    // together, and only a resolved batch drops them - a rejected save keeps
+    // together, and only a resolved save drops them - a rejected save keeps
     // every draft, deletions included.
     const collected: Array<TMDataGridEditCommitArgs<TMDataGridRowData>> = [];
     const added: Array<TMDataGridRowAddArgs<TMDataGridRowData>> = [];
-    batchCollector = collected;
-    batchAddCollector = added;
+    draftCollector = collected;
+    draftAddCollector = added;
     let allValid = true;
     try {
       for (const rowId of [...forms.keys()]) {
@@ -853,13 +927,13 @@ export function createEditEngine(
         if (!entry.lastSubmitOk) allValid = false;
       }
     } finally {
-      batchCollector = null;
-      batchAddCollector = null;
+      draftCollector = null;
+      draftAddCollector = null;
     }
     const deleted = [...store.state.deletedRowIds];
     if (collected.length > 0 || added.length > 0 || deleted.length > 0) {
       try {
-        await getContext().onEditCommitBatch?.({ rows: collected, added, deleted });
+        await getContext().onEditCommitDrafts?.({ rows: collected, added, deleted });
       } catch {
         return false;
       }

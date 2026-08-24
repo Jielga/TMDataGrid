@@ -82,7 +82,7 @@ export {
   type TMDataGridEditApi,
   type TMDataGridEditChange,
   type TMDataGridEditCommitArgs,
-  type TMDataGridEditCommitBatchArgs,
+  type TMDataGridEditCommitDraftsArgs,
   type TMDataGridEditField,
   type TMDataGridEditMode,
   type TMDataGridEditorArgs,
