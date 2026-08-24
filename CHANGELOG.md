@@ -1,5 +1,33 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.2
+
+### Major Changes
+
+- [`238470c`](https://github.com/Jielga/TMDataGrid/commit/238470cf675000207b0061d760c93b2bee08a27f) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** The `"batch"` edit mode is now `"draft"`, reworked: a held draft
+  renders its value through the column's own `cell` renderer (in `cellConfirm`
+  too), an entered new row stays in the grid as a value row until Save all, and
+  the edit lane becomes the change indicator and per-row revert - a state icon
+  (new/edited/deleted) beside Revert, Restore or remove. Nothing reaches a
+  callback before `edit.submitAll()`: the lane's per-row save and
+  Delete-to-clear no longer commit under draft mode.
+
+  | Before                              | After                            |
+  | ----------------------------------- | -------------------------------- |
+  | `editing.mode: "batch"`             | `editing.mode: "draft"`          |
+  | `editing.onCommitBatch`             | `editing.onCommitDrafts`         |
+  | `TMDataGridEditCommitBatchArgs`     | `TMDataGridEditCommitDraftsArgs` |
+  | `edit.state.newRows[]` `{ tempId }` | `{ tempId, confirmed }`          |
+
+  New: `editing.newRowsSticky` (entered rows scroll by default), row
+  `data-dirty`, entry-row `data-new` / `data-confirmed`, parts `row-state` /
+  `revert-row`, `edit.state.rows[id].values`, labels `revertRow` /
+  `rowStateNew` / `rowStateEdited` / `rowStateDeleted`, `--dg-row-new-bg`.
+  The edit lane now appears under draft mode without `onCommitDrafts`.
+
+  Fixed: Restore on a deletion-marked row was unclickable in real browsers
+  (`pointer-events`).
+
 ## 2.0.0-beta.1
 
 ### Major Changes
