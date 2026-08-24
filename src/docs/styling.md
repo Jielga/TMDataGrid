@@ -63,6 +63,7 @@ from a stylesheet.
 | `--dg-row-highlight-bg` | Themed | The highlighted row |
 | `--dg-row-striped-bg` | Themed | Every second row under `striped` |
 | `--dg-row-group-bg` | Themed | [Group](/docs/grouping) rows |
+| `--dg-row-new-bg` | Green tint | New rows entered under [draft editing](/docs/editing#draft-editing) |
 | `--dg-match-highlight-bg` | Themed yellow | [Marked](/docs/quick-search#match-highlighting) text |
 | `--dg-header-shadow-color` | Themed | The shadow under the sticky header |
 

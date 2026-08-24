@@ -48,7 +48,7 @@ the `grid` role.
 | Grid | `table`, or `grid` under cell selection | `aria-rowcount`, `aria-colcount`, `aria-busy`, `data-dg-row-count` |
 | Header row | `row` | `aria-rowindex` |
 | Header cell | `columnheader` | `data-dg-part="header"`, `data-column-id`, `aria-sort`, `data-active` |
-| Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-striped` |
+| Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-dirty`, `data-striped` |
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
 
 **The role changes with cell selection.** `cellSelection` turns the grid's
@@ -98,13 +98,15 @@ so a part that repeats is addressed by adding the coordinate.
 | `data-dg-part` | What it is |
 | --- | --- |
 | `row` | A body row, pinned or not |
-| `entry-row` | An open entry row in the new-row block |
+| `entry-row` | An entry row. Carries `data-new`, and `data-confirmed` once entered under draft mode |
 | `details` | A row's detail panel |
 | `select-row` | Its selection checkbox |
 | `details-toggle`, `group-toggle` | Its detail and tree chevrons |
-| `edit-row`, `delete-row` | The edit lane, idle |
-| `save-row`, `cancel-row` | The edit lane, open |
-| `restore-row` | Undo a batch deletion mark |
+| `edit-row`, `delete-row` | The edit lane, idle. `edit-row` also reopens an entered new row |
+| `save-row`, `cancel-row` | The edit lane, open - row mode only |
+| `row-state` | Draft mode's change marker; `data-state` is `new`, `edited` or `deleted` |
+| `revert-row` | Drops a row's draft under draft mode |
+| `restore-row` | Undo a deletion mark under draft mode |
 | `confirm-new-row`, `discard-new-row` | An entry row's ✓ and ✕ |
 
 ### Keyed by `data-column-id`

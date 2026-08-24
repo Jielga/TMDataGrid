@@ -128,13 +128,13 @@ mid-edit switches them immediately. See
 whole row, Save commits it, and `editing.onCommit` hands the form one finished
 condition. The form's rules run at that point.
 
-**Not `"batch"`.** Batch holds every draft inside the grid and calls nothing
-until `edit.submitAll()`, so the form's array goes stale the moment typing
-starts: "at least one condition" counts rows the user may have marked for
-deletion, a duplicate sitting in a draft passes unseen, and the form's submit
-saves an array missing every pending edit.
+**Not `"draft"`.** Draft mode holds every draft inside the grid and calls
+nothing until `edit.submitAll()`, so the form's array goes stale the moment
+typing starts: "at least one condition" counts rows the user may have marked
+for deletion, a duplicate sitting in a draft passes unseen, and the form's
+submit saves an array missing every pending edit.
 
-To use batch anyway, invert where the save happens: `grid.edit.submitAll()`
+To use draft mode anyway, invert where the save happens: `grid.edit.submitAll()`
 becomes the only way rows reach the form, and the form's submit is gated on the
 grid holding no draft -
 `useSelector(grid.edit.store, (s) => s.openRowIds.length === 0)`.
@@ -153,7 +153,7 @@ const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0
 
 The alternative is to flush instead of block. `await grid.edit.submitAll()`
 before `form.handleSubmit()` commits every open row through the normal
-`editing.onCommit` path, in every mode and not only batch. Rows that fail their
+`editing.onCommit` path, in every mode and not only draft. Rows that fail their
 own validation stay open, so the submit fails.
 
 Two constraints apply to a native `<form>` around a grid:

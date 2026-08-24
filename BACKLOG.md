@@ -36,6 +36,15 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Draft mode (2.0)** - **done 2026-08-24**, breaking. `editMode: "batch"`
+became `editing.mode: "draft"`, reworked: held drafts render their values
+through the cell renderers, entered new rows stay as value rows (scrolling by
+default, `newRowsSticky` pins them), the edit lane carries a per-row state
+icon and revert/restore/remove, and nothing reaches a callback before Save
+all. `onCommitBatch` became `onCommitDrafts`; the rename table is in the
+changeset. Fixed along the way: Restore on a deletion-marked row was
+unclickable in real browsers.
+
 **Versioned documentation** - **done 2026-08-21**, corrected the same day.
 The docs site publishes several complete builds under one Pages root, held on a `gh-pages` branch: the newest release at the root, the tip of main at `next/`, one directory per minor line at `v1.1/`, and previews at `b/<branch>/` while a pull request carries the `docs-preview` label.
 The header's version badge became the menu that moves between them, carrying the page you are on across.

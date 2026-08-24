@@ -50,7 +50,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.ColumnsButton` · `.ColumnsPanel`    | Manage columns, and Reset layout                                             | [Column layout](/docs/column-layout#hiding)           |
 | `TMDataGrid.Spacer`                             | Pushes following toolbar items right                                         | [Toolbar](/docs/toolbar)                              |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty](/docs/loading-and-empty)          |
-| `TMDataGrid.EditActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridEditActions` | [Editing](/docs/editing#batch-editing)                |
+| `TMDataGrid.EditActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridEditActions` | [Editing](/docs/editing#draft-editing)                |
 
 `FilterPills` is the exception: it takes the grid as an `api` prop and can be
 rendered outside `TMDataGrid`, since an active-filter strip often sits above

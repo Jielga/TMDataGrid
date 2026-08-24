@@ -214,7 +214,7 @@ issue lands on the column whose `editField` is `"address.city"`.
 
 Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
-unedited value and cannot pass. Use `"row"` or `"batch"`.
+unedited value and cannot pass. Use `"row"` or `"draft"`.
 
 ## Server-side errors
 
@@ -242,9 +242,12 @@ row.
 
 | Marker | Means |
 | --- | --- |
+| The cell's own value | A held draft is displayed: the cell renders the draft value through the column's `cell` renderer, in every mode |
 | Blue cell corner | The field is dirty against its original value |
 | Red cell corner | The field carries a validation error |
 | Row error text | A pathless rule failed, or a commit was rejected |
+| `data-dirty` on the row | The row holds a dirty draft |
 
 The same information is readable from `edit.store`: `rows[rowId].dirtyFields`,
-`rows[rowId].errorFields`, `rows[rowId].isSubmitting`.
+`rows[rowId].errorFields`, `rows[rowId].hasRowError`,
+`rows[rowId].isSubmitting`, and `rows[rowId].values` for the draft itself.

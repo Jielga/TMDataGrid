@@ -71,7 +71,8 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 
 **Keyed by `data-row-id`**: `row`, `entry-row`, `details`, `select-row`,
 `details-toggle`, `group-toggle`, `edit-row`, `delete-row`, `save-row`,
-`cancel-row`, `restore-row`, `confirm-new-row`, `discard-new-row`.
+`cancel-row`, `row-state`, `revert-row`, `restore-row`, `confirm-new-row`,
+`discard-new-row`.
 
 **Keyed by `data-column-id`**: `header`, `header-sort`, `header-menu`,
 `header-filter`, `filter-row`, `filter-pill`, `columns-toggle`.

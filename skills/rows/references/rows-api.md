@@ -69,7 +69,7 @@ Row data attributes:
 | `data-grouped` | Group rows |
 | `data-depth` | Every row - the nesting level |
 | `data-context-menu` | The row whose context menu is open |
-| `data-deleted` | Rows marked for deletion under batch editing |
+| `data-deleted` | Rows marked for deletion under draft editing |
 | `data-row-id` | Every row - its id |
 
 ## Details

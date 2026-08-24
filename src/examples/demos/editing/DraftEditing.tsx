@@ -1,11 +1,12 @@
 import { Button } from "@mantine/core";
 import { useCallback, useState } from "react";
+import { useSelector } from "@tanstack/react-store";
 import { z } from "zod";
 import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
-  type TMDataGridEditCommitBatchArgs,
+  type TMDataGridEditCommitDraftsArgs,
 } from "../../../tmdatagrid";
 import {
   DEPARTMENTS,
@@ -52,13 +53,13 @@ const newEmployee = (): Employee => ({
   skills: [],
 });
 
-export function BatchEditing() {
+export function DraftEditing() {
   const [employees, setEmployees] = useState(() => makeEmployees(20, 2000));
 
   // Everything pending (edits, additions, deletions) arrives here at once, so
   // the server can apply it as a single transaction.
-  const onCommitBatch = useCallback(
-    ({ rows, added, deleted }: TMDataGridEditCommitBatchArgs<Employee>) => {
+  const onCommitDrafts = useCallback(
+    ({ rows, added, deleted }: TMDataGridEditCommitDraftsArgs<Employee>) => {
       setEmployees((previous) => {
         const edited = previous.map(
           (employee) =>
@@ -88,13 +89,20 @@ export function BatchEditing() {
     columns,
     getRowId: (row) => String(row.id),
     editing: {
-      mode: "batch",
-      onCommitBatch,
+      mode: "draft",
+      onCommitDrafts,
       newRowDefaults: newEmployee,
     },
     selectionMode: "highlight",
     enableGrouping: false,
   });
+
+  // One entry row at a time: `edit.store` publishes every new row with its
+  // `confirmed` flag, so the Add button waits until the open one is entered
+  // or discarded.
+  const hasOpenEntry = useSelector(grid.edit.store, (state) =>
+    state.newRows.some((newRow) => !newRow.confirmed),
+  );
 
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
@@ -104,12 +112,13 @@ export function BatchEditing() {
         <Button
           size="compact-xs"
           variant="light"
+          disabled={hasOpenEntry}
           onClick={() => grid.edit.addRow()}
         >
           Add row
         </Button>
-        {/* Save and Discard for the whole batch, disabled while nothing is
-            pending and while anything is invalid. */}
+        {/* Save and Discard for every pending draft, disabled while nothing
+            is pending and while anything is invalid. */}
         <TMDataGrid.EditActions />
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
