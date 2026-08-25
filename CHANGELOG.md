@@ -1,5 +1,52 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.3
+
+### Major Changes
+
+- [#37](https://github.com/Jielga/TMDataGrid/pull/37) [`d989de1`](https://github.com/Jielga/TMDataGrid/commit/d989de19e32435d2639c54c503a058d6f0ca1348) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** Draft mode gets a real draft store, and the verbs are split to
+  match: a row is _open_ (undecided form state) until it is committed, and only
+  committed rows are saved.
+
+  - `edit.commitAll()` submits every open row; `edit.saveDrafts()` sends the
+    draft store. `edit.submitAll()` is deprecated and now does both in turn -
+    what it always did in effect.
+  - `editing.onCommitDrafts` is renamed `editing.onSaveDrafts`. The old name is
+    still honoured; the new one wins if both are set.
+  - `edit.addRows(rows, { commit })` adds a batch in one write. `commit: true`
+    submits each row as it lands, which is the import case: valid rows commit,
+    invalid ones stay open carrying their errors, and the result says which went
+    which way.
+  - `newRows[].confirmed` is now `newRows[].committed`, and the entry row's
+    `data-confirmed` attribute is `data-committed`. `edit.state` gains
+    `committedRowIds`.
+  - `TMDataGridEditCommitDraftsArgs` is renamed `TMDataGridSaveDraftsArgs`, with
+    the old name kept as a deprecated alias.
+
+  Two behaviour changes to know about:
+
+  **Save no longer sweeps rows that were never OK'd.** It sends the draft store
+  and leaves open rows alone - they keep what was typed and stay open for the
+  next save. `EditActions` counts the draft store on Save and shows how many rows
+  are still open beside it. Enter in draft mode now commits the row instead of
+  only closing the editor, so the ordinary keyboard flow still fills the store.
+  Call `edit.commitAll()` before saving to get the old sweep.
+
+  **Column validation no longer depends on a mounted editor.** `meta.edit.validate`
+  ran on the editor, so a commit with no editor on screen - an import, a
+  programmatic commit, Delete-to-clear on a cell that was never opened - skipped
+  it and could write past the rule. The engine now runs the column rules itself
+  at commit. Existing grids may see commits refused that previously went through;
+  those were the rule being bypassed.
+
+### Minor Changes
+
+- [#37](https://github.com/Jielga/TMDataGrid/pull/37) [`d2741a6`](https://github.com/Jielga/TMDataGrid/commit/d2741a64252547cebce069f53299173118cd99f0) Thanks [@Psvensso](https://github.com/Psvensso)! - `edit.addRow` takes the values the entry row starts from.
+
+  `addRow(values)` overrides `editing.newRowDefaults` field by field, so one call
+  opens the default row and another opens it filled in - or duplicates an existing
+  row by passing it whole. `addRow()` is unchanged.
+
 ## 2.0.0-beta.2
 
 ### Major Changes
