@@ -62,7 +62,8 @@ rather than forwarded to TanStack.
 | `onFocusedCellChange` | `(cell \| null) => void` | – | Fires whenever the focused cell moves. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
-| `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
+| `initialState` | `Partial<TableState>` | See below | The state the grid starts from, read once on mount. Merged over the grid defaults. |
+| `state` | `Partial<TableState>` | – | State you hold yourself. Needs the matching `onXChange` - see below. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
 | `editing` | `TMDataGridEditingOptions` | off | Turns editing on. `mode` (`"cell" \| "cellConfirm" \| "row" \| "draft"`) picks the commit policy; the object also holds `onCommit`, `onSaveDrafts`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `newRowsSticky`, `onRowAdd` and `onRowDelete` - see the `editing` skill. |
@@ -75,6 +76,32 @@ rather than forwarded to TanStack.
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }` - inert until pagination is enabled |
 | `columnPinning.left` | The checkbox column, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
+
+### Controlled state
+
+`initialState` seeds a slice and hands it to the grid; `state` keeps it yours.
+A controlled slice needs its `onXChange` - TanStack routes every write through
+the callback, so a `state` entry passed alone is frozen at the value given and
+the grid warns once. For a starting value, use `initialState`.
+
+```tsx
+const [columnVisibility, setColumnVisibility] = useState({ play: false });
+
+const grid = useTMDataGrid({
+  data,
+  columns,
+  state: { columnVisibility },
+  onColumnVisibilityChange: setColumnVisibility,
+});
+```
+
+The object may be built inline: the grid reuses the previous render's value for
+a slice that has not changed, so the identity churn does not loop. `atoms` is
+TanStack's other route and needs no callback; it outranks `state`. A controlled
+`columnVisibility` cannot hide the generated lanes, and the tree column's entry
+is the grid's own - it tracks `grouping`, and is written into an atom that owns
+the slice as well. `persist` restores through `initialState`, so it cannot
+restore a slice you control.
 
 ## meta
 

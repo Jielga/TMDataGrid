@@ -12,9 +12,9 @@ Spread the result onto `TMDataGrid`.
 ## Options
 
 All TanStack `TableOptions` are supported and passed through unchanged,
-including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
-`manual*` flags and `rowCount`. The `features` option is supplied internally and
-cannot be overridden.
+including `data`, `columns`, `getRowId`, `state` and the `onXChange` callbacks
+(see [Controlled state](#controlled-state)), the `manual*` flags and `rowCount`.
+The `features` option is supplied internally and cannot be overridden.
 
 `persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode`,
 `showSelectedBackground`, `defaultHighlightedRowId`, `onHighlightedRowChange`,
@@ -50,7 +50,9 @@ rather than forwarded to TanStack.
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
-| `initialState` | `Partial<TableState>` | – | Merged over the [grid defaults](#default-initial-state). |
+| `initialState` | `Partial<TableState>` | – | The state the grid starts from, read once on mount. Merged over the [grid defaults](#default-initial-state). |
+| `state` | `Partial<TableState>` | – | State you hold yourself. Needs the matching `onXChange`, see [Controlled state](#controlled-state). |
+| `atoms` | `Partial<Record<slice, Atom>>` | – | TanStack's other way of owning a slice: an atom the table writes through. Outranks `state`. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
 | `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
@@ -62,6 +64,47 @@ rather than forwarded to TanStack.
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }`. Inert until pagination is enabled |
 | `columnPinning.left` | The checkbox, tree and details columns, followed by any columns you provide |
 | `globalFilterFn` | `"tmDataGridFuzzy"`, the fuzzy matcher behind `quickSearchMode`. `"includesString"` under `quickSearchMode: "contains"` |
+
+### Controlled state
+
+`initialState` seeds a slice and hands it to the grid. `state` is the other
+half of the pair: the slice stays yours, and the grid reads it back on every
+render.
+
+A controlled slice needs the callback that writes to it. TanStack routes every
+write through `onXChange`, so a `state` entry passed on its own is frozen at the
+value you gave it: the column menu, the filter panel and the pager all still act,
+and the next render puts the old value back. The grid says so once, in the
+console. Where you only want a starting value, `initialState` is the option.
+
+```tsx
+const [columnVisibility, setColumnVisibility] = useState({ play: false });
+
+const grid = useTMDataGrid({
+  data,
+  columns,
+  state: { columnVisibility },
+  onColumnVisibilityChange: setColumnVisibility,
+});
+```
+
+The slices are `columnFilters`, `columnOrder`, `columnPinning`, `columnResizing`,
+`columnSizing`, `columnVisibility`, `expanded`, `globalFilter`, `grouping`,
+`pagination`, `rowPinning`, `rowSelection` and `sorting`, each with its
+`onXChange`. `atoms` is TanStack's other route: an atom per slice, written
+through directly and needing no callback. A slice named in both is owned by the
+atom.
+
+Two things about a controlled `columnVisibility` in particular. The generated
+lanes are not yours to hide, so entries naming them are dropped, and the tree
+column's entry is the grid's own: it tracks `grouping`, and is re-applied after
+whatever your map says. An atom owning the slice gets the same entry written
+into it at mount, since `initialState` never reaches a slice the table does not
+hold.
+
+[persist](#persist) restores through `initialState`, which a controlled slice
+overrides, so it cannot bring one back. It keeps writing the value on the way
+out; reading it at mount and passing it in is yours to do.
 
 ## meta
 

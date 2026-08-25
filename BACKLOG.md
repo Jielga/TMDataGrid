@@ -14,9 +14,10 @@ starts without the stakeholder's go.
   message and a docs link, and `acknowledgeUx?: ReadonlyArray<string>`
   silences one by key, keys being permanent once published. Opinions only - a
   misconfiguration such as `editMode` without `getRowId` stays a hard error.
-  Folds in the existing `onReachEnd`-with-pagination warning; the first new
-  rules are `detailsTrigger: "rowClick"` against a selection mode where a row
-  click already acts, and unstable `data` identity, which the v9 beta's
+  Folds in the existing `onReachEnd`-with-pagination warning and the
+  frozen-controlled-slice one added for #39; the first new rules are
+  `detailsTrigger: "rowClick"` against a selection mode where a row click
+  already acts, and unstable `data` identity, which the v9 beta's
   `autoResetExpanded` turns into a render loop.
 - H4 - details ergonomics (`detailsTrigger`, `detailsMode`). Wants H3 shipped
   first for its rule.
@@ -35,6 +36,17 @@ past 1.0.0 on 2026-08-01.
   needs hands-on play before speccing.
 
 ## Done
+
+**Controlled `state` passthrough** - **done 2026-08-25**.
+Closes [#39](https://github.com/Jielga/TMDataGrid/issues/39). TanStack re-reads
+`options.state` on every render and compares each slice by identity, so a
+`state` object written in the consumer's render body published a new value every
+time and the publish re-rendered the consumer: an inline
+`state: { columnVisibility: { play: false } }` hung the page, with or without
+this grid. The grid now hands the table back the previous render's value for a
+slice that says the same thing, warns once about a controlled slice with no
+`onXChange` behind it, and keeps the generated lanes and the tree column's entry
+out of a controlled `columnVisibility`.
 
 **Draft store and the commit/save split (2.0)** - **done 2026-08-25**, breaking.
 Closes [#35](https://github.com/Jielga/TMDataGrid/issues/35). Draft mode now

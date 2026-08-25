@@ -93,6 +93,10 @@ import {
   isSameCell,
   type TMDataGridCellPosition,
 } from "./core/cellNavigation";
+import {
+  findFrozenStateSlices,
+  stabilizeControlledState,
+} from "./core/controlledState";
 import type { TMDataGridCellRange } from "./core/cellRange";
 import {
   createSelectColumn,
@@ -1019,6 +1023,45 @@ export function useTMDataGrid<TData extends RowData>({
   const initialGrouping =
     persistedState.grouping ?? options.initialState?.grouping ?? [];
 
+  // Whether anything is grouped right now, for the tree lane's visibility under
+  // a controlled `columnVisibility` - see below. A ref rather than state: it is
+  // only read while building the options, and the store change that moves it
+  // has already re-rendered the hook by then.
+  const groupingActiveRef = useRef(initialGrouping.length > 0);
+
+  // A controlled `columnVisibility` replaces the whole map every time TanStack
+  // syncs the options, the grid's own entries included, so the tree lane has to
+  // be re-applied here or it vanishes on the next render. The control lanes are
+  // scrubbed for the reason `initialState`'s are: they are not the consumer's
+  // to hide.
+  const controlledColumnVisibility = options.state?.columnVisibility;
+  const requestedState =
+    options.state !== undefined && controlledColumnVisibility !== undefined
+      ? {
+          ...options.state,
+          columnVisibility: {
+            ...withoutControlColumnVisibility(controlledColumnVisibility),
+            ...(groupColumnEnabled
+              ? { [GROUP_COLUMN_ID]: groupingActiveRef.current }
+              : {}),
+          },
+        }
+      : options.state;
+
+  // Controlled state is re-published to the table on every render and compared
+  // by identity, so a `state` object built in the consumer's render body would
+  // loop: the write re-renders the consumer, the consumer builds another
+  // object. Reusing last render's identity for a slice that says the same thing
+  // is what keeps that from happening - see controlledState.ts.
+  const controlledStateRef = useRef<Partial<TableState<TMDataGridFeatures>>>(
+    undefined,
+  );
+  const controlledState = stabilizeControlledState(
+    requestedState,
+    controlledStateRef.current,
+  );
+  controlledStateRef.current = controlledState;
+
   const table = useTable({
     columnResizeMode: "onChange",
     enableSorting: true,
@@ -1057,6 +1100,9 @@ export function useTMDataGrid<TData extends RowData>({
         : options.enableRowPinning === true),
     features: tmDataGridFeatures,
     columns: columns as TableOptions<TMDataGridFeatures, TData>["columns"],
+    // Passed through, stabilized. `undefined` when the consumer controls
+    // nothing, which is the same thing `...options` spread a moment ago.
+    state: controlledState,
     initialState: {
       ...options.initialState,
       ...persistedState,
@@ -1164,6 +1210,20 @@ export function useTMDataGrid<TData extends RowData>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A controlled slice with no callback behind it is frozen: TanStack sends
+  // every write to the `onXChange` option, and the next options sync puts the
+  // consumer's value back. The menu item is there, the click does nothing.
+  // Nearly always `initialState` was what was wanted.
+  useEffect(() => {
+    for (const { slice, handler } of findFrozenStateSlices(options)) {
+      console.warn(
+        `TMDataGrid: state.${slice} is controlled but no ${handler} was passed, so nothing in the grid can change it. Use initialState.${slice} to start from a value, or add ${handler} to hold it yourself.`,
+      );
+    }
+    // A mount-time contract, like the check above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Two things have to happen whenever `grouping` changes.
   //
   // One: the tree column appears with the first grouped column and goes away
@@ -1204,9 +1264,28 @@ export function useTMDataGrid<TData extends RowData>({
     if (!groupColumnEnabled) return;
     let previousGrouping = table.store.state.grouping;
 
+    // The lane's entry is written into `initialState` at mount, which only
+    // reaches a slice the table owns: a consumer holding `columnVisibility` in
+    // an external atom starts without it, and a missing entry means visible -
+    // an empty tree lane in a grid with nothing grouped. Seeded here instead,
+    // where the write goes wherever the slice actually lives. A no-op in every
+    // other configuration, where the entry is already what it should be.
+    if (
+      table.store.state.columnVisibility[GROUP_COLUMN_ID] !==
+      (previousGrouping.length > 0)
+    ) {
+      table.setColumnVisibility((old) => ({
+        ...old,
+        [GROUP_COLUMN_ID]: previousGrouping.length > 0,
+      }));
+    }
+
     const subscription = table.store.subscribe((state) => {
       if (state.grouping === previousGrouping) return;
       previousGrouping = state.grouping;
+      // Read back while the options are built, which is the only place a
+      // controlled `columnVisibility` leaves for the lane's own entry.
+      groupingActiveRef.current = state.grouping.length > 0;
 
       table.setColumnVisibility((old) => ({
         ...old,
