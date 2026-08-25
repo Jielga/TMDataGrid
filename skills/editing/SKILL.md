@@ -11,13 +11,14 @@ description: >
   Schema and Zod), adding and deleting rows with edit.addRow,
   editing.newRowDefaults, editing.onRowAdd and editing.onRowDelete, the
   generated edit lane, TMDataGrid.EditActions with its renderActions slot, and
-  the public edit engine (begin, commit, commitAll, saveDrafts, addRows, getForm, store).
-  Load when making a grid editable, choosing an edit mode, wiring a save,
-  writing a cell editor, validating an edit, or when cells will not open.
+  the public edit engine (begin, commit, commitAll, saveDrafts, addRows,
+  getForm, store). Load when making a grid editable, choosing an edit mode,
+  wiring a save, writing a cell editor, validating an edit, or when cells will
+  not open.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.2'
+  library_version: '2.0.0-beta.3'
 sources:
   - 'Jielga/TMDataGrid:src/docs/editing.md'
   - 'Jielga/TMDataGrid:src/docs/query-builder.md'
