@@ -210,7 +210,9 @@ Detail for all three: [references/editors-and-validation.md](references/editors-
 ## Adding and deleting rows
 
 `edit.addRow()` opens an entry row in a sticky block under the header, seeded
-from `editing.newRowDefaults`. Enter, or the lane's ✓, commits the add through
+from `editing.newRowDefaults`. `edit.addRow(values)` overrides that seed key by
+key, so `addRow()` opens the `newRowDefaults` row and `addRow(values)` opens it
+with those fields filled in - pass a whole row to duplicate it. Enter, or the lane's ✓, commits the add through
 `editing.onRowAdd` under the immediate modes; under draft mode it enters the
 row, which is validated, held with the other drafts, and reported in
 `submitAll`'s `added`. Escape, or ✕, discards the entry.
@@ -239,6 +241,9 @@ const grid = useTMDataGrid({
 
 <TMDataGrid.Toolbar>
   <Button onClick={() => grid.edit.addRow()}>Add row</Button>
+  <Button onClick={() => grid.edit.addRow({ salary: 50_000 })}>
+    Add senior
+  </Button>
   <TMDataGrid.Spacer />
   <TMDataGrid.EditActions />
 </TMDataGrid.Toolbar>;

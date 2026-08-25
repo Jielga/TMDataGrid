@@ -311,7 +311,10 @@ export type TMDataGridEditEngineContext = {
   onEditCommitDrafts?: (
     args: TMDataGridEditCommitDraftsArgs<TMDataGridRowData>,
   ) => void | Promise<void>;
-  /** Seed values for `addRow`. A function is called per added row. */
+  /**
+   * Seed values for `addRow`, under the values it is called with. A function
+   * is called per added row.
+   */
   newRowDefaults?: TMDataGridRowData | (() => TMDataGridRowData);
   onRowAdd?: (
     args: TMDataGridRowAddArgs<TMDataGridRowData>,
@@ -363,7 +366,9 @@ export function clearedValueForType(type: TMDataGridColumnType): unknown {
  * editors write through, so a consumer can render it in a drawer or a detail
  * panel and share values, dirty state and errors with the cells.
  */
-export type TMDataGridEditApi = {
+export type TMDataGridEditApi<
+  TData extends RowData = TMDataGridRowData,
+> = {
   /** The projection store - subscribe with `useSelector(edit.store, …)`. */
   store: Store<TMDataGridEditState>;
   /** Current snapshot, for reads outside React. */
@@ -404,11 +409,13 @@ export type TMDataGridEditApi = {
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
   /**
    * Opens a new entry row (the sticky block under the header) seeded from
-   * `newRowDefaults`. Returns its temporary id - a form with no backing row
-   * yet. Committing it calls `onRowAdd` (immediate modes) or joins
+   * `newRowDefaults`. `values` overrides that seed key by key, so
+   * `addRow()` opens a blank row and `addRow({ status: "draft" })` opens one
+   * that starts filled in. Returns its temporary id - a form with no backing
+   * row yet. Committing it calls `onRowAdd` (immediate modes) or joins
    * `submitAll`'s `added` (draft).
    */
-  addRow: () => string;
+  addRow: (values?: Partial<TData>) => string;
   /**
    * Deletes a row: `onRowDelete` straight away under the immediate modes;
    * under draft it toggles the id in `deletedRowIds` - the row renders
@@ -815,7 +822,7 @@ export function createEditEngine(
     store.setState((prev) => ({ ...prev, active: null, deletedRowIds: [] }));
   };
 
-  const addRow = (): string => {
+  const addRow = (values?: TMDataGridRowData): string => {
     const context = getContext();
     newRowCounter += 1;
     const tempId = `__new__${newRowCounter}`;
@@ -823,7 +830,9 @@ export function createEditEngine(
       typeof context.newRowDefaults === "function"
         ? context.newRowDefaults()
         : (context.newRowDefaults ?? {});
-    createForm(tempId, defaults, true);
+    // The argument wins over the defaults key by key, so a caller can seed
+    // one field and leave the rest of `newRowDefaults` standing.
+    createForm(tempId, { ...defaults, ...values }, true);
     store.setState((prev) => ({
       ...prev,
       newRows: [...prev.newRows, { tempId, confirmed: false }],

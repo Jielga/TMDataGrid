@@ -956,6 +956,57 @@ describe("cell editing", () => {
     expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
   });
 
+  it("seeds the entry row's editors from addRow's argument", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    function EntryGrid() {
+      const grid = useTMDataGrid<Employee>({
+        data: editRows,
+        columns: editColumns,
+        getRowId: (row) => String(row.id),
+        editing: {
+          mode: "cell",
+          onRowAdd: (args) => void adds.push(args),
+          onRowDelete: () => {},
+          newRowDefaults: () => ({ id: 0, name: "Ny", age: 20, note: "" }),
+        },
+        selectionMode: "highlight",
+      } as UseTMDataGridOptions<Employee>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Toolbar>
+            <button
+              type="button"
+              onClick={() => grid.edit.addRow({ name: "Kopia", age: 44 })}
+            >
+              add
+            </button>
+          </TMDataGrid.Toolbar>
+          <TMDataGrid.Table<Employee> />
+        </TMDataGrid>
+      );
+    }
+    renderWithMantine(<EntryGrid />);
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    // The editors open on the argument, not on newRowDefaults' "Ny".
+    expect(
+      within(entryRow).getByRole("textbox", { name: "Edit Name" }),
+    ).toHaveValue("Kopia");
+    expect(
+      within(entryRow).getByRole("textbox", { name: "Edit Age" }),
+    ).toHaveValue("44");
+
+    await user.click(within(entryRow).getByRole("button", { name: "Add row" }));
+
+    await waitFor(() => expect(adds.length).toBe(1));
+    // What the argument left out still comes from newRowDefaults.
+    expect(adds[0]).toMatchObject({
+      value: { name: "Kopia", age: 44, note: "" },
+    });
+  });
+
   it("clears the cell on Delete and commits the empty value", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

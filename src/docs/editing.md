@@ -183,6 +183,21 @@ useTMDataGrid({
 <Button onClick={() => grid.edit.addRow()}>Add row</Button>;
 ```
 
+`addRow` takes the values the row starts from. They override `newRowDefaults`
+key by key, so `addRow()` opens the `newRowDefaults` row and
+`addRow({ department: "Sales" })` opens that row with `department` filled in.
+Passing a whole row duplicates it. The entry row is an ordinary form either way:
+the seeded values are editable, validate like any other, and nothing reaches
+`onRowAdd` until the row is entered.
+
+```tsx
+<Button onClick={() => grid.edit.addRow({ department: "Sales", active: true })}>
+  Add to Sales
+</Button>;
+
+<Button onClick={() => grid.edit.addRow(selected.original)}>Duplicate</Button>;
+```
+
 To limit how many entry rows are open at once, read the entry state off
 `edit.store` and gate the button:
 
@@ -216,7 +231,7 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.commit(rowId)`                      | Commits. Resolves `false` if blocked. Under `"draft"`, validates and holds the draft                |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts                                                                                        |
 | `edit.submitAll()`                        | Commits every pending change - draft mode's Save all                                                |
-| `edit.addRow()` / `edit.deleteRow(rowId)` | Adds or removes a row                                                                               |
+| `edit.addRow(values?)` / `edit.deleteRow(rowId)` | Opens an entry row, seeded over `newRowDefaults`, or removes a row                            |
 | `edit.getForm(rowId)`                     | The row's live `FormApi`                                                                            |
 | `edit.store`                              | Open rows, active cell, dirty and error projections, draft values, entry rows, deletion marks       |
 

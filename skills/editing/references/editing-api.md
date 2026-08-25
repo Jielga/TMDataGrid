@@ -56,7 +56,7 @@ path, which may be dotted.
 | `deactivate` | `() => void` | Closes the editor without touching the draft, as blur does under `"cellConfirm"`. |
 | `submitAll` | `() => Promise<boolean>` | Draft mode's Save all. `true` when every row landed. |
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
-| `addRow` | `() => string` | Opens an entry row, returns its `tempId`. |
+| `addRow` | `(values?) => string` | Opens an entry row, returns its `tempId`. `values` overrides `editing.newRowDefaults` key by key for that row; with no argument the row is `newRowDefaults` alone. |
 | `deleteRow` | `(rowId) => void` | `editing.onRowDelete` under the immediate modes, a deletion mark under draft mode. Toggles: a second call restores the row. |
 | `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |

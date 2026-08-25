@@ -470,6 +470,50 @@ describe("edit engine", () => {
     expect(edit.state.openRowIds).toEqual([]);
   });
 
+  it("addRow(values) seeds the entry row over newRowDefaults", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({
+      onRowAdd,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "",
+        age: 18,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+
+    const tempId = edit.addRow({ name: "Ny Person", age: 42 });
+
+    // The argument wins per key; what it leaves out keeps the default.
+    const values = edit.getForm(tempId)?.state.values;
+    expect(values?.["name"]).toBe("Ny Person");
+    expect(values?.["age"]).toBe(42);
+    expect(values?.["address"]).toEqual({ city: "Lund" });
+
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    const args = onRowAdd.mock.calls[0]?.[0] as { value: Person };
+    expect(args.value.name).toBe("Ny Person");
+    expect(args.value.age).toBe(42);
+  });
+
+  it("addRow(values) works with no newRowDefaults and leaves the next row blank", () => {
+    const grid = renderEditGrid({ onRowAdd: vi.fn() });
+    const { edit } = grid.current;
+
+    const seeded = edit.addRow({ name: "Seedad" });
+    expect(edit.getForm(seeded)?.state.values["name"]).toBe("Seedad");
+
+    // Per call, not a lasting default.
+    const blank = edit.addRow();
+    expect(edit.getForm(blank)?.state.values["name"]).toBeUndefined();
+    expect(edit.state.newRows).toEqual([
+      { tempId: seeded, confirmed: false },
+      { tempId: blank, confirmed: false },
+    ]);
+  });
+
   it("draft mode confirms an entry row instead of adding it, and re-opens it", async () => {
     const onRowAdd = vi.fn();
     const grid = renderEditGrid({

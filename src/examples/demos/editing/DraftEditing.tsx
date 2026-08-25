@@ -117,6 +117,18 @@ export function DraftEditing() {
         >
           Add row
         </Button>
+        {/* The same entry row, seeded: the argument overrides
+            `newRowDefaults` field by field. */}
+        <Button
+          size="compact-xs"
+          variant="light"
+          disabled={hasOpenEntry}
+          onClick={() =>
+            grid.edit.addRow({ department: "Sales", salary: 45_000 })
+          }
+        >
+          Add to Sales
+        </Button>
         {/* Save and Discard for every pending draft, disabled while nothing
             is pending and while anything is invalid. */}
         <TMDataGrid.EditActions />

@@ -390,7 +390,7 @@ export type TMDataGridApi<TData extends RowData> = {
    * out the same TanStack Form the inline editors write through, so a drawer
    * or detail panel can share a row's draft. Inert until `editing` is set.
    */
-  edit: TMDataGridEditApi;
+  edit: TMDataGridEditApi<TData>;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
@@ -471,6 +471,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
   /**
    * Seed values for `edit.addRow()` - the entry row's starting point. A
    * function is called per added row (fresh timestamps, empty arrays).
+   * `edit.addRow(values)` overrides this key by key for that one row.
    */
   newRowDefaults?: TData | (() => TData);
   /**
@@ -1117,8 +1118,13 @@ export function useTMDataGrid<TData extends RowData>({
     onRowDelete:
       editing?.onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
   };
-  const [edit] = useState(() =>
-    createEditEngine(() => editContextRef.current),
+  // The engine is erased; the row type comes back on the way out, which is
+  // what makes `edit.addRow(values)` check against `TData`.
+  const [edit] = useState(
+    () =>
+      createEditEngine(
+        () => editContextRef.current,
+      ) as unknown as TMDataGridEditApi<TData>,
   );
 
   // Switching modes mid-flight drops every draft: the policies disagree about
