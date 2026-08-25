@@ -2,7 +2,12 @@ import { act, render } from "@testing-library/react";
 import { useState } from "react";
 import { useCreateAtom } from "@tanstack/react-store";
 import { describe, expect, it, vi } from "vitest";
-import type { ColumnVisibilityState } from "@tanstack/react-table";
+import type {
+  ColumnFiltersState,
+  ColumnOrderState,
+  ColumnVisibilityState,
+  GroupingState,
+} from "@tanstack/react-table";
 import {
   MantineWrapper,
   renderedHeaderIds,
@@ -17,6 +22,7 @@ import {
   findFrozenStateSlices,
   sameStateValue,
   stabilizeControlledState,
+  withoutUndefinedSlices,
 } from "./controlledState";
 
 describe("sameStateValue", () => {
@@ -46,10 +52,36 @@ describe("sameStateValue", () => {
     expect(sameStateValue(["a"], ["a", "b"])).toBe(false);
   });
 
-  it("compares anything that is not data by identity", () => {
-    const date = new Date(0);
-    expect(sameStateValue(date, date)).toBe(true);
-    expect(sameStateValue(date, new Date(0))).toBe(false);
+  it("compares Dates by time - the grid's date filters hold them", () => {
+    expect(sameStateValue(new Date(0), new Date(0))).toBe(true);
+    expect(sameStateValue(new Date(0), new Date(1))).toBe(false);
+    expect(sameStateValue(new Date(0), 0)).toBe(false);
+    expect(
+      sameStateValue(
+        [{ id: "hired", value: { operator: "after", value: new Date(0) } }],
+        [{ id: "hired", value: { operator: "after", value: new Date(0) } }],
+      ),
+    ).toBe(true);
+  });
+
+  it("compares class instances by identity", () => {
+    const map = new Map([["a", 1]]);
+    expect(sameStateValue(map, map)).toBe(true);
+    expect(sameStateValue(map, new Map([["a", 1]]))).toBe(false);
+  });
+});
+
+describe("withoutUndefinedSlices", () => {
+  it("drops keys whose value is undefined", () => {
+    expect(
+      withoutUndefinedSlices({ columnVisibility: undefined, sorting: [] }),
+    ).toEqual({ sorting: [] });
+  });
+
+  it("keeps identity when there is nothing to drop", () => {
+    const state = { sorting: [] };
+    expect(withoutUndefinedSlices(state)).toBe(state);
+    expect(withoutUndefinedSlices(undefined)).toBeUndefined();
   });
 });
 
@@ -127,6 +159,10 @@ describe("findFrozenStateSlices", () => {
 
   it("is quiet with nothing controlled", () => {
     expect(findFrozenStateSlices({})).toEqual([]);
+    // A key set to undefined is scrubbed before the table sees it.
+    expect(
+      findFrozenStateSlices({ state: { columnVisibility: undefined } }),
+    ).toEqual([]);
   });
 });
 
@@ -310,6 +346,135 @@ describe("controlled state on the grid", () => {
 
     act(() => api!.table.setGrouping(["age"]));
     expect(renderedHeaderIds()).toContain("__group__");
+  });
+
+  it("does not loop when grouping and visibility are both controlled at mount", () => {
+    // #39's loop, second form: the ref feeding the tree lane's injected entry
+    // started from initialState only, so a controlled grouping active at mount
+    // had the seed write and the injection undoing each other forever.
+    let renders = 0;
+    let api: TMDataGridApi<TestRow> | null = null;
+
+    function Controlled() {
+      renders += 1;
+      if (renders > 25) throw new Error(`render loop at ${renders}`);
+      const [grouping, setGrouping] = useState<GroupingState>(["age"]);
+      const [columnVisibility, setColumnVisibility] =
+        useState<ColumnVisibilityState>({ city: false });
+      const grid = useTMDataGrid<TestRow>({
+        data: testRows,
+        columns: testColumns,
+        getRowId: (row: TestRow) => String(row.id),
+        state: { grouping, columnVisibility },
+        onGroupingChange: setGrouping,
+        onColumnVisibilityChange: setColumnVisibility,
+      } as never);
+      api = grid;
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+
+    render(<Controlled />, { wrapper: MantineWrapper });
+    expect(renderedHeaderIds()).toContain("__group__");
+
+    // Any later change re-syncs the options; the loop only opened then.
+    act(() => api!.table.setSorting([{ id: "name", desc: true }]));
+    expect(renders).toBeLessThan(25);
+    expect(renderedHeaderIds()).toContain("__group__");
+  });
+
+  it("removes the second grouped column with order and visibility controlled", () => {
+    // The grouping workaround republishes columnOrder and columnVisibility
+    // with the same contents to repair table-core's missing memo deps.
+    // Stabilization must not cancel those writes when the slices round-trip
+    // through the consumer's handlers.
+    let api: TMDataGridApi<TestRow> | null = null;
+
+    function Controlled() {
+      const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
+      const [columnVisibility, setColumnVisibility] =
+        useState<ColumnVisibilityState>({});
+      const grid = useTMDataGrid<TestRow>({
+        data: testRows,
+        columns: testColumns,
+        getRowId: (row: TestRow) => String(row.id),
+        state: { columnOrder, columnVisibility },
+        onColumnOrderChange: setColumnOrder,
+        onColumnVisibilityChange: setColumnVisibility,
+      } as never);
+      api = grid;
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+
+    render(<Controlled />, { wrapper: MantineWrapper });
+
+    act(() => api!.table.setGrouping(["age"]));
+    expect(renderedHeaderIds()).not.toContain("age");
+
+    act(() => api!.table.setGrouping(["age", "city"]));
+    expect(renderedHeaderIds()).not.toContain("city");
+  });
+
+  it("does not loop on a Date built inline in a controlled filter value", () => {
+    let renders = 0;
+    let api: TMDataGridApi<TestRow> | null = null;
+
+    function Controlled() {
+      renders += 1;
+      if (renders > 25) throw new Error(`render loop at ${renders}`);
+      const [, setColumnFilters] = useState<ColumnFiltersState>([]);
+      const grid = useTMDataGrid<TestRow>({
+        data: testRows,
+        columns: testColumns,
+        getRowId: (row: TestRow) => String(row.id),
+        // Built inline on purpose: a fresh Date every render must compare by
+        // time, not identity. Manual filtering keeps the client filter fn out
+        // of it - the harness has no date column, and the loop under test is
+        // in the options sync, not the filter.
+        manualFiltering: true,
+        state: {
+          columnFilters: [
+            { id: "name", value: { operator: "after", value: new Date(0) } },
+          ],
+        },
+        onColumnFiltersChange: setColumnFilters,
+      } as never);
+      api = grid;
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<TestRow> />
+        </TMDataGrid>
+      );
+    }
+
+    render(<Controlled />, { wrapper: MantineWrapper });
+    act(() => api!.table.setSorting([{ id: "name", desc: true }]));
+    expect(renders).toBeLessThan(25);
+  });
+
+  it("mounts with an undefined-valued state key - conditionally controlled", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    render(
+      <ControlledGrid
+        onRender={() => {}}
+        columnVisibility={undefined as never}
+      />,
+      { wrapper: MantineWrapper },
+    );
+
+    // The slice fell back to the table's own state; nothing froze, nothing
+    // crashed, and no warning fired for it.
+    expect(renderedHeaderIds()).toContain("city");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it("keeps the control lanes out of a controlled visibility map", () => {

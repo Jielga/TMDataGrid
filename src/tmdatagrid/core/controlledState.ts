@@ -26,9 +26,9 @@ type GridState = TableState<TMDataGridFeatures>;
  */
 
 /**
- * The `onXChange` option that owns each controlled slice. `globalFilterFn` is
- * left out: it is configuration living in the state bag, not something the grid
- * writes.
+ * The `onXChange` option that owns each controlled slice - every slice v9
+ * defines. `globalFilterFn` is not among them: in this beta it is a table
+ * option, not state.
  */
 export const CONTROLLED_SLICE_HANDLERS = {
   columnFilters: "onColumnFiltersChange",
@@ -80,13 +80,21 @@ function isDataObject(value: unknown): value is Record<string, unknown> {
 /**
  * Whether two state values say the same thing.
  *
- * Structural, because the whole point is to see past the identity a fresh
- * object literal has. Dates, `Map`s and class instances are compared by
- * identity - they are not what state slices are made of, and guessing at their
- * contents would be worse than the extra render.
+ * Structural, to see past the identity a fresh object literal has. `Date`s
+ * compare by time, because the grid's own date filters hold them and a filter
+ * value rebuilt each render must not read as a change. `Map`s and class
+ * instances compare by identity: their contents are not knowable here, and a
+ * controlled slice holding one built inline stays unstable - which TanStack
+ * turns into the render loop this module exists to stop. Filter values should
+ * be primitives, plain objects, arrays or `Date`s.
  */
 export function sameStateValue(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
+  if (a instanceof Date || b instanceof Date) {
+    return (
+      a instanceof Date && b instanceof Date && a.getTime() === b.getTime()
+    );
+  }
   if (Array.isArray(a) || Array.isArray(b)) {
     if (!Array.isArray(a) || !Array.isArray(b)) return false;
     return (
@@ -98,6 +106,29 @@ export function sameStateValue(a: unknown, b: unknown): boolean {
   const keys = Object.keys(a);
   if (keys.length !== Object.keys(b).length) return false;
   return keys.every((key) => hasOwn(b, key) && sameStateValue(a[key], b[key]));
+}
+
+/**
+ * Drops entries whose value is `undefined` - the conditionally-controlled
+ * shape, `state: { sorting: cond ? sorting : undefined }`.
+ *
+ * TanStack's sync iterates the keys of `state` and writes each value into the
+ * slice's atom, `undefined` included, which leaves `getState().sorting` broken
+ * for everything that reads it. A key set to `undefined` means "not controlled
+ * right now", so it is removed before the table sees it and the slice falls
+ * back to the table's own state. Identity is kept when there is nothing to
+ * drop - the stabilizer downstream compares by it.
+ */
+export function withoutUndefinedSlices(
+  state: Partial<GridState> | undefined,
+): Partial<GridState> | undefined {
+  if (state === undefined) return state;
+  if (!Object.values(state).includes(undefined)) return state;
+  const compacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(state)) {
+    if (value !== undefined) compacted[key] = value;
+  }
+  return compacted as Partial<GridState>;
 }
 
 /**
@@ -157,7 +188,9 @@ export function findFrozenStateSlices(
   )
     .filter(
       ([slice, handler]) =>
-        hasOwn(state, slice) &&
+        // An undefined-valued key is scrubbed before the table sees it - the
+        // slice is not controlled, so there is nothing to freeze.
+        (state as Record<string, unknown>)[slice] !== undefined &&
         (options as Record<string, unknown>)[handler] === undefined &&
         options.atoms?.[slice] === undefined,
     )

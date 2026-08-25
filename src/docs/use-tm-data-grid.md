@@ -91,9 +91,16 @@ const grid = useTMDataGrid({
 The slices are `columnFilters`, `columnOrder`, `columnPinning`, `columnResizing`,
 `columnSizing`, `columnVisibility`, `expanded`, `globalFilter`, `grouping`,
 `pagination`, `rowPinning`, `rowSelection` and `sorting`, each with its
-`onXChange`. `atoms` is TanStack's other route: an atom per slice, written
+`onXChange`. A key set to `undefined` is not controlled - the slice falls back
+to the grid's own state, so `sorting: serverDriven ? sorting : undefined` reads
+as it looks. `atoms` is TanStack's other route: an atom per slice, written
 through directly and needing no callback. A slice named in both is owned by the
 atom.
+
+The grid compares a controlled slice structurally between renders, so the
+object may be built inline. `Date`s compare by time; a `Map` or class instance
+compares by identity, so hold a slice containing one in `useState` or `useMemo`
+rather than building it in the render body.
 
 Two things about a controlled `columnVisibility` in particular. The generated
 lanes are not yours to hide, so entries naming them are dropped, and the tree

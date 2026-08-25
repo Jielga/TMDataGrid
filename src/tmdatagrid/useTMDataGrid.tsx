@@ -96,6 +96,7 @@ import {
 import {
   findFrozenStateSlices,
   stabilizeControlledState,
+  withoutUndefinedSlices,
 } from "./core/controlledState";
 import type { TMDataGridCellRange } from "./core/cellRange";
 import {
@@ -1026,19 +1027,29 @@ export function useTMDataGrid<TData extends RowData>({
   // Whether anything is grouped right now, for the tree lane's visibility under
   // a controlled `columnVisibility` - see below. A ref rather than state: it is
   // only read while building the options, and the store change that moves it
-  // has already re-rendered the hook by then.
-  const groupingActiveRef = useRef(initialGrouping.length > 0);
+  // has already re-rendered the hook by then. A controlled `grouping` outranks
+  // the persisted one, so it is read here too; grouping held in an external
+  // atom is unreadable at this point and is caught by the effect below, at the
+  // cost of one corrective write on mount.
+  const groupingActiveRef = useRef(
+    (options.state?.grouping ?? initialGrouping).length > 0,
+  );
+
+  // `state: { sorting: cond ? sorting : undefined }` - the key exists, so
+  // TanStack would write `undefined` into the slice's atom. Scrubbed first;
+  // an undefined-valued key means the slice is not controlled.
+  const consumerState = withoutUndefinedSlices(options.state);
 
   // A controlled `columnVisibility` replaces the whole map every time TanStack
   // syncs the options, the grid's own entries included, so the tree lane has to
   // be re-applied here or it vanishes on the next render. The control lanes are
   // scrubbed for the reason `initialState`'s are: they are not the consumer's
   // to hide.
-  const controlledColumnVisibility = options.state?.columnVisibility;
+  const controlledColumnVisibility = consumerState?.columnVisibility;
   const requestedState =
-    options.state !== undefined && controlledColumnVisibility !== undefined
+    consumerState !== undefined && controlledColumnVisibility !== undefined
       ? {
-          ...options.state,
+          ...consumerState,
           columnVisibility: {
             ...withoutControlColumnVisibility(controlledColumnVisibility),
             ...(groupColumnEnabled
@@ -1046,7 +1057,7 @@ export function useTMDataGrid<TData extends RowData>({
               : {}),
           },
         }
-      : options.state;
+      : consumerState;
 
   // Controlled state is re-published to the table on every render and compared
   // by identity, so a `state` object built in the consumer's render body would
@@ -1056,10 +1067,16 @@ export function useTMDataGrid<TData extends RowData>({
   const controlledStateRef = useRef<Partial<TableState<TMDataGridFeatures>>>(
     undefined,
   );
-  const controlledState = stabilizeControlledState(
-    requestedState,
-    controlledStateRef.current,
-  );
+  // The one exception: the grouping workaround below repairs table-core's
+  // missing memo deps by republishing slices with the same contents and a new
+  // identity, which is exactly the write stabilization cancels. When it has
+  // just run, this render hands the controlled state through untouched - once,
+  // so the fresh identities reach the atoms; a single render cannot loop.
+  const republishControlledStateRef = useRef(false);
+  const controlledState = republishControlledStateRef.current
+    ? requestedState
+    : stabilizeControlledState(requestedState, controlledStateRef.current);
+  republishControlledStateRef.current = false;
   controlledStateRef.current = controlledState;
 
   const table = useTable({
@@ -1263,6 +1280,12 @@ export function useTMDataGrid<TData extends RowData>({
   useEffect(() => {
     if (!groupColumnEnabled) return;
     let previousGrouping = table.store.state.grouping;
+    // The ref first, before any write: it feeds the visibility injection
+    // above, a write below re-renders the hook, and a stale ref would put the
+    // old value straight back - the injection and the seed then undo each
+    // other every render. Also what corrects the mount value when an external
+    // atom owns `grouping`, which the ref's initializer cannot read.
+    groupingActiveRef.current = previousGrouping.length > 0;
 
     // The lane's entry is written into `initialState` at mount, which only
     // reaches a slice the table owns: a consumer holding `columnVisibility` in
@@ -1270,8 +1293,10 @@ export function useTMDataGrid<TData extends RowData>({
     // an empty tree lane in a grid with nothing grouped. Seeded here instead,
     // where the write goes wherever the slice actually lives. A no-op in every
     // other configuration, where the entry is already what it should be.
+    // `?.` because an external atom can hold `undefined`; the seed write
+    // repairs that too.
     if (
-      table.store.state.columnVisibility[GROUP_COLUMN_ID] !==
+      table.store.state.columnVisibility?.[GROUP_COLUMN_ID] !==
       (previousGrouping.length > 0)
     ) {
       table.setColumnVisibility((old) => ({
@@ -1286,6 +1311,10 @@ export function useTMDataGrid<TData extends RowData>({
       // Read back while the options are built, which is the only place a
       // controlled `columnVisibility` leaves for the lane's own entry.
       groupingActiveRef.current = state.grouping.length > 0;
+      // The writes below carry the memo-repair identities; on a controlled
+      // slice they round-trip through the consumer's handler, and the next
+      // render must not stabilize them away. See republishControlledStateRef.
+      republishControlledStateRef.current = true;
 
       table.setColumnVisibility((old) => ({
         ...old,

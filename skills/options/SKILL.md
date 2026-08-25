@@ -96,7 +96,10 @@ const grid = useTMDataGrid({
 ```
 
 The object may be built inline: the grid reuses the previous render's value for
-a slice that has not changed, so the identity churn does not loop. `atoms` is
+a slice that has not changed, so the identity churn does not loop. The
+comparison is structural, `Date`s by time; a `Map` or class instance compares
+by identity and belongs in `useState` or `useMemo`. A key set to `undefined` is
+not controlled - the slice falls back to the grid's own state. `atoms` is
 TanStack's other route and needs no callback; it outranks `state`. A controlled
 `columnVisibility` cannot hide the generated lanes, and the tree column's entry
 is the grid's own - it tracks `grouping`, and is written into an atom that owns
