@@ -36,6 +36,19 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Draft store and the commit/save split (2.0)** - **done 2026-08-25**, breaking.
+Closes [#35](https://github.com/Jielga/TMDataGrid/issues/35). Draft mode now
+holds a real draft store, so a row is *open* (undecided form state) until it is
+committed and only committed rows are saved. `edit.commitAll()` submits every
+open row, `edit.saveDrafts()` sends the store, and `edit.submitAll()` is the
+deprecated pair of the two; `onCommitDrafts` became `onSaveDrafts` and
+`newRows[].confirmed` became `committed`. `edit.addRow(values)` seeds one entry
+row and `edit.addRows(rows, { commit })` adds a batch, committing each as it
+lands - the import case the issue asked for. Fixed along the way, and the
+reason the import case needed it: `meta.edit.validate` only ran on a mounted
+editor, so a commit with nothing on screen wrote past the column rules; the
+engine now runs them itself.
+
 **Draft mode (2.0)** - **done 2026-08-24**, breaking. `editMode: "batch"`
 became `editing.mode: "draft"`, reworked: held drafts render their values
 through the cell renderers, entered new rows stay as value rows (scrolling by

@@ -67,12 +67,12 @@ export function TMDataGridEntryRows({
 }) {
   const { table, edit, features } = useTMDataGridContext();
   const newRows = useSelector(edit.store, (state) => state.newRows);
-  // The reopen gesture: `begin` on a confirmed entry row flips it back to
+  // The reopen gesture: `begin` on a committed entry row flips it back to
   // editors and names the cell double-clicked - where the caret goes.
   const activeEntry = useSelector(edit.store, (state) =>
     state.active !== null &&
     state.newRows.some(
-      (newRow) => newRow.tempId === state.active?.rowId && !newRow.confirmed,
+      (newRow) => newRow.tempId === state.active?.rowId && !newRow.committed,
     )
       ? state.active
       : null,
@@ -109,7 +109,7 @@ export function TMDataGridEntryRows({
   });
 
   /**
-   * The caret for a reopen: `begin` on a confirmed row re-arms its editors
+   * The caret for a reopen: `begin` on a committed row re-arms its editors
    * and the double-clicked cell's editor should hold the caret, not the
    * row's first. Keyed separately from the add effect above - the row was
    * already focused once when it was added.
@@ -134,16 +134,16 @@ export function TMDataGridEntryRows({
     focusEditorContent(editor);
   });
 
-  // Unconfirmed rows keep the seed values frozen at addRow - the live values
+  // Open (uncommitted) rows keep the seed values frozen at addRow - the live values
   // belong to the forms, which the editors read directly, and this table only
-  // provides row and cell identity. A confirmed row's cells render values, so
+  // provides row and cell identity. A committed row's cells render values, so
   // there the draft itself is the row; the memo recomputes on every
-  // confirm/reopen because either flips `newRows`' identity.
+  // commit/reopen because either flips `newRows`' identity.
   const data = useMemo(
     () =>
       newRows.map(
-        ({ tempId, confirmed }) =>
-          ((confirmed
+        ({ tempId, committed }) =>
+          ((committed
             ? edit.getForm(tempId)?.state.values
             : edit.getForm(tempId)?.options.defaultValues) ??
             {}) as TMDataGridRowData,
@@ -161,20 +161,20 @@ export function TMDataGridEntryRows({
   if (newRows.length === 0) return null;
 
   const entryRows = entryTable.getCoreRowModel().rows;
-  const confirmedById = new Map(
-    newRows.map((newRow) => [newRow.tempId, newRow.confirmed]),
+  const committedById = new Map(
+    newRows.map((newRow) => [newRow.tempId, newRow.committed]),
   );
   // A row being *typed* into is always sticky - it exists nowhere else to
-  // scroll back to. A confirmed row joins the scrolling flow unless
+  // scroll back to. A committed row joins the scrolling flow unless
   // `newRowsSticky` keeps it pinned, so entering many rows cannot fill the
   // viewport with sticky chrome.
   const stickyRows = entryRows.filter(
     (entryRow) =>
-      features.editNewRowsSticky || confirmedById.get(entryRow.id) !== true,
+      features.editNewRowsSticky || committedById.get(entryRow.id) !== true,
   );
   const flowRows = features.editNewRowsSticky
     ? []
-    : entryRows.filter((entryRow) => confirmedById.get(entryRow.id) === true);
+    : entryRows.filter((entryRow) => committedById.get(entryRow.id) === true);
 
   const renderEntryRow = (
     entryRow: (typeof entryRows)[number],
@@ -183,7 +183,7 @@ export function TMDataGridEntryRows({
     const cellsById = new Map(
       entryRow.getAllCells().map((cell) => [cell.column.id, cell]),
     );
-    const confirmed = confirmedById.get(entryRow.id) === true;
+    const committed = committedById.get(entryRow.id) === true;
     return (
       <div
         key={entryRow.id}
@@ -191,7 +191,7 @@ export function TMDataGridEntryRows({
         data-dg-part="entry-row"
         data-row-id={entryRow.id}
         data-new
-        data-confirmed={confirmed}
+        data-committed={committed}
         className={classes.entryRow}
       >
         {orderedColumns.map((column) => {
@@ -206,10 +206,10 @@ export function TMDataGridEntryRows({
               data-column-id={column.id}
               data-align={getColumnAlign(column)}
               data-control-column={isControlColumn(column.id)}
-              // A confirmed row re-opens where it is double-clicked, the
+              // A committed row re-opens where it is double-clicked, the
               // same gesture a body cell answers.
               onDoubleClick={
-                confirmed && !isControlColumn(column.id)
+                committed && !isControlColumn(column.id)
                   ? () =>
                       edit.begin({
                         rowId: entryRow.id,
@@ -239,7 +239,7 @@ export function TMDataGridEntryRows({
               {cell !== undefined && column.id === EDIT_COLUMN_ID ? (
                 // The lane's cell - the entry row's controls.
                 flexRender(cell.column.columnDef.cell, cell.getContext())
-              ) : confirmed && cell !== undefined ? (
+              ) : committed && cell !== undefined ? (
                 // Entered, awaiting Save all: a value row through the
                 // columns' own renderers, over the draft the memo above
                 // fed this table.

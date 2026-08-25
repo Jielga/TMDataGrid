@@ -51,7 +51,7 @@ import {
   createEditEngine,
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
-  type TMDataGridEditCommitDraftsArgs,
+  type TMDataGridSaveDraftsArgs,
   type TMDataGridEditEngineContext,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
@@ -390,7 +390,7 @@ export type TMDataGridApi<TData extends RowData> = {
    * out the same TanStack Form the inline editors write through, so a drawer
    * or detail panel can share a row's draft. Inert until `editing` is set.
    */
-  edit: TMDataGridEditApi;
+  edit: TMDataGridEditApi<TData>;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
@@ -471,6 +471,7 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
   /**
    * Seed values for `edit.addRow()` - the entry row's starting point. A
    * function is called per added row (fresh timestamps, empty arrays).
+   * `edit.addRow(values)` overrides this key by key for that one row.
    */
   newRowDefaults?: TData | (() => TData);
   /**
@@ -498,12 +499,12 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * | `"cell"` | Enter, Tab, blur - Sheets | Escape |
  * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
  * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
- * | `"draft"` | `edit.submitAll()` | `edit.cancelAll()` |
+ * | `"draft"` | `edit.commit(rowId)` into the draft store, `edit.saveDrafts()` out | `edit.cancelAll()` |
  *
  * Setting `editing` makes `getRowId` required - drafts are keyed by row id,
  * and the index fallback would name a different record after any sort - and
- * `onCommitDrafts` exists only under `mode: "draft"`, the one mode whose
- * `submitAll` calls it.
+ * `onSaveDrafts` exists only under `mode: "draft"`, the one mode with a draft
+ * store to save.
  *
  * The object may be written inline: the callbacks are read through a ref
  * every render, so its identity does not matter.
@@ -520,28 +521,42 @@ export type TMDataGridEditingOptions<TData extends RowData> =
       | {
           mode: "draft";
           /**
-           * Draft mode's save, called once by `edit.submitAll()` with every
-           * valid dirty row. Without it, `submitAll` falls back to the per-row
-           * {@link TMDataGridEditingCallbacks.onCommit} loop. Rows failing
-           * validation stay open either way; a rejection keeps every draft.
+           * Draft mode's save: called once by `edit.saveDrafts()` with the
+           * whole draft store - committed edits, added rows and deletion
+           * marks - so a server can apply it as one transaction. Without it,
+           * `saveDrafts` falls back to the per-row
+           * {@link TMDataGridEditingCallbacks.onCommit} loop.
+           *
+           * Rows still open are not in the payload and stay open; a rejection
+           * keeps every draft.
            */
-          onCommitDrafts?: (
-            args: TMDataGridEditCommitDraftsArgs<TData>,
+          onSaveDrafts?: (
+            args: TMDataGridSaveDraftsArgs<TData>,
           ) => void | Promise<void>;
           /**
-           * Keep confirmed entry rows pinned in the sticky entry block until
-           * Save all. Off by default: a confirmed row joins the scrolling
-           * flow above the body rows instead - the block a row is *typed*
-           * into is always sticky, but entered rows scroll, so entering many
-           * cannot fill the viewport with sticky chrome.
+           * @deprecated Renamed to {@link onSaveDrafts} - it fires when the
+           * draft store is saved, not when a row commits into it. Still
+           * honoured; removed in a later beta.
+           */
+          onCommitDrafts?: (
+            args: TMDataGridSaveDraftsArgs<TData>,
+          ) => void | Promise<void>;
+          /**
+           * Keep committed entry rows pinned in the sticky entry block until
+           * the draft store is saved. Off by default: a committed row joins
+           * the scrolling flow above the body rows instead - the block a row
+           * is *typed* into is always sticky, but committed rows scroll, so
+           * committing many cannot fill the viewport with sticky chrome.
            */
           newRowsSticky?: boolean;
         }
       | {
           mode: Exclude<TMDataGridEditMode, "draft">;
-          /** Only `"draft"`'s `submitAll` ever calls it - see the other branch. */
+          /** Only `"draft"` has a draft store to save - see the other branch. */
+          onSaveDrafts?: never;
+          /** @deprecated See {@link onSaveDrafts}. */
           onCommitDrafts?: never;
-          /** Confirmed entry rows exist only under `"draft"` - see there. */
+          /** Committed entry rows exist only under `"draft"` - see there. */
           newRowsSticky?: never;
         }
     );
@@ -1109,16 +1124,22 @@ export function useTMDataGrid<TData extends RowData>({
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:
       editing?.onCommit as TMDataGridEditEngineContext["onEditCommit"],
-    onEditCommitDrafts:
-      editing?.onCommitDrafts as TMDataGridEditEngineContext["onEditCommitDrafts"],
+    // The deprecated name still works; the new one wins if both are set.
+    onSaveDrafts: (editing?.onSaveDrafts ??
+      editing?.onCommitDrafts) as TMDataGridEditEngineContext["onSaveDrafts"],
     newRowDefaults:
       editing?.newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
     onRowAdd: editing?.onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
     onRowDelete:
       editing?.onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
   };
-  const [edit] = useState(() =>
-    createEditEngine(() => editContextRef.current),
+  // The engine is erased; the row type comes back on the way out, which is
+  // what makes `edit.addRow(values)` check against `TData`.
+  const [edit] = useState(
+    () =>
+      createEditEngine(
+        () => editContextRef.current,
+      ) as unknown as TMDataGridEditApi<TData>,
   );
 
   // Switching modes mid-flight drops every draft: the policies disagree about

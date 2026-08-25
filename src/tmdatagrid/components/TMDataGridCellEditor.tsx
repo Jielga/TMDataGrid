@@ -172,7 +172,11 @@ export function TMDataGridCellEditor({
     onClose({ committed: false, via: "escape" });
   };
 
-  /** Draft: the key closes the editor and leaves the draft for submitAll. */
+  /**
+   * Draft: the key closes the editor and leaves the row open - undecided
+   * form state, which `saveDrafts` does not send. Tab moving along the row
+   * is not a decision about it; Enter is, and commits instead.
+   */
   const deferAndClose = (via: "defer" | "defer-tab" | "defer-shift-tab") => {
     if (closingRef.current) return;
     closingRef.current = true;
@@ -185,12 +189,11 @@ export function TMDataGridCellEditor({
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
-      // In row mode Enter (and Ctrl+Enter, the documented pair) saves the
-      // row; in draft nothing reaches a callback until submitAll, so Enter
-      // parks the draft - and in the entry block it confirms the entry, which
-      // the engine parks the same way.
-      if (isDraft && !inEntryBlock) deferAndClose("defer");
-      else void commitAndClose("enter");
+      // Enter is OK, in every mode: the row's form submits and has to pass
+      // validation. What a commit *does* is the mode's business - the
+      // immediate modes call the consumer, draft mode parks the row in the
+      // draft store for `saveDrafts` - so this key does not branch.
+      void commitAndClose("enter");
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();

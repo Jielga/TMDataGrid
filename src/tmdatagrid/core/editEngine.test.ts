@@ -453,7 +453,7 @@ describe("edit engine", () => {
     const { edit } = grid.current;
 
     const tempId = edit.addRow();
-    expect(edit.state.newRows).toEqual([{ tempId, confirmed: false }]);
+    expect(edit.state.newRows).toEqual([{ tempId, committed: false }]);
     expect(edit.getForm(tempId)?.state.values["age"]).toBe(18);
 
     edit.getForm(tempId)?.setFieldValue("name", "Ny Person");
@@ -468,6 +468,50 @@ describe("edit engine", () => {
     expect(args.value.name).toBe("Ny Person");
     expect(edit.state.newRows).toEqual([]);
     expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("addRow(values) seeds the entry row over newRowDefaults", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({
+      onRowAdd,
+      newRowDefaults: () => ({
+        id: 0,
+        name: "",
+        age: 18,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+
+    const tempId = edit.addRow({ name: "Ny Person", age: 42 });
+
+    // The argument wins per key; what it leaves out keeps the default.
+    const values = edit.getForm(tempId)?.state.values;
+    expect(values?.["name"]).toBe("Ny Person");
+    expect(values?.["age"]).toBe(42);
+    expect(values?.["address"]).toEqual({ city: "Lund" });
+
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    const args = onRowAdd.mock.calls[0]?.[0] as { value: Person };
+    expect(args.value.name).toBe("Ny Person");
+    expect(args.value.age).toBe(42);
+  });
+
+  it("addRow(values) works with no newRowDefaults and leaves the next row blank", () => {
+    const grid = renderEditGrid({ onRowAdd: vi.fn() });
+    const { edit } = grid.current;
+
+    const seeded = edit.addRow({ name: "Seedad" });
+    expect(edit.getForm(seeded)?.state.values["name"]).toBe("Seedad");
+
+    // Per call, not a lasting default.
+    const blank = edit.addRow();
+    expect(edit.getForm(blank)?.state.values["name"]).toBeUndefined();
+    expect(edit.state.newRows).toEqual([
+      { tempId: seeded, committed: false },
+      { tempId: blank, committed: false },
+    ]);
   });
 
   it("draft mode confirms an entry row instead of adding it, and re-opens it", async () => {
@@ -490,13 +534,13 @@ describe("edit engine", () => {
     // Entered, awaiting Save all: the form stays, the entry is marked
     // confirmed, and nothing was added anywhere.
     expect(onRowAdd).not.toHaveBeenCalled();
-    expect(edit.state.newRows).toEqual([{ tempId, confirmed: true }]);
+    expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
     expect(edit.state.openRowIds).toEqual([tempId]);
 
     // The re-edit gesture: begin re-arms the entry's editors.
     edit.begin({ rowId: tempId, columnId: "name" });
 
-    expect(edit.state.newRows).toEqual([{ tempId, confirmed: false }]);
+    expect(edit.state.newRows).toEqual([{ tempId, committed: false }]);
     expect(edit.state.active).toEqual({ rowId: tempId, columnId: "name" });
   });
 
@@ -646,7 +690,7 @@ describe("edit engine", () => {
 
     // Nothing valid to report, and the entry is still there to be fixed.
     expect(onCommitDrafts).not.toHaveBeenCalled();
-    expect(edit.state.newRows).toEqual([{ tempId, confirmed: true }]);
+    expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
     expect(edit.state.rows[tempId]?.errorFields).toContain("name");
   });
 
@@ -754,5 +798,212 @@ describe("edit engine", () => {
     expect(edit.canEditCell(table.getRow("1"), nameColumn)).toBe(true);
     expect(edit.canEditCell(table.getRow("2"), nameColumn)).toBe(false);
     expect(edit.canEditCell(table.getRow("1"), lockedColumn)).toBe(false);
+  });
+});
+
+describe("the draft store", () => {
+  /** A validated column, to prove commits validate without mounted editors. */
+  const validatedColumns = helper.columns([
+    helper.accessor("name", {
+      header: "Name",
+      meta: { edit: { validate: z.string().min(2, "Too short") } },
+    }),
+    helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+  ]);
+
+  function renderValidatedGrid(
+    editing: Partial<TMDataGridEditingOptions<Person>> = {},
+  ) {
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: people,
+          columns: validatedColumns,
+          getRowId: (row) => String(row.id),
+          editing: { mode: "draft", ...editing },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    return result;
+  }
+
+  it("commit moves an existing row in, saveDrafts sends only what is in", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const { edit } = grid.current;
+
+    // Row 1 is OK'd, row 2 only typed into - the difference the store keeps.
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna Committed");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Erik Open");
+
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      rows: Array<{ rowId: string }>;
+    };
+    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+    // The open row is untouched by the save: still open, still holding it.
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.openRowIds).toEqual(["2"]);
+    expect(edit.getForm("2")?.state.values["name"]).toBe("Erik Open");
+  });
+
+  it("re-opening a committed row takes it back out of the store", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+
+    // Editing it again makes it undecided, so a save must not send it.
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(edit.state.committedRowIds).toEqual([]);
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    expect(onSaveDrafts).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+  });
+
+  it("commitAll submits the open rows, holding back the ones that fail", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderValidatedGrid({ onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "E"); // fails min(2)
+
+    await expect(edit.commitAll()).resolves.toBe(false);
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.rows["2"]?.errorFields).toContain("name");
+
+    await edit.saveDrafts();
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      rows: Array<{ rowId: string }>;
+    };
+    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+  });
+
+  it("validates a commit against the column rules with no editor mounted", async () => {
+    const grid = renderValidatedGrid({ onSaveDrafts: vi.fn() });
+    const { edit } = grid.current;
+
+    // No editors are mounted here: the rule lives on the column, so the
+    // engine has to be the one running it.
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "A");
+    await expect(edit.commit("1")).resolves.toBe(false);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.rows["1"]?.errorFields).toContain("name");
+
+    // And the error clears once the value is fixed.
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+  });
+
+  it("addRows opens a batch, and reports every row as open", async () => {
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts: vi.fn() });
+    const { edit } = grid.current;
+
+    const result = await edit.addRows([
+      { name: "Ett", age: 1 },
+      { name: "Tva", age: 2 },
+    ]);
+
+    expect(result.committed).toEqual([]);
+    expect(result.open).toHaveLength(2);
+    expect(edit.state.newRows.every((newRow) => !newRow.committed)).toBe(true);
+    expect(edit.getForm(result.open[0]!)?.state.values["name"]).toBe("Ett");
+  });
+
+  it("addRows with commit lands the valid rows and leaves the rest open", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderValidatedGrid({ onSaveDrafts });
+    const { edit } = grid.current;
+
+    // The import case: raw data in, validated, only the bad rows left open.
+    const result = await edit.addRows(
+      [
+        { name: "Giltig", age: 1 },
+        { name: "X", age: 2 },
+        { name: "Ocksa giltig", age: 3 },
+      ],
+      { commit: true },
+    );
+
+    expect(result.committed).toHaveLength(2);
+    expect(result.open).toHaveLength(1);
+    expect(edit.getForm(result.open[0]!)?.state.values["name"]).toBe("X");
+    expect(edit.state.rows[result.open[0]!]?.errorFields).toContain("name");
+
+    await edit.saveDrafts();
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      added: Array<{ value: Person }>;
+    };
+    expect(args.added.map((add) => add.value.name)).toEqual([
+      "Giltig",
+      "Ocksa giltig",
+    ]);
+    // The rejected row is still there to be fixed.
+    expect(edit.state.newRows).toHaveLength(1);
+  });
+
+  it("addRows with commit adds through onRowAdd under the immediate modes", async () => {
+    const onRowAdd = vi.fn();
+    const grid = renderEditGrid({ mode: "cell", onRowAdd });
+    const { edit } = grid.current;
+
+    // No draft store to park in, so a commit is the add - one call per row.
+    const result = await edit.addRows(
+      [
+        { name: "Ett", age: 1 },
+        { name: "Tva", age: 2 },
+      ],
+      { commit: true },
+    );
+
+    expect(result.committed).toHaveLength(2);
+    expect(onRowAdd).toHaveBeenCalledTimes(2);
+    expect(edit.state.newRows).toEqual([]);
+  });
+
+  it("saveDrafts sends nothing while the store is empty", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Bara oppen");
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    expect(onSaveDrafts).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+  });
+
+  it("the deprecated submitAll is commitAll then saveDrafts", async () => {
+    const onCommitDrafts = vi.fn();
+    // The deprecated callback name still reaches the engine, too.
+    const grid = renderEditGrid({ mode: "draft", onCommitDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+
+    // Never committed, yet submitAll saves it - that is what it always did.
+    await expect(edit.submitAll()).resolves.toBe(true);
+    const args = onCommitDrafts.mock.calls[0]?.[0] as {
+      rows: Array<{ rowId: string }>;
+    };
+    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
   });
 });
