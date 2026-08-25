@@ -137,7 +137,7 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 ## HIGH Submitting an outer form while the grid holds a draft
 
 The outer form's array contains only committed rows. Under any mode a mid-edit
-row is invisible to it, and under `"draft"` every edit is until `submitAll()`,
+row is invisible to it, and under `"draft"` every edit is until `saveDrafts()`,
 so a form submit saves stale rows and collection rules skip pending values.
 
 Correct:
@@ -146,8 +146,9 @@ Correct:
 const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0);
 
 <Button type="submit" disabled={!canSubmit || hasOpenDraft}>Save</Button>
-// or flush instead of blocking:
-const flushed = await grid.edit.submitAll();
+// or commit and flush instead of blocking:
+await grid.edit.commitAll();
+const flushed = await grid.edit.saveDrafts();
 if (flushed) await form.handleSubmit();
 ```
 
@@ -155,12 +156,13 @@ Source: `src/docs/query-builder.md` (Which mode, Submitting).
 
 ## MEDIUM Reading a commit's result as the saved value
 
-`edit.commit(rowId)` and `edit.submitAll()` resolve to a `boolean` saying
-whether the form closed, and resolve `false` when validation or a rejected save
-kept it open. Ignoring the result reports a save that did not happen.
+`edit.commit(rowId)`, `edit.commitAll()` and `edit.saveDrafts()` resolve to a
+`boolean` saying whether everything landed, and resolve `false` when validation
+or a rejected save kept a row open. Ignoring the result reports a save that did
+not happen.
 
 ```tsx
-const saved = await grid.edit.submitAll();
+const saved = await grid.edit.saveDrafts();
 notifications.show({ message: saved ? "Saved" : "Some rows need attention" });
 ```
 
@@ -170,7 +172,7 @@ Source: `src/tmdatagrid/core/editEngine.ts` (`TMDataGridEditApi`).
 
 Under the immediate modes `edit.deleteRow` calls `editing.onRowDelete` at once.
 Under `"draft"` it only toggles a deletion mark, so nothing is removed until
-`submitAll`: the ids arrive as `deleted` in `editing.onCommitDrafts`, or, with
+`saveDrafts`: the ids arrive as `deleted` in `editing.onSaveDrafts`, or, with
 no such callback, in the per-row `editing.onRowDelete` loop. A confirmation
 placed inside `editing.onRowDelete` therefore guards the save, not the trash.
 

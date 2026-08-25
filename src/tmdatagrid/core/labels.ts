@@ -111,10 +111,15 @@ export type TMDataGridLabels = {
   cancelRowEdit: string;
   /** Save tooltip when field errors block the row, with no row message. */
   editRowErrors: string;
-  /** `EditActions`' Save, with the dirty-row count. */
+  /** `EditActions`' Save, with the count of rows in the draft store. */
   saveAllEdits: (rows: number) => string;
   /** `EditActions`' Discard. */
   discardAllEdits: string;
+  /**
+   * `EditActions`' note about rows still open - edited but not committed, so
+   * not part of the save. Shown only while there are any.
+   */
+  editRowsStillOpen: (rows: number) => string;
   /** The entry row's ✓ - commit the add. */
   confirmNewRow: string;
   /** The entry row's ✕ - drop the entry. */
@@ -243,6 +248,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   editRowErrors: "Fix the marked cells",
   saveAllEdits: (rows) => (rows === 1 ? "Save 1 row" : `Save ${rows} rows`),
   discardAllEdits: "Discard",
+  editRowsStillOpen: (rows) =>
+    rows === 1 ? "1 row still being edited" : `${rows} rows still being edited`,
   confirmNewRow: "Add row",
   discardNewRow: "Discard new row",
   deleteRow: "Delete row",

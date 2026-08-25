@@ -88,7 +88,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `pinned-top`, `pinned-bottom` | The pinned-row edge blocks |
 | `select-all` | The header select-all checkbox |
 | `details-toggle-all` | Expand/collapse every detail panel |
-| `save-all`, `discard-all` | `TMDataGrid.EditActions` |
+| `save-all`, `discard-all` | `TMDataGrid.EditActions`. `save-all` carries `data-draft-count` - the rows the save will send |
 | `editor-confirm`, `editor-cancel` | `cellConfirm`'s ✓ and ✕ |
 | `editor-input` | The input inside a built-in editor |
 | `sort-index` | A column's position in a multi-column sort |
@@ -98,7 +98,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `data-dg-part` | What it is |
 | --- | --- |
 | `row` | A body row, pinned or not |
-| `entry-row` | An entry row. Carries `data-new`, and `data-confirmed` once entered under draft mode |
+| `entry-row` | An entry row. Carries `data-new`, and `data-committed` once committed under draft mode |
 | `details` | A row's detail panel |
 | `select-row` | Its selection checkbox |
 | `details-toggle`, `group-toggle` | Its detail and tree chevrons |
@@ -107,7 +107,8 @@ so a part that repeats is addressed by adding the coordinate.
 | `row-state` | Draft mode's change marker; `data-state` is `new`, `edited` or `deleted` |
 | `revert-row` | Drops a row's draft under draft mode |
 | `restore-row` | Undo a deletion mark under draft mode |
-| `confirm-new-row`, `discard-new-row` | An entry row's ✓ and ✕ |
+| `confirm-new-row`, `discard-new-row` | An entry row's ✓ (commit) and ✕ |
+| `open-rows-note` | `EditActions`' count of rows still open. Carries `data-open-count`; absent while there are none |
 
 ### Keyed by `data-column-id`
 

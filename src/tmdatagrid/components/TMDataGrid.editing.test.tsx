@@ -769,7 +769,7 @@ describe("cell editing", () => {
     // Entered, awaiting Save all: a value row, still in the entry block's
     // markup but out of the sticky part of it.
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(entryRow).toHaveAttribute("data-committed", "true");
     expect(entryRow).toHaveAttribute("data-new", "true");
     expect(within(entryRow).queryByRole("textbox")).not.toBeInTheDocument();
     expect(entryRow).toHaveTextContent("Ny Person");
@@ -798,7 +798,7 @@ describe("cell editing", () => {
     await user.keyboard("{Enter}");
 
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(entryRow).toHaveAttribute("data-committed", "true");
     expect(within(entryRow).queryByRole("textbox")).not.toBeInTheDocument();
     expect(entryRow).toHaveTextContent("Ny Person");
     expect(adds.length).toBe(0);
@@ -814,7 +814,7 @@ describe("cell editing", () => {
     await user.click(part("confirm-new-row", { rowId: "__new__1" }));
 
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-confirmed", "true");
+    expect(entryRow).toHaveAttribute("data-committed", "true");
     expect(entryRow.closest("[data-dg-entry-block]")).not.toBeNull();
     expect(entryRow.closest("[data-dg-entry-flow-block]")).toBeNull();
   });
@@ -830,7 +830,7 @@ describe("cell editing", () => {
 
     // The editors come back over the same form, draft and all.
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-confirmed", "false");
+    expect(entryRow).toHaveAttribute("data-committed", "false");
     expect(
       within(entryRow).getByRole("textbox", { name: "Edit Name" }),
     ).toHaveValue("Ny Person");
@@ -885,6 +885,12 @@ describe("cell editing", () => {
       name: "Edit Name",
     });
     await user.type(entryName, "Ny Person");
+    // OK the entry: only committed rows are part of a save.
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+    expect(part("entry-row", { rowId: "__new__1" })).toHaveAttribute(
+      "data-committed",
+      "true",
+    );
 
     // Mark row 2 deleted through the lane; it renders struck through.
     await user.click(
@@ -913,6 +919,49 @@ describe("cell editing", () => {
     // The entry block is gone and the mark is cleared.
     expect(queryPart("entry-row", { rowId: "__new__1" })).not.toBeInTheDocument();
     expect(bodyRows()[1]).not.toHaveAttribute("data-deleted", "true");
+  });
+
+  it("leaves an entry row that was never OK'd out of the save, still open", async () => {
+    const user = userEvent.setup();
+    const saves: Array<{ added: unknown[]; deleted: string[] }> = [];
+    renderWithMantine(
+      <DraftGrid
+        newRowDefaults={entryDefaults}
+        onCommitDrafts={(args) => void saves.push(args as never)}
+      />,
+    );
+
+    // One entry row typed into but not OK'd, and one deletion mark, which is
+    // a decision the moment it is made.
+    await user.click(screen.getByRole("button", { name: "add" }));
+    await user.type(
+      within(part("entry-row", { rowId: "__new__1" })).getByRole("textbox", {
+        name: "Edit Name",
+      }),
+      "Halvfärdig",
+    );
+    await user.click(
+      within(bodyRows()[1]!).getByRole("button", { name: "Delete row" }),
+    );
+
+    // Save counts the deletion only, and says the row is still being edited.
+    expect(part("open-rows-note")).toHaveTextContent("1 row still being edited");
+    await user.click(screen.getByRole("button", { name: "Save 1 row" }));
+    await waitFor(() => expect(saves.length).toBe(1));
+    expect(saves[0]?.added).toEqual([]);
+    expect(saves[0]?.deleted).toEqual(["2"]);
+
+    // The undecided row is untouched: still open, still holding what was
+    // typed, ready to be finished.
+    expect(part("entry-row", { rowId: "__new__1" })).toHaveAttribute(
+      "data-committed",
+      "false",
+    );
+    expect(
+      within(part("entry-row", { rowId: "__new__1" })).getByRole("textbox", {
+        name: "Edit Name",
+      }),
+    ).toHaveValue("Halvfärdig");
   });
 
   it("adds immediately from the entry row's check outside draft", async () => {
@@ -1014,14 +1063,34 @@ describe("cell editing", () => {
       <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
     );
 
-    await user.click(cellAt(1, 0));
+    // Age carries no rule, so clearing it commits the type's empty value.
+    await user.click(cellAt(1, 1));
     await user.keyboard("{Delete}");
 
     await waitFor(() => expect(commits.length).toBe(1));
     const commit = commits[0] as { changes: unknown[] };
     expect(commit.changes).toEqual([
-      { columnId: "name", field: "name", previous: "Erik", next: "" },
+      { columnId: "age", field: "age", previous: 41, next: null },
     ]);
+  });
+
+  it("refuses Delete on a cell whose column rule rejects the empty value", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
+    );
+
+    // Name is `min(2)`. Delete opens no editor, so the column's validator
+    // only runs because the engine runs it - the commit has to be refused
+    // rather than writing "" past the rule.
+    await user.click(cellAt(1, 0));
+    await user.keyboard("{Delete}");
+
+    await waitFor(() =>
+      expect(cellAt(1, 0)).toHaveAttribute("data-invalid", "true"),
+    );
+    expect(commits).toEqual([]);
   });
 
   it("puts the caret in a new entry row's first editable cell", async () => {

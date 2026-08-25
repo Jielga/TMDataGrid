@@ -6,7 +6,7 @@ import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
-  type TMDataGridEditCommitDraftsArgs,
+  type TMDataGridSaveDraftsArgs,
 } from "../../../tmdatagrid";
 import {
   DEPARTMENTS,
@@ -56,10 +56,10 @@ const newEmployee = (): Employee => ({
 export function DraftEditing() {
   const [employees, setEmployees] = useState(() => makeEmployees(20, 2000));
 
-  // Everything pending (edits, additions, deletions) arrives here at once, so
-  // the server can apply it as a single transaction.
-  const onCommitDrafts = useCallback(
-    ({ rows, added, deleted }: TMDataGridEditCommitDraftsArgs<Employee>) => {
+  // The whole draft store (edits, additions, deletions) arrives here at once,
+  // so the server can apply it as a single transaction.
+  const onSaveDrafts = useCallback(
+    ({ rows, added, deleted }: TMDataGridSaveDraftsArgs<Employee>) => {
       setEmployees((previous) => {
         const edited = previous.map(
           (employee) =>
@@ -90,7 +90,7 @@ export function DraftEditing() {
     getRowId: (row) => String(row.id),
     editing: {
       mode: "draft",
-      onCommitDrafts,
+      onSaveDrafts,
       newRowDefaults: newEmployee,
     },
     selectionMode: "highlight",
@@ -101,7 +101,7 @@ export function DraftEditing() {
   // `confirmed` flag, so the Add button waits until the open one is entered
   // or discarded.
   const hasOpenEntry = useSelector(grid.edit.store, (state) =>
-    state.newRows.some((newRow) => !newRow.confirmed),
+    state.newRows.some((newRow) => !newRow.committed),
   );
 
   return (

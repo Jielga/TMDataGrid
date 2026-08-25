@@ -103,6 +103,8 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   editRowErrors: "Åtgärda de markerade cellerna",
   saveAllEdits: (rows) => (rows === 1 ? "Spara 1 rad" : `Spara ${rows} rader`),
   discardAllEdits: "Förkasta",
+  editRowsStillOpen: (rows) =>
+    rows === 1 ? "1 rad redigeras fortfarande" : `${rows} rader redigeras fortfarande`,
   confirmNewRow: "Lägg till rad",
   discardNewRow: "Släng ny rad",
   deleteRow: "Ta bort rad",

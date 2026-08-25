@@ -3,9 +3,21 @@
 `@tanstack/react-form` becomes a peer dependency once editing is used.
 
 Editing is configured through one option, `editing`. `mode` decides what counts
-as a commit, and `onCommit` receives it. Each open row gets its own TanStack
-Form instance holding the draft; the grid never mutates `data`, so you apply
-the commit and the new values arrive back through `data`.
+as a commit, and `onCommit` receives it. The grid never mutates `data`, so you
+apply the commit and the new values arrive back through `data`.
+
+A row moves through three places, and the words for them are used exactly:
+
+| Place | What it holds | In | Out |
+| --- | --- | --- | --- |
+| **data** | Your rows, the only source of truth | - | - |
+| **form state** | A row being edited: its own TanStack Form, undecided | `edit.begin`, `edit.addRow` | `edit.cancel` |
+| **draft store** | Rows whose form passed its submit, parked in the grid | `edit.commit` | `edit.saveDrafts` |
+
+A row is **open** while it is form state, and **committed** once it is in the
+draft store. Only draft mode has a store with any dwell: the immediate modes
+send a commit straight to `onCommit` and drop the form, which is the same
+pipeline with the middle step lasting no time at all.
 
 ```tsx
 const grid = useTMDataGrid({
@@ -22,10 +34,10 @@ const grid = useTMDataGrid({
 ```
 
 `editing` requires `getRowId`: drafts are keyed by row id, and the index
-fallback would name a different record after any sort. `onCommitDrafts` is
+fallback would name a different record after any sort. `onSaveDrafts` is
 accepted only under `mode: "draft"`. Both are compile errors rather than options
-that silently do nothing. `mode: "draft"` without `onCommitDrafts` is fine:
-`submitAll` falls back to the per-row `onCommit` loop.
+that silently do nothing. `mode: "draft"` without `onSaveDrafts` is fine:
+`saveDrafts` falls back to the per-row `onCommit` loop.
 
 The `editing` object may be written inline. Its callbacks are read through a ref
 on every render, so its identity does not matter.
@@ -40,7 +52,7 @@ counts as a commit and which controls trigger it.
 | `"cell"`        | Enter, Tab or blur                    | Escape                                     | none                                    |
 | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape                                | ✓ / ✕ beside the input                  |
 | `"row"`         | Save in the edit lane, or Ctrl+Enter  | Cancel, or Escape                          | generated edit lane                     |
-| `"draft"`       | `edit.submitAll()`                    | `edit.cancelAll()`, or per row in the lane | `TMDataGridEditActions` + the edit lane |
+| `"draft"`       | Enter or the lane's ✓, into the draft store | `edit.cancelAll()`, or per row in the lane | `TMDataGridEditActions` + the edit lane |
 
 ```demo
 file: editing/CellEditing.tsx
@@ -55,7 +67,9 @@ in a spreadsheet. The grid places the caret in the cell that was opened, so a
 `edit.addRow()` opens the same way, with the caret in its first editable cell.
 
 Delete or Backspace clears the value and commits without opening an editor;
-under `"draft"` the cleared value is held with the other drafts instead.
+under `"draft"` the cleared value goes into the draft store with the rest. The
+commit validates either way - a column rule that rejects the empty value
+refuses the clear and marks the cell, rather than writing past the rule.
 Editing implies cell selection: `cellSelection` defaults to `"single"` while
 `editing` is set.
 
@@ -77,11 +91,22 @@ height: 440
 
 ### Draft editing
 
-Under `"draft"` nothing reaches a callback until Save all. Enter and Tab
-**hold** the draft (Tab moving on to the next editable cell), Escape drops the
-one draft, and drafts accumulate across rows, surviving filters, sorts and
-scrolling. A held draft is displayed: the cell renders the draft value through
-the column's own `cell` renderer, with the blue corner marking it dirty.
+Under `"draft"` nothing reaches a callback until the draft store is saved, and
+a row only joins that store when it is committed.
+
+**Enter, or the lane's ✓, commits**: the row's form submits, and it has to pass
+validation to land - the same gate as a form's submit button. Tab moves on to
+the next editable cell without deciding the row, clicking away leaves it open,
+and Escape drops its draft. Committed rows accumulate across filters, sorts and
+scrolling, and a committed row is displayed: the cell renders the draft value
+through the column's own `cell` renderer, with the blue corner marking it
+dirty.
+
+A row left open is not lost and not sent. It keeps everything typed into it,
+stays open across a save, and joins the next save once it is committed. This
+is what `edit.commitAll()` is for: it submits every open row at once, so
+"commit everything, then save" is two calls, and the rows that fail validation
+stay open with their errors instead of travelling half-checked.
 
 The edit lane shows each row's pending change and undoes it per row:
 
@@ -93,16 +118,22 @@ A row with a dirty draft hides the trash: revert first, then delete. If
 validation blocks a row, its icon turns red with the message in the tooltip.
 
 `TMDataGrid.EditActions` in the toolbar provides the whole-grid controls: Save
-with the pending count, and Discard. `renderActions` replaces the pair and
-hands over its pieces: `state.pendingCount`, `state.isSubmitting`, the `save`
-and `discard` actions, and `Controls.Save` / `Controls.Discard` as the
-built-in buttons:
+with the draft-store count, Discard, and a note counting the rows still open.
+Save sends the store and leaves open rows alone, so it greys out while nothing
+is committed however much is being typed - the note is what keeps those rows
+visible rather than silently left behind.
+
+`renderActions` replaces the set and hands over its pieces: `state.draftCount`,
+`state.openCount`, `state.isSubmitting`, the `save`, `commitAll` and `discard`
+actions, and `Controls.Save` / `Controls.Discard` / `Controls.OpenRowsNote` as
+the built-in pieces:
 
 ```tsx
 <TMDataGrid.EditActions
   renderActions={({ state, Controls }) => (
     <Group>
-      {state.pendingCount > 0 && <Badge>{state.pendingCount} unsaved</Badge>}
+      {state.draftCount > 0 && <Badge>{state.draftCount} ready</Badge>}
+      <Controls.OpenRowsNote />
       <Controls.Save />
       <Controls.Discard />
     </Group>
@@ -116,10 +147,15 @@ hint: Edit cells, enter new rows, mark deletions with the trash - the lane shows
 height: 440
 ```
 
-`edit.submitAll()` commits every pending change, through the per-row
-`onCommit` / `onRowAdd` / `onRowDelete` loop by default, or through one
-`onCommitDrafts({ rows, added, deleted })` call when that is set. Rows failing
-validation stay open either way, and a rejected save keeps every draft.
+`edit.saveDrafts()` sends the draft store, through the per-row `onCommit` /
+`onRowAdd` / `onRowDelete` loop by default, or through one
+`onSaveDrafts({ rows, added, deleted })` call when that is set - the whole
+store in one payload, for a server that applies it as a transaction. A
+rejected save keeps every draft.
+
+`edit.submitAll()` is the old single verb and is **deprecated**: it now does
+`commitAll()` followed by `saveDrafts()`, which is what it always did in
+effect. Replace it with whichever half you meant.
 
 ## Which cells edit
 
@@ -158,23 +194,24 @@ blue for a dirty draft, red for a validation error, and the row carries
 
 `edit.addRow()` opens an **entry row** in a sticky block under the header, so a
 row being typed into stays in view. Entry cells are ordinary editors over a form
-seeded from `newRowDefaults`. Enter, or the lane's ✓, enters the row: the
-immediate modes commit the add through `onRowAdd`, while draft mode holds it
-with the other drafts and `submitAll` reports it in `added`. Escape, or ✕,
-discards the entry.
+seeded from `newRowDefaults`. Enter, or the lane's ✓, commits the row: the
+immediate modes add it through `onRowAdd`, while draft mode puts it in the
+draft store and `saveDrafts` reports it in `added`. Escape, or ✕, discards the
+entry. An entry row never OK'd is not part of a save - it stays open.
 
-Under `"draft"` an entered row renders as a value row above the body rows,
-marked new (`data-new`, `data-confirmed`) and tinted with `--dg-row-new-bg`.
-By default it scrolls with the body; set `newRowsSticky: true` to keep entered
-rows pinned in the entry block until Save all. Double-click, or the lane's
-pencil, reopens the row; ✕ removes it.
+Under `"draft"` a committed row renders as a value row above the body rows,
+marked new (`data-new`, `data-committed`) and tinted with `--dg-row-new-bg`.
+By default it scrolls with the body; set `newRowsSticky: true` to keep
+committed rows pinned in the entry block until the save. Double-click, or the
+lane's pencil, reopens the row - which takes it back out of the draft store
+until it is committed again; ✕ removes it.
 
 ```tsx
 useTMDataGrid({
   editing: {
     mode: "draft",
     newRowDefaults: () => ({ id: 0, name: "", hired: today() }),
-    onCommitDrafts: async ({ rows, added, deleted }) => {
+    onSaveDrafts: async ({ rows, added, deleted }) => {
       await api.saveBatch({ rows, added, deleted });
     },
   },
@@ -188,7 +225,7 @@ key by key, so `addRow()` opens the `newRowDefaults` row and
 `addRow({ department: "Sales" })` opens that row with `department` filled in.
 Passing a whole row duplicates it. The entry row is an ordinary form either way:
 the seeded values are editable, validate like any other, and nothing reaches
-`onRowAdd` until the row is entered.
+`onRowAdd` until the row is committed.
 
 ```tsx
 <Button onClick={() => grid.edit.addRow({ department: "Sales", active: true })}>
@@ -203,7 +240,7 @@ To limit how many entry rows are open at once, read the entry state off
 
 ```tsx
 const hasOpenEntry = useSelector(grid.edit.store, (state) =>
-  state.newRows.some((newRow) => !newRow.confirmed),
+  state.newRows.some((newRow) => !newRow.committed),
 );
 
 <Button disabled={hasOpenEntry} onClick={() => grid.edit.addRow()}>
@@ -211,11 +248,45 @@ const hasOpenEntry = useSelector(grid.edit.store, (state) =>
 </Button>;
 ```
 
+### Importing rows
+
+`edit.addRows(rows)` opens a batch of entry rows in one write, where a loop
+over `addRow` is one write per row. Each row is seeded over `newRowDefaults`
+exactly as `addRow` is.
+
+`{ commit: true }` submits each row as it lands, which is what an import
+wants: rows that validate are committed, and rows that fail stay open in the
+entry block carrying their errors, for the user to fix. The result says which
+went which way, so the file's bad rows can be reported before anything is
+saved.
+
+```tsx
+const { committed, open } = await grid.edit.addRows(parsedRows, {
+  commit: true,
+});
+if (open.length > 0) notify(`${open.length} rows need attention`);
+await grid.edit.saveDrafts();
+```
+
+Column rules are enforced here even though the rows never had an editor on
+screen: the engine runs `meta.edit.validate` itself at commit, so an imported
+row is held to the same rules as a typed one. Under the immediate modes there
+is no store to park in, so `commit: true` adds each valid row through
+`onRowAdd` - one call per row.
+
+```demo
+file: editing/ImportRows.tsx
+hint: Import parses the pasted rows, commits the valid ones and leaves the rest open with their errors.
+height: 460
+```
+
 `edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` immediately under
 the immediate modes; put any confirmation in that callback. Under draft mode it
 toggles a mark instead: the row renders struck through and inert
-(`data-deleted`), the lane shows Restore, and `submitAll` reports the ids in
-`deleted`. Setting `onRowDelete` puts the trash can in the edit lane.
+(`data-deleted`), the lane shows Restore, and `saveDrafts` reports the ids in
+`deleted`. A deletion mark is a decision the moment it is made, so it goes
+straight into the draft store - there is nothing to type. Setting `onRowDelete`
+puts the trash can in the edit lane.
 
 The grid still never mutates `data`: you apply adds and deletes, and the new
 rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not
@@ -225,15 +296,19 @@ need to become a real id; assign one when you create the record.
 
 The built-in controls do everything through `edit`, which is public.
 
-| Member                                    | Does                                                                                                |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `edit.begin({ rowId, columnId })`         | Opens an editor. On an entered new row, reopens it                                                  |
-| `edit.commit(rowId)`                      | Commits. Resolves `false` if blocked. Under `"draft"`, validates and holds the draft                |
-| `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts                                                                                        |
-| `edit.submitAll()`                        | Commits every pending change - draft mode's Save all                                                |
-| `edit.addRow(values?)` / `edit.deleteRow(rowId)` | Opens an entry row, seeded over `newRowDefaults`, or removes a row                            |
-| `edit.getForm(rowId)`                     | The row's live `FormApi`                                                                            |
-| `edit.store`                              | Open rows, active cell, dirty and error projections, draft values, entry rows, deletion marks       |
+| Member | Does |
+| --- | --- |
+| `edit.begin({ rowId, columnId })` | Opens a row into form state. On a committed row, takes it back out of the draft store |
+| `edit.commit(rowId)` | Submits one row: into the draft store under `"draft"`, to `onCommit` otherwise. `false` if validation blocked it |
+| `edit.commitAll()` | Submits every open row. `false` when one stayed open |
+| `edit.saveDrafts()` | Sends the draft store. Open rows are left alone |
+| `edit.submitAll()` | **Deprecated** - `commitAll()` then `saveDrafts()` |
+| `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts - form state and the draft store alike |
+| `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
+| `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits each as it lands |
+| `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `"draft"` |
+| `edit.getForm(rowId)` | The row's live `FormApi` |
+| `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, entry rows, deletion marks |
 
 `getForm` returns the row's own `FormApi`. Render it in a drawer or side panel
 and it shares values, dirty state and errors with the inline cells.
@@ -251,7 +326,8 @@ array, see [A query builder inside a form](/docs/query-builder).
 | `editing.isRowEditable`       | Member         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
 | `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
 | `editing.onCommit`            | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |
-| `editing.onCommitDrafts`      | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | Draft mode only. One call for the whole save.                                                    |
+| `editing.onSaveDrafts`        | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | Draft mode only. One call for the whole draft store.                                             |
+| `editing.onCommitDrafts`      | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | Draft mode only. Keeps entered new rows pinned in the entry block until Save all.                |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |
@@ -267,4 +343,4 @@ array, see [A query builder inside a form](/docs/query-builder).
 | `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of an entered new row.                                                                |
 | `data-deleted`                | Data attribute | –                                                | –                 | On a row marked for deletion under draft mode.                                                   |
 | `data-dirty`                  | Data attribute | –                                                | –                 | On a body row holding a dirty draft.                                                             |
-| `data-new` / `data-confirmed` | Data attribute | –                                                | –                 | On an entry row; `data-confirmed` once it is entered, awaiting Save all.                         |
+| `data-new` / `data-committed` | Data attribute | –                                                | –                 | On an entry row; `data-committed` once it is committed, awaiting the save.                       |

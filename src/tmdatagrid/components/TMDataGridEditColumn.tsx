@@ -82,7 +82,7 @@ function EditLaneCell<TData extends RowData>({
   const isConfirmedNew = useSelector(
     edit.store,
     (state) =>
-      state.newRows.find((newRow) => newRow.tempId === rowId)?.confirmed ===
+      state.newRows.find((newRow) => newRow.tempId === rowId)?.committed ===
       true,
   );
   const isMarkedDeleted = useSelector(edit.store, (state) =>
