@@ -63,7 +63,7 @@ rather than forwarded to TanStack.
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
 | `initialState` | `Partial<TableState>` | See below | The state the grid starts from, read once on mount. Merged over the grid defaults. |
-| `state` | `Partial<TableState>` | – | State you hold yourself. Needs the matching `onXChange` - see below. |
+| `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange` - see below. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
 | `editing` | `TMDataGridEditingOptions` | off | Turns editing on. `mode` (`"cell" \| "cellConfirm" \| "row" \| "draft"`) picks the commit policy; the object also holds `onCommit`, `onSaveDrafts`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `newRowsSticky`, `onRowAdd` and `onRowDelete` - see the `editing` skill. |
@@ -79,10 +79,10 @@ rather than forwarded to TanStack.
 
 ### Controlled state
 
-`initialState` seeds a slice and hands it to the grid; `state` keeps it yours.
-A controlled slice needs its `onXChange` - TanStack routes every write through
-the callback, so a `state` entry passed alone is frozen at the value given and
-the grid warns once. For a starting value, use `initialState`.
+`state` makes a slice controlled: the parent owns the value, the grid reads it
+every render, and all writes go through the matching `onXChange`. Without the
+callback the slice cannot change; the grid logs a console warning in
+development. For a starting value only, use `initialState`.
 
 ```tsx
 const [columnVisibility, setColumnVisibility] = useState({ play: false });
@@ -95,16 +95,16 @@ const grid = useTMDataGrid({
 });
 ```
 
-The object may be built inline: the grid reuses the previous render's value for
-a slice that has not changed, so the identity churn does not loop. The
-comparison is structural, `Date`s by time; a `Map` or class instance compares
-by identity and belongs in `useState` or `useMemo`. A key set to `undefined` is
-not controlled - the slice falls back to the grid's own state. `atoms` is
-TanStack's other route and needs no callback; it outranks `state`. A controlled
-`columnVisibility` cannot hide the generated lanes, and the tree column's entry
-is the grid's own - it tracks `grouping`, and is written into an atom that owns
-the slice as well. `persist` restores through `initialState`, so it cannot
-restore a slice you control.
+- A key set to `undefined` is ignored; the slice is uncontrolled.
+- Slices compare structurally between renders, so the `state` object can be
+  built inline. `Date`s compare by time; `Map`s and class instances compare by
+  identity and belong in `useState` or `useMemo`.
+- `atoms` also controls a slice, with no callback. Takes precedence over
+  `state` for the same slice.
+- `columnVisibility` toggles user-defined columns only. Entries for the
+  generated columns are ignored; enable or disable those through their feature
+  options. The tree column's entry follows `grouping`.
+- `persist` cannot restore a controlled slice; it still writes it to storage.
 
 ## meta
 

@@ -1234,7 +1234,7 @@ export function useTMDataGrid<TData extends RowData>({
   useEffect(() => {
     for (const { slice, handler } of findFrozenStateSlices(options)) {
       console.warn(
-        `TMDataGrid: state.${slice} is controlled but no ${handler} was passed, so nothing in the grid can change it. Use initialState.${slice} to start from a value, or add ${handler} to hold it yourself.`,
+        `TMDataGrid: state.${slice} is controlled but no ${handler} was passed - the slice cannot change. Add ${handler}, or use initialState.${slice} for a starting value.`,
       );
     }
     // A mount-time contract, like the check above.
