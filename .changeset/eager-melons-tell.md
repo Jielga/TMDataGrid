@@ -2,18 +2,19 @@
 "@jielga/tmdatagrid": patch
 ---
 
-Controlled `state` no longer renders forever.
+Fixed: a controlled `state` slice built inline in the render body caused an
+infinite render loop. TanStack compares `options.state` slices by identity on
+every render; the grid now forwards the previous render's value for a slice
+whose contents are unchanged.
 
-TanStack re-reads `options.state` on every render and compares each slice by
-identity, so a `state` object built in the consumer's render body published a
-new value each time and the publish re-rendered the consumer. The grid now
-hands the table back the previous value for a slice that says the same thing,
-which makes `state: { columnVisibility: { play: false } }` safe to write
-inline. A controlled slice passed without its `onXChange` warns once: nothing
-can write to it, and `initialState` is what seeds a starting value.
-
-Also: a controlled `columnVisibility` no longer hides the generated lanes or
-drops the tree column's entry, which tracks `grouping` and is the grid's own.
-The same entry is now seeded into an external `atoms.columnVisibility`, which
-`initialState` never reached - an empty tree lane used to show in a grid with
-nothing grouped.
+- A controlled slice passed without its `onXChange` logs a console warning in
+  development. Without the callback the slice cannot change; use
+  `initialState` for a starting value.
+- A controlled `columnVisibility` no longer hides the generated columns. The
+  tree column's entry is managed by the grid and follows `grouping`.
+- The tree column's visibility entry is seeded into an external
+  `atoms.columnVisibility` at mount. Previously the tree column rendered empty
+  in an ungrouped grid when an atom owned the slice.
+- A `state` key set to `undefined` is ignored instead of being written into
+  the table state.
+- `Date` values in controlled state compare by time.

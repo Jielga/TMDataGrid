@@ -38,15 +38,13 @@ past 1.0.0 on 2026-08-01.
 ## Done
 
 **Controlled `state` passthrough** - **done 2026-08-25**.
-Closes [#39](https://github.com/Jielga/TMDataGrid/issues/39). TanStack re-reads
-`options.state` on every render and compares each slice by identity, so a
-`state` object written in the consumer's render body published a new value every
-time and the publish re-rendered the consumer: an inline
-`state: { columnVisibility: { play: false } }` hung the page, with or without
-this grid. The grid now hands the table back the previous render's value for a
-slice that says the same thing, warns once about a controlled slice with no
-`onXChange` behind it, and keeps the generated lanes and the tree column's entry
-out of a controlled `columnVisibility`.
+Closes [#39](https://github.com/Jielga/TMDataGrid/issues/39). TanStack compares
+`options.state` slices by identity on every render, so a slice object built in
+the render body caused an infinite render loop. The grid now forwards the
+previous render's value for unchanged slices, warns in development about a
+controlled slice without its `onXChange`, ignores `undefined`-valued keys, and
+keeps the generated columns and the tree column's entry out of a controlled
+`columnVisibility`.
 
 **Draft store and the commit/save split (2.0)** - **done 2026-08-25**, breaking.
 Closes [#35](https://github.com/Jielga/TMDataGrid/issues/35). Draft mode now

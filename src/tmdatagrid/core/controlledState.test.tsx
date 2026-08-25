@@ -167,9 +167,8 @@ describe("findFrozenStateSlices", () => {
 });
 
 /**
- * The grid a consumer writes when they reach for controlled state: the options
- * object, and the `state` inside it, are built in the render body. Issue #39 is
- * that this used to render forever.
+ * Options and `state` built in the render body, as a consumer writes them.
+ * This rendered forever before the fix for #39.
  */
 function ControlledGrid({
   onRender,
@@ -220,8 +219,8 @@ describe("controlled state on the grid", () => {
     );
 
     const mounted = renders;
-    // Any state change re-renders the consumer, which is what used to hand the
-    // table a new `state` object and start the cycle.
+    // A state change re-renders the consumer and rebuilds the `state` object;
+    // the loop started here before the fix.
     act(() => api!.table.setSorting([{ id: "name", desc: true }]));
 
     expect(renders - mounted).toBeLessThanOrEqual(3);
@@ -305,8 +304,8 @@ describe("controlled state on the grid", () => {
     render(<Controlled />, { wrapper: MantineWrapper });
     expect(renderedHeaderIds()).not.toContain("__group__");
 
-    // The lane's visibility is the grid's own entry in a map the consumer now
-    // owns - the sync would drop it on the next render.
+    // The tree column's entry lives in a map the consumer owns; without
+    // re-application the options sync would drop it.
     act(() => api!.table.setGrouping(["age"]));
     expect(renderedHeaderIds()).toContain("__group__");
 
@@ -320,8 +319,8 @@ describe("controlled state on the grid", () => {
     let api: TMDataGridApi<TestRow> | null = null;
 
     function AtomOwned() {
-      // The v9 route that needs no callback: the table writes through the atom,
-      // and `initialState` never reaches the slice.
+      // The atoms route: the table writes through the atom, no callback, and
+      // `initialState` never reaches the slice.
       const columnVisibility = useCreateAtom<ColumnVisibilityState>({
         city: false,
       });
@@ -349,9 +348,10 @@ describe("controlled state on the grid", () => {
   });
 
   it("does not loop when grouping and visibility are both controlled at mount", () => {
-    // #39's loop, second form: the ref feeding the tree lane's injected entry
-    // started from initialState only, so a controlled grouping active at mount
-    // had the seed write and the injection undoing each other forever.
+    // Regression: the ref feeding the tree column's injected visibility entry
+    // read only persisted/initial state, so a controlled grouping active at
+    // mount looped - the mount seed and the render injection wrote opposite
+    // values.
     let renders = 0;
     let api: TMDataGridApi<TestRow> | null = null;
 
@@ -380,7 +380,7 @@ describe("controlled state on the grid", () => {
     render(<Controlled />, { wrapper: MantineWrapper });
     expect(renderedHeaderIds()).toContain("__group__");
 
-    // Any later change re-syncs the options; the loop only opened then.
+    // A later change re-syncs the options; the loop opened on that render.
     act(() => api!.table.setSorting([{ id: "name", desc: true }]));
     expect(renders).toBeLessThan(25);
     expect(renderedHeaderIds()).toContain("__group__");
@@ -470,8 +470,8 @@ describe("controlled state on the grid", () => {
       { wrapper: MantineWrapper },
     );
 
-    // The slice fell back to the table's own state; nothing froze, nothing
-    // crashed, and no warning fired for it.
+    // The slice is uncontrolled: the grid mounts, default visibility applies
+    // and no warning is logged.
     expect(renderedHeaderIds()).toContain("city");
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
