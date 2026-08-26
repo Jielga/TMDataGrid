@@ -235,13 +235,27 @@ A column is editable when it maps to a data path: its `accessorKey`, or
 nested records: `accessorKey: "address.city"` edits `values.address.city`, and
 issues from a nested schema map to the right column.
 
-| Gate                                          | Effect                       |
-| --------------------------------------------- | ---------------------------- |
-| `meta.edit.enabled: false`                    | The column never edits       |
-| `meta.edit.enabled: (row) => boolean`         | Per row, per column          |
-| `editing.isRowEditable: (row) => boolean`     | The whole row, in every mode |
+| Gate | Effect |
+| --- | --- |
+| `editing.columns: string[]` | Only the named columns edit |
+| `meta.edit.enabled: false` | The column never edits |
+| `meta.edit.enabled: (row) => boolean` | Per row, per column |
+| `editing.isRowEditable: (row) => boolean` | The whole row, in every mode |
 
 Group rows and the generated lanes never edit.
+
+`editing.columns` lists the column ids that take edits.
+Unset, the default, every column mapping to a data path is editable.
+
+```tsx
+editing: { mode: "cell", columns: ["targetPct", "note"] }
+```
+
+It gates before `meta.edit`, never past it: a column left out takes no edits whatever its own meta says, and a listed column still answers to its `meta.edit.enabled`.
+The same list decides which cells an entry row opens.
+
+`edit.isColumnEditable(column)` asks the column's half of the question on its own, for a toolbar or a menu with no row in hand: the column maps to a field, `editing.columns` lists it when that is set, and `meta.edit.enabled` is not `false`.
+A per-row `enabled` predicate is the row's half, and `edit.canEditCell(row, column)` asks both.
 
 ```demo
 file: editing/EditableGating.tsx
@@ -378,9 +392,13 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.saveDrafts()` | Sends the draft store. Open rows are left alone |
 | `edit.submitAll()` | **Deprecated** - `commitAll()` then `saveDrafts()` |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts - form state and the draft store alike |
+| `edit.setCellValue(rowId, columnId, value)` | Writes one cell and commits the row, with no editor. `false` if the cell takes no edit, or validation refused the value |
+| `edit.setRowValues(rowId, values)` | The same for several cells of one row, in one commit. All or nothing |
+| `edit.clearCell(rowId, columnId)` | Writes the type's empty value and commits it - what Delete does |
 | `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
 | `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits each as it lands |
 | `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true` |
+| `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
 | `edit.getForm(rowId)` | The row's live `FormApi` |
 | `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, entry rows, deletion marks |
 
@@ -390,6 +408,29 @@ and it shares values, dirty state and errors with the inline cells.
 For the inverse, a `@tanstack/react-form` form _around_ the grid holding the row
 array, see [A query builder inside a form](/docs/query-builder).
 
+### Bulk actions
+
+`edit.setCellValue(rowId, columnId, value)` writes one cell and commits its row without an editor ever opening: a typed edit without the typing, for a toolbar action or a bulk fill.
+The row need not be mounted, so a selected row inside a collapsed group takes the write like any other.
+
+```tsx
+for (const row of grid.table.getSelectedRowModel().rows) {
+  await grid.edit.setCellValue(row.id, "targetPct", equalWeight(row.original));
+}
+```
+
+Under `draft: true` each row parks in the draft store like any hand-made edit, so the whole basket saves at once through `edit.saveDrafts()`, carries the same change markers, and is reverted row by row from the edit lane.
+
+`edit.setRowValues(rowId, values)` does the same for several cells of one row in a single commit: one `onCommit` call and one draft entry rather than one per column.
+Keys are column ids, and it is all or nothing - if any named cell takes no edit, nothing is written and it resolves `false`.
+
+```tsx
+await grid.edit.setRowValues(row.id, { status: "Closed", closedOn: today() });
+```
+
+Both resolve `false` when the cell takes no edit - no such row or column, `editing.columns` excludes it, `meta.edit.enabled` is off, or the row is not editable - and when validation refuses the value, which leaves the row open carrying its errors.
+`value` is the stored value: no editor runs, so `meta.edit.mapValue` does not run either, while `meta.edit.validate` does.
+
 ## Reference
 
 | Name                          | Kind           | Type                                             | Default           | What it does                                                                                     |
@@ -398,6 +439,7 @@ array, see [A query builder inside a form](/docs/query-builder).
 | `editing.mode`                | Member         | `"cell" \| "cellConfirm" \| "row"`               | –                 | Picks what counts as a commit and which controls trigger it.                                     |
 | `editing.draft`               | Member         | `boolean`                                        | `false`           | Parks commits in the draft store for `edit.saveDrafts()` instead of sending them out.             |
 | `getRowId`                    | Table option   | `(row) => string`                                | –                 | Required once `editing` is set. Drafts are keyed by it.                                          |
+| `editing.columns`             | Member         | `ReadonlyArray<string>`                          | Every mapped column | The column ids that take edits. Gates before `meta.edit`, never past it.                       |
 | `editing.isRowEditable`       | Member         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
 | `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
 | `editing.onCommit`            | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |

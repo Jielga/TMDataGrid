@@ -213,6 +213,100 @@ describe("the multiSelect editor", () => {
 });
 
 /**
+ * Mantine's NumberInput reports a number once one can be parsed and the raw
+ * text while it cannot - "" for an emptied box, "-" on the way to a negative
+ * number. What is tested here is the editor's answer to that text: the field
+ * holds nothing, and the text stays on screen so the user can finish it.
+ */
+describe("the number editor", () => {
+  type Reading = { id: number; celsius: number };
+
+  const readingColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Reading>();
+    return helper.columns([
+      helper.accessor("celsius", {
+        header: "Celsius",
+        meta: { type: "number" },
+      }),
+    ]);
+  })();
+
+  const readings: Array<Reading> = [{ id: 1, celsius: 12 }];
+
+  type ReadingCommit = TMDataGridEditCommitArgs<Reading>;
+
+  function renderReadingGrid() {
+    const commits: Array<ReadingCommit> = [];
+    function ReadingGrid() {
+      const grid = useTMDataGrid<Reading>({
+        data: readings,
+        columns: readingColumns,
+        getRowId: (row) => String(row.id),
+        editing: {
+          mode: "cell",
+          onCommit: (args) => void commits.push(args as ReadingCommit),
+        },
+        selectionMode: "highlight",
+      } as UseTMDataGridOptions<Reading>);
+      return (
+        <TMDataGrid {...grid}>
+          <TMDataGrid.Table<Reading> />
+        </TMDataGrid>
+      );
+    }
+    const { container } = renderWithMantine(<ReadingGrid />);
+    return { container, commits };
+  }
+
+  async function openCelsius() {
+    const user = userEvent.setup();
+    const { container, commits } = renderReadingGrid();
+    await user.dblClick(cell(container, "celsius"));
+    return { user, commits, input: screen.getByLabelText("Edit Celsius") };
+  }
+
+  it("keeps a half-typed number on screen and writes null, never NaN", async () => {
+    const { user, commits, input } = await openCelsius();
+
+    fireEvent.change(input, { target: { value: "-" } });
+
+    // NaN is a number to every validator and would commit as one, with no
+    // message a user could act on - so the field holds nothing while the text
+    // it cannot parse stays in the box.
+    expect(input).toHaveValue("-");
+
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes).toEqual([
+      { columnId: "celsius", field: "celsius", previous: 12, next: null },
+    ]);
+  });
+
+  it("writes the number as soon as the typing makes one", async () => {
+    const { user, commits, input } = await openCelsius();
+
+    fireEvent.change(input, { target: { value: "-" } });
+    fireEvent.change(input, { target: { value: "-5" } });
+
+    expect(input).toHaveValue("-5");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe(-5);
+  });
+
+  it("writes null for a box the user emptied", async () => {
+    const { user, commits, input } = await openCelsius();
+
+    fireEvent.change(input, { target: { value: "" } });
+
+    expect(input).toHaveValue("");
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(commits[0]?.changes[0]?.next).toBe(null);
+  });
+});
+
+/**
  * `meta.edit.mapValue` sits in the editor host rather than in any one editor,
  * so these drive it through the same gestures a user has: typing, the
  * type-to-edit seed, and a custom editor that knows nothing about it.

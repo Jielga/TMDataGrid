@@ -34,8 +34,28 @@ past 1.0.0 on 2026-08-01.
 
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing.
+- Cell-level styling (`meta.cellStyle`, `meta.cellClassName`) - the cell
+  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
+  rather than to what a `cell` renderer puts inside it. Raised by a test
+  consumer 2026-08-26: colouring a value today means a wrapper component
+  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
+  so it cannot reach the cell's background layers the way `rowStyle` does. AG
+  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
+  vocabulary as the row hooks so it composes with the draft and selection
+  layers rather than fighting them.
 
 ## Done
+
+**Programmatic edits and a column allowlist** - **done 2026-08-26**.
+From a test consumer's report on building a rebalancing desk from the skills
+alone. `edit.setCellValue` / `edit.setRowValues` write through the engine, so a
+toolbar action lands in the draft store as a typed edit does; the three-call
+`begin` + `getForm(…)?.setFieldValue` + `commit` sequence it replaces was never
+reliable, since `begin` defers in `"cell"` mode when another row is open.
+`editing.columns` names the editable columns instead of switching every other
+one off. `edit.isColumnEditable` answers the column's half of the rule.
+Alongside: `aggregateColumn` reads `flatRows` so a `getSubRows` tree totals its
+children, and the `number` editor no longer writes `NaN` for partial input.
 
 **Partial draft saves** - **done 2026-08-26**.
 Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33). `onSaveDrafts`
@@ -184,6 +204,15 @@ with its demo, the way it ships with a changeset.
 Known gaps, no decision to build:
 
 - Column virtualization (all cells of a row mount today).
+- Value-change flash (`meta.flashOnChange`, a `--dg-cell-flash-bg` variable) -
+  a brief tint on a cell whose value moved. Raised by a test consumer
+  2026-08-26 as the trading grid's most-asked-for feature, and the reason it is
+  here rather than left to consumers: it needs previous-value tracking inside
+  the row model, which nothing outside the grid can hold.
+- Undo across the draft store. `revert-row` reverts one row and `discard-all`
+  clears every draft; there is nothing between them, so a bulk write that
+  touched five rows takes five reverts. Wants a real undo stack, which the
+  engine has no notion of today.
 - Row drag-reordering.
 - Multi-range cell selection (explicitly scoped out in docs).
 - Tree data from hierarchical source (`getSubRows` passthrough undocumented).

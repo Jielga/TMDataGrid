@@ -155,6 +155,38 @@ if (flushed) await form.handleSubmit();
 
 Source: `src/docs/query-builder.md` (Which mode, Submitting).
 
+## HIGH A bulk write built from `begin`, `getForm` and `commit`
+
+`edit.setCellValue(rowId, columnId, value)` writes one cell and commits its row, so a fill over the selection is one call per row.
+Reaching instead for `begin`, then `getForm(rowId)?.setFieldValue(...)`, then `commit` looks equivalent and is not: under `editing.mode: "cell"`, `begin` defers behind a pending commit whenever another row is open, so `getForm(rowId)` returns `undefined` immediately after it and the optional chain writes nothing.
+The `commit` that follows finds no form and resolves `true`, reporting a write that never happened.
+
+Wrong:
+
+```tsx
+for (const row of grid.table.getSelectedRowModel().rows) {
+  grid.edit.begin({ rowId: row.id, columnId: "targetPct" });
+  grid.edit.getForm(row.id)?.setFieldValue("targetPct", next(row.original));
+  await grid.edit.commit(row.id);
+}
+```
+
+Correct:
+
+```tsx
+for (const row of grid.table.getSelectedRowModel().rows) {
+  await grid.edit.setCellValue(row.id, "targetPct", next(row.original));
+}
+
+// Several cells of one row: one commit, one draft entry.
+await grid.edit.setRowValues(rowId, { status: "Closed", closedOn: today() });
+```
+
+Both write the stored value through the row's form, so `meta.edit.mapValue` does not run - no editor is involved - while `meta.edit.validate` does, at the commit.
+A refused value leaves the row open carrying its errors and the call resolves `false`, so read the result rather than assuming the fill landed.
+
+Source: `src/tmdatagrid/core/editEngine.ts` (`begin`, `writeFields`).
+
 ## MEDIUM Reading a commit's result as the saved value
 
 `edit.commit(rowId)`, `edit.commitAll()` and `edit.saveDrafts()` resolve to a

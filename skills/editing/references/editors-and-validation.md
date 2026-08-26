@@ -8,14 +8,20 @@ bad value being committed. Both follow from the column.
 `meta.type` picks one, `meta.options` feeds the two select editors from the same
 declaration the filter panel reads.
 
-| `meta.type` | Editor | Export |
-| --- | --- | --- |
-| `"string"` (default) | Text input | `TMDataGridStringEditor` |
-| `"number"` | Number input | `TMDataGridNumberEditor` |
-| `"boolean"` | Checkbox | `TMDataGridBooleanEditor` |
-| `"date"` | Native `<input type="date">`, ISO `YYYY-MM-DD` | `TMDataGridDateEditor` |
-| `"select"` | Searchable select, commits on pick under `"cell"` | `TMDataGridSelectEditor` |
-| `"multiSelect"` | Multi-select, same source | `TMDataGridMultiSelectEditor` |
+| `meta.type` | Editor | Writes | Export |
+| --- | --- | --- | --- |
+| `"string"` (default) | Text input | `string` | `TMDataGridStringEditor` |
+| `"number"` | Number input | `number`, or `null` while the cell is empty or the text is not yet a number | `TMDataGridNumberEditor` |
+| `"boolean"` | Checkbox | `boolean` | `TMDataGridBooleanEditor` |
+| `"date"` | Native `<input type="date">` | A `Date`, or the ISO `"YYYY-MM-DD"` string; `null` when cleared | `TMDataGridDateEditor` |
+| `"select"` | Searchable select, commits on pick under `"cell"` | `string \| null` | `TMDataGridSelectEditor` |
+| `"multiSelect"` | Multi-select, same source | `string[]` | `TMDataGridMultiSelectEditor` |
+
+**Writes** is the value the editor puts into the draft: what `meta.edit.mapValue` is handed, what `meta.edit.validate` checks, and what a commit carries in `value` and in `changes[].next`.
+
+The number editor writes `null` rather than `NaN` while the text does not parse, so a half-typed number leaves the field empty instead of committing a number no rule can describe.
+The date editor picks between its two types once, when it opens, from what the cell held: a `Date` cell keeps receiving `Date`s and a string cell keeps receiving `"YYYY-MM-DD"` strings, so clearing and retyping cannot flip the type.
+A validator for a date column has to accept whichever of the two that column's data holds.
 
 ```tsx
 columnHelper.accessor("department", {
@@ -155,6 +161,9 @@ Left unmapped on purpose:
   edited, mark a pristine row dirty and swallow the select-all.
 - `edit.clearCell()`, the Delete key: it writes the type's empty value through
   the form, so there is no input to map.
+- `edit.setCellValue()` and `edit.setRowValues()`: they write through the form
+  too, and the caller passes the stored value itself. `meta.edit.validate` still
+  runs on the commit.
 - An editor calling `field.setValue`. `handleChange` is the mapped path.
 
 The built-in string and number editors restore the caret after a mapped write,

@@ -4,16 +4,18 @@ description: >
   Edit cells and rows in TMDataGrid. Covers the editing option with its four
   mode policies (cell, cellConfirm, row, draft), the required getRowId,
   editing.onCommit and editing.onSaveDrafts, why the grid never mutates data,
-  per-column gating with meta.edit.enabled and meta.edit.field, the six built-in
-  editors picked by meta.type, custom editors through meta.edit.editor,
+  per-column gating with editing.columns, meta.edit.enabled and meta.edit.field,
+  the six built-in editors picked by meta.type and the value each one writes,
+  custom editors through meta.edit.editor,
   per-keystroke value mapping with meta.edit.mapValue, field validation with
   meta.edit.validate and cross-field rules with editing.rowValidators (Standard
   Schema and Zod), adding and deleting rows with edit.addRow,
   editing.newRowDefaults, editing.onRowAdd and editing.onRowDelete, the
   generated edit lane, TMDataGrid.DraftActions with its renderActions slot, and
   the public edit engine (begin, commit, commitAll, saveDrafts, addRows,
-  getForm, store). Load when making a grid editable, choosing an edit mode,
-  wiring a save, writing a cell editor, validating an edit, or when cells will
+  setCellValue, setRowValues, getForm, store). Load when making a grid editable,
+  choosing an edit mode, wiring a save, writing a cell editor, validating an
+  edit, writing cells from a toolbar action or a bulk fill, or when cells will
   not open.
 metadata:
   type: core
@@ -157,6 +159,7 @@ records, so `accessorKey: "address.city"` edits `values.address.city`.
 
 | Gate | Effect |
 | --- | --- |
+| `editing.columns: ["targetPct"]` | Only the named columns edit |
 | `meta.edit.enabled: false` | The column never edits |
 | `meta.edit.enabled: (row) => boolean` | Per row, per column |
 | `meta.edit.field: "lastName"` | The path an `accessorFn` column writes to |
@@ -164,6 +167,11 @@ records, so `accessorKey: "address.city"` edits `values.address.city`.
 
 Group rows and the generated lanes (checkbox, row number, details, edit) never
 edit.
+
+`editing.columns` lists the column ids that take edits; unset, the default, every column mapping to a data path is editable.
+It gates before `meta.edit`, never past it: a column left out takes no edits whatever its own meta says, and a listed column still answers to its `meta.edit.enabled`.
+The same list decides which cells an entry row opens.
+`edit.isColumnEditable(column)` answers the column's half of the question with no row in hand, for a toolbar or a menu, and `edit.canEditCell(row, column)` asks both halves.
 
 ```tsx
 // Computed column writing back to a real field, and per-row gating.
@@ -183,7 +191,7 @@ columnHelper.accessor("salary", {
 `meta.type` picks the editor - `"string"` (the default), `"number"`,
 `"boolean"`, `"date"`, `"select"` and `"multiSelect"` - and `meta.options` feeds
 the two select editors from the same declaration the filter panel reads. Each
-one, with the export that wraps it, is in
+one, with the value it writes into the draft and the export that wraps it, is in
 [references/editors-and-validation.md](references/editors-and-validation.md#the-built-in-editors).
 
 `meta.edit.editor` replaces one, `meta.edit.validate` guards the field, and
@@ -316,16 +324,30 @@ while editing is off, and works under any mode, not only draft.
 
 `grid.edit` is public, and everything the built-in controls do goes through it:
 `begin` and `commit`, `cancel` / `cancelAll`, `commitAll` / `saveDrafts`,
-`addRow` / `addRows` /
+`setCellValue` / `setRowValues` / `clearCell`, `addRow` / `addRows` /
 `deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
 [Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
-Every member with its signature, the gates, `clearCell`, `deactivate`, and the
-`edit.store` shape are in
+Every member with its signature, the gates, `isColumnEditable`, `deactivate`,
+and the `edit.store` shape are in
 [references/editing-api.md](references/editing-api.md#the-edit-engine).
 
 `getForm` exposes the row's form: render it in a drawer and it shares values,
 dirty state and errors with the inline cells, because it is the same
 `FormApi`.
+
+`edit.setCellValue(rowId, columnId, value)` writes one cell and commits its row with no editor open, which is what a toolbar action or a bulk fill wants.
+The row need not be mounted, so a selected row inside a collapsed group takes the write like any other.
+`edit.setRowValues(rowId, values)` does several cells of one row in a single commit, keyed by column id, all or nothing.
+
+```tsx
+for (const row of grid.table.getSelectedRowModel().rows) {
+  await grid.edit.setCellValue(row.id, "targetPct", equalWeight(row.original));
+}
+```
+
+Under `draft: true` each row parks in the draft store like any hand-made edit, with the same change markers and the same per-row revert, and the basket leaves through `saveDrafts`.
+`value` is the stored value: no editor runs, so `meta.edit.mapValue` does not run either, while `meta.edit.validate` does.
+Both resolve `false` when the cell takes no edit - no such row or column, `editing.columns` excludes it, `meta.edit.enabled` is off, or the row is not editable - and when validation refuses the value, which leaves the row open carrying its errors.
 
 ## Inside an outer form
 
@@ -356,6 +378,7 @@ are in [references/common-mistakes.md](references/common-mistakes.md).
 | HIGH | An `accessorFn` column with no `meta.edit.field` - it maps to nothing and stays read-only |
 | HIGH | Swallowing the error in `editing.onCommit` - a resolved catch drops the draft |
 | HIGH | Submitting an outer form while the grid holds a draft - it saves stale rows |
+| HIGH | A bulk write built from `begin` + `getForm` + `commit` - `getForm` can be `undefined`; `edit.setCellValue` is the write |
 | MEDIUM | Reading a commit's result as the saved value - it is a `boolean` about the form |
 | MEDIUM | Expecting `editing.onRowDelete` to fire under draft - the mark waits for `saveDrafts` |
 

@@ -533,6 +533,20 @@ export type TMDataGridEditingOptions<TData extends RowData> =
   TMDataGridEditingCallbacks<TData> & {
     /** What counts as a commit. See the table above. */
     mode: TMDataGridEditMode;
+    /**
+     * The column ids that take edits, by id. Unset - the default - every
+     * column mapping to a data path is editable, which is what a grid whose
+     * columns are mostly the record itself wants.
+     *
+     * Set it for the other shape: a grid of reference data with one or two
+     * columns the user maintains, where naming those is shorter and harder to
+     * get wrong than switching every other column off one by one.
+     *
+     * This gates before `meta.edit`, never past it: a column left out takes no
+     * edits whatever its own meta says, and a column listed here still answers
+     * to its `meta.edit.enabled`.
+     */
+    columns?: ReadonlyArray<string>;
   } & (
       | {
           /**
@@ -1205,6 +1219,7 @@ export function useTMDataGrid<TData extends RowData>({
     editMode: editMode ?? "cell",
     draft: editDraft,
     rowValidators: editing?.rowValidators,
+    editableColumnIds: editing?.columns,
     isRowEditable:
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:

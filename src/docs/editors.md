@@ -15,14 +15,19 @@ height: 440
 `meta.type` picks one, and `meta.options` feeds the select editors from the same
 source the filter panel reads. Neither lives under `meta.edit`.
 
-| `meta.type` | Editor |
-| --- | --- |
-| `string` (default) | Text input |
-| `number` | Number input |
-| `boolean` | Checkbox |
-| `date` | Native `<input type="date">` |
-| `select` | Searchable select from `meta.options`. Commits on pick under `"cell"` |
-| `multiSelect` | Multi-select, same source |
+| `meta.type` | Editor | Writes |
+| --- | --- | --- |
+| `string` (default) | Text input | `string` |
+| `number` | Number input | `number`, or `null` while the cell is empty or the text is not yet a number |
+| `boolean` | Checkbox | `boolean` |
+| `date` | Native `<input type="date">` | A `Date`, or the `"YYYY-MM-DD"` string; `null` when cleared |
+| `select` | Searchable select from `meta.options`. Commits on pick under `"cell"` | `string \| null` |
+| `multiSelect` | Multi-select, same source | `string[]` |
+
+**Writes** is the value the editor puts into the draft: what `meta.edit.mapValue` is handed, what `meta.edit.validate` checks, and what a commit carries in `value` and in `changes[].next`.
+
+The number editor writes `null` rather than `NaN` while the text does not parse, so a half-typed number leaves the field empty instead of committing a number no rule can describe.
+The date editor picks between its two types once, when it opens, from what the cell held: a `Date` cell keeps receiving `Date`s and a string cell keeps receiving `"YYYY-MM-DD"` strings, so clearing and retyping cannot flip the type.
 
 Each is a named export (`TMDataGridStringEditor`, `TMDataGridNumberEditor`,
 `TMDataGridBooleanEditor`, `TMDataGridDateEditor`, `TMDataGridSelectEditor`,
@@ -80,11 +85,9 @@ through, so one declaration covers all six built-in editors, your own
 `meta.edit.editor`, and the character that opened the editor when typing started
 the edit.
 
-Two writes are not mapped: the value the editor opens with, and
-`edit.clearCell()`, the Delete key, which writes the type's empty value through
-the form rather than through an editor. An editor calling `field.setValue`
-instead of `field.handleChange` also bypasses the map. `handleChange` is the
-mapped path.
+Some writes are not mapped: the value the editor opens with, and the writes that go through the form rather than through an editor - `edit.clearCell()`, the Delete key, `edit.setCellValue()` and `edit.setRowValues()`.
+An editor calling `field.setValue` instead of `field.handleChange` also bypasses the map.
+`handleChange` is the mapped path.
 
 The map receives the row and column as well, so it can depend on the record
 being edited:

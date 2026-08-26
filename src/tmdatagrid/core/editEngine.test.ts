@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { MantineWrapper } from "../../test/gridHarness";
@@ -417,10 +417,10 @@ describe("edit engine", () => {
 
     expect(onCommit).not.toHaveBeenCalled();
     expect(onCommitDrafts).toHaveBeenCalledTimes(1);
-    const { rows: draftRows } = onCommitDrafts.mock.calls[0]?.[0] as {
+    const args = onCommitDrafts.mock.calls[0]?.[0] as {
       rows: Array<TMDataGridEditCommitArgs<Person>>;
     };
-    expect(draftRows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
+    expect(args.rows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
     expect(edit.state.openRowIds).toEqual([]);
   });
 
@@ -1152,5 +1152,428 @@ describe("the draft store", () => {
       rows: Array<{ rowId: string }>;
     };
     expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+  });
+});
+
+/**
+ * `setCellValue` and `setRowValues` - a write with no editor behind it. What
+ * these guard is that it takes the same path a typed edit does: the row's own
+ * form, the same commit, the same validators and the same draft store - and
+ * that a cell which takes no edit refuses it outright.
+ */
+describe("writing a cell from outside an editor", () => {
+  /** The erasure the context provider performs - `canEditCell` is chrome. */
+  const erasedTable = (api: TMDataGridApi<Person>) =>
+    api.table as unknown as TMDataGridApi<TMDataGridRowData>["table"];
+
+  it("setCellValue writes the cell and commits the row", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "city", "Uppsala")).resolves.toBe(true);
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes).toEqual([
+      {
+        columnId: "city",
+        field: "address.city",
+        previous: "Stockholm",
+        next: "Uppsala",
+      },
+    ]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("setCellValue parks the write in the draft store under draft", async () => {
+    const onCommit = vi.fn();
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit,
+      onSaveDrafts,
+    });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+
+    // Parked exactly as a hand-typed edit is: nothing out to the consumer,
+    // the change marked on the row, and the per-row revert still available.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+
+    // And it leaves the way every other draft does.
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<TMDataGridEditCommitArgs<Person>>;
+    };
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("setCellValue writes a row inside a collapsed group", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const table = erasedTable(grid.current);
+    act(() => {
+      table.setGrouping(["city"]);
+    });
+    const { edit } = grid.current;
+
+    // Groups start collapsed, so the grid displays the two group rows and
+    // nothing under them - row 1 has no cell to open an editor in.
+    expect(table.getPrePaginatedRowModel().rows.map((row) => row.id)).toEqual([
+      "city:Stockholm",
+      "city:Malmö",
+    ]);
+
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes).toEqual([
+      { columnId: "name", field: "name", previous: "Anna", next: "Annika" },
+    ]);
+  });
+
+  it("setCellValue refuses a row or column the grid does not have", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("99", "name", "Annika")).resolves.toBe(false);
+    await expect(edit.setCellValue("1", "nope", "Annika")).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("setCellValue refuses a column meta.edit.enabled switched off", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(
+      edit.setCellValue("1", "readonlyName", "Annika"),
+    ).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.getForm("1")).toBeUndefined();
+  });
+
+  it("setCellValue refuses a row isRowEditable turns down", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({
+      onCommit,
+      isRowEditable: (row) => row.original.id !== 2,
+    });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("2", "name", "Erik B")).resolves.toBe(false);
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.rowId).toBe("1");
+  });
+
+  it("setCellValue joins a form already open on the row", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.setCellValue("1", "age", 40)).resolves.toBe(true);
+
+    // One commit carrying both fields: the pending edit was joined, not
+    // replaced by a form of the write's own.
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes.map((change) => change.columnId)).toEqual([
+      "name",
+      "age",
+    ]);
+  });
+
+  it("setRowValues writes several cells in one commit", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(
+      edit.setRowValues("1", { name: "Annika", city: "Uppsala" }),
+    ).resolves.toBe(true);
+
+    // One consumer call for the row, not one per column.
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes).toEqual([
+      { columnId: "name", field: "name", previous: "Anna", next: "Annika" },
+      {
+        columnId: "city",
+        field: "address.city",
+        previous: "Stockholm",
+        next: "Uppsala",
+      },
+    ]);
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("setRowValues parks the whole write as one draft", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    await expect(
+      edit.setRowValues("1", { name: "Annika", age: 35 }),
+    ).resolves.toBe(true);
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name", "age"]);
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<TMDataGridEditCommitArgs<Person>>;
+    };
+    expect(args.updated).toHaveLength(1);
+    expect(args.updated[0]?.changes.map((change) => change.columnId)).toEqual([
+      "name",
+      "age",
+    ]);
+  });
+
+  it("setRowValues writes nothing at all when one cell takes no edit", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(
+      edit.setRowValues("1", { name: "Annika", readonlyName: "Nej" }),
+    ).resolves.toBe(false);
+
+    // All or nothing: the editable half is not written either, so a bulk
+    // action cannot half-apply unnoticed.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual([]);
+    expect(edit.getForm("1")).toBeUndefined();
+  });
+
+  it("setRowValues leaves an open form's draft alone when it refuses", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({ onCommit });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(
+      edit.setRowValues("1", { city: "Uppsala", readonlyName: "Nej" }),
+    ).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+  });
+
+  /** A mapped column and a validated one - neither has an editor here. */
+  const writeColumns = helper.columns([
+    helper.accessor("name", {
+      header: "Name",
+      meta: {
+        edit: {
+          mapValue: ({ value }) =>
+            typeof value === "string" ? value.toUpperCase() : value,
+        },
+      },
+    }),
+    helper.accessor("age", {
+      header: "Age",
+      meta: {
+        type: "number",
+        edit: { validate: z.number().min(18, "Too young") },
+      },
+    }),
+  ]);
+
+  function renderWriteGrid(
+    editing: Partial<TMDataGridEditingOptions<Person>> = {},
+  ) {
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: people,
+          columns: writeColumns,
+          getRowId: (row) => String(row.id),
+          editing: { mode: "cell", ...editing },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    return result;
+  }
+
+  it("writes the value as given - mapValue belongs to the editor", async () => {
+    const onCommit = vi.fn();
+    const grid = renderWriteGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "name", "annika")).resolves.toBe(true);
+
+    // The caller writes the stored value, so the column's map - which every
+    // keystroke of a typed edit goes through - has nothing to run on.
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes[0]?.next).toBe("annika");
+  });
+
+  it("refuses a value the column's validate turns down, and holds the row", async () => {
+    const onCommit = vi.fn();
+    const grid = renderWriteGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "age", 5)).resolves.toBe(false);
+
+    // The rule is the column's, and it runs with no editor mounted; the row
+    // is left open carrying the message, for the user to answer.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.errorFields).toContain("age");
+    expect(edit.state.rows["1"]?.errorMessages).toContainEqual({
+      field: "age",
+      message: "Too young",
+    });
+
+    // And the same write with a value that passes lands.
+    await expect(edit.setCellValue("1", "age", 40)).resolves.toBe(true);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * `editing.columns` - the allowlist. It gates before `meta.edit` and never
+ * past it, so both halves are tested: a column left out takes no edit whatever
+ * its meta says, and a column listed still answers to its own meta.
+ */
+describe("editing.columns", () => {
+  const gatedColumns = helper.columns([
+    helper.accessor("name", { header: "Name" }),
+    // Switched on by its own meta and left out of the list below, with a rule
+    // no listed column has to satisfy.
+    helper.accessor("age", {
+      header: "Age",
+      meta: {
+        type: "number",
+        edit: { enabled: true, validate: z.number().max(0, "Too big") },
+      },
+    }),
+    // Listed below, and switched off by its own meta all the same.
+    helper.accessor("address.city", {
+      header: "City",
+      id: "city",
+      meta: { edit: { enabled: false } },
+    }),
+  ]);
+
+  function renderGatedGrid(
+    editing: Partial<TMDataGridEditingOptions<Person>> = {},
+  ) {
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: people,
+          columns: gatedColumns,
+          getRowId: (row) => String(row.id),
+          editing: { mode: "cell", columns: ["name", "city"], ...editing },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    return result;
+  }
+
+  /** The erasure the context provider performs - `canEditCell` is chrome. */
+  const columnOf = (api: TMDataGridApi<Person>, columnId: string) => {
+    const table = api.table as unknown as TMDataGridApi<TMDataGridRowData>["table"];
+    const column = table.getColumn(columnId);
+    if (column === undefined) throw new Error(`no column "${columnId}"`);
+    return column;
+  };
+
+  it("isColumnEditable takes every column mapping to a field while it is unset", () => {
+    const grid = renderEditGrid();
+    const { edit } = grid.current;
+
+    expect(edit.isColumnEditable(columnOf(grid.current, "name"))).toBe(true);
+    expect(edit.isColumnEditable(columnOf(grid.current, "age"))).toBe(true);
+    // No accessorKey and no meta.edit.field - nothing to write to.
+    expect(edit.isColumnEditable(columnOf(grid.current, "display"))).toBe(false);
+    expect(edit.isColumnEditable(columnOf(grid.current, "readonlyName"))).toBe(
+      false,
+    );
+  });
+
+  it("isColumnEditable gates on the list before meta.edit, and never past it", () => {
+    const grid = renderGatedGrid();
+    const { edit } = grid.current;
+
+    expect(edit.isColumnEditable(columnOf(grid.current, "name"))).toBe(true);
+    // Listed, and its own meta still switches it off.
+    expect(edit.isColumnEditable(columnOf(grid.current, "city"))).toBe(false);
+    // Switched on by its own meta, and still left out of the list.
+    expect(edit.isColumnEditable(columnOf(grid.current, "age"))).toBe(false);
+  });
+
+  it("canEditCell agrees with isColumnEditable where no row predicate speaks", () => {
+    const grid = renderGatedGrid();
+    const { edit } = grid.current;
+    const table = grid.current
+      .table as unknown as TMDataGridApi<TMDataGridRowData>["table"];
+    const row = table.getRow("1");
+
+    for (const columnId of ["name", "age", "city"]) {
+      const column = columnOf(grid.current, columnId);
+      expect(edit.canEditCell(row, column), columnId).toBe(
+        edit.isColumnEditable(column),
+      );
+    }
+  });
+
+  it("setCellValue refuses a column the list leaves out", async () => {
+    const onCommit = vi.fn();
+    const grid = renderGatedGrid({ onCommit });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "age", 40)).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual([]);
+  });
+
+  it("keeps an unlisted column out of the diff and out of the submit pass", async () => {
+    const onCommit = vi.fn();
+    const grid = renderGatedGrid({ onCommit });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    // Past the allowlist: `age` now holds a value its own rule would reject,
+    // and the row's form neither reports it as a change nor validates it.
+    edit.getForm("1")?.setFieldValue("age", 99);
+
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const args = onCommit.mock
+      .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
+    expect(args.changes.map((change) => change.columnId)).toEqual(["name"]);
   });
 });
