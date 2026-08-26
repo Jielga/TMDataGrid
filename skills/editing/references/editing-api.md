@@ -110,7 +110,7 @@ type TMDataGridEditState = {
 
 | Name | Kind | What it is |
 | --- | --- | --- |
-| `TMDataGrid.DraftActions` | Component | Save with the pending count, and Discard. Any mode; renders nothing while editing is off. Takes `renderActions` over `{ state, actions, Controls }`. |
+| `TMDataGrid.DraftActions` | Component | Save with the draft-store count, Discard, and a note counting the rows still open. Any mode; renders nothing while editing is off. Takes `renderActions` over `{ state, actions, Controls }` - `state.openRowIds` and `actions.scrollToFirstOpenRow(align?)` reach the rows left open. |
 | `TMDataGridDraftActions` | Export | The same component, for use outside the namespace. |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"`, the generated edit lane's id. |
 | `clearedValueForType` | Export | `(type) => unknown` - what Delete writes per column type. |

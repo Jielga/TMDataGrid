@@ -46,8 +46,19 @@ Under virtualization the target row may not be mounted, so
 `element.scrollIntoView()` cannot find it. `align` is `"start"`, `"center"`,
 `"end"` or `"auto"`, which scrolls only if the row is out of view.
 
-`scrollerRef` is the scroll container itself, for anything the helper does not
-cover.
+It answers whether the row could be reached. `false` means the row is not in
+the current view - filtered out, on another page, or an id matching no row -
+and nothing scrolled. A pinned row answers `true` without scrolling.
+
+The hook reaches the virtualizer through `scrollerRef`, which `TMDataGrid.Table`
+fills in. That is internal wiring rather than an API: spread the whole grid
+object onto `<TMDataGrid>`, because a hand-assembled prop list that leaves it
+out has no scrolling.
+
+While the draft store is running, `TMDataGrid.DraftActions` hands its
+`renderActions` slot an `actions.scrollToFirstOpenRow(align?)` that goes to the
+first row [left open](/docs/editing#the-draft-store), without your having to
+track the ids.
 
 ## Edge callbacks
 
@@ -88,8 +99,7 @@ boundary and the pinned band is always on.
 | --- | --- | --- | --- | --- |
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height, in pixels. The virtualizer needs a number. |
-| `scrollToRow` | Hook return | `({ rowId, align? }) => void` | `align: "auto"` | Scrolls a row into view, mounted or not. |
-| `scrollerRef` | Hook return | `RefObject<HTMLDivElement>` | – | The scroll container. |
+| `scrollToRow` | Hook return | `({ rowId, align? }) => boolean` | `align: "auto"` | Scrolls a row into view, mounted or not. Answers whether it could be reached. |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | Table props | `() => void` | – | Fire once on arriving at that edge. |
 | `TMDataGridScrollAlign` | Export | `"start" \| "center" \| "end" \| "auto"` | – | The `align` argument. |
 | `--dg-header-shadow-color` | CSS variable | colour | Themed | The shadow under the sticky header. |

@@ -319,17 +319,25 @@ If validation blocks a row, its marker - or the open row's ✓ - turns red with 
 Every control carries a tooltip from the labels.
 
 `TMDataGrid.DraftActions` is Save with the draft-store count, Discard, and a
-note counting the rows still open. Save sends the store and leaves open rows
-alone, it greys out while nothing is parked, and the component renders nothing
-while editing is off.
+note counting the rows still open. Save greys out while the store is empty
+however much is being typed, spins while a submit is in flight, renders nothing
+while editing is off, and works under any mode, not only draft.
 
 `renderActions` replaces the set and hands over its pieces:
 
 ```tsx
 <TMDataGrid.DraftActions
-  renderActions={({ state, Controls }) => (
+  renderActions={({ state, actions, Controls }) => (
     <Group>
       {state.draftCount > 0 && <Badge>{state.draftCount}</Badge>}
+      <Button
+        disabled={state.openCount === 0}
+        onClick={() => {
+          actions.scrollToFirstOpenRow("center");
+        }}
+      >
+        Go to open row
+      </Button>
       <Controls.OpenRowsNote />
       <Controls.Save />
       <Controls.Discard />
@@ -338,9 +346,22 @@ while editing is off.
 />
 ```
 
-`state` is `{ draftCount, openCount, isSubmitting }`, `actions` is
-`{ save, commitAll, discard }`, and `Controls` is
-`{ Save, Discard, OpenRowsNote }`.
+`state` is
+`{ draftCount, openCount, openRowIds, pendingCount, isSubmitting }` -
+`pendingCount` deprecated, reading as `draftCount + openCount`. `actions` is
+`{ save, commitAll, discard, scrollToRow, scrollToFirstOpenRow }`, and
+`Controls` is `{ Save, Discard, OpenRowsNote }`.
+
+The grid is always virtualized, so an open row far down the list has no element
+to scroll to. `actions.scrollToFirstOpenRow(align?)` moves the virtualizer to
+the topmost open row and answers whether it could be reached; `false` means
+every open row is filtered out, on another page or collapsed in a group. An
+open entry row answers `true` without scrolling - the entry block is sticky, so
+it is on screen already.
+
+The two orderings differ: `state.openRowIds` is the order the grid opened the
+rows, `scrollToFirstOpenRow` is display order. `openRowIds[0]` need not be the
+row it reaches.
 
 ## The engine: `edit`
 

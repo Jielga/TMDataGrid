@@ -1,15 +1,28 @@
 import { Button, Menu } from "@mantine/core";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
   bodyRows,
+  countScrolls,
+  makeRows,
   openColumnMenu,
   part,
   queryPart,
   renderedRowIds,
   renderGridUi,
+  renderWithMantine,
+  testColumns,
+  type TestRow,
 } from "../../test/gridHarness";
+import {
+  useTMDataGrid,
+  type TMDataGridApi,
+  type TMDataGridScrollToRowArgs,
+  type UseTMDataGridOptions,
+} from "../index";
+import { TMDataGrid } from "./TMDataGrid";
+import type { TMDataGridDraftActionsSlotArgs } from "./TMDataGridDraftActions";
 
 /**
  * The P2 render slots: the two chrome slots that hand over
@@ -303,5 +316,212 @@ describe("DraftActions renderActions", () => {
     });
 
     expect(screen.getByText("Custom chrome")).toBeInTheDocument();
+  });
+});
+
+describe("DraftActions and the rows left open", () => {
+  const manyRows = makeRows(500);
+
+  /**
+   * A draft grid whose chrome is the slot itself: the test drives the engine
+   * through `api` and reads back whatever `renderActions` was last handed.
+   */
+  function DraftSlotGrid({
+    onReady,
+    onArgs,
+    ...options
+  }: Partial<UseTMDataGridOptions<TestRow>> & {
+    onReady: (api: TMDataGridApi<TestRow>) => void;
+    onArgs: (args: TMDataGridDraftActionsSlotArgs) => void;
+  }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: manyRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      editing: { mode: "row", draft: true },
+      ...options,
+    } as UseTMDataGridOptions<TestRow>);
+    onReady(grid);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <TMDataGrid.DraftActions
+            renderActions={(args) => {
+              onArgs(args);
+              return null;
+            }}
+          />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  function renderDraftSlotGrid(
+    options: Partial<UseTMDataGridOptions<TestRow>> = {},
+  ) {
+    let api: TMDataGridApi<TestRow> | null = null;
+    let args: TMDataGridDraftActionsSlotArgs | null = null;
+    renderWithMantine(
+      <DraftSlotGrid
+        {...options}
+        onReady={(next) => (api = next)}
+        onArgs={(next) => (args = next)}
+      />,
+    );
+    if (api === null || args === null) throw new Error("grid never rendered");
+    return {
+      api: api as TMDataGridApi<TestRow>,
+      /** The latest slot args, re-read so a stale render is never asserted on. */
+      slot: () => args as TMDataGridDraftActionsSlotArgs,
+    };
+  }
+
+  /** Opens a row and types into it, which is what makes it count as open. */
+  const openRow = (api: TMDataGridApi<TestRow>, rowId: string) => {
+    act(() => {
+      api.edit.begin({ rowId, columnId: "name" });
+      api.edit.getForm(rowId)?.setFieldValue("name", `Edited ${rowId}`);
+    });
+  };
+
+  /**
+   * Which row the scroll was asked for, with the body's own scroller stood
+   * down. `countScrolls` answers whether anything scrolled; this answers what
+   * it aimed at, which no scroll offset can say under jsdom.
+   */
+  function scrollTargets(
+    api: TMDataGridApi<TestRow>,
+    run: () => void,
+  ): Array<TMDataGridScrollToRowArgs> {
+    const seen: Array<TMDataGridScrollToRowArgs> = [];
+    const original = api.scrollerRef.current;
+    api.scrollerRef.current = (args) => {
+      seen.push(args);
+      return true;
+    };
+    try {
+      act(run);
+    } finally {
+      api.scrollerRef.current = original;
+    }
+    return seen;
+  }
+
+  it("hands over the ids behind the count, in the order the rows were opened", () => {
+    const { api, slot } = renderDraftSlotGrid();
+
+    expect(slot().state.openRowIds).toEqual([]);
+
+    openRow(api, "8");
+    openRow(api, "3");
+
+    expect(slot().state.openRowIds).toEqual(["8", "3"]);
+    expect(slot().state.openCount).toBe(2);
+  });
+
+  it("scrolls to the first open row in display order, not the first opened", () => {
+    const { api, slot } = renderDraftSlotGrid();
+
+    openRow(api, "3");
+    openRow(api, "8");
+    act(() => {
+      api.table.setSorting([{ id: "id", desc: true }]);
+    });
+
+    // `openRowIds` still reads ["3", "8"] - the engine's order never moves.
+    // On screen row 8 is now above row 3, and that is what "first" means.
+    expect(slot().state.openRowIds).toEqual(["3", "8"]);
+    expect(
+      scrollTargets(api, () => {
+        expect(slot().actions.scrollToFirstOpenRow("center")).toBe(true);
+      }),
+    ).toEqual([{ rowId: "8", align: "center" }]);
+  });
+
+  it("skips an open row the current view does not hold", () => {
+    const { api, slot } = renderDraftSlotGrid();
+
+    openRow(api, "8");
+    openRow(api, "3");
+    act(() => {
+      // Row 8 is Göteborg and row 3 is Malmö, so only row 3 survives.
+      api.table.setGlobalFilter("Malmö");
+    });
+
+    expect(
+      scrollTargets(api, () => {
+        expect(slot().actions.scrollToFirstOpenRow()).toBe(true);
+      }),
+    ).toEqual([{ rowId: "3", align: undefined }]);
+  });
+
+  it("answers false, and scrolls nothing, with no row open", () => {
+    const { slot } = renderDraftSlotGrid();
+
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = slot().actions.scrollToFirstOpenRow();
+      }),
+    ).toBe(0);
+    expect(answer).toBe(false);
+  });
+
+  it("answers false when every open row is filtered away", () => {
+    const { api, slot } = renderDraftSlotGrid();
+
+    openRow(api, "3");
+    act(() => {
+      api.table.setGlobalFilter("Göteborg");
+    });
+
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = slot().actions.scrollToFirstOpenRow();
+      }),
+    ).toBe(0);
+    expect(answer).toBe(false);
+  });
+
+  it("answers true for a pinned open row without scrolling it", () => {
+    const { api, slot } = renderDraftSlotGrid({ enableRowPinning: true });
+
+    openRow(api, "300");
+    act(() => {
+      api.table.setRowPinning({ top: ["300"], bottom: [] });
+    });
+
+    // Parked at the edge, and out of the scrolling order - already on screen.
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = slot().actions.scrollToFirstOpenRow();
+      }),
+    ).toBe(0);
+    expect(answer).toBe(true);
+  });
+
+  it("hands `scrollToRow` straight through", () => {
+    const { slot } = renderDraftSlotGrid();
+
+    // The point of the passthrough: row 400 is real and has no element.
+    expect(queryPart("row", { rowId: "400" })).toBeNull();
+
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = slot().actions.scrollToRow({ rowId: "400" });
+      }),
+    ).toBe(1);
+    expect(answer).toBe(true);
+
+    expect(
+      countScrolls(() => {
+        answer = slot().actions.scrollToRow({ rowId: "9999" });
+      }),
+    ).toBe(0);
+    expect(answer).toBe(false);
   });
 });

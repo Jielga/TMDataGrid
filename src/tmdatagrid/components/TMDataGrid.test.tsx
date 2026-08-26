@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   bodyRows,
   clickMenuItem,
+  countScrolls,
   Grid,
   gridRowCount,
   header,
@@ -749,33 +750,6 @@ describe("scrollToRow", () => {
     if (api === null) throw new Error("grid never rendered");
     return api as TMDataGridApi<TestRow>;
   };
-
-  /**
-   * How many times the body asked its scroll container to move.
-   *
-   * The offset it asks for is TanStack Virtual's to compute, and jsdom cannot
-   * check it: nothing is laid out, the ResizeObserver is a stub, and the
-   * virtualizer measures everything as zero. What is testable here is the part
-   * this grid owns - whether a row resolves to a scroll at all. That the rows
-   * then mount is a browser-level concern; see the Testing docs page.
-   */
-  function countScrolls(run: () => void): number {
-    const container = document.querySelector<HTMLElement>(
-      "[data-dg-scroll-container]",
-    );
-    if (container === null) throw new Error("no scroll container");
-    const original = container.scrollTo;
-    let calls = 0;
-    container.scrollTo = (() => {
-      calls += 1;
-    }) as typeof container.scrollTo;
-    try {
-      act(run);
-    } finally {
-      container.scrollTo = original;
-    }
-    return calls;
-  }
 
   it("scrolls for a row virtualization left out of the DOM", () => {
     const api = renderScrollGrid();

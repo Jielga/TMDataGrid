@@ -142,6 +142,18 @@ one off. `edit.isColumnEditable` answers the column's half of the rule.
 Alongside: `aggregateColumn` reads `flatRows` so a `getSubRows` tree totals its
 children, and the `number` editor no longer writes `NaN` for partial input.
 
+**DraftActions scroll to row** - **done 2026-08-26**.
+Closes [#46](https://github.com/Jielga/TMDataGrid/issues/46). `renderActions`
+gains `state.openRowIds`, `actions.scrollToRow` and
+`actions.scrollToFirstOpenRow(align?)`, so a toolbar can return the user to a
+row left undecided on a grid too long to find it by scrolling. `openRowIds` is
+the engine's order and the scroll is display order, resolved at the click:
+ordering only matters then, and pinning it to the state would have put a
+`table.store` subscription on chrome that otherwise only watches edit state.
+`Controls.OpenRowsNote` stays a label. Fixed along the way: the slot-args table
+in the docs was two features behind, and `scrollerRef` was documented as the
+scroll container element, which it has never been.
+
 **Partial draft saves** - **done 2026-08-26**.
 Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33). `onSaveDrafts`
 returns a result naming the ids that failed; they keep their drafts, committed,

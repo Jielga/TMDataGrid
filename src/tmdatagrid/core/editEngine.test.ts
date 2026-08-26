@@ -5,8 +5,10 @@ import { MantineWrapper } from "../../test/gridHarness";
 import {
   clearedValueForType,
   getEditFieldName,
+  getOpenRowIds,
   normalizeFieldValidate,
   type TMDataGridEditCommitArgs,
+  type TMDataGridEditState,
   type TMDataGridTableValidateArgs,
   type TMDataGridTableValidators,
 } from "./editEngine";
@@ -102,6 +104,86 @@ describe("clearedValueForType", () => {
     expect(clearedValueForType("boolean")).toBe(false);
     expect(clearedValueForType("number")).toBe(null);
     expect(clearedValueForType("date")).toBe(null);
+  });
+});
+
+describe("getOpenRowIds", () => {
+  /** A projection with only the field the predicate reads. */
+  const projection = (dirtyFields: Array<string>) => ({
+    dirtyFields,
+    errorFields: [],
+    errorMessages: [],
+    hasRowError: false,
+    isSubmitting: false,
+    values: {},
+  });
+
+  const state = (
+    over: Partial<TMDataGridEditState> = {},
+  ): TMDataGridEditState => ({
+    active: null,
+    openRowIds: [],
+    rows: {},
+    committedRowIds: [],
+    newRows: [],
+    deletedRowIds: [],
+    ...over,
+  });
+
+  it("counts a row with values typed in, and skips one merely opened", () => {
+    expect(
+      getOpenRowIds(
+        state({
+          openRowIds: ["1", "2"],
+          rows: { 1: projection(["name"]), 2: projection([]) },
+        }),
+      ),
+    ).toEqual(["1"]);
+  });
+
+  it("skips a row parked in the draft store, values or not", () => {
+    expect(
+      getOpenRowIds(
+        state({
+          openRowIds: ["1"],
+          rows: { 1: projection(["name"]) },
+          committedRowIds: ["1"],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("skips a projection with no form behind it", () => {
+    // `rows` outlives nothing: a row is only open while `openRowIds` says so.
+    expect(getOpenRowIds(state({ rows: { 1: projection(["name"]) } }))).toEqual(
+      [],
+    );
+  });
+
+  it("counts an entry row whatever it holds, until it is committed", () => {
+    const entered = state({
+      openRowIds: ["__new__1"],
+      newRows: [{ tempId: "__new__1", committed: false }],
+    });
+
+    expect(getOpenRowIds(entered)).toEqual(["__new__1"]);
+    expect(
+      getOpenRowIds({
+        ...entered,
+        newRows: [{ tempId: "__new__1", committed: true }],
+      }),
+    ).toEqual([]);
+  });
+
+  it("keeps the engine's order - the order the forms were opened", () => {
+    expect(
+      getOpenRowIds(
+        state({
+          openRowIds: ["8", "3"],
+          rows: { 8: projection(["name"]), 3: projection(["name"]) },
+        }),
+      ),
+    ).toEqual(["8", "3"]);
   });
 });
 
