@@ -246,7 +246,7 @@ asks for it.
 | Checkbox | `SELECT_COLUMN_ID` | Selection is on and the mode has checkboxes |
 | Tree | `GROUP_COLUMN_ID` | A column is grouped |
 | Details | `DETAILS_COLUMN_ID` | `renderDetails` is set |
-| Edit | `EDIT_COLUMN_ID` | Row mode, draft mode, or `editing.onRowDelete` |
+| Edit | `EDIT_COLUMN_ID` | Row mode, `editing.draft`, or `editing.onRowDelete` |
 
 They are structural: fixed width, no column menu, and they cannot be sorted,
 filtered, resized, re-pinned or moved. The checkbox lane anchors the left pinned

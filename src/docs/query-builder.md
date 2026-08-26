@@ -128,13 +128,13 @@ mid-edit switches them immediately. See
 whole row, Save commits it, and `editing.onCommit` hands the form one finished
 condition. The form's rules run at that point.
 
-**Not `"draft"`.** Draft mode holds every draft inside the grid and calls
-nothing until `edit.saveDrafts()`, so the form's array goes stale the moment
-typing starts: "at least one condition" counts rows the user may have marked
-for deletion, a duplicate sitting in a draft passes unseen, and the form's
-submit saves an array missing every pending edit.
+**Not `draft: true`.** A draft store holds every commit inside the grid and
+calls nothing until `edit.saveDrafts()`, so the form's array goes stale the
+moment typing starts: "at least one condition" counts rows the user may have
+marked for deletion, a duplicate sitting in a draft passes unseen, and the
+form's submit saves an array missing every pending edit.
 
-To use draft mode anyway, invert where the save happens: `grid.edit.saveDrafts()`
+To use the store anyway, invert where the save happens: `grid.edit.saveDrafts()`
 becomes the only way rows reach the form, and the form's submit is gated on the
 grid holding no draft -
 `useSelector(grid.edit.store, (s) => s.openRowIds.length === 0)`.
@@ -153,8 +153,8 @@ const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0
 
 The alternative is to flush instead of block. `await grid.edit.commitAll()`
 before `form.handleSubmit()` submits every open row through the normal
-`editing.onCommit` path, in every mode and not only draft; under draft mode
-follow it with `grid.edit.saveDrafts()`. Rows that fail their own validation
+`editing.onCommit` path, in every mode; with `draft: true` follow it with
+`grid.edit.saveDrafts()`. Rows that fail their own validation
 stay open, so the submit fails.
 
 Two constraints apply to a native `<form>` around a grid:

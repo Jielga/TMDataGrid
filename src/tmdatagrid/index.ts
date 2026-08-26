@@ -67,13 +67,13 @@ export {
   type TMDataGridOptionsSource,
 } from "./core/columnOptions";
 export {
-  TMDataGridEditActions,
-  type TMDataGridEditActionsActions,
-  type TMDataGridEditActionsControls,
-  type TMDataGridEditActionsProps,
-  type TMDataGridEditActionsSlotArgs,
-  type TMDataGridEditActionsState,
-} from "./components/TMDataGridEditActions";
+  TMDataGridDraftActions,
+  type TMDataGridDraftActionsActions,
+  type TMDataGridDraftActionsControls,
+  type TMDataGridDraftActionsProps,
+  type TMDataGridDraftActionsSlotArgs,
+  type TMDataGridDraftActionsState,
+} from "./components/TMDataGridDraftActions";
 export {
   clearedValueForType,
   getEditFieldName,

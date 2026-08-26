@@ -4,7 +4,7 @@ description: >
   Set up TMDataGrid, a compound React data grid built on TanStack Table v9 and
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
   catalog (Table, Footer, Toolbar, Spacer, SummaryCount, Search,
-  LoadingIndicator, EditActions, FilterButton, ColumnsButton, FilterPanel,
+  LoadingIndicator, DraftActions, FilterButton, ColumnsButton, FilterPanel,
   FilterPills, ColumnsPanel), the size scale and the bounded-height layout
   requirement. Load when adding a grid, choosing which parts to render, or when
   rows do not appear.
@@ -156,7 +156,7 @@ flex column.
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
 | `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
-| `TMDataGrid.EditActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
+| `TMDataGrid.DraftActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
 | `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
 | `TMDataGrid.ColumnsButton` | - | Opens column manager. Renders nothing if no column is hideable. |
 | `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |

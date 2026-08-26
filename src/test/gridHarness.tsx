@@ -8,7 +8,7 @@ import {
   TMDataGridFilterPills,
   useTMDataGrid,
   type TMDataGridApi,
-  type TMDataGridEditActionsProps,
+  type TMDataGridDraftActionsProps,
   type TMDataGridFooterProps,
   type TMDataGridRowData,
   type TMDataGridTableProps,
@@ -117,8 +117,8 @@ export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
   tableProps?: TMDataGridTableProps<TestRow>;
   /** Everything under this key goes to `TMDataGrid.Footer`. */
   footerProps?: TMDataGridFooterProps;
-  /** Renders `TMDataGrid.EditActions` in the toolbar, with these props. */
-  editActionsProps?: TMDataGridEditActionsProps;
+  /** Renders `TMDataGrid.DraftActions` in the toolbar, with these props. */
+  draftActionsProps?: TMDataGridDraftActionsProps;
   /** Passed to `<TMDataGrid>` itself, the way a consumer names a grid. */
   "data-testid"?: string;
 };
@@ -132,7 +132,7 @@ export type GridProps = Partial<UseTMDataGridOptions<TestRow>> & {
 export function Grid({
   tableProps,
   footerProps,
-  editActionsProps,
+  draftActionsProps,
   "data-testid": testId,
   ...options
 }: GridProps = {}) {
@@ -152,8 +152,8 @@ export function Grid({
         <TMDataGrid.Toolbar>
           <TMDataGrid.SummaryCount />
           <TMDataGrid.Spacer />
-          {editActionsProps ? (
-            <TMDataGrid.EditActions {...editActionsProps} />
+          {draftActionsProps ? (
+            <TMDataGrid.DraftActions {...draftActionsProps} />
           ) : null}
           <TMDataGrid.FilterButton />
           <TMDataGrid.ColumnsButton />

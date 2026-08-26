@@ -565,10 +565,13 @@ describe("cell editing", () => {
   });
 
   /**
-   * Draft mode's grid: the toolbar's Save all and Discard, plus an add button
-   * for the entry block - `addRow` has no chrome of its own.
+   * A grid with the draft store on: the toolbar's Save and Discard, plus an
+   * add button for the entry block - `addRow` has no chrome of its own. The
+   * gesture is the other axis, so it is a prop; `"cell"` is what these tests
+   * mostly drive, and the mode matrix covers the rest.
    */
   function DraftGrid({
+    mode = "cell",
     columns = editColumns,
     onCommit,
     onCommitDrafts,
@@ -577,6 +580,7 @@ describe("cell editing", () => {
     newRowDefaults,
     newRowsSticky,
   }: {
+    mode?: "cell" | "cellConfirm" | "row";
     columns?: UseTMDataGridOptions<Employee>["columns"];
     onCommit?: (args: unknown) => void;
     onCommitDrafts?: (args: unknown) => void;
@@ -590,7 +594,8 @@ describe("cell editing", () => {
       columns,
       getRowId: (row) => String(row.id),
       editing: {
-        mode: "draft",
+        mode,
+        draft: true,
         onCommit,
         onCommitDrafts,
         onRowAdd,
@@ -606,7 +611,7 @@ describe("cell editing", () => {
           <button type="button" onClick={() => grid.edit.addRow()}>
             add
           </button>
-          <TMDataGrid.EditActions />
+          <TMDataGrid.DraftActions />
         </TMDataGrid.Toolbar>
         <TMDataGrid.Table<Employee> />
       </TMDataGrid>
@@ -649,13 +654,9 @@ describe("cell editing", () => {
     await user.dblClick(cellAt(0, 0));
     await user.clear(screen.getByRole("textbox", { name: "Edit Name" }));
     await user.type(screen.getByRole("textbox", { name: "Edit Name" }), "Annika");
-    // Typed but undecided: dirty, not yet in the draft store.
+    // Leaving the cell decides the row under `"cell"`: dirty, and parked.
     await user.click(cellAt(1, 1));
     expect(row()).toHaveAttribute("data-dirty", "true");
-    expect(row()).toHaveAttribute("data-draft", "false");
-
-    await user.dblClick(cellAt(0, 0));
-    await user.keyboard("{Enter}");
     expect(row()).toHaveAttribute("data-draft", "true");
 
     await user.click(screen.getByRole("button", { name: "Save 1 row" }));
@@ -664,7 +665,7 @@ describe("cell editing", () => {
     );
   });
 
-  it("draft mode parks drafts on Enter and saves them through EditActions", async () => {
+  it("parks drafts on Enter and saves them through DraftActions", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
@@ -693,7 +694,7 @@ describe("cell editing", () => {
     expect(screen.getByRole("button", { name: "Save 0 rows" })).toBeDisabled();
   });
 
-  it("EditActions' Discard drops every draft", async () => {
+  it("DraftActions' Discard drops every draft", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
     renderWithMantine(
@@ -884,7 +885,8 @@ describe("cell editing", () => {
         columns: editColumns,
         getRowId: (row) => String(row.id),
         editing: {
-          mode: "draft",
+          mode: "cell",
+          draft: true,
           onCommitDrafts: (args) => void saves.push(args),
           newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
         },
@@ -896,7 +898,7 @@ describe("cell editing", () => {
             <button type="button" onClick={() => grid.edit.addRow()}>
               add
             </button>
-            <TMDataGrid.EditActions />
+            <TMDataGrid.DraftActions />
           </TMDataGrid.Toolbar>
           <TMDataGrid.Table<Employee> />
         </TMDataGrid>

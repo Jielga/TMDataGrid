@@ -111,12 +111,12 @@ export type TMDataGridLabels = {
   cancelRowEdit: string;
   /** Save tooltip when field errors block the row, with no row message. */
   editRowErrors: string;
-  /** `EditActions`' Save, with the count of rows in the draft store. */
+  /** `DraftActions`' Save, with the count of rows in the draft store. */
   saveAllEdits: (rows: number) => string;
-  /** `EditActions`' Discard. */
+  /** `DraftActions`' Discard. */
   discardAllEdits: string;
   /**
-   * `EditActions`' note about rows still open - edited but not committed, so
+   * `DraftActions`' note about rows still open - edited but not committed, so
    * not part of the save. Shown only while there are any.
    */
   editRowsStillOpen: (rows: number) => string;

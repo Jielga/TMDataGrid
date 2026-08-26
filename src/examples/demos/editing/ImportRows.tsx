@@ -103,7 +103,12 @@ export function ImportRows() {
     data: employees,
     columns,
     getRowId: (row) => String(row.id),
-    editing: { mode: "draft", onSaveDrafts, newRowDefaults: newEmployee },
+    editing: {
+      mode: "row",
+      draft: true,
+      onSaveDrafts,
+      newRowDefaults: newEmployee,
+    },
     selectionMode: "highlight",
     enableGrouping: false,
   });
@@ -142,7 +147,7 @@ export function ImportRows() {
           </Text>
         )}
         <TMDataGrid.Spacer />
-        <TMDataGrid.EditActions />
+        <TMDataGrid.DraftActions />
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

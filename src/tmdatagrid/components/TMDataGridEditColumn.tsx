@@ -7,7 +7,7 @@ import {
   useTMDataGridContext,
 } from "../TMDataGridContext";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
-import { firstErrorText } from "./editors/editorShared";
+import { firstErrorText } from "../core/editEngine";
 import {
   CheckIcon,
   CloseIcon,
@@ -20,10 +20,10 @@ import {
 export const EDIT_COLUMN_ID = "__edit__";
 
 /**
- * Draft mode's change marker in the lane - what kind of uncommitted change
- * the row carries. Non-interactive; the buttons beside it act. `data-state`
- * is the styling hook, `data-error` flips it red and puts the message in the
- * tooltip in place of the state's name.
+ * The draft store's change marker in the lane - what kind of change the row
+ * is holding for the save. Non-interactive; the buttons beside it act.
+ * `data-state` is the styling hook, `data-error` flips it red and puts the
+ * message in the tooltip in place of the state's name.
  */
 function RowStateIndicator({
   state,
@@ -56,13 +56,19 @@ function RowStateIndicator({
 }
 
 /**
- * One row's slot in the edit lane, driven off the edit store. Outside draft
- * mode: a pencil while idle, Save/Cancel while the row's form is open, a
- * loader while its commit is in flight; a row error turns the Save red with
- * the message in its tooltip - the pathless `.refine()` has nowhere else to
- * land. Under draft mode the lane is the change marker and the per-row
- * revert instead: a state icon (new/edited/deleted) beside undo, discard or
- * restore - never a per-row save, which the engine would only park anyway.
+ * One row's slot in the edit lane, driven off the edit store. Two things
+ * decide what it holds, and they are the two axes of `editing`:
+ *
+ * | Row is | Lane holds | From |
+ * | ------ | ---------- | ---- |
+ * | parked in the draft store | the change marker and the way back out - revert, discard or restore | `editing.draft` |
+ * | open | the mode's own controls: Save and Cancel | `editing.mode` |
+ * | neither | the pencil (row mode) and the trash | `editing.mode` |
+ *
+ * A row error turns the Save red with the message in its tooltip - a
+ * pathless `.refine()` has nowhere else to land, and a field error outlives
+ * the editor that found it. A parked row never offers a save: it has had its
+ * submit, and `TMDataGrid.DraftActions` is what sends it.
  */
 function EditLaneCell<TData extends RowData>({
   row,
@@ -85,18 +91,25 @@ function EditLaneCell<TData extends RowData>({
       state.newRows.find((newRow) => newRow.tempId === rowId)?.committed ===
       true,
   );
+  // Parked: the row passed its submit and is waiting for the save. A subset
+  // of the open rows, so it is asked about first - the two overlap.
+  const isCommitted = useSelector(edit.store, (state) =>
+    state.committedRowIds.includes(rowId),
+  );
   const isMarkedDeleted = useSelector(edit.store, (state) =>
     state.deletedRowIds.includes(rowId),
   );
 
   if (row.getIsGrouped()) return null;
 
-  const isDraftMode = features.editMode === "draft";
   const hasErrors =
     projection !== undefined &&
     (projection.hasRowError || projection.errorFields.length > 0);
+  // The row's own message first - a pathless issue is about the row - then
+  // the first field's, which is what a failed commit left behind.
   const rowError = hasErrors
     ? (firstErrorText(edit.getForm(rowId)?.state.errors ?? []) ??
+      projection.errorMessages[0]?.message ??
       labels.editRowErrors)
     : null;
 
@@ -120,9 +133,9 @@ function EditLaneCell<TData extends RowData>({
     </Tooltip>
   ) : null;
 
-  // An entry row: ✓ enters it - an add under the immediate modes, a parked
-  // confirm under draft - and ✕ discards the entry. A confirmed entry waits
-  // for Save all as a value row: marked new, re-openable, still discardable.
+  // An entry row: ✓ enters it - an add, or a park under `editing.draft` -
+  // and ✕ discards the entry. A parked entry waits for the save as a value
+  // row: marked new, re-openable, still discardable.
   if (isNew) {
     if (isConfirmedNew) {
       return (
@@ -201,7 +214,7 @@ function EditLaneCell<TData extends RowData>({
     );
   }
 
-  // A draft-mode deletion mark is a draft like any other - restorable in place.
+  // A deletion mark is a draft like any other - restorable in place.
   if (isMarkedDeleted) {
     return (
       <Group gap={0} wrap="nowrap">
@@ -235,16 +248,14 @@ function EditLaneCell<TData extends RowData>({
   // The pencil means "this row edits"; a row that does not gets nothing.
   if (!edit.canEditRow(row as never)) return null;
 
-  // Draft mode never offers a per-row save - the engine would only park it,
-  // and Save all is the commit. The lane is the state marker and the revert.
-  // No trash beside the revert: the two undo-shaped icons were too easy to
-  // mistake for one another, so a dirty row reverts first, then deletes.
-  if (isDraftMode) {
-    if (projection?.isSubmitting) {
-      return <Loader size="xs" aria-label={labels.loading} />;
-    }
-    const isDirty = (projection?.dirtyFields.length ?? 0) > 0;
-    if (!isDirty) return trash;
+  if (projection?.isSubmitting) {
+    return <Loader size="xs" aria-label={labels.loading} />;
+  }
+
+  // Parked in the draft store: the mark, and the way back out. No trash
+  // beside the revert - the two undo-shaped icons were too easy to mistake
+  // for one another, so a drafted row reverts first, then deletes.
+  if (isCommitted) {
     return (
       <Group gap={0} wrap="nowrap">
         <RowStateIndicator
@@ -301,10 +312,6 @@ function EditLaneCell<TData extends RowData>({
     );
   }
 
-  if (projection?.isSubmitting) {
-    return <Loader size="xs" aria-label={labels.loading} />;
-  }
-
   const save = (
     <ActionIcon
       variant="subtle"
@@ -358,11 +365,11 @@ function EditLaneCell<TData extends RowData>({
 /**
  * The generated edit lane, appended and pinned right - the row's Save at the
  * end of the row under `mode: "row"`, the state marker and revert under
- * `mode: "draft"`, mirroring the checkbox lane's build on the left.
+ * `editing.draft`, mirroring the checkbox lane's build on the left.
  */
 export function createEditColumn<TData extends RowData>(
   label = "Edit",
-  /** Draft mode holds three controls where the others hold two. */
+  /** A draft lane holds three controls where the rest hold two. */
   wide = false,
 ): ColumnDef<TMDataGridFeatures, TData, unknown> {
   const width = wide ? 88 : 64;

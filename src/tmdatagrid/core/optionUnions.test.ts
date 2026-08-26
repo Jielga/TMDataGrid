@@ -15,21 +15,46 @@ declare const columns: UseTMDataGridOptions<Person>["columns"];
 declare const getRowId: (row: Person) => string;
 
 export function useCompileTimeContracts() {
-  // Legal: draft with its bulk save.
+  // Legal: a draft store with its bulk save.
   useTMDataGrid<Person>({
     data,
     columns,
     getRowId,
-    editing: { mode: "draft", onCommitDrafts: async () => {} },
+    editing: { mode: "cell", draft: true, onSaveDrafts: async () => {} },
   });
-  // Legal: draft without it - `submitAll` falls back to the per-row loop.
-  useTMDataGrid<Person>({ data, columns, getRowId, editing: { mode: "draft" } });
-  // Legal: an immediate mode with the per-row commit.
+  // Legal: a draft store without it - `saveDrafts` falls back to `onCommit`.
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    editing: { mode: "cell", draft: true },
+  });
+  // Legal: every mode combines with the flag - the axes are independent.
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    editing: { mode: "row", draft: true, onSaveDrafts: async () => {} },
+  });
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    editing: { mode: "cellConfirm", draft: true },
+  });
+  // Legal: the default - commits go straight out.
   useTMDataGrid<Person>({
     data,
     columns,
     getRowId,
     editing: { mode: "cell", onCommit: () => {} },
+  });
+  // Legal: the flag written out as its default.
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    editing: { mode: "row", draft: false, onCommit: () => {} },
   });
   // Legal: no editing at all.
   useTMDataGrid<Person>({ data, columns });
@@ -44,12 +69,26 @@ export function useCompileTimeContracts() {
     data,
     columns,
     getRowId,
-    editing: {
-      mode: "cell",
-      // @ts-expect-error -- onCommitDrafts exists only under mode "draft"; no
-      // other mode's submitAll ever calls it.
-      onCommitDrafts: async () => {},
-    },
+    // @ts-expect-error -- there is no store to save without `draft: true`,
+    // so nothing would ever call this.
+    editing: { mode: "cell", onSaveDrafts: async () => {} },
+  });
+
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    // @ts-expect-error -- same for the deprecated name.
+    editing: { mode: "cell", onCommitDrafts: async () => {} },
+  });
+
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    // @ts-expect-error -- entry rows only park under `draft: true`, so there
+    // is nothing for them to stay sticky until.
+    editing: { mode: "cell", newRowsSticky: true },
   });
 
   useTMDataGrid<Person>({
@@ -57,11 +96,21 @@ export function useCompileTimeContracts() {
     columns,
     getRowId,
     editing: {
-      mode: "draft",
+      mode: "cell",
+      draft: true,
       // @ts-expect-error -- the rename left no alias behind: `onCommitBatch`
-      // is not an option under any mode.
+      // is not an option under any configuration.
       onCommitBatch: async () => {},
     },
+  });
+
+  useTMDataGrid<Person>({
+    data,
+    columns,
+    getRowId,
+    // @ts-expect-error -- `draft` is where a commit goes, not what counts as
+    // one: it never replaced the mode.
+    editing: { mode: "draft" },
   });
 
   useTMDataGrid<Person>({

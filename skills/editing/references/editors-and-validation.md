@@ -214,7 +214,7 @@ issue lands on the column whose `editField` is `"address.city"`.
 
 Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
-unedited value and cannot pass. Use `"row"` or `"draft"`.
+unedited value and cannot pass. Use `"row"`.
 
 ## Server-side errors
 

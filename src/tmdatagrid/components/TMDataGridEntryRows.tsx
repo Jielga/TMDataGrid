@@ -52,9 +52,9 @@ function isEntryCellEditable(
  * validators all apply unchanged. The forms live in the same engine map as
  * every other draft, keyed by their temporary ids.
  *
- * Enter commits the entry (`onRowAdd`) under the immediate modes and parks
- * it under draft, where `submitAll` reports it in `added`; Escape discards
- * it. The edit lane, when present, offers the same pair as buttons.
+ * Enter commits the entry - `onRowAdd`, or a park under `editing.draft`,
+ * where `saveDrafts` reports it in `created`; Escape discards it. The edit
+ * lane, when present, offers the same pair as buttons.
  */
 export function TMDataGridEntryRows({
   orderedColumns,

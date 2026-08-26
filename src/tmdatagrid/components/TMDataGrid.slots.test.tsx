@@ -257,9 +257,10 @@ describe("renderRowContextMenu", () => {
   });
 });
 
-describe("EditActions renderActions", () => {
+describe("DraftActions renderActions", () => {
+  // The chrome is the draft store's, so the store is what turns it on.
   const editable = {
-    editing: { mode: "cell" as const, onCommit: vi.fn() },
+    editing: { mode: "cell" as const, draft: true as const, onCommit: vi.fn() },
   };
 
   it("hands over the pending count and the built-in buttons", () => {
@@ -267,7 +268,7 @@ describe("EditActions renderActions", () => {
 
     renderGridUi({
       ...editable,
-      editActionsProps: {
+      draftActionsProps: {
         renderActions: ({ state, Controls }) => {
           seen.push(state.pendingCount);
           return (
@@ -289,9 +290,18 @@ describe("EditActions renderActions", () => {
 
   it("renders nothing at all while editing is off", () => {
     renderGridUi({
-      editActionsProps: { renderActions: () => <span>Should not render</span> },
+      draftActionsProps: { renderActions: () => <span>Should not render</span> },
     });
 
     expect(screen.queryByText("Should not render")).not.toBeInTheDocument();
+  });
+
+  it("renders under a non-draft grid too - inclusion is the consumer's call", () => {
+    renderGridUi({
+      editing: { mode: "cell" as const, onCommit: vi.fn() },
+      draftActionsProps: { renderActions: () => <span>Custom chrome</span> },
+    });
+
+    expect(screen.getByText("Custom chrome")).toBeInTheDocument();
   });
 });

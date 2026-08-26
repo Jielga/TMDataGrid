@@ -8,7 +8,7 @@ import { TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
 ```
 
 The parts of the grid are reached through the `TMDataGrid` object.
-`TMDataGridSearch`, `TMDataGridFilterPills`, `TMDataGridEditActions`, the editors and the filter controls are also exported by name; the remaining parts are available only as `TMDataGrid.Part`.
+`TMDataGridSearch`, `TMDataGridFilterPills`, `TMDataGridDraftActions`, the editors and the filter controls are also exported by name; the remaining parts are available only as `TMDataGrid.Part`.
 
 ## useTMDataGrid
 
@@ -175,14 +175,14 @@ The total comes from `meta.totalRowCount` when set, and from the unfiltered row 
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | – | Replaces the count with your own text. |
 
-## TMDataGrid.EditActions
+## TMDataGrid.DraftActions
 
 Save and Discard for pending edits.
 It renders nothing unless `editing` is set. See [Editing](/docs/editing).
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `renderActions` | `(args: TMDataGridEditActionsSlotArgs) => ReactNode` | – | Replaces both buttons. Receives `{ state, actions, Controls }`. |
+| `renderActions` | `(args: TMDataGridDraftActionsSlotArgs) => ReactNode` | – | Replaces both buttons. Receives `{ state, actions, Controls }`. |
 
 The slot argument carries the state, the two operations and the built-in buttons:
 
@@ -301,7 +301,7 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. |
 | `TMDataGrid.ColumnsButton` · `.ColumnsPanel` | Components | – | – | Column visibility, and Reset layout. |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Components | – | – | Fetch spinner, and the row count. |
-| `TMDataGrid.EditActions` | Component | – | – | Save and Discard. Also `TMDataGridEditActions`. |
+| `TMDataGrid.DraftActions` | Component | – | – | Save and Discard. Also `TMDataGridDraftActions`. |
 | `TMDataGrid.Footer` | Component | – | – | The pager bar. |
 | `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |
