@@ -54,22 +54,20 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
   const { table, controlSize } = useTMDataGridContext();
   useSelector(table.store);
 
-  if (children !== undefined) {
-    return (
-      <Text span size={controlSize} c="dimmed" data-dg-part="summary-count">
-        {children}
-      </Text>
-    );
-  }
-
   const shown = table.getRowCount();
   const total =
     table.options.meta?.totalRowCount ??
     table.getPreFilteredRowModel().rows.length;
 
   return (
-    <Text span size={controlSize} c="dimmed" data-dg-part="summary-count">
-      {shown} / {total}
+    <Text
+      span
+      size={controlSize}
+      c="dimmed"
+      className={classes.summaryCount}
+      data-dg-part="summary-count"
+    >
+      {children !== undefined ? children : `${shown} / ${total}`}
     </Text>
   );
 }

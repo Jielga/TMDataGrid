@@ -10,3 +10,7 @@
 .toolbarSpacer {
   flex: 1;
 }
+
+.summaryCount {
+  white-space: nowrap;
+}
