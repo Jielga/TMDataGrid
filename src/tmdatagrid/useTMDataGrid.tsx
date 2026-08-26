@@ -52,6 +52,7 @@ import {
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
   type TMDataGridSaveDraftsArgs,
+  type TMDataGridSaveDraftsResult,
   type TMDataGridEditEngineContext,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
@@ -532,12 +533,16 @@ export type TMDataGridEditingOptions<TData extends RowData> =
            * `saveDrafts` falls back to the per-row
            * {@link TMDataGridEditingCallbacks.onCommit} loop.
            *
-           * Rows still open are not in the payload and stay open; a rejection
-           * keeps every draft.
+           * Rows still open are not in the payload and stay open. Returning
+           * nothing saves the whole store and throwing saves none of it;
+           * return a {@link TMDataGridSaveDraftsResult} to save part of it.
            */
           onSaveDrafts?: (
             args: TMDataGridSaveDraftsArgs<TData>,
-          ) => void | Promise<void>;
+          ) =>
+            | void
+            | TMDataGridSaveDraftsResult
+            | Promise<void | TMDataGridSaveDraftsResult>;
           /**
            * @deprecated Renamed to {@link onSaveDrafts} - it fires when the
            * draft store is saved, not when a row commits into it. Still
@@ -545,7 +550,10 @@ export type TMDataGridEditingOptions<TData extends RowData> =
            */
           onCommitDrafts?: (
             args: TMDataGridSaveDraftsArgs<TData>,
-          ) => void | Promise<void>;
+          ) =>
+            | void
+            | TMDataGridSaveDraftsResult
+            | Promise<void | TMDataGridSaveDraftsResult>;
           /**
            * Keep committed entry rows pinned in the sticky entry block until
            * the draft store is saved. Off by default: a committed row joins

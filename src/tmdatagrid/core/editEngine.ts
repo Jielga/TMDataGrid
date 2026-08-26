@@ -308,13 +308,52 @@ export type TMDataGridRowDeleteArgs<TData extends RowData> = {
  * Rows still open (undecided form state) are not in here and stay open.
  */
 export type TMDataGridSaveDraftsArgs<TData extends RowData> = {
-  /** Every committed edit to an existing row. */
-  rows: Array<TMDataGridEditCommitArgs<TData>>;
-  /** Every committed new row from the entry block. */
-  added: Array<TMDataGridRowAddArgs<TData>>;
+  /** Committed edits to existing rows; each entry carries its `rowId`. */
+  updated: Array<TMDataGridEditCommitArgs<TData>>;
+  /** Committed new rows from the entry block; each entry carries its `tempId`. */
+  created: Array<TMDataGridRowAddArgs<TData>>;
   /** Ids marked deleted while the drafts accumulated. */
   deleted: Array<string>;
+  /** @deprecated Renamed to {@link updated}. Removed in a later beta. */
+  rows: Array<TMDataGridEditCommitArgs<TData>>;
+  /** @deprecated Renamed to {@link created}. Removed in a later beta. */
+  added: Array<TMDataGridRowAddArgs<TData>>;
 };
+
+/**
+ * Which entries of one bucket saved. `true`, or an id the map does not name,
+ * saved and is dropped from the draft store; `false` failed and keeps its
+ * draft. A bare boolean answers for the whole bucket.
+ */
+export type TMDataGridSaveOutcomes = boolean | Record<string, boolean>;
+
+/**
+ * What `onSaveDrafts` may return to save part of the store.
+ *
+ * Returning nothing saves everything, and throwing saves nothing. Between
+ * those, name the ids that failed: they keep their drafts, committed and
+ * ready for the next save, while the rest are dropped. The grid marks them
+ * with nothing beyond the state itself - a failed edit keeps `data-draft`,
+ * a failed deletion keeps `data-deleted` - so the display is the consumer's.
+ */
+export type TMDataGridSaveDraftsResult = {
+  /** Keyed by `rowId`. */
+  updated?: TMDataGridSaveOutcomes;
+  /** Keyed by `tempId`. */
+  created?: TMDataGridSaveOutcomes;
+  /** Keyed by `rowId`. */
+  deleted?: TMDataGridSaveOutcomes;
+};
+
+/** Whether one id of a bucket saved. Unnamed ids saved. */
+function isSaved(
+  outcomes: TMDataGridSaveOutcomes | undefined,
+  id: string,
+): boolean {
+  if (outcomes === undefined) return true;
+  if (typeof outcomes === "boolean") return outcomes;
+  return outcomes[id] !== false;
+}
 
 /**
  * @deprecated Renamed to {@link TMDataGridSaveDraftsArgs} - the payload is
@@ -334,7 +373,10 @@ export type TMDataGridEditEngineContext = {
   ) => void | Promise<void>;
   onSaveDrafts?: (
     args: TMDataGridSaveDraftsArgs<TMDataGridRowData>,
-  ) => void | Promise<void>;
+  ) =>
+    | void
+    | TMDataGridSaveDraftsResult
+    | Promise<void | TMDataGridSaveDraftsResult>;
   /**
    * Seed values for `addRow`, under the values it is called with. A function
    * is called per added row.
@@ -1192,15 +1234,24 @@ export function createEditEngine(
     return results.every(Boolean);
   };
 
-  const saveDrafts = async (): Promise<boolean> => {
+  /**
+   * The in-flight save. A second call while `onSaveDrafts` awaits would
+   * re-collect the same payload and send it again - a double-clicked Save
+   * would create every pending entry row twice - so concurrent calls join
+   * this promise instead of starting a save of their own.
+   */
+  let saveInFlight: Promise<boolean> | null = null;
+
+  const saveDrafts = (): Promise<boolean> => {
+    if (saveInFlight !== null) return saveInFlight;
     // While this runs, `commit` really commits - under draft it parks
     // otherwise. Single-threaded flag, same idiom as the collectors.
     savingDrafts = true;
-    try {
-      return await saveDraftsInner();
-    } finally {
+    saveInFlight = saveDraftsInner().finally(() => {
       savingDrafts = false;
-    }
+      saveInFlight = null;
+    });
+    return saveInFlight;
   };
 
   const saveDraftsInner = async (): Promise<boolean> => {
@@ -1248,21 +1299,47 @@ export function createEditEngine(
     }
     const deleted = deletedIds;
     if (collected.length > 0 || added.length > 0 || deleted.length > 0) {
+      let result: void | TMDataGridSaveDraftsResult;
       try {
-        await getContext().onSaveDrafts?.({ rows: collected, added, deleted });
+        result = await getContext().onSaveDrafts?.({
+          updated: collected,
+          created: added,
+          deleted,
+          // The pre-2.0 names, still filled - see TMDataGridSaveDraftsArgs.
+          rows: collected,
+          added,
+        });
       } catch {
         return false;
       }
-      for (const args of collected) drop(args.rowId);
-      for (const args of added) drop(args.tempId);
-      if (deleted.length > 0) {
+
+      // Nothing returned saves the lot. A result names what failed; those
+      // keep their drafts, committed, so the next save retries them.
+      const outcomes = result ?? {};
+      let savedAll = true;
+
+      for (const args of collected) {
+        if (isSaved(outcomes.updated, args.rowId)) drop(args.rowId);
+        else savedAll = false;
+      }
+      for (const args of added) {
+        if (isSaved(outcomes.created, args.tempId)) drop(args.tempId);
+        else savedAll = false;
+      }
+      const savedDeletions = deleted.filter((id) =>
+        isSaved(outcomes.deleted, id),
+      );
+      if (savedDeletions.length > 0) {
         store.setState((prev) => ({
           ...prev,
           deletedRowIds: prev.deletedRowIds.filter(
-            (id) => !deleted.includes(id),
+            (id) => !savedDeletions.includes(id),
           ),
         }));
       }
+      if (savedDeletions.length < deleted.length) savedAll = false;
+
+      if (!savedAll) return false;
     }
     return allValid;
   };

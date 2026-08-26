@@ -83,6 +83,8 @@ export {
   type TMDataGridEditChange,
   type TMDataGridEditCommitArgs,
   type TMDataGridSaveDraftsArgs,
+  type TMDataGridSaveDraftsResult,
+  type TMDataGridSaveOutcomes,
   type TMDataGridEditCommitDraftsArgs,
   type TMDataGridAddRowsOptions,
   type TMDataGridAddRowsResult,

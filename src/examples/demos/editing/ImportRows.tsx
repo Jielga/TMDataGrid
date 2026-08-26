@@ -83,12 +83,15 @@ export function ImportRows() {
   const [report, setReport] = useState<string | null>(null);
 
   const onSaveDrafts = useCallback(
-    ({ added }: TMDataGridSaveDraftsArgs<Employee>) => {
+    ({ created }: TMDataGridSaveDraftsArgs<Employee>) => {
       setEmployees((previous) => {
         const maxId = Math.max(4999, ...previous.map((row) => row.id));
         return [
           ...previous,
-          ...added.map((add, index) => ({ ...add.value, id: maxId + index + 1 })),
+          ...created.map((add, index) => ({
+            ...add.value,
+            id: maxId + index + 1,
+          })),
         ];
       });
       setReport(null);
