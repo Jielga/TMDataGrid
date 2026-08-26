@@ -32,6 +32,7 @@ describe("readFeatureFlags", () => {
       grouping: true,
       editing: false,
       editMode: null,
+      editDraft: false,
       editNewRowsSticky: false,
       rowNumbers: false,
       rowPinning: false,
@@ -51,15 +52,33 @@ describe("readFeatureFlags", () => {
     expect(readFeatureFlags({})).toMatchObject({ cellSelectionMode: "none" });
   });
 
-  it("keeps confirmed entry rows sticky only where draft mode asks for it", () => {
+  it("keeps parked entry rows sticky only where the draft store asks for it", () => {
     expect(readFeatureFlags({}).editNewRowsSticky).toBe(false);
     expect(
-      readFeatureFlags({ editing: { mode: "draft" } }).editNewRowsSticky,
+      readFeatureFlags({ editing: { mode: "cell", draft: true } })
+        .editNewRowsSticky,
     ).toBe(false);
     expect(
-      readFeatureFlags({ editing: { mode: "draft", newRowsSticky: true } })
-        .editNewRowsSticky,
+      readFeatureFlags({
+        editing: { mode: "cell", draft: true, newRowsSticky: true },
+      }).editNewRowsSticky,
     ).toBe(true);
+  });
+
+  it("reads the two editing axes apart", () => {
+    expect(readFeatureFlags({})).toMatchObject({
+      editing: false,
+      editMode: null,
+      editDraft: false,
+    });
+    expect(readFeatureFlags({ editing: { mode: "row" } })).toMatchObject({
+      editing: true,
+      editMode: "row",
+      editDraft: false,
+    });
+    expect(
+      readFeatureFlags({ editing: { mode: "row", draft: true } }),
+    ).toMatchObject({ editMode: "row", editDraft: true });
   });
 
   it("reads the cell selection mode", () => {

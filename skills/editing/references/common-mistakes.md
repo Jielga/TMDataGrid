@@ -79,8 +79,8 @@ Under `"cell"` each cell commits on its own, so a rule spanning two columns
 cannot be satisfied by either one: the first cell edited is rejected against the
 other column's old value, and the row cannot be saved.
 
-Correct: `editing.rowValidators` needs `mode: "row"` or `"draft"`, which
-validate the whole row in one commit.
+Correct: `editing.rowValidators` needs `mode: "row"`, which validates the
+whole row in one commit.
 
 Source: `src/docs/editors.md` (Validation).
 
@@ -137,7 +137,8 @@ Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 ## HIGH Submitting an outer form while the grid holds a draft
 
 The outer form's array contains only committed rows. Under any mode a mid-edit
-row is invisible to it, and under `"draft"` every edit is until `saveDrafts()`,
+row is invisible to it, and under `draft: true` every edit is until
+`saveDrafts()`,
 so a form submit saves stale rows and collection rules skip pending values.
 
 Correct:
@@ -168,10 +169,10 @@ notifications.show({ message: saved ? "Saved" : "Some rows need attention" });
 
 Source: `src/tmdatagrid/core/editEngine.ts` (`TMDataGridEditApi`).
 
-## MEDIUM Expecting `editing.onRowDelete` to fire under draft
+## MEDIUM Expecting `editing.onRowDelete` to fire under a draft store
 
-Under the immediate modes `edit.deleteRow` calls `editing.onRowDelete` at once.
-Under `"draft"` it only toggles a deletion mark, so nothing is removed until
+Without `editing.draft`, `edit.deleteRow` calls `editing.onRowDelete` at once.
+Under `draft: true` it only toggles a deletion mark, so nothing is removed until
 `saveDrafts`: the ids arrive as `deleted` in `editing.onSaveDrafts`, or, with
 no such callback, in the per-row `editing.onRowDelete` loop. A confirmation
 placed inside `editing.onRowDelete` therefore guards the save, not the trash.

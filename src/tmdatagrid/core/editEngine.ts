@@ -19,10 +19,21 @@ import type { TMDataGridColumnType } from "./filterOperators";
 import type { TMDataGridSize } from "./sizes";
 
 /**
- * How commits happen - one axis, each mode a thin policy over the same
- * engine. See `editMode` on `UseTMDataGridOptions`.
+ * What counts as a commit - one axis, each mode a thin policy over the same
+ * engine. Where a commit *goes* is the other axis, `editing.draft`: out to
+ * the consumer, or into the draft store. See `editing` on
+ * `UseTMDataGridOptions`.
+ *
+ * | Mode | Enter | Tab | Focus leaves | Escape |
+ * | ---- | ----- | --- | ------------ | ------ |
+ * | `"cell"` | commits | commits, caret moves on | commits | cancels |
+ * | `"cellConfirm"` | commits | keeps the draft, caret moves on | keeps the draft | cancels |
+ * | `"row"` | commits the row | the browser's, along the row | nothing | cancels the row |
+ *
+ * An entry row is row-shaped in every mode - every editable cell open at
+ * once, the browser's Tab between them, and an explicit ✓.
  */
-export type TMDataGridEditMode = "cell" | "cellConfirm" | "row" | "draft";
+export type TMDataGridEditMode = "cell" | "cellConfirm" | "row";
 
 /**
  * One editing row's live form. TanStack Form's `FormApi`, not a wrapper: the
@@ -108,8 +119,17 @@ export type TMDataGridEditCommitArgs<TData extends RowData> = {
 export type TMDataGridEditRowProjection = {
   /** Field names whose value differs from the original. */
   dirtyFields: ReadonlyArray<string>;
-  /** Field names carrying a validation error. */
+  /** Field names carrying a validation error, live or from a failed commit. */
   errorFields: ReadonlyArray<string>;
+  /**
+   * Those errors as text: what each cell editor is showing, plus what the
+   * row's last failed commit found. The second half is the reason this
+   * exists - Form clears a field's errors when its editor unmounts, so a row
+   * left invalid would go back to looking like an ordinary edited row. Such
+   * a message is dropped as soon as its field's value moves: the fix is what
+   * clears the mark.
+   */
+  errorMessages: ReadonlyArray<{ field: string; message: string }>;
   /** A row-level error - a pathless `.refine()`, or a rejected commit. */
   hasRowError: boolean;
   isSubmitting: boolean;
@@ -147,19 +167,18 @@ export type TMDataGridEditState = {
    * values stay in the row's form, this records which side of the line the
    * row is on. `begin` on one of these takes it back out, into form state.
    *
-   * Only draft mode parks; the immediate modes send a commit straight to the
-   * consumer and drop the form, so there this stays empty.
+   * Only `editing.draft` parks. Without it a commit goes straight to the
+   * consumer and the form is dropped, so this stays empty.
    */
   committedRowIds: ReadonlyArray<string>;
   /**
    * Rows being created, not yet in `data`. `committed` is the draft store's
    * add slice: the entry row passed its submit and renders as a value row
-   * until `begin` re-opens it. Under the immediate modes a commit adds
-   * through `onRowAdd` and the entry is dropped, so there it never turns
-   * `true`.
+   * until `begin` re-opens it. Without `editing.draft` a commit adds through
+   * `onRowAdd` and the entry is dropped, so it never turns `true`.
    */
   newRows: ReadonlyArray<{ tempId: string; committed: boolean }>;
-  /** The draft store's delete slice: rows marked deleted under draft mode. */
+  /** The draft store's delete slice: rows marked deleted, awaiting the save. */
   deletedRowIds: ReadonlyArray<string>;
 };
 
@@ -289,7 +308,7 @@ export type TMDataGridColumnEditOptions = {
   mapValue?: TMDataGridEditValueMap;
 };
 
-/** A new row being committed - `onRowAdd`, and `submitAll`'s `added`. */
+/** A new row being committed - `onRowAdd`, and `saveDrafts`'s `created`. */
 export type TMDataGridRowAddArgs<TData extends RowData> = {
   /** The engine's placeholder id; the real id is the consumer's to mint. */
   tempId: string;
@@ -366,6 +385,8 @@ export type TMDataGridEditCommitDraftsArgs<TData extends RowData> =
 export type TMDataGridEditEngineContext = {
   table: TMDataGridTable<TMDataGridRowData>;
   editMode: TMDataGridEditMode;
+  /** `editing.draft` - whether a commit parks instead of reaching out. */
+  draft: boolean;
   rowValidators?: TMDataGridRowValidators;
   isRowEditable?: (row: ErasedRow) => boolean;
   onEditCommit?: (
@@ -491,10 +512,10 @@ export type TMDataGridEditApi<
   cancelAll: () => void;
   /**
    * Submits every open row, as if each had been OK'd: a row that validates
-   * commits (into the draft store under draft mode, straight to the consumer
-   * under the immediate modes), a row that fails stays open with its errors.
-   * `true` when every row committed. Sends nothing to the consumer by itself
-   * under draft mode - that is `saveDrafts`.
+   * commits (into the draft store with `editing.draft` on, straight to the
+   * consumer without it), a row that fails stays open with its errors.
+   * `true` when every row committed. Under `editing.draft` it sends nothing
+   * to the consumer by itself - that is `saveDrafts`.
    */
   commitAll: () => Promise<boolean>;
   /**
@@ -518,8 +539,8 @@ export type TMDataGridEditApi<
    * `newRowDefaults`. `values` overrides that seed key by key, so
    * `addRow()` opens a blank row and `addRow({ status: "draft" })` opens one
    * that starts filled in. Returns its temporary id - a form with no backing
-   * row yet. Committing it calls `onRowAdd` (immediate modes) or joins
-   * `submitAll`'s `added` (draft).
+   * row yet. Committing it calls `onRowAdd`, or parks it for `saveDrafts`
+   * under `editing.draft`.
    */
   addRow: (values?: Partial<TData>) => string;
   /**
@@ -528,8 +549,8 @@ export type TMDataGridEditApi<
    * `newRowDefaults` exactly as `addRow` does.
    *
    * `commit: true` submits each row as it lands, which is what an import
-   * wants: rows that validate commit (parked in the draft store under draft
-   * mode, added through `onRowAdd` under the immediate modes - once per row),
+   * wants: rows that validate commit (parked in the draft store under
+   * `editing.draft`, added through `onRowAdd` without it - once per row),
    * and rows that fail stay open in the entry block carrying their errors,
    * for the user to fix. The result says which went which way.
    */
@@ -538,10 +559,10 @@ export type TMDataGridEditApi<
     options?: TMDataGridAddRowsOptions,
   ) => Promise<TMDataGridAddRowsResult>;
   /**
-   * Deletes a row: `onRowDelete` straight away under the immediate modes;
-   * under draft it toggles the id in `deletedRowIds` - the row renders
-   * struck through until `submitAll` reports it. On an uncommitted entry
-   * row it just discards the entry.
+   * Deletes a row: `onRowDelete` straight away, or under `editing.draft` a
+   * toggle of the id in `deletedRowIds` - the row renders struck through
+   * until `saveDrafts` reports it. On an uncommitted entry row it just
+   * discards the entry.
    */
   deleteRow: (rowId: string) => void;
   /** Whether delete chrome makes sense - the lane's trash gate. */
@@ -582,6 +603,34 @@ function sameValue(a: unknown, b: unknown): boolean {
 
 function hasAnyError(errors: ReadonlyArray<unknown>): boolean {
   return errors.some((error) => error !== undefined && error !== null);
+}
+
+/**
+ * The first error as text, whatever shape the validator produced - TanStack
+ * Form keeps errors verbatim, so a Zod issue arrives as `{ message }`, a
+ * plain function's return arrives as it was, and a form-level schema's
+ * pathless issues arrive keyed under an empty path (`{ "": [issues] }`).
+ * This digs until it finds a message.
+ */
+export function firstErrorText(error: unknown): string | undefined {
+  if (error === null || error === undefined) return undefined;
+  if (typeof error === "string") return error;
+  if (Array.isArray(error)) {
+    for (const entry of error) {
+      const text = firstErrorText(entry);
+      if (text !== undefined) return text;
+    }
+    return undefined;
+  }
+  if (typeof error === "object") {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+    for (const value of Object.values(error)) {
+      const text = firstErrorText(value);
+      if (text !== undefined) return text;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -658,10 +707,18 @@ export function createEditEngine(
     /** Set by the wrapped onSubmit when the consumer's commit resolved. */
     lastSubmitOk: boolean;
     /**
-     * Draft mode's park: this submit validates and puts the row in the draft
-     * store instead of calling the consumer. Set by `commit` per attempt -
-     * `true` only under draft outside `saveDrafts`, which is what closes the
-     * per-row escape hatches (the lane's ✓, Delete-to-clear) at the engine.
+     * What the last failed commit found, field by field, with the value it
+     * found it on. Form clears a field's errors when its editor unmounts, so
+     * without this a row that failed on the way out would keep its draft and
+     * lose the reason. `project` drops an entry once its value has moved.
+     */
+    submitErrors: Array<{ field: string; value: unknown; message: string }>;
+    /**
+     * The park: this submit validates and puts the row in the draft store
+     * instead of calling the consumer. Set by `commit` per attempt - `true`
+     * only while `editing.draft` is on and outside `saveDrafts`, which is
+     * what closes the per-row escape hatches (the lane's ✓,
+     * Delete-to-clear) at the engine.
      */
     parkOnly: boolean;
     /** A commit already running - Enter and blur race on the same edit. */
@@ -799,23 +856,33 @@ export function createEditEngine(
 
   const project = (entry: FormEntry): TMDataGridEditRowProjection => {
     const state = entry.form.state;
-    const errorFields = Object.entries(state.fieldMeta)
-      .filter(
-        ([name, meta]) =>
-          // The empty path is a pathless (row-level) issue's landing spot -
-          // it belongs to `hasRowError`, not to any cell's marker.
-          name !== "" &&
-          hasAnyError((meta as { errors: ReadonlyArray<unknown> }).errors),
-      )
-      .map(([name]) => name);
+    const values = state.values as TMDataGridRowData;
+    const live = Object.entries(state.fieldMeta).flatMap(([name, meta]) => {
+      // The empty path is a pathless (row-level) issue's landing spot - it
+      // belongs to `hasRowError`, not to any cell's marker.
+      if (name === "") return [];
+      const errors = (meta as { errors: ReadonlyArray<unknown> }).errors;
+      if (!hasAnyError(errors)) return [];
+      return [{ field: name, message: firstErrorText(errors) ?? "" }];
+    });
+    // What a closed editor left behind, minus everything the user has since
+    // changed - editing the field is the answer to its message.
+    const kept = entry.submitErrors.filter(
+      (error) =>
+        !live.some((current) => current.field === error.field) &&
+        sameValue(getBy(values, error.field), error.value),
+    );
+    const errorMessages = [
+      ...live,
+      ...kept.map(({ field, message }) => ({ field, message })),
+    ];
     return {
-      dirtyFields: diff(entry, state.values as TMDataGridRowData).map(
-        (change) => change.field,
-      ),
-      errorFields,
+      dirtyFields: diff(entry, values).map((change) => change.field),
+      errorFields: errorMessages.map((error) => error.field),
+      errorMessages,
       hasRowError: hasAnyError(state.errors),
       isSubmitting: state.isSubmitting,
-      values: state.values as TMDataGridRowData,
+      values,
     };
   };
 
@@ -898,6 +965,7 @@ export function createEditEngine(
       isNew,
       committed: false,
       lastSubmitOk: false,
+      submitErrors: [],
       parkOnly: false,
       pendingCommit: null,
       unsubscribe: () => {},
@@ -1002,6 +1070,26 @@ export function createEditEngine(
     }
   };
 
+  /**
+   * The row's field errors as they stand, with the value each was found on.
+   * Read straight after a failed submit, while every editor is still mounted
+   * and Form still holds what its validators said.
+   */
+  const takeFieldErrors = (
+    entry: FormEntry,
+  ): Array<{ field: string; value: unknown; message: string }> => {
+    const values = entry.form.state.values as TMDataGridRowData;
+    return Object.entries(entry.form.state.fieldMeta).flatMap(
+      ([field, meta]) => {
+        if (field === "") return [];
+        const errors = (meta as { errors: ReadonlyArray<unknown> }).errors;
+        const message = hasAnyError(errors) ? firstErrorText(errors) : undefined;
+        if (message === undefined) return [];
+        return [{ field, value: getBy(values, field), message }];
+      },
+    );
+  };
+
   const commit = async (rowId: string): Promise<boolean> => {
     const entry = forms.get(rowId);
     if (entry === undefined) return true;
@@ -1023,14 +1111,21 @@ export function createEditEngine(
     // block `canSubmit` forever. The validator puts back whatever still holds.
     clearFormSourcedFieldErrors(entry.form);
     entry.lastSubmitOk = false;
-    entry.parkOnly = getContext().editMode === "draft" && !savingDrafts;
+    entry.submitErrors = [];
+    entry.parkOnly = getContext().draft && !savingDrafts;
     entry.pendingCommit = (async () => {
       try {
         await entry.form.handleSubmit();
       } finally {
         entry.pendingCommit = null;
       }
-      if (!entry.lastSubmitOk) return false;
+      if (!entry.lastSubmitOk) {
+        // Snapshot before the caller closes the editor: the field errors go
+        // with it, and the row is about to be left carrying them.
+        entry.submitErrors = takeFieldErrors(entry);
+        publishRow(rowId);
+        return false;
+      }
       if (entry.parkOnly) {
         // Into the draft store: the row's values stay in its form, and the
         // grid records that they are decided. An entry row renders as a
@@ -1052,7 +1147,8 @@ export function createEditEngine(
 
   const beginOn = (rowId: string, columnId: string | null) => {
     // An entry row has no backing row in the table; opening one re-arms its
-    // editors - under draft, that is how a confirmed row is edited again.
+    // editors - with `editing.draft` on, that is how a parked row is edited
+    // again.
     const entryForm = forms.get(rowId);
     if (entryForm?.isNew === true) {
       entryForm.committed = false;
@@ -1083,11 +1179,19 @@ export function createEditEngine(
     // | Mode | Another row open |
     // | ---- | ---------------- |
     // | cell | committed - Sheets; a failed commit keeps holding the edit |
-    // | row, cellConfirm, draft | accumulates. Every draft waits for its own
-    //   save, so a second row opening can neither discard the first nor be
-    //   refused by it - nothing about one row's form bears on another's |
+    // | row, cellConfirm | accumulates. Every draft waits for its own save,
+    //   so a second row opening can neither discard the first nor be refused
+    //   by it - nothing about one row's form bears on another's |
+    //
+    // A parked row is not "open": it has had its submit and is waiting for
+    // the save, so it is skipped rather than put through a second one. An
+    // entry row is skipped too - it is row-shaped in every mode, and its ✓
+    // is the decision, so the sweep must not add a half-typed row.
     if (editMode === "cell") {
-      const openElsewhere = [...forms.keys()].find((id) => id !== rowId);
+      const openElsewhere = [...forms.keys()].find((id) => {
+        const other = forms.get(id);
+        return id !== rowId && other?.committed !== true && other?.isNew !== true;
+      });
       if (openElsewhere !== undefined) {
         void commit(openElsewhere).then((ok) => {
           if (ok) beginOn(rowId, columnId);
@@ -1184,7 +1288,7 @@ export function createEditEngine(
       return;
     }
     const context = getContext();
-    if (context.editMode === "draft") {
+    if (context.draft) {
       // A toggle: the second press unmarks - the mark is a draft too.
       store.setState((prev) => ({
         ...prev,
@@ -1202,7 +1306,7 @@ export function createEditEngine(
 
   const canDeleteRows = (): boolean => {
     const context = getContext();
-    if (context.editMode === "draft") {
+    if (context.draft) {
       return (
         context.onRowDelete !== undefined ||
         context.onSaveDrafts !== undefined
@@ -1244,7 +1348,7 @@ export function createEditEngine(
 
   const saveDrafts = (): Promise<boolean> => {
     if (saveInFlight !== null) return saveInFlight;
-    // While this runs, `commit` really commits - under draft it parks
+    // While this runs, `commit` really commits - `editing.draft` parks
     // otherwise. Single-threaded flag, same idiom as the collectors.
     savingDrafts = true;
     saveInFlight = saveDraftsInner().finally(() => {

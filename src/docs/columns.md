@@ -186,7 +186,7 @@ never listed in the columns panel.
 | `SELECT_COLUMN_ID` | A checkbox selection mode | First, pinned left. See [Row selection](/docs/row-selection). |
 | `GROUP_COLUMN_ID` | A column is grouped | Front, beside the checkbox lane. See [Grouping](/docs/grouping). |
 | `DETAILS_COLUMN_ID` | `renderDetails` is set | Left, after checkbox and tree. See [Row details](/docs/row-details). |
-| `EDIT_COLUMN_ID` | `editing.mode: "row"` or `"draft"`, or `editing.onRowDelete` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
+| `EDIT_COLUMN_ID` | `editing.mode: "row"`, `editing.draft`, or `editing.onRowDelete` | Appended, pinned right, and stays outside anything the user pins right. See [Editing](/docs/editing). |
 
 The checkbox lane cannot be moved: it anchors the left pinned region, and no
 column can be placed in front of it.

@@ -36,7 +36,7 @@ toolbar with only `Search` has only a search box.
 | `TMDataGrid.SummaryCount` | Visible rows out of total |
 | `TMDataGrid.LoadingIndicator` | A spinner while `meta.loading` |
 | `TMDataGrid.Spacer` | Pushes what follows to the right |
-| `TMDataGridEditActions` | Save and Discard under [draft editing](/docs/editing#draft-editing) |
+| `TMDataGridDraftActions` | Save and Discard for the [draft store](/docs/editing#the-draft-store) |
 
 Each renders nothing when its feature is off, so a read-only grid needs no
 conditionals in the toolbar: `FilterButton` under `enableColumnFilters: false`

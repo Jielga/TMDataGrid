@@ -364,9 +364,10 @@ function TMDataGridBodyCell({
         <span className={classes.cellContent}>
           {(() => {
             // A row with a live form shows its draft, not `data`: the column's
-            // own renderer over a context reading the form's values. Parked
-            // drafts - draft mode, cellConfirm's kept-on-blur - are the point;
-            // group cells are excluded because no group row ever has a form.
+            // own renderer over a context reading the form's values. The
+            // drafts that outlive their editor - parked ones, cellConfirm's
+            // kept ones - are the point; group cells are excluded because no
+            // group row ever has a form.
             const draftContext =
               draftValues !== undefined &&
               contentOverride === undefined &&
@@ -1539,7 +1540,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     close: TMDataGridCellEditorClose,
   ) => {
     // Where the keyboard goes: Enter moves down, Tab to the next editable
-    // cell (the deferring draft variants move the same way, draft in tow) -
+    // cell (cellConfirm's deferring variants move the same way, draft kept) -
     // everything else, and a saved row, goes back to where the edit was.
     const move =
       close.via === "enter"
@@ -2163,8 +2164,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               // open, so every row holding a form shows its editors. Which of
               // them holds the caret is not decided here - see
               // placeEditCaret, which places it once per gesture.
+              //
+              // A parked row is not one of them. It keeps its form, so it is
+              // still "open", but it has been decided: it renders its draft
+              // through the column's own renderer until `begin` reopens it.
               const rowEditing =
-                features.editMode === "row" && editOpenRowIds.includes(row.id);
+                features.editMode === "row" &&
+                editOpenRowIds.includes(row.id) &&
+                !editDraftRowIds.includes(row.id);
               // Cell selection takes the body's tab stop off the row and puts
               // it on a cell - two stops per row would make Tab a way of
               // walking the grid, which is what the arrow keys are for. Space

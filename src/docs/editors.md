@@ -147,9 +147,9 @@ input. A rejected `editing.onCommit` keeps the draft too, with the error on the
 row. Server-side field errors can be returned natively through
 `editing.rowValidators.onSubmitAsync`'s `{ form, fields }` shape.
 
-Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
-each cell commits alone, so a rule spanning two columns cannot be satisfied by
-either one. Use `editing.rowValidators.onSubmit` with `"row"` or `"draft"`. See
+Cross-field rules need a mode that commits the whole row at once. Under
+`"cell"` each cell commits alone, so a rule spanning two columns cannot be
+satisfied by either one. Use `editing.rowValidators.onSubmit` with `"row"`. See
 [Editing](/docs/editing#row-editing).
 
 A rule about the whole collection, such as "at least one row" or "no

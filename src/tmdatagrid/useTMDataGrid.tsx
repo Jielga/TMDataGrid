@@ -481,36 +481,44 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    */
   newRowDefaults?: TData | (() => TData);
   /**
-   * Called when an entry row commits: `Enter` or the lane's ✓ under the
-   * immediate modes, `submitAll` under draft. Create the record and let it
-   * arrive back through `data`; the engine's `tempId` never leaves the grid.
+   * Called when an entry row commits: `Enter` or the lane's ✓, or
+   * `saveDrafts` under `editing.draft`. Create the record and let it arrive
+   * back through `data`; the engine's `tempId` never leaves the grid.
    */
   onRowAdd?: (args: TMDataGridRowAddArgs<TData>) => void | Promise<void>;
   /**
-   * Called by `edit.deleteRow` under the immediate modes - confirmation, if
-   * any, belongs in here. Under draft, deletions accumulate in
-   * `edit.state.deletedRowIds` instead and are reported by `submitAll`.
-   * Setting this also puts the trash can in the edit lane.
+   * Called by `edit.deleteRow` - confirmation, if any, belongs in here. Under
+   * `editing.draft` deletions accumulate in `edit.state.deletedRowIds`
+   * instead and are reported by `saveDrafts`. Setting this also puts the
+   * trash can in the edit lane.
    */
   onRowDelete?: (args: TMDataGridRowDeleteArgs<TData>) => void | Promise<void>;
 };
 
 /**
  * The `editing` option: one object that turns editing on and holds
- * everything about it. `mode` picks what counts as a commit and which
- * controls trigger it; the other members act within that mode.
+ * everything about it. Two axes, and they are independent: `mode` picks what
+ * counts as a commit, `draft` picks where that commit goes.
  *
- * | Mode | Commit | Cancel |
- * | ---- | ------ | ------ |
- * | `"cell"` | Enter, Tab, blur - Sheets | Escape |
- * | `"cellConfirm"` | ✓ or Enter only; blur keeps the draft | ✕ or Escape |
- * | `"row"` | Save in the edit lane, or Ctrl+Enter | Cancel, or Escape |
- * | `"draft"` | `edit.commit(rowId)` into the draft store, `edit.saveDrafts()` out | `edit.cancelAll()` |
+ * | Mode | Commit | Cancel | Controls |
+ * | ---- | ------ | ------ | -------- |
+ * | `"cell"` | Enter, Tab, blur - Sheets | Escape | none |
+ * | `"cellConfirm"` | ✓ or Enter; Tab and blur keep the draft | ✕ or Escape | ✓ / ✕ beside the input |
+ * | `"row"` | Save in the edit lane, or Enter | Cancel, or Escape | generated edit lane |
+ *
+ * | `draft` | Where a commit goes |
+ * | ------- | ------------------- |
+ * | `false` (default) | Out as it happens - `onCommit`, `onRowAdd`, `onRowDelete` |
+ * | `true` | Into the grid's draft store; `edit.saveDrafts()` sends the lot |
+ *
+ * So `{ mode: "row", draft: true }` is "edit a row, the lane's ✓ parks it,
+ * the toolbar's Save sends every parked row at once", and
+ * `{ mode: "cell", draft: true }` is the same store filled cell by cell.
  *
  * Setting `editing` makes `getRowId` required - drafts are keyed by row id,
  * and the index fallback would name a different record after any sort - and
- * `onSaveDrafts` exists only under `mode: "draft"`, the one mode with a draft
- * store to save.
+ * `onSaveDrafts` exists only under `draft: true`, the one configuration with
+ * a draft store to save.
  *
  * The object may be written inline: the callbacks are read through a ref
  * every render, so its identity does not matter.
@@ -522,12 +530,21 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
  * override the rest.
  */
 export type TMDataGridEditingOptions<TData extends RowData> =
-  TMDataGridEditingCallbacks<TData> &
-    (
+  TMDataGridEditingCallbacks<TData> & {
+    /** What counts as a commit. See the table above. */
+    mode: TMDataGridEditMode;
+  } & (
       | {
-          mode: "draft";
           /**
-           * Draft mode's save: called once by `edit.saveDrafts()` with the
+           * Commits park in the grid's draft store instead of reaching the
+           * consumer, and leave together through `edit.saveDrafts()`. The
+           * edit lane gains the change markers and the per-row revert, the
+           * trash marks a row for deletion rather than deleting it, and
+           * `TMDataGrid.DraftActions` gets something to save.
+           */
+          draft: true;
+          /**
+           * The bulk save: called once by `edit.saveDrafts()` with the
            * whole draft store - committed edits, added rows and deletion
            * marks - so a server can apply it as one transaction. Without it,
            * `saveDrafts` falls back to the per-row
@@ -555,21 +572,22 @@ export type TMDataGridEditingOptions<TData extends RowData> =
             | TMDataGridSaveDraftsResult
             | Promise<void | TMDataGridSaveDraftsResult>;
           /**
-           * Keep committed entry rows pinned in the sticky entry block until
-           * the draft store is saved. Off by default: a committed row joins
-           * the scrolling flow above the body rows instead - the block a row
-           * is *typed* into is always sticky, but committed rows scroll, so
-           * committing many cannot fill the viewport with sticky chrome.
+           * Keep parked entry rows pinned in the sticky entry block until
+           * the draft store is saved. Off by default: a parked row joins the
+           * scrolling flow above the body rows instead - the block a row is
+           * *typed* into is always sticky, but parked rows scroll, so
+           * entering many cannot fill the viewport with sticky chrome.
            */
           newRowsSticky?: boolean;
         }
       | {
-          mode: Exclude<TMDataGridEditMode, "draft">;
-          /** Only `"draft"` has a draft store to save - see the other branch. */
+          /** Every commit reaches the consumer as it happens. The default. */
+          draft?: false;
+          /** Only `draft: true` has a store to save - see the other branch. */
           onSaveDrafts?: never;
           /** @deprecated See {@link onSaveDrafts}. */
           onCommitDrafts?: never;
-          /** Committed entry rows exist only under `"draft"` - see there. */
+          /** Parked entry rows exist only under `draft: true` - see there. */
           newRowsSticky?: never;
         }
     );
@@ -919,6 +937,7 @@ export function useTMDataGrid<TData extends RowData>({
   // The one place `editing` is unpacked - the engine and the flags keep their
   // own vocabulary (`editMode`, `onEditCommit`), so the mapping lives here.
   const editMode = editing?.mode;
+  const editDraft = editing?.draft === true;
 
   // Derived up here, rather than just before the return, because the rest of the
   // hook needs `selectColumn` - one place decides what each mode means.
@@ -949,14 +968,12 @@ export function useTMDataGrid<TData extends RowData>({
   const detailsColumnEnabled = renderDetails !== undefined;
   // Row mode's Save sits at the end of the row - the lane is its chrome. It
   // also appears wherever the trash can has somewhere to report to, and
-  // always under draft mode, where it is the change marker and the per-row
-  // revert - with or without `onCommitDrafts`, since the per-row `submitAll`
-  // fallback is a first-class configuration.
+  // always under `draft`, where it is the change marker and the per-row
+  // revert - with or without `onSaveDrafts`, since the per-row fallback is a
+  // first-class configuration.
   const editColumnEnabled =
     editing !== undefined &&
-    (editing.mode === "row" ||
-      editing.mode === "draft" ||
-      editing.onRowDelete !== undefined);
+    (editing.mode === "row" || editDraft || editing.onRowDelete !== undefined);
 
   // The generated lanes bake `meta.label` into their definitions, so the memo
   // depends on the strings rather than on the labels object - a fresh
@@ -967,9 +984,9 @@ export function useTMDataGrid<TData extends RowData>({
   const editColumnLabel = labels.editColumnLabel;
   const rowNumberColumnLabel = labels.rowNumberColumnLabel;
   const rowNumbersEnabled = features.rowNumbers;
-  // Draft mode's lane holds three controls (state icon, undo, trash) where
-  // the other modes hold two - it gets the wider track.
-  const editIsDraftMode = editing?.mode === "draft";
+  // A draft lane holds three controls (state icon, undo, trash) where the
+  // rest hold two - it gets the wider track.
+  const editWideLane = editDraft;
 
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
@@ -1000,7 +1017,7 @@ export function useTMDataGrid<TData extends RowData>({
       ...base,
       // Last and pinned right - the row's Save belongs at the end of the row.
       ...(editColumnEnabled
-        ? [createEditColumn<TData>(editColumnLabel, editIsDraftMode)]
+        ? [createEditColumn<TData>(editColumnLabel, editWideLane)]
         : []),
     ];
   }, [
@@ -1010,7 +1027,7 @@ export function useTMDataGrid<TData extends RowData>({
     detailsColumnEnabled,
     groupColumnEnabled,
     editColumnEnabled,
-    editIsDraftMode,
+    editWideLane,
     rowNumberColumnLabel,
     selectColumnLabel,
     groupColumnLabel,
@@ -1186,6 +1203,7 @@ export function useTMDataGrid<TData extends RowData>({
   editContextRef.current = {
     table: table as unknown as TMDataGridTable<TMDataGridRowData>,
     editMode: editMode ?? "cell",
+    draft: editDraft,
     rowValidators: editing?.rowValidators,
     isRowEditable:
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
@@ -1209,15 +1227,18 @@ export function useTMDataGrid<TData extends RowData>({
       ) as unknown as TMDataGridEditApi<TData>,
   );
 
-  // Switching modes mid-flight drops every draft: the policies disagree about
-  // what an open form means, and carrying one across is how a draft parked
-  // under "draft" silently commits under "cell".
-  const previousEditModeRef = useRef(editMode);
+  // Switching either axis mid-flight drops every draft: the policies disagree
+  // about what an open form means, and carrying one across is how a row
+  // parked for `saveDrafts` silently commits to the consumer instead.
+  const previousEditPolicyRef = useRef({ editMode, editDraft });
   useEffect(() => {
-    if (previousEditModeRef.current === editMode) return;
-    previousEditModeRef.current = editMode;
+    const previous = previousEditPolicyRef.current;
+    if (previous.editMode === editMode && previous.editDraft === editDraft) {
+      return;
+    }
+    previousEditPolicyRef.current = { editMode, editDraft };
     edit.cancelAll();
-  }, [editMode, edit]);
+  }, [editMode, editDraft, edit]);
 
   // Editing without stable ids points every draft at whatever record slides
   // into that index after a sort. Loud, once, in development.

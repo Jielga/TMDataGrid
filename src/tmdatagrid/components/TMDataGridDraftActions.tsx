@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
 
 /**
- * How many rows the draft store holds - committed edits, committed entry
- * rows and deletion marks. This is what Save sends, so it is what Save
- * counts: a row the user is still typing into is not in here.
+ * How many rows the draft store holds - parked edits, parked entry rows and
+ * deletion marks. This is what Save sends, so it is what Save counts: a row
+ * the user is still typing into is not in here.
  */
 function useDraftCount(): number {
   const { edit } = useTMDataGridContext();
@@ -20,8 +20,8 @@ function useDraftCount(): number {
 }
 
 /**
- * How many rows are still open - edited or entered but not committed, so not
- * part of the save. Surfaced beside Save so an uncommitted row is visible
+ * How many rows are still open - edited or entered but not parked, so not
+ * part of the save. Surfaced beside Save so an undecided row is visible
  * rather than silently left behind.
  */
 function useOpenCount(): number {
@@ -105,14 +105,14 @@ function EditDiscardButton() {
   );
 }
 
-const EDIT_ACTIONS_CONTROLS: TMDataGridEditActionsControls = {
+const EDIT_ACTIONS_CONTROLS: TMDataGridDraftActionsControls = {
   Save: EditSaveButton,
   Discard: EditDiscardButton,
   OpenRowsNote: EditOpenRowsNote,
 };
 
 /** What the edit chrome is showing. */
-export type TMDataGridEditActionsState = {
+export type TMDataGridDraftActionsState = {
   /**
    * Rows in the draft store, which is what Save sends: committed edits,
    * committed entry rows and deletion marks.
@@ -133,7 +133,7 @@ export type TMDataGridEditActionsState = {
 };
 
 /** What the edit chrome can do. */
-export type TMDataGridEditActionsActions = {
+export type TMDataGridDraftActionsActions = {
   /** Saves the draft store. Open rows are left alone. */
   save: () => Promise<boolean>;
   /** Submits every open row, committing the ones that validate. */
@@ -143,7 +143,7 @@ export type TMDataGridEditActionsActions = {
 };
 
 /** The pre-bound pieces of the built-in edit chrome. */
-export type TMDataGridEditActionsControls = {
+export type TMDataGridDraftActionsControls = {
   /** Save, with the draft count, disabled while the draft store is empty. */
   Save: () => ReactNode;
   /** Discard, disabled while nothing is pending. */
@@ -152,19 +152,19 @@ export type TMDataGridEditActionsControls = {
   OpenRowsNote: () => ReactNode;
 };
 
-/** What {@link TMDataGridEditActionsProps.renderActions} is handed. */
-export type TMDataGridEditActionsSlotArgs = {
-  state: TMDataGridEditActionsState;
-  actions: TMDataGridEditActionsActions;
-  Controls: TMDataGridEditActionsControls;
+/** What {@link TMDataGridDraftActionsProps.renderActions} is handed. */
+export type TMDataGridDraftActionsSlotArgs = {
+  state: TMDataGridDraftActionsState;
+  actions: TMDataGridDraftActionsActions;
+  Controls: TMDataGridDraftActionsControls;
 };
 
-export type TMDataGridEditActionsProps = {
+export type TMDataGridDraftActionsProps = {
   /**
    * Replaces the built-in Save/Discard pair, and is handed the pieces of it.
    *
    * ```tsx
-   * <TMDataGrid.EditActions
+   * <TMDataGrid.DraftActions
    *   renderActions={({ state, Controls }) => (
    *     <Group>
    *       {state.draftCount > 0 && <Badge>{state.draftCount}</Badge>}
@@ -176,27 +176,30 @@ export type TMDataGridEditActionsProps = {
    * />
    * ```
    */
-  renderActions?: (args: TMDataGridEditActionsSlotArgs) => ReactNode;
+  renderActions?: (args: TMDataGridDraftActionsSlotArgs) => ReactNode;
 };
 
 /**
- * Draft mode's toolbar chrome: Save with the draft-store count, Discard, and
- * a note counting rows still open. Save sends the draft store and leaves open
- * rows alone, so it greys out while nothing is committed however much is
- * being typed - the note is what makes those rows visible. Works under any
- * `editing.mode` and renders nothing while editing is off.
+ * The draft store's toolbar chrome: Save with the store's count, Discard, and
+ * a note counting the rows still open. Save sends the store and leaves open
+ * rows alone, so it greys out while nothing is parked however much is being
+ * typed - the note is what makes those rows visible.
+ *
+ * Works under any `editing.mode`. The toolbar is declarative: the grid does
+ * not decide for you, so include this only when the grid runs a draft store -
+ * without `editing.draft` there is nothing to save and Save stays disabled.
  *
  * ```tsx
  * <TMDataGrid.Toolbar>
  *   <TMDataGrid.SummaryCount />
  *   <TMDataGrid.Spacer />
- *   <TMDataGrid.EditActions />
+ *   <TMDataGrid.DraftActions />
  * </TMDataGrid.Toolbar>
  * ```
  */
-export function TMDataGridEditActions({
+export function TMDataGridDraftActions({
   renderActions,
-}: TMDataGridEditActionsProps = {}) {
+}: TMDataGridDraftActionsProps = {}) {
   const { edit, features } = useTMDataGridContext();
   const draftCount = useDraftCount();
   const openCount = useOpenCount();

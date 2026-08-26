@@ -120,13 +120,20 @@ export type TMDataGridFeatureFlags = {
   grouping: boolean;
   /** Whether cells can be edited at all - the `editing` option was set. */
   editing: boolean;
-  /** The commit policy, or `null` while editing is off. */
+  /** What counts as a commit, or `null` while editing is off. */
   editMode: TMDataGridEditMode | null;
   /**
-   * Whether a confirmed entry row stays pinned in the sticky entry block
-   * until Save all - `editing.newRowsSticky`, draft mode only. Off by
-   * default: a confirmed row joins the scrolling flow instead, so entering
-   * many rows cannot fill the viewport with sticky chrome.
+   * Where a commit goes - `editing.draft`. On, commits park in the grid's
+   * draft store and leave through `edit.saveDrafts()`; off, each one reaches
+   * the consumer as it happens.
+   */
+  editDraft: boolean;
+  /**
+   * Whether a parked entry row stays pinned in the sticky entry block until
+   * the draft store is saved - `editing.newRowsSticky`, which needs
+   * `editing.draft`. Off by default: a parked row joins the scrolling flow
+   * instead, so entering many rows cannot fill the viewport with sticky
+   * chrome.
    */
   editNewRowsSticky: boolean;
   /** The generated row-number gutter - `enableRowNumbers`. Off by default. */
@@ -211,8 +218,9 @@ export function readFeatureFlags<TData extends RowData>(
     grouping: options.enableGrouping ?? options.manualPagination !== true,
     editing: options.editing !== undefined,
     editMode: options.editing?.mode ?? null,
+    editDraft: options.editing?.draft === true,
     editNewRowsSticky:
-      options.editing?.mode === "draft" &&
+      options.editing?.draft === true &&
       options.editing.newRowsSticky === true,
     rowNumbers: options.enableRowNumbers === true,
     // A predicate counts as on - some rows may still pin.

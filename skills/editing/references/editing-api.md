@@ -8,27 +8,28 @@ kind.
 | Name | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `editing` | `TMDataGridEditingOptions` | off | The editing namespace. Setting it turns editing on. |
-| `editing.mode` | `"cell" \| "cellConfirm" \| "row" \| "draft"` | – | Picks the commit policy. |
+| `editing.mode` | `"cell" \| "cellConfirm" \| "row"` | – | What counts as a commit, and which controls trigger it. |
+| `editing.draft` | `boolean` | `false` | Where a commit goes. On, it parks in the grid's draft store until `edit.saveDrafts()`. |
 | `getRowId` | `(row) => string` | – | A TanStack table option, required once `editing` is set. Drafts are keyed by it. |
 | `editing.isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
 | `editing.rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
 | `editing.newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
-| `editing.newRowsSticky` | `boolean` | `false` | Draft mode only. Keeps entered new rows pinned in the entry block until Save all, instead of letting them scroll with the body. |
+| `editing.newRowsSticky` | `boolean` | `false` | `draft: true` only. Keeps entered new rows pinned in the entry block until the save, instead of letting them scroll with the body. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while `editing` is set | Editing turns the cell cursor on; set it explicitly to override. |
 
 Passing any other member of `editing` without `mode` is a compile error, and
-`onSaveDrafts` and `newRowsSticky` exist only in the `"draft"` branch of the
-type.
+`onSaveDrafts` and `newRowsSticky` exist only in the `draft: true` branch of
+the type.
 
 ## Callbacks
 
 | Name | Argument | What it does |
 | --- | --- | --- |
 | `editing.onCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
-| `editing.onSaveDrafts` | `{ rows, added, deleted }` | Draft mode only. One call for the whole draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
-| `editing.onCommitDrafts` | `{ rows, added, deleted }` | **Deprecated** - renamed to `onSaveDrafts`. Still honoured; the new name wins if both are set. |
+| `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
+| `editing.onCommitDrafts` | `{ updated, created, deleted }` | **Deprecated** - renamed to `onSaveDrafts`. Still honoured; the new name wins if both are set. |
 | `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
-| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row under the immediate modes, and puts the trash can in the edit lane. |
+| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row, and puts the trash can in the edit lane. |
 
 `changes` entries are `{ columnId, field, previous, next }`; `field` is the data
 path, which may be dotted.
@@ -51,7 +52,7 @@ path, which may be dotted.
 | Member | Signature | Notes |
 | --- | --- | --- |
 | `begin` | `({ rowId, columnId }) => void` | Row mode opens the entire row either way. `columnId` selects which cell takes the caret; `null` (the pencil) uses its first editable one. On a committed row it reopens it, taking it back out of the draft store. |
-| `commit` | `(rowId) => Promise<boolean>` | The OK gesture: submits the row's form. `false` keeps it open with its errors. Under `"draft"` a pass puts the row in the draft store - no consumer callback runs until `saveDrafts`. Column rules run whether or not an editor is mounted. |
+| `commit` | `(rowId) => Promise<boolean>` | The OK gesture: submits the row's form. `false` keeps it open with its errors, and the message outlives the editor that found it. Under `draft: true` a pass parks the row - no consumer callback runs until `saveDrafts`. Column rules run whether or not an editor is mounted. |
 | `commitAll` | `() => Promise<boolean>` | Submits every open row. Rows that fail stay open. `false` when one did. |
 | `saveDrafts` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone and stay open. |
 | `cancel` | `(rowId) => void` | Drops one draft. |
@@ -61,7 +62,7 @@ path, which may be dotted.
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
 | `addRow` | `(values?) => string` | Opens an entry row, returns its `tempId`. `values` overrides `editing.newRowDefaults` key by key for that row; with no argument the row is `newRowDefaults` alone. |
 | `addRows` | `(rows, options?) => Promise<{ committed, open }>` | Opens a batch in one write, each row seeded as `addRow` seeds. `{ commit: true }` submits each as it lands - valid rows commit, invalid ones stay open with their errors. |
-| `deleteRow` | `(rowId) => void` | `editing.onRowDelete` under the immediate modes, a deletion mark under draft mode. Toggles: a second call restores the row. |
+| `deleteRow` | `(rowId) => void` | `editing.onRowDelete`, or a deletion mark under `draft: true`. Toggles: a second call restores the row. |
 | `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
 | `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
@@ -91,10 +92,10 @@ type TMDataGridEditState = {
     }
   >;
   // The draft store's edit slice: existing rows whose form passed its submit,
-  // parked for `saveDrafts`. Empty outside `"draft"`.
+  // parked for `saveDrafts`. Empty without `editing.draft`.
   committedRowIds: ReadonlyArray<string>;
-  // `committed` is draft mode's "in the store, awaiting the save". Under the
-  // immediate modes a commit adds through `onRowAdd`, so it stays `false`.
+  // `committed` is "in the store, awaiting the save". Without `editing.draft`
+  // a commit adds through `onRowAdd`, so it stays `false`.
   newRows: ReadonlyArray<{ tempId: string; committed: boolean }>;
   deletedRowIds: ReadonlyArray<string>;
 };
@@ -104,8 +105,8 @@ type TMDataGridEditState = {
 
 | Name | Kind | What it is |
 | --- | --- | --- |
-| `TMDataGrid.EditActions` | Component | Save with the pending count, and Discard. Any mode; renders nothing while editing is off. Takes `renderActions` over `{ state, actions, Controls }`. |
-| `TMDataGridEditActions` | Export | The same component, for use outside the namespace. |
+| `TMDataGrid.DraftActions` | Component | Save with the pending count, and Discard. Any mode; renders nothing while editing is off. Takes `renderActions` over `{ state, actions, Controls }`. |
+| `TMDataGridDraftActions` | Export | The same component, for use outside the namespace. |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"`, the generated edit lane's id. |
 | `clearedValueForType` | Export | `(type) => unknown` - what Delete writes per column type. |
 | `getEditFieldName` | Export | `(column) => string` - the data path a column's edits write to. |
@@ -125,20 +126,20 @@ Generated, pinned right, id `EDIT_COLUMN_ID`. It appears when any of these
 holds:
 
 - `editing.mode: "row"` - the lane is Save and Cancel's home
-- `editing.mode: "draft"` - the lane is the change indicator and the per-row
-  revert, and `editing.onSaveDrafts` is not required for it
+- `editing.draft` - the lane is the change indicator and the per-row revert,
+  and `editing.onSaveDrafts` is not required for it
 - `editing.onRowDelete` is set - the trash can has somewhere to report to
 
-`"cell"` and `"cellConfirm"` have no lane unless `editing.onRowDelete` asks for
-one.
+`"cell"` and `"cellConfirm"` have no lane unless `editing.draft` or
+`editing.onRowDelete` asks for one.
 
-What the lane holds depends on the mode. Under `"row"` an open row shows
-`save-row` and `cancel-row`; those two never render under `"draft"`. Under
-`"draft"` every changed row shows `row-state`, whose `data-state` is `new`,
-`edited` or `deleted`, together with `revert-row` on an edited row,
-`restore-row` on one marked for deletion, and `edit-row` plus `discard-new-row`
-on an entered new row. A row holding a dirty draft hides `delete-row`. Every
-control carries a tooltip from the labels, `revertRow`, `rowStateNew`,
+What the lane holds follows the row's state, one axis each. An open row shows
+the mode's own controls, `save-row` and `cancel-row`. A parked row shows
+`row-state` instead, whose `data-state` is `new`, `edited` or `deleted`,
+together with `revert-row` on an edited row, `restore-row` on one marked for
+deletion, and `edit-row` plus `discard-new-row` on an entered new row - never a
+save, which the engine would only park again. A parked row hides `delete-row`.
+Every control carries a tooltip from the labels, `revertRow`, `rowStateNew`,
 `rowStateEdited` and `rowStateDeleted` among them.
 
 ## Styling and test hooks
@@ -147,16 +148,16 @@ control carries a tooltip from the labels, `revertRow`, `rowStateNew`,
 | --- | --- | --- |
 | `--dg-entry-height` | CSS variable | Height of the sticky entry block. From `size`. |
 | `--dg-row-new-bg` | CSS variable | Background of an entered new row. A green tint. |
-| `data-deleted` | Row attribute | On a row marked for deletion under draft mode. |
+| `data-deleted` | Row attribute | On a row marked for deletion under `draft: true`. |
 | `data-dirty` | Row attribute | On a body row holding a dirty draft. Also on the cell whose field is dirty. |
 | `data-new` / `data-committed` | Entry row attributes | On an entry row; `data-committed` once it is committed, awaiting the save. |
 | `data-dg-entry-flow-block` | Attribute | The in-flow block above the body rows holding entered new rows, unless `editing.newRowsSticky` keeps them in the sticky entry block. |
 | `data-dg-part="editor-input"` | Part | The control inside an editing cell. |
-| `data-dg-part="save-row"` / `"cancel-row"` | Parts | The edit lane's buttons on an open row, with `data-row-id`. Row mode only. |
-| `data-dg-part="row-state"` | Part | Draft mode's change marker, with `data-row-id` and `data-state` of `new`, `edited` or `deleted`. |
+| `data-dg-part="save-row"` / `"cancel-row"` | Parts | The edit lane's buttons on an open row, with `data-row-id`. |
+| `data-dg-part="row-state"` | Part | The draft store's change marker, with `data-row-id` and `data-state` of `new`, `edited` or `deleted`. |
 | `data-dg-part="revert-row"` / `"restore-row"` | Parts | Drops a row's draft, and undoes a deletion mark, with `data-row-id`. |
 | `data-dg-part="edit-row"` / `"delete-row"` | Parts | The idle lane's pencil and trash, with `data-row-id`. `edit-row` also reopens an entered new row. |
 | `data-dg-part="confirm-new-row"` / `"discard-new-row"` | Parts | An entry row's ✓ and ✕, with `data-row-id`. |
-| `data-dg-part="save-all"` / `"discard-all"` | Parts | `EditActions`. |
+| `data-dg-part="save-all"` / `"discard-all"` | Parts | `DraftActions`. |
 
 See the `testing` skill for how to compose these into selectors.

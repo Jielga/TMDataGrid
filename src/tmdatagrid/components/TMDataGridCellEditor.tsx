@@ -43,8 +43,8 @@ const BUILT_IN_EDITORS: Record<
 export type TMDataGridCellEditorClose =
   | { committed: true; via: "enter" | "tab" | "shift-tab" | "pick" }
   | { committed: false; via: "escape" }
-  /** Draft: the editor closed, the draft stays - Enter parks, Tab moves on. */
-  | { committed: false; via: "defer" | "defer-tab" | "defer-shift-tab" };
+  /** `cellConfirm`: the editor closed, the draft stays, waiting for its ✓. */
+  | { committed: false; via: "defer-tab" | "defer-shift-tab" };
 
 /**
  * The host an editing cell mounts - it owns the field, the keys and the blur
@@ -68,10 +68,10 @@ export function TMDataGridCellEditor({
   /** After the editor closed itself - the table moves the focus. */
   onClose: (args: TMDataGridCellEditorClose) => void;
   /**
-   * Hosted by the entry block rather than a body cell. Under draft the keys
-   * change meaning there: Enter confirms the whole entry (the engine parks
-   * it), and Tab stays the browser's, walking the entry row's own inputs the
-   * way row mode's do.
+   * Hosted by the entry block rather than a body cell. An entry row is
+   * row-shaped in every mode: Enter enters the whole row, Tab stays the
+   * browser's - walking the row's own inputs the way row mode's do - and
+   * focus leaving decides nothing, because the ✓ is the decision.
    */
   inEntryBlock?: boolean;
 }) {
@@ -79,8 +79,9 @@ export function TMDataGridCellEditor({
   // Row mode mounts one host per editable cell of the row; every key that
   // commits or cancels acts on the whole row's form either way, but Tab must
   // stay the browser's (it walks the row's inputs) and blur must do nothing
-  // (focus moves between this row's own editors).
-  const isRowMode = features.editMode === "row";
+  // (focus moves between this row's own editors). The entry block is built
+  // the same way, in every mode, so it follows the same two rules.
+  const isRowShaped = features.editMode === "row" || inEntryBlock;
   const column = cell.column;
   const form = edit.getForm(row.id);
   const fieldName = getEditFieldName(column);
@@ -173,11 +174,11 @@ export function TMDataGridCellEditor({
   };
 
   /**
-   * Draft: the key closes the editor and leaves the row open - undecided
-   * form state, which `saveDrafts` does not send. Tab moving along the row
-   * is not a decision about it; Enter is, and commits instead.
+   * `cellConfirm`: the key closes the editor and leaves the draft where it
+   * is, waiting for the ✓. Moving along the row is not a decision about it;
+   * Enter is, and commits instead.
    */
-  const deferAndClose = (via: "defer" | "defer-tab" | "defer-shift-tab") => {
+  const deferAndClose = (via: "defer-tab" | "defer-shift-tab") => {
     if (closingRef.current) return;
     closingRef.current = true;
     edit.deactivate();
@@ -185,26 +186,23 @@ export function TMDataGridCellEditor({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const isDraft = features.editMode === "draft";
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
       // Enter is OK, in every mode: the row's form submits and has to pass
-      // validation. What a commit *does* is the mode's business - the
-      // immediate modes call the consumer, draft mode parks the row in the
-      // draft store for `saveDrafts` - so this key does not branch.
+      // validation. Where a commit *goes* is `editing.draft`'s business, not
+      // this key's - out to the consumer, or into the draft store.
       void commitAndClose("enter");
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       cancelAndClose();
-    } else if (event.key === "Tab" && !isRowMode && !(isDraft && inEntryBlock)) {
-      // In the draft entry block Tab stays the browser's: every editable
-      // cell's editor is mounted, so it walks the row's inputs as row mode's
-      // does.
+    } else if (event.key === "Tab" && !isRowShaped) {
       event.preventDefault();
       event.stopPropagation();
-      if (isDraft) {
+      // `cellConfirm` is the one mode where leaving a cell decides nothing:
+      // the caret moves on and the draft waits for its ✓.
+      if (features.editMode === "cellConfirm") {
         deferAndClose(event.shiftKey ? "defer-shift-tab" : "defer-tab");
       } else {
         void commitAndClose(event.shiftKey ? "shift-tab" : "tab");
@@ -214,27 +212,28 @@ export function TMDataGridCellEditor({
 
   /**
    * Focus left the editor entirely - a click somewhere else. Under `"cell"`
-   * that commits (Sheets); a commit blocked by validation keeps the form and
-   * its invalid marker, with the editor closed. The confirming modes keep
-   * the draft open-but-inactive, waiting for their explicit ✓.
+   * that commits (Sheets): a row the user has walked away from is a row they
+   * are done typing into, and where the commit lands is `editing.draft`'s
+   * business. A commit blocked by validation keeps the form and its invalid
+   * marker, with the editor closed.
    */
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (closingRef.current) return;
-    // Row mode: the row's other editors are outside this host, and focus
-    // moving between them is not leaving the edit. Blur means nothing here;
-    // the lane's Save/Cancel and the keys end the edit.
-    if (isRowMode) return;
+    // Row mode and the entry block: the row's other editors are outside this
+    // host, and focus moving between them is not leaving the edit. Blur means
+    // nothing there; the lane's buttons and the keys end the edit.
+    if (isRowShaped) return;
     const next = event.relatedTarget;
     if (next instanceof Node && event.currentTarget.contains(next)) return;
     closingRef.current = true;
-    if (features.editMode === "cell") {
-      void edit.commit(row.id).then((ok) => {
-        if (!ok) edit.deactivate();
-      });
-    } else {
-      // cellConfirm: the draft stays, dirty-marked, waiting for its ✓.
+    if (features.editMode === "cellConfirm") {
+      // The draft stays, dirty-marked, waiting for its ✓.
       edit.deactivate();
+      return;
     }
+    void edit.commit(row.id).then((ok) => {
+      if (!ok) edit.deactivate();
+    });
   };
 
   if (form === undefined || fieldName === null) return null;

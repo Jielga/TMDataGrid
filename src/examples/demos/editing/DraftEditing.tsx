@@ -89,7 +89,8 @@ export function DraftEditing() {
     columns,
     getRowId: (row) => String(row.id),
     editing: {
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onSaveDrafts,
       newRowDefaults: newEmployee,
     },
@@ -131,7 +132,7 @@ export function DraftEditing() {
         </Button>
         {/* Save and Discard for every pending draft, disabled while nothing
             is pending and while anything is invalid. */}
-        <TMDataGrid.EditActions />
+        <TMDataGrid.DraftActions />
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

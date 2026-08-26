@@ -312,9 +312,9 @@ describe("edit engine", () => {
     expect(onCommit).toHaveBeenCalledTimes(1);
   });
 
-  it("draft mode parks a commit: validated, kept, and no consumer call", async () => {
+  it("the draft store parks a commit: validated, kept, and no consumer call", async () => {
     const onCommit = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
@@ -333,7 +333,8 @@ describe("edit engine", () => {
   it("a parked commit still validates, and a failing one keeps its errors", async () => {
     const onCommit = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommit,
       rowValidators: {
         onSubmit: z.object({
@@ -355,7 +356,7 @@ describe("edit engine", () => {
 
   it("drops a pristine row under draft too, without a consumer call", async () => {
     const onCommit = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
 
@@ -384,7 +385,7 @@ describe("edit engine", () => {
 
   it("submitAll commits every dirty row through the per-row loop", async () => {
     const onCommit = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Annika");
@@ -401,7 +402,8 @@ describe("edit engine", () => {
     const onCommit = vi.fn();
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommit,
       onCommitDrafts,
     });
@@ -424,7 +426,8 @@ describe("edit engine", () => {
 
   it("a rejected save keeps every draft", async () => {
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommitDrafts: () => Promise.reject(new Error("no")),
     });
     const { edit } = grid.current;
@@ -517,7 +520,8 @@ describe("edit engine", () => {
   it("draft mode confirms an entry row instead of adding it, and re-opens it", async () => {
     const onRowAdd = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onRowAdd,
       newRowDefaults: () => ({
         id: 0,
@@ -551,7 +555,7 @@ describe("edit engine", () => {
     expect(onRowDelete).toHaveBeenCalledTimes(1);
     expect(onRowDelete.mock.calls[0]?.[0]).toMatchObject({ rowId: "1" });
 
-    const draft = renderEditGrid({ mode: "draft", onRowDelete: vi.fn() });
+    const draft = renderEditGrid({ mode: "row", draft: true, onRowDelete: vi.fn() });
     draft.current.edit.deleteRow("1");
     expect(draft.current.edit.state.deletedRowIds).toEqual(["1"]);
     draft.current.edit.deleteRow("1");
@@ -560,7 +564,7 @@ describe("edit engine", () => {
 
   it("deleteRow on an uncommitted entry row just discards the entry", () => {
     const onRowDelete = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onRowDelete });
+    const grid = renderEditGrid({ mode: "row", draft: true, onRowDelete });
     const { edit } = grid.current;
     const tempId = edit.addRow();
 
@@ -574,7 +578,8 @@ describe("edit engine", () => {
   it("submitAll's draft payload carries rows, added and deleted together", async () => {
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommitDrafts,
       newRowDefaults: () => ({
         id: 0,
@@ -608,7 +613,8 @@ describe("edit engine", () => {
   it("submitAll adds a confirmed entry row through onRowAdd on the per-row path", async () => {
     const onRowAdd = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onRowAdd,
       newRowDefaults: () => ({
         id: 0,
@@ -637,7 +643,8 @@ describe("edit engine", () => {
   it("submitAll carries a confirmed entry row in the drafts payload's added", async () => {
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommitDrafts,
       newRowDefaults: () => ({
         id: 0,
@@ -664,7 +671,8 @@ describe("edit engine", () => {
   it("keeps a confirmed entry row that no longer validates at submitAll", async () => {
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommitDrafts,
       rowValidators: {
         onSubmit: z.object({
@@ -724,7 +732,7 @@ describe("edit engine", () => {
 
   it("clearCell parks the cleared value under draft", async () => {
     const onCommit = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onCommit });
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
     const { edit } = grid.current;
 
     await expect(edit.clearCell("1", "age")).resolves.toBe(true);
@@ -740,7 +748,8 @@ describe("edit engine", () => {
     const onCommit = vi.fn();
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onCommitDrafts,
       onCommit,
       onRowDelete: vi.fn(),
@@ -773,10 +782,10 @@ describe("edit engine", () => {
 
     // Draft can also deliver deletions through the drafts commit.
     expect(
-      renderEditGrid({ mode: "draft" }).current.edit.canDeleteRows(),
+      renderEditGrid({ mode: "row", draft: true }).current.edit.canDeleteRows(),
     ).toBe(false);
     expect(
-      renderEditGrid({ mode: "draft", onCommitDrafts: vi.fn() })
+      renderEditGrid({ mode: "row", draft: true, onCommitDrafts: vi.fn() })
         .current.edit.canDeleteRows(),
     ).toBe(true);
   });
@@ -820,7 +829,7 @@ describe("the draft store", () => {
           data: people,
           columns: validatedColumns,
           getRowId: (row) => String(row.id),
-          editing: { mode: "draft", ...editing },
+          editing: { mode: "row", draft: true, ...editing },
         } as UseTMDataGridOptions<Person>),
       { wrapper: MantineWrapper },
     );
@@ -829,7 +838,7 @@ describe("the draft store", () => {
 
   it("commit moves an existing row in, saveDrafts sends only what is in", async () => {
     const onSaveDrafts = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit } = grid.current;
 
     // Row 1 is OK'd, row 2 only typed into - the difference the store keeps.
@@ -855,7 +864,7 @@ describe("the draft store", () => {
 
   it("names the payload buckets updated / created / deleted", async () => {
     const onSaveDrafts = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
@@ -885,7 +894,8 @@ describe("the draft store", () => {
 
   it("keeps the drafts a result reports as failed", async () => {
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onSaveDrafts: () => ({ updated: { "2": false } }),
     });
     const { edit } = grid.current;
@@ -908,7 +918,8 @@ describe("the draft store", () => {
 
   it("keeps a failed entry row and a failed deletion mark", async () => {
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onSaveDrafts: ({ created, deleted }) => ({
         created: { [created[0]!.tempId]: false },
         deleted: { [deleted[0]!]: false },
@@ -929,7 +940,8 @@ describe("the draft store", () => {
 
   it("saves the whole bucket a result answers with a boolean", async () => {
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       onSaveDrafts: () => ({ updated: false }),
     });
     const { edit } = grid.current;
@@ -946,7 +958,8 @@ describe("the draft store", () => {
 
   it("saves everything a result does not name", async () => {
     const grid = renderEditGrid({
-      mode: "draft",
+      mode: "row",
+      draft: true,
       // An empty result says nothing failed.
       onSaveDrafts: () => ({}),
     });
@@ -967,7 +980,7 @@ describe("the draft store", () => {
     const onSaveDrafts = vi.fn(
       () => new Promise<void>((resolve) => (resolveSave = resolve)),
     );
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
@@ -989,7 +1002,7 @@ describe("the draft store", () => {
 
   it("re-opening a committed row takes it back out of the store", async () => {
     const onSaveDrafts = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
@@ -1046,7 +1059,7 @@ describe("the draft store", () => {
   });
 
   it("addRows opens a batch, and reports every row as open", async () => {
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts: vi.fn() });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts: vi.fn() });
     const { edit } = grid.current;
 
     const result = await edit.addRows([
@@ -1113,7 +1126,7 @@ describe("the draft store", () => {
 
   it("saveDrafts sends nothing while the store is empty", async () => {
     const onSaveDrafts = vi.fn();
-    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
@@ -1127,7 +1140,7 @@ describe("the draft store", () => {
   it("the deprecated submitAll is commitAll then saveDrafts", async () => {
     const onCommitDrafts = vi.fn();
     // The deprecated callback name still reaches the engine, too.
-    const grid = renderEditGrid({ mode: "draft", onCommitDrafts });
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommitDrafts });
     const { edit } = grid.current;
 
     edit.begin({ rowId: "1", columnId: "name" });
