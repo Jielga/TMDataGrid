@@ -192,6 +192,9 @@ export function TMDataGridEntryRows({
         data-row-id={entryRow.id}
         data-new
         data-committed={committed}
+        // The same marker body rows carry once committed, so one selector
+        // reaches everything parked in the draft store.
+        data-draft={committed}
         className={classes.entryRow}
       >
         {orderedColumns.map((column) => {

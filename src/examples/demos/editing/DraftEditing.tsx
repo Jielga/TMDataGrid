@@ -59,11 +59,11 @@ export function DraftEditing() {
   // The whole draft store (edits, additions, deletions) arrives here at once,
   // so the server can apply it as a single transaction.
   const onSaveDrafts = useCallback(
-    ({ rows, added, deleted }: TMDataGridSaveDraftsArgs<Employee>) => {
+    ({ updated, created, deleted }: TMDataGridSaveDraftsArgs<Employee>) => {
       setEmployees((previous) => {
         const edited = previous.map(
           (employee) =>
-            rows.find((row) => row.rowId === String(employee.id))?.value ??
+            updated.find((row) => row.rowId === String(employee.id))?.value ??
             employee,
         );
         const kept = edited.filter(
@@ -74,7 +74,7 @@ export function DraftEditing() {
         const maxId = Math.max(2999, ...kept.map((employee) => employee.id));
         return [
           ...kept,
-          ...added.map((add, index) => ({
+          ...created.map((add, index) => ({
             ...add.value,
             id: maxId + index + 1,
           })),

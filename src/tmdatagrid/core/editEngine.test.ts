@@ -853,6 +853,140 @@ describe("the draft store", () => {
     expect(edit.getForm("2")?.state.values["name"]).toBe("Erik Open");
   });
 
+  it("names the payload buckets updated / created / deleted", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+    edit.addRow({ name: "Ny", age: 30 });
+    const tempId = edit.state.newRows[0]!.tempId;
+    await edit.commit(tempId);
+    edit.deleteRow("2");
+
+    await edit.saveDrafts();
+
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+      created: Array<{ tempId: string }>;
+      deleted: Array<string>;
+      rows: Array<{ rowId: string }>;
+      added: Array<{ tempId: string }>;
+    };
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
+    expect(args.created.map((row) => row.tempId)).toEqual([tempId]);
+    expect(args.deleted).toEqual(["2"]);
+    // The pre-2.0 names carry the same arrays until they are removed.
+    expect(args.rows).toBe(args.updated);
+    expect(args.added).toBe(args.created);
+  });
+
+  it("keeps the drafts a result reports as failed", async () => {
+    const grid = renderEditGrid({
+      mode: "draft",
+      onSaveDrafts: () => ({ updated: { "2": false } }),
+    });
+    const { edit } = grid.current;
+
+    for (const rowId of ["1", "2"]) {
+      edit.begin({ rowId, columnId: "name" });
+      edit.getForm(rowId)?.setFieldValue("name", `Namn ${rowId}`);
+      await edit.commit(rowId);
+    }
+    expect(edit.state.committedRowIds).toEqual(["1", "2"]);
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    // Row 1 saved and is gone; row 2 stays committed, values intact, so the
+    // next save retries it.
+    expect(edit.state.committedRowIds).toEqual(["2"]);
+    expect(edit.getForm("1")).toBeUndefined();
+    expect(edit.getForm("2")?.state.values["name"]).toBe("Namn 2");
+  });
+
+  it("keeps a failed entry row and a failed deletion mark", async () => {
+    const grid = renderEditGrid({
+      mode: "draft",
+      onSaveDrafts: ({ created, deleted }) => ({
+        created: { [created[0]!.tempId]: false },
+        deleted: { [deleted[0]!]: false },
+      }),
+    });
+    const { edit } = grid.current;
+
+    edit.addRow({ name: "Ny", age: 30 });
+    const tempId = edit.state.newRows[0]!.tempId;
+    await edit.commit(tempId);
+    edit.deleteRow("2");
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
+  });
+
+  it("saves the whole bucket a result answers with a boolean", async () => {
+    const grid = renderEditGrid({
+      mode: "draft",
+      onSaveDrafts: () => ({ updated: false }),
+    });
+    const { edit } = grid.current;
+
+    for (const rowId of ["1", "2"]) {
+      edit.begin({ rowId, columnId: "name" });
+      edit.getForm(rowId)?.setFieldValue("name", `Namn ${rowId}`);
+      await edit.commit(rowId);
+    }
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+    expect(edit.state.committedRowIds).toEqual(["1", "2"]);
+  });
+
+  it("saves everything a result does not name", async () => {
+    const grid = renderEditGrid({
+      mode: "draft",
+      // An empty result says nothing failed.
+      onSaveDrafts: () => ({}),
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+    edit.deleteRow("2");
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+  });
+
+  it("a save during a save joins it instead of sending the payload twice", async () => {
+    let resolveSave: () => void = () => {};
+    const onSaveDrafts = vi.fn(
+      () => new Promise<void>((resolve) => (resolveSave = resolve)),
+    );
+    const grid = renderEditGrid({ mode: "draft", onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+
+    const first = edit.saveDrafts();
+    const second = edit.saveDrafts();
+    // The collector phase runs before the consumer call; release the save
+    // only once it is actually awaiting.
+    await vi.waitFor(() => expect(onSaveDrafts).toHaveBeenCalled());
+    resolveSave();
+
+    await expect(first).resolves.toBe(true);
+    await expect(second).resolves.toBe(true);
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    expect(edit.state.committedRowIds).toEqual([]);
+  });
+
   it("re-opening a committed row takes it back out of the store", async () => {
     const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({ mode: "draft", onSaveDrafts });

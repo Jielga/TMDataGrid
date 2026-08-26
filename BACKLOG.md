@@ -37,6 +37,14 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Partial draft saves** - **done 2026-08-26**.
+Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33). `onSaveDrafts`
+returns a result naming the ids that failed; they keep their drafts, committed,
+and the rest are cleared. The payload keys are renamed to `updated` / `created`
+/ `deleted`, with the old `rows` / `added` still filled and deprecated. Rows
+carry `data-draft` while parked in the store; the grid paints nothing, so
+highlighting is `rowStyle` or the attribute.
+
 **Controlled `state` passthrough** - **done 2026-08-25**.
 Closes [#39](https://github.com/Jielga/TMDataGrid/issues/39). TanStack compares
 `options.state` slices by identity on every render, so a slice object built in

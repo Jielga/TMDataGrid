@@ -117,6 +117,34 @@ The edit lane shows each row's pending change and undoes it per row:
 A row with a dirty draft hides the trash: revert first, then delete. If
 validation blocks a row, its icon turns red with the message in the tooltip.
 
+### Marking the drafts
+
+Rows publish what they are holding, for styling and for tests:
+
+| Attribute | On | Means |
+| --- | --- | --- |
+| `data-dirty` | Body row, cell | Values typed in, decided or not |
+| `data-draft` | Body row, entry row | Committed into the draft store, waiting for Save |
+| `data-deleted` | Body row | Marked for deletion |
+| `data-new` | Entry row | An entered row, committed or not |
+
+The grid paints none of them beyond the markers already described. To
+highlight everything pending a save, and to let the user toggle it, use
+`rowStyle` on the Table:
+
+```tsx
+<TMDataGrid.Table
+  rowStyle={(row) =>
+    showPending && grid.edit.state.committedRowIds.includes(row.id)
+      ? { "--row-bg": "var(--mantine-color-yellow-0)" }
+      : undefined
+  }
+/>
+```
+
+`rowClassName` takes a class instead. For CSS alone, target the attribute:
+`[data-dg-part="row"][data-draft="true"]`.
+
 `TMDataGrid.EditActions` in the toolbar provides the whole-grid controls: Save
 with the draft-store count, Discard, and a note counting the rows still open.
 Save sends the store and leaves open rows alone, so it greys out while nothing
@@ -149,9 +177,37 @@ height: 440
 
 `edit.saveDrafts()` sends the draft store, through the per-row `onCommit` /
 `onRowAdd` / `onRowDelete` loop by default, or through one
-`onSaveDrafts({ rows, added, deleted })` call when that is set - the whole
-store in one payload, for a server that applies it as a transaction. A
-rejected save keeps every draft.
+`onSaveDrafts({ updated, created, deleted })` call when that is set - the whole
+store in one payload, for a server that applies it as a transaction.
+`updated` entries carry a `rowId`, `created` entries a `tempId`, and `deleted`
+is a list of row ids.
+
+### Saving part of the store
+
+`onSaveDrafts` decides how much of the store is cleared:
+
+| Returned | Effect |
+| --- | --- |
+| nothing | Everything saved. The store is cleared. |
+| a rejected promise, or a throw | Nothing saved. Every draft is kept. |
+| `{ updated, created, deleted }` | The ids reported `false` are kept; the rest are cleared. |
+
+Each key takes `false` for the whole bucket, or a map of id to result. An id
+the map does not name saved.
+
+```tsx
+onSaveDrafts: async ({ updated, created, deleted }) => {
+  const failed = await api.saveBatch({ updated, created, deleted });
+  return { updated: Object.fromEntries(failed.map((id) => [id, false])) };
+};
+```
+
+A kept row stays committed rather than reopening, so the next `saveDrafts()`
+retries it with the values it already holds. `saveDrafts()` resolves `false`
+when anything was kept.
+
+Nothing about a kept row is styled by the grid. It carries the same markers
+every draft carries - see [Marking the drafts](#marking-the-drafts).
 
 `edit.submitAll()` is the old single verb and is **deprecated**: it now does
 `commitAll()` followed by `saveDrafts()`, which is what it always did in
@@ -211,8 +267,8 @@ useTMDataGrid({
   editing: {
     mode: "draft",
     newRowDefaults: () => ({ id: 0, name: "", hired: today() }),
-    onSaveDrafts: async ({ rows, added, deleted }) => {
-      await api.saveBatch({ rows, added, deleted });
+    onSaveDrafts: async ({ updated, created, deleted }) => {
+      await api.saveBatch({ updated, created, deleted });
     },
   },
 });
@@ -326,8 +382,8 @@ array, see [A query builder inside a form](/docs/query-builder).
 | `editing.isRowEditable`       | Member         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
 | `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
 | `editing.onCommit`            | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |
-| `editing.onSaveDrafts`        | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | Draft mode only. One call for the whole draft store.                                             |
-| `editing.onCommitDrafts`      | Callback       | `({ rows, added, deleted }) => void \| Promise`  | –                 | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
+| `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | Draft mode only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
+| `editing.onCommitDrafts`      | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | Draft mode only. Keeps entered new rows pinned in the entry block until Save all.                |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |

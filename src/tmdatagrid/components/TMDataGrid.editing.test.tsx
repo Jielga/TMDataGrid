@@ -638,6 +638,32 @@ describe("cell editing", () => {
     );
   }
 
+  it("marks a parked draft with data-draft and clears it on save", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<DraftGrid onCommit={() => {}} />);
+
+    // Row attributes carry "true"/"false" rather than being dropped.
+    const row = () => part("row", { rowId: "1" });
+    expect(row()).toHaveAttribute("data-draft", "false");
+
+    await user.dblClick(cellAt(0, 0));
+    await user.clear(screen.getByRole("textbox", { name: "Edit Name" }));
+    await user.type(screen.getByRole("textbox", { name: "Edit Name" }), "Annika");
+    // Typed but undecided: dirty, not yet in the draft store.
+    await user.click(cellAt(1, 1));
+    expect(row()).toHaveAttribute("data-dirty", "true");
+    expect(row()).toHaveAttribute("data-draft", "false");
+
+    await user.dblClick(cellAt(0, 0));
+    await user.keyboard("{Enter}");
+    expect(row()).toHaveAttribute("data-draft", "true");
+
+    await user.click(screen.getByRole("button", { name: "Save 1 row" }));
+    await waitFor(() =>
+      expect(row()).toHaveAttribute("data-draft", "false"),
+    );
+  });
+
   it("draft mode parks drafts on Enter and saves them through EditActions", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

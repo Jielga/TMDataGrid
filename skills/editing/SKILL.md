@@ -123,9 +123,21 @@ tooltip.
 
 `saveDrafts` then sends the draft store: through the per-row
 `editing.onCommit` / `editing.onRowAdd` / `editing.onRowDelete` loop by default,
-or through one `editing.onSaveDrafts({ rows, added, deleted })` call when that
-is set. Rows failing validation stay open either way, and a rejected save keeps
-every draft.
+or through one `editing.onSaveDrafts({ updated, created, deleted })` call when
+that is set. `updated` entries carry a `rowId`, `created` entries a `tempId`, `deleted` is
+a list of row ids. Rows failing validation stay open either way.
+
+`onSaveDrafts` decides how much of the store is cleared: returning nothing
+saves everything, throwing saves nothing, and returning
+`{ updated, created, deleted }` saves everything except the ids reported
+`false`. Each key takes `false` for the whole bucket or a map of id to result;
+an unnamed id saved. A kept row stays committed, so the next `saveDrafts()`
+retries it, and `saveDrafts()` resolves `false` when anything was kept.
+
+Rows carry `data-dirty` (values typed in), `data-draft` (committed, waiting for
+Save), `data-deleted` and, on entry rows, `data-new`. The grid paints none of
+them; use `rowStyle` / `rowClassName` or the attributes to highlight what is
+pending.
 
 ## What a commit receives
 
@@ -236,8 +248,8 @@ const grid = useTMDataGrid({
   editing: {
     mode: "draft",
     newRowDefaults: () => ({ id: 0, firstName: "", salary: 30_000 }),
-    onSaveDrafts: async ({ rows, added, deleted }) => {
-      await api.saveBatch({ rows, added, deleted });
+    onSaveDrafts: async ({ updated, created, deleted }) => {
+      await api.saveBatch({ updated, created, deleted });
     },
   },
 });

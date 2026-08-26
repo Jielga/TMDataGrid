@@ -750,6 +750,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       (id) => (state.rows[id]?.dirtyFields.length ?? 0) > 0,
     ),
   );
+  // Rows parked in the draft store, waiting for Save. A separate marker from
+  // `data-dirty`, which covers any row being typed into: after a partial save
+  // these are what is left, so one selector highlights everything still
+  // pending.
+  const editDraftRowIds = useSelector(
+    edit.store,
+    (state) => state.committedRowIds,
+  );
 
   const { loading, noResultsLabel = labels.noResults } =
     table.options.meta ?? {};
@@ -2232,6 +2240,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   data-dirty={
                     editDirtyRowIds.length > 0 &&
                     editDirtyRowIds.includes(row.id)
+                  }
+                  // Committed into the draft store, waiting for Save.
+                  data-draft={
+                    editDraftRowIds.length > 0 &&
+                    editDraftRowIds.includes(row.id)
                   }
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is
