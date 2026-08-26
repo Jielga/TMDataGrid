@@ -1,5 +1,45 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.4
+
+### Minor Changes
+
+- [#42](https://github.com/Jielga/TMDataGrid/pull/42) [`3e0c861`](https://github.com/Jielga/TMDataGrid/commit/3e0c8618d5bf428e737f10a2220a3d402b1360e0) Thanks [@Psvensso](https://github.com/Psvensso)! - `onSaveDrafts` can save part of the draft store. Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33).
+
+  - The payload keys are renamed: `rows` is now `updated`, `added` is now
+    `created`, `deleted` is unchanged. The old names are still filled and are
+    deprecated; they are removed in a later beta.
+  - Returning `{ updated, created, deleted }` from `onSaveDrafts` keeps the ids
+    reported `false` and clears the rest. Each key takes `false` for the whole
+    bucket or a map of id to result; an id the map does not name saved. A kept
+    row stays committed, so the next `saveDrafts()` retries it, and
+    `saveDrafts()` resolves `false` when anything was kept. Returning nothing
+    saves everything and throwing saves nothing, both unchanged.
+  - Body rows and entry rows carry `data-draft` while committed into the draft
+    store. `data-dirty` continues to mark any row with values typed in.
+  - `saveDrafts()` called while a save is in flight joins it instead of sending
+    the same payload again. Previously a double-clicked Save could create every
+    pending entry row twice.
+
+### Patch Changes
+
+- [#40](https://github.com/Jielga/TMDataGrid/pull/40) [`dc3aac9`](https://github.com/Jielga/TMDataGrid/commit/dc3aac9816e0f03be4a1ade1062fbc4412faecca) Thanks [@Psvensso](https://github.com/Psvensso)! - Fixed: a controlled `state` slice built inline in the render body caused an
+  infinite render loop. TanStack compares `options.state` slices by identity on
+  every render; the grid now forwards the previous render's value for a slice
+  whose contents are unchanged.
+
+  - A controlled slice passed without its `onXChange` logs a console warning in
+    development. Without the callback the slice cannot change; use
+    `initialState` for a starting value.
+  - A controlled `columnVisibility` no longer hides the generated columns. The
+    tree column's entry is managed by the grid and follows `grouping`.
+  - The tree column's visibility entry is seeded into an external
+    `atoms.columnVisibility` at mount. Previously the tree column rendered empty
+    in an ungrouped grid when an atom owned the slice.
+  - A `state` key set to `undefined` is ignored instead of being written into
+    the table state.
+  - `Date` values in controlled state compare by time.
+
 ## 2.0.0-beta.3
 
 ### Major Changes
