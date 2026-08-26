@@ -12,9 +12,9 @@ Spread the result onto `TMDataGrid`.
 ## Options
 
 All TanStack `TableOptions` are supported and passed through unchanged,
-including `data`, `columns`, `getRowId`, `state`, the `onXChange` callbacks, the
-`manual*` flags and `rowCount`. The `features` option is supplied internally and
-cannot be overridden.
+including `data`, `columns`, `getRowId`, `state` and the `onXChange` callbacks
+(see [Controlled state](#controlled-state)), the `manual*` flags and `rowCount`.
+The `features` option is supplied internally and cannot be overridden.
 
 `persist`, `enableColumnOrdering`, `enablePagination`, `selectionMode`,
 `showSelectedBackground`, `defaultHighlightedRowId`, `onHighlightedRowChange`,
@@ -50,7 +50,9 @@ rather than forwarded to TanStack.
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
-| `initialState` | `Partial<TableState>` | – | Merged over the [grid defaults](#default-initial-state). |
+| `initialState` | `Partial<TableState>` | – | Starting state, read once on mount. Merged over the [grid defaults](#default-initial-state). |
+| `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange`. See [Controlled state](#controlled-state). |
+| `atoms` | `Partial<Record<slice, Atom>>` | – | External atoms owning state slices. No callback required. Takes precedence over `state`. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
 | `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
@@ -62,6 +64,42 @@ rather than forwarded to TanStack.
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }`. Inert until pagination is enabled |
 | `columnPinning.left` | The checkbox, tree and details columns, followed by any columns you provide |
 | `globalFilterFn` | `"tmDataGridFuzzy"`, the fuzzy matcher behind `quickSearchMode`. `"includesString"` under `quickSearchMode: "contains"` |
+
+### Controlled state
+
+`state` makes a slice controlled: the parent owns the value and the grid reads
+it on every render. Each controlled slice requires its `onXChange` callback -
+all writes go through it. Without the callback the slice cannot change; the
+grid logs a console warning in development. For a starting value only, use
+`initialState`.
+
+```tsx
+const [columnVisibility, setColumnVisibility] = useState({ play: false });
+
+const grid = useTMDataGrid({
+  data,
+  columns,
+  state: { columnVisibility },
+  onColumnVisibilityChange: setColumnVisibility,
+});
+```
+
+- Controllable slices: `columnFilters`, `columnOrder`, `columnPinning`,
+  `columnResizing`, `columnSizing`, `columnVisibility`, `expanded`,
+  `globalFilter`, `grouping`, `pagination`, `rowPinning`, `rowSelection`,
+  `sorting`. Each has a matching `onXChange`.
+- A key set to `undefined` is ignored; the slice is uncontrolled.
+- Slices are compared structurally between renders, so the `state` object can
+  be built inline. `Date` values compare by time. `Map`s and class instances
+  compare by identity; keep a slice containing one in `useState` or `useMemo`.
+- `atoms` also controls a slice, with no callback: the table writes through the
+  atom. An atom takes precedence over `state` for the same slice.
+- `columnVisibility` toggles user-defined columns only. Entries for the
+  generated columns (checkbox, details, edit, row number) are ignored; enable
+  or disable those through their feature options. The tree column's entry is
+  managed by the grid and follows `grouping`.
+- `persist` restores through `initialState` and cannot restore a controlled
+  slice. It still writes the slice to storage on change.
 
 ## meta
 

@@ -62,7 +62,8 @@ rather than forwarded to TanStack.
 | `onFocusedCellChange` | `(cell \| null) => void` | – | Fires whenever the focused cell moves. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Defined by the grid. |
 | `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
-| `initialState` | `Partial<TableState>` | See below | Merged over the grid defaults. |
+| `initialState` | `Partial<TableState>` | See below | The state the grid starts from, read once on mount. Merged over the grid defaults. |
+| `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange` - see below. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
 | `editing` | `TMDataGridEditingOptions` | off | Turns editing on. `mode` (`"cell" \| "cellConfirm" \| "row" \| "draft"`) picks the commit policy; the object also holds `onCommit`, `onSaveDrafts`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `newRowsSticky`, `onRowAdd` and `onRowDelete` - see the `editing` skill. |
@@ -75,6 +76,35 @@ rather than forwarded to TanStack.
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }` - inert until pagination is enabled |
 | `columnPinning.left` | The checkbox column, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
+
+### Controlled state
+
+`state` makes a slice controlled: the parent owns the value, the grid reads it
+every render, and all writes go through the matching `onXChange`. Without the
+callback the slice cannot change; the grid logs a console warning in
+development. For a starting value only, use `initialState`.
+
+```tsx
+const [columnVisibility, setColumnVisibility] = useState({ play: false });
+
+const grid = useTMDataGrid({
+  data,
+  columns,
+  state: { columnVisibility },
+  onColumnVisibilityChange: setColumnVisibility,
+});
+```
+
+- A key set to `undefined` is ignored; the slice is uncontrolled.
+- Slices compare structurally between renders, so the `state` object can be
+  built inline. `Date`s compare by time; `Map`s and class instances compare by
+  identity and belong in `useState` or `useMemo`.
+- `atoms` also controls a slice, with no callback. Takes precedence over
+  `state` for the same slice.
+- `columnVisibility` toggles user-defined columns only. Entries for the
+  generated columns are ignored; enable or disable those through their feature
+  options. The tree column's entry follows `grouping`.
+- `persist` cannot restore a controlled slice; it still writes it to storage.
 
 ## meta
 
