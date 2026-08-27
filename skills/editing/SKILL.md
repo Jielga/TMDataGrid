@@ -1,24 +1,24 @@
 ---
 name: editing
 description: >
-  Edit cells and rows in TMDataGrid. Covers the editing option and its two
-  axes (mode: cell, cellConfirm, row; draft), the required getRowId,
-  editing.onCommit and editing.onSaveDrafts, why the grid never mutates data,
-  gating with editing.columns, meta.edit.enabled and meta.edit.field, the
-  built-in editors picked by meta.type, custom editors via meta.edit.editor,
-  value mapping with meta.edit.mapValue, validation at every level -
-  meta.edit.validate, cross-field editing.rowValidators, cross-row
-  editing.tableValidators over the draft-overlaid collection - adding and
-  deleting rows (edit.addRow, newRowDefaults, onRowAdd, onRowDelete), the
-  edit lane, TMDataGrid.DraftActions and renderActions, and the edit engine
-  (begin, commit, commitAll, saveDrafts, addRows, setCellValue, setRowValues,
-  getForm, store). Load when making a grid editable, choosing an edit mode,
-  wiring a save, writing a cell editor, validating an edit, writing cells
-  from a toolbar action or bulk fill, or when cells will not open.
+  Edit cells and rows in TMDataGrid. Covers the editing option and its two axes
+  (mode: cell, cellConfirm, row; draft), the required getRowId, editing.onCommit
+  and editing.onSaveDrafts, why the grid never mutates data, gating with
+  editing.columns, meta.edit.enabled and meta.edit.field, the built-in editors
+  picked by meta.type, custom editors via meta.edit.editor, value mapping with
+  meta.edit.mapValue, validation at every level - meta.edit.validate,
+  cross-field editing.rowValidators, cross-row editing.tableValidators over the
+  draft-overlaid collection - adding and deleting rows (edit.addRow,
+  newRowDefaults, onRowAdd, onRowDelete), the edit lane, TMDataGrid.DraftActions
+  and renderActions, and the edit engine (begin, commit, commitAll, saveDrafts,
+  addRows, setCellValue, setRowValues, getForm, store). Load when making a grid
+  editable, choosing an edit mode, wiring a save, writing a cell editor,
+  validating an edit, writing cells from a toolbar action or bulk fill, or when
+  cells will not open.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.5'
+  library_version: '2.0.0-beta.6'
 sources:
   - 'Jielga/TMDataGrid:src/docs/editing.md'
   - 'Jielga/TMDataGrid:src/docs/query-builder.md'
