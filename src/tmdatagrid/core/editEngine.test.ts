@@ -7,6 +7,8 @@ import {
   getEditFieldName,
   normalizeFieldValidate,
   type TMDataGridEditCommitArgs,
+  type TMDataGridTableValidateArgs,
+  type TMDataGridTableValidators,
 } from "./editEngine";
 import {
   createTMDataGridColumnHelper,
@@ -1575,5 +1577,298 @@ describe("editing.columns", () => {
     const args = onCommit.mock
       .calls[0]?.[0] as TMDataGridEditCommitArgs<Person>;
     expect(args.changes.map((change) => change.columnId)).toEqual(["name"]);
+  });
+});
+
+/**
+ * `editing.tableValidators` - the rules that need the other rows. What these
+ * guard is the collection the validator is handed - drafts overlaid, entry
+ * rows appended, deletion marks removed - and that its result lands on the
+ * committing row the way every other validator's does.
+ */
+describe("editing.tableValidators", () => {
+  /** The stock cross-row rule: no two rows may carry the same name. */
+  const noDuplicateNames: TMDataGridTableValidators<Person> = {
+    onSubmit: ({ value, rowId, rows }) =>
+      rows.some((row) => row.rowId !== rowId && row.value.name === value.name)
+        ? { fields: { name: "Duplicate name" } }
+        : undefined,
+  };
+
+  it("refuses a commit that duplicates another row, with the error on the cell", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({
+      onCommit,
+      tableValidators: noDuplicateNames,
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Anna");
+
+    await expect(edit.commit("2")).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["2"]);
+    expect(edit.state.rows["2"]?.errorFields).toContain("name");
+    expect(edit.state.rows["2"]?.errorMessages).toContainEqual({
+      field: "name",
+      message: "Duplicate name",
+    });
+
+    // And the same commit lands once the clash is gone.
+    edit.getForm("2")?.setFieldValue("name", "Erika");
+    await expect(edit.commit("2")).resolves.toBe(true);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands the validator every row, the committing one as drafted", async () => {
+    let seen: TMDataGridTableValidateArgs<Person> | undefined;
+    const grid = renderEditGrid({
+      onCommit: vi.fn(),
+      tableValidators: {
+        onSubmit: (args) => {
+          seen = args;
+          return undefined;
+        },
+      },
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    expect(seen?.rowId).toBe("1");
+    expect(seen?.isNew).toBe(false);
+    expect(seen?.value.name).toBe("Annika");
+    expect(seen?.rows.map((row) => row.rowId)).toEqual(["1", "2"]);
+    // The committing row as submitted, not as `data` still has it; the row
+    // nobody is editing exactly as `data` has it.
+    expect(seen?.rows[0]?.value.name).toBe("Annika");
+    expect(seen?.rows[1]?.value).toEqual(people[1]);
+  });
+
+  it("sees a parked draft, not the data its row was loaded with", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      tableValidators: noDuplicateNames,
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Zoe");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    // "Zoe" is in no row's data - it exists only in row one's parked draft,
+    // so this clash is one the overlay is the only way to see.
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Zoe");
+
+    await expect(edit.commit("2")).resolves.toBe(false);
+
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+    expect(edit.state.rows["2"]?.errorFields).toContain("name");
+  });
+
+  it("re-runs at saveDrafts, holding back a draft the rule now rejects", async () => {
+    const onSaveDrafts = vi.fn();
+    let clashes = false;
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts,
+      tableValidators: {
+        onSubmit: () =>
+          clashes
+            ? { form: "Table rule broken", fields: { name: "Duplicate name" } }
+            : undefined,
+      },
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+
+    // The collection moved under the parked row - a later edit elsewhere is
+    // what this stands in for.
+    clashes = true;
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    // Nothing valid to send, and the draft is still there to be fixed.
+    expect(onSaveDrafts).not.toHaveBeenCalled();
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.errorFields).toContain("name");
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+  });
+
+  it("leaves onSubmitAsync unasked once onSubmit has failed", async () => {
+    const onSubmitAsync = vi.fn();
+    const grid = renderEditGrid({
+      onCommit: vi.fn(),
+      tableValidators: { onSubmit: () => "Table rule broken", onSubmitAsync },
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.commit("1")).resolves.toBe(false);
+
+    expect(onSubmitAsync).not.toHaveBeenCalled();
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+  });
+
+  it("runs onSubmitAsync when onSubmit passes, and honours its error", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({
+      onCommit,
+      tableValidators: {
+        onSubmit: () => undefined,
+        onSubmitAsync: () => Promise.resolve({ fields: { name: "Taken" } }),
+      },
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.commit("1")).resolves.toBe(false);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.rows["1"]?.errorMessages).toContainEqual({
+      field: "name",
+      message: "Taken",
+    });
+  });
+
+  it("carries an entry row: once in its own view, and again in the next row's", async () => {
+    const seen: Array<TMDataGridTableValidateArgs<Person>> = [];
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      tableValidators: {
+        onSubmit: (args) => {
+          seen.push(args);
+          return undefined;
+        },
+      },
+    });
+    const { edit } = grid.current;
+
+    const tempId = edit.addRow({ name: "Ny", age: 30 });
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+
+    // The entry row's own commit: reported as new, and present in `rows`
+    // exactly once - appended, never doubled by the entry-row pass.
+    expect(seen[0]?.rowId).toBe(tempId);
+    expect(seen[0]?.isNew).toBe(true);
+    expect(seen[0]?.value.name).toBe("Ny");
+    expect(seen[0]?.rows.map((row) => row.rowId)).toEqual(["1", "2", tempId]);
+
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+    await expect(edit.commit("2")).resolves.toBe(true);
+
+    // And a data row committed afterwards sees the parked entry's values.
+    expect(seen[1]?.isNew).toBe(false);
+    expect(seen[1]?.rows.map((row) => row.rowId)).toEqual(["1", "2", tempId]);
+    expect(seen[1]?.rows.find((row) => row.rowId === tempId)?.value.name).toBe(
+      "Ny",
+    );
+  });
+
+  it("leaves a row marked for deletion out of the view", async () => {
+    let seen: TMDataGridTableValidateArgs<Person> | undefined;
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      tableValidators: {
+        onSubmit: (args) => {
+          seen = args;
+          return undefined;
+        },
+      },
+    });
+    const { edit } = grid.current;
+
+    edit.deleteRow("1");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Erik B");
+
+    await expect(edit.commit("2")).resolves.toBe(true);
+
+    // A rule counting or totalling rows must not count one on its way out.
+    expect(seen?.rows.map((row) => row.rowId)).toEqual(["2"]);
+  });
+
+  it("merges its result with the row's own validators", async () => {
+    const onCommit = vi.fn();
+    const grid = renderEditGrid({
+      onCommit,
+      tableValidators: { onSubmit: () => "Table rule broken" },
+      rowValidators: {
+        onSubmitAsync: () => ({ fields: { age: "Too young" } }),
+      },
+    });
+    const { edit } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    await expect(edit.commit("1")).resolves.toBe(false);
+
+    // Both sources land: the pathless one on the row, the pathed one on its
+    // cell - neither swallows the other.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+    expect(edit.state.rows["1"]?.errorMessages).toContainEqual({
+      field: "age",
+      message: "Too young",
+    });
+  });
+
+  it("wins a field the column rules also spoke for", async () => {
+    const validatedColumns = helper.columns([
+      helper.accessor("name", {
+        header: "Name",
+        meta: { edit: { validate: z.string().min(2, "Too short") } },
+      }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+    ]);
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: people,
+          columns: validatedColumns,
+          getRowId: (row) => String(row.id),
+          editing: {
+            mode: "cell",
+            onCommit: vi.fn(),
+            tableValidators: {
+              onSubmit: () => ({ fields: { name: "Duplicate name" } }),
+            },
+          },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    const { edit } = result.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    // Fails the column's rule and the table rule at once.
+    edit.getForm("1")?.setFieldValue("name", "A");
+
+    await expect(edit.commit("1")).resolves.toBe(false);
+
+    // The column rules are the earlier source, so the table rule's message is
+    // the one the cell carries.
+    expect(edit.state.rows["1"]?.errorMessages).toContainEqual({
+      field: "name",
+      message: "Duplicate name",
+    });
   });
 });

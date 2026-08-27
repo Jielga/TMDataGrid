@@ -181,9 +181,53 @@ Cross-field rules need a mode that commits the whole row at once. Under
 satisfied by either one. Use `editing.rowValidators.onSubmit` with `"row"`. See
 [Editing](/docs/editing#row-editing).
 
-A rule about the whole collection, such as "at least one row" or "no
-duplicates", is neither a field rule nor a row rule. It belongs to a form around
-the grid. See [A query builder inside a form](/docs/query-builder).
+A rule about the whole collection, such as "no duplicates" or "shares sum to
+100", is neither a field rule nor a row rule. It takes
+`editing.tableValidators` - see [Cross-row rules](#cross-row-rules).
+
+## Cross-row rules
+
+`editing.tableValidators` holds the rules that need the other rows: no
+duplicate keys, no overlapping ranges, allocations summing to a total. Its
+validators receive the committing row and `rows`, the collection as it would
+stand if the commit landed - every draft overlaid, entry rows appended,
+deletion-marked rows removed:
+
+```tsx
+editing: {
+  mode: "cell",
+  draft: true,
+  tableValidators: {
+    onSubmit: ({ value, rowId, rows }) =>
+      rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+        ? { fields: { code: "Codes must be unique" } }
+        : undefined,
+  },
+}
+```
+
+The result is the `rowValidators` vocabulary: nothing passes, a string is a
+row-level message, and `{ form, fields }` lands pathed issues on the
+committing row's cells. `onSubmit` runs first, and its failure stands without
+`onSubmitAsync` running.
+
+The rules run at every commit, after the row's own validators, and again for
+every parked row during `saveDrafts` - a draft that a later edit has
+invalidated fails there, keeps its markers, and the save resolves `false`.
+Errors land on the committing row only; the row it clashes with is not
+marked.
+
+`rows` is unfiltered, so a rule sees the whole collection whatever the view
+shows, and it never contains group rows.
+
+```demo
+file: editing/TableValidation.tsx
+hint: Give two teams the same code, or push the shares past 100, and the commit is refused. Drafts count - a clash with a pending edit is caught too.
+height: 380
+```
+
+A grid inside an outer form can put collection rules in the form's own field
+validator instead. See [A query builder inside a form](/docs/query-builder).
 
 ## Reference
 
@@ -193,6 +237,8 @@ the grid. See [A query builder inside a form](/docs/query-builder).
 | `meta.edit.validate` | Column meta | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema or function means `onChange`. |
 | `meta.edit.mapValue` | Column meta | `TMDataGridEditValueMap` | – | Maps each value an editor writes, before it reaches the draft. |
 | `editing.rowValidators` | Option | `TMDataGridRowValidators` | – | Form-level validation, for cross-field rules. |
+| `editing.tableValidators` | Option | `TMDataGridTableValidators` | – | Cross-row rules, handed the collection with every draft overlaid. See [Cross-row rules](#cross-row-rules). |
+| `TMDataGridTableValidateArgs` | Export | type | – | What a table validator receives: `value`, `rowId`, `isNew`, `rows`. |
 | `TMDataGridEditorArgs` | Export | type | – | What an editor component receives: `field`, `commit`, `cancel`, `row`, `column`. |
 | `TMDataGridEditValueMapArgs` | Export | type | – | What `mapValue` receives: `value`, `previous`, `row`, `column`, `table`. |
 | `TMDataGridStringEditor` · `NumberEditor` · `BooleanEditor` · `DateEditor` · `SelectEditor` · `MultiSelectEditor` | Exports | components | – | The six built-ins, for wrapping. |

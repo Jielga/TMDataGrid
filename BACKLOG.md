@@ -21,16 +21,6 @@ starts without the stakeholder's go.
   `autoResetExpanded` turns into a render loop.
 - H4 - details ergonomics (`detailsTrigger`, `detailsMode`). Wants H3 shipped
   first for its rule.
-- H6 - cross-row validation. Raised independently by two test consumers
-  2026-08-27 (traffic split, tariff desk): "allocations sum to 100% per
-  group", "no overlapping date ranges", "no duplicate keys" have no home -
-  `meta.edit.validate` sees one field, `rowValidators` one row, and the outer
-  form answer only applies when there is an outer form. Both consumers built
-  the same ~20 lines of scaffolding (a data ref, an engine ref, a merge of
-  saved rows with `rows[id].values`). Sketch: `editing.tableValidators` or
-  `groupValidators: { by, onSubmit }` handed the merged view, returning the
-  existing `{ form, fields }` shape, marking the group row and gating
-  `saveDrafts`. Wants draft-aware aggregates (see below) to be visible.
 - H7 - warning severity for validation. Raised 2026-08-27 (tariff desk):
   validation is binary today, so "unusual, are you sure" - the second class
   every pricing or budget grid has - is rebuilt by hand per consumer without
@@ -89,8 +79,8 @@ past 1.0.0 on 2026-08-01.
 - Draft-aware aggregates - `aggregatedCell` and `footer` read `data`, so a
   grouped total cannot show the pending split while a batch is held. An
   `aggregateColumn`-style helper overlaying `edit.store`'s values would let a
-  consumer render the pending total anywhere. Raised 2026-08-27; pairs with
-  H6.
+  consumer render the pending total anywhere. Raised 2026-08-27; what would
+  make a `tableValidators` group rule visible on the group row.
 - `edit.commitAll()` resolving `{ committed, open }` the way `addRows` does -
   today one boolean for the batch, so "3 approved, 1 blocked" needs a
   hand-rolled loop over `commit(rowId)`. Raised 2026-08-27.
@@ -120,6 +110,18 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Cross-row validation (H6)** - **done 2026-08-27**.
+Raised independently by two test consumers (traffic split, tariff desk).
+`editing.tableValidators` takes `onSubmit` / `onSubmitAsync`, each handed
+`{ value, rowId, isNew, rows }` where `rows` is the collection as it would
+stand if the commit landed: every draft overlaid, entry rows appended,
+deletion-marked rows removed - the scaffolding both consumers had hand-rolled.
+Same result vocabulary as `rowValidators`; errors land on the committing row.
+Folded into the composed submit pass, so it runs at every commit and re-runs
+per parked row during `saveDrafts` - the save gate came free. Scope cut from
+the sketch: no `groupValidators` sugar (a `rows.filter()` is the group rule)
+and no group-row marking, which wants draft-aware aggregates (To explore).
 
 **Density (H5)** - **done 2026-08-27**. Closed as recipe, not feature: the
 size scale and its recipe are on [styling.md](src/docs/styling.md) and

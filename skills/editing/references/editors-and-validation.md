@@ -233,6 +233,38 @@ Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
 unedited value and cannot pass. Use `"row"`.
 
+## Cross-row rules
+
+`editing.tableValidators` holds the rules that need the other rows. Its
+`onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`:
+`value` is the committing row as drafted, and `rows` is
+`Array<{ rowId, value }>` - the collection as it would stand if the commit
+landed, with every draft overlaid, entry rows appended and deletion-marked
+rows removed. `rows` is unfiltered and never contains group rows.
+
+```tsx
+editing: {
+  mode: "cell",
+  draft: true,
+  tableValidators: {
+    onSubmit: ({ value, rowId, rows }) =>
+      rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+        ? { fields: { code: "Codes must be unique" } }
+        : undefined,
+  },
+}
+```
+
+The result is the `rowValidators` vocabulary: nothing passes, a string is a
+row-level message, `{ form, fields }` lands pathed issues on the committing
+row's cells. `onSubmit` runs first, and its failure stands without
+`onSubmitAsync` running. Errors land on the committing row only.
+
+The rules run at every commit - typed, ✓, `edit.setCellValue`, an entry
+row's - after the row's own validators, and again for every parked row during
+`saveDrafts`: a draft that a later edit invalidated fails there, keeps its
+markers, and the save resolves `false`.
+
 ## Server-side errors
 
 `editing.rowValidators.onSubmitAsync` returns TanStack Form's `{ form, fields }`

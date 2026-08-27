@@ -8,8 +8,10 @@ description: >
   the six built-in editors picked by meta.type and the value each one writes,
   custom editors through meta.edit.editor,
   per-keystroke value mapping with meta.edit.mapValue, field validation with
-  meta.edit.validate and cross-field rules with editing.rowValidators (Standard
-  Schema and Zod), adding and deleting rows with edit.addRow,
+  meta.edit.validate, cross-field rules with editing.rowValidators (Standard
+  Schema and Zod), cross-row rules with editing.tableValidators (duplicates,
+  overlaps, totals over the draft-overlaid collection), adding and deleting
+  rows with edit.addRow,
   editing.newRowDefaults, editing.onRowAdd and editing.onRowDelete, the
   generated edit lane, TMDataGrid.DraftActions with its renderActions slot, and
   the public edit engine (begin, commit, commitAll, saveDrafts, addRows,
@@ -217,6 +219,24 @@ rowValidators: {
 Pathed issues land on the matching cells, pathless ones on the row, and cell
 corners mark both: blue for a dirty draft, red for a validation error.
 
+`editing.tableValidators` carries the rules that need the other rows - no
+duplicate keys, no overlapping ranges, shares summing to a total. Its
+`onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`, where
+`rows` is the collection as it would stand if the commit landed: every draft
+overlaid, entry rows appended, deletion-marked rows removed. Same result
+vocabulary as `rowValidators`; errors land on the committing row. The rules
+re-run per parked row during `saveDrafts`, so a draft a later edit
+invalidated blocks the save.
+
+```tsx
+tableValidators: {
+  onSubmit: ({ value, rowId, rows }) =>
+    rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+      ? { fields: { code: "Codes must be unique" } }
+      : undefined,
+}
+```
+
 `meta.edit.mapValue` rewrites a value instead of rejecting it: uppercase a code,
 strip spaces from an IBAN, clamp a number. It runs on every write an editor
 makes, so a text input maps per keystroke, and what it returns is what the
@@ -368,11 +388,12 @@ approval, map by row id (never index), and assign negative ids to new rows.
 
 The validation split follows from what each side can see: **a rule decidable
 from one row belongs to the grid (`meta.edit.validate`,
-`editing.rowValidators`); a rule needing the other rows or the collection ("has
-rows", "no duplicates") belongs to the form's field validator.** A row's form
-cannot see the array. The outer form can see the drafts: `edit.store` publishes
-each row's drafted values as `rows[rowId].values`, so a collection rule that
-must count pending values merges them over `data` first.
+`editing.rowValidators`), and a rule needing the other rows belongs to
+`editing.tableValidators`, which is handed the collection with every draft
+overlaid.** A collection rule may live in the outer form's field validator
+instead, where the submit gate is the form's own; `edit.store` publishes each
+row's drafted values as `rows[rowId].values` for a rule there that must count
+pending values.
 
 ## Common mistakes
 

@@ -208,6 +208,42 @@ describe("cell editing", () => {
     expect(editorInput()).toBeInTheDocument();
   });
 
+  it("blocks the commit on an editing.tableValidators rule and shows the message", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editing={{
+          onCommit: (args) => void commits.push(args),
+          tableValidators: {
+            onSubmit: ({ value, rowId, rows }) =>
+              rows.some(
+                (row) => row.rowId !== rowId && row.value.name === value.name,
+              )
+                ? { fields: { name: "Duplicate name" } }
+                : undefined,
+          },
+        }}
+      />,
+    );
+
+    // Row two, typed into the name row one already carries: a clash only a
+    // rule reading the other rows can see.
+    await user.dblClick(cellAt(1, 0));
+    const input = within(bodyRows()[1]!).getByRole("textbox", {
+      name: "Edit Name",
+    });
+    await user.clear(input);
+    await user.type(input, "Anna");
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByText("Duplicate name")).toBeInTheDocument();
+    expect(commits).toEqual([]);
+    // Still editing - the refused cell holds the edit.
+    expect(input).toBeInTheDocument();
+    expect(cellAt(1, 0)).toHaveAttribute("data-invalid", "true");
+  });
+
   it("commits on Tab and moves to the next editable cell", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];

@@ -59,6 +59,7 @@ import {
   type TMDataGridRowAddArgs,
   type TMDataGridRowDeleteArgs,
   type TMDataGridRowValidators,
+  type TMDataGridTableValidators,
 } from "./core/editEngine";
 import {
   emptyValueForOperator,
@@ -461,6 +462,27 @@ type TMDataGridEditingCallbacks<TData extends RowData> = {
    * Pathed issues land on the matching columns; pathless ones on the row.
    */
   rowValidators?: TMDataGridRowValidators;
+  /**
+   * Rules that need the other rows - no duplicate keys, no overlapping
+   * ranges, allocations summing to a total. Handed the committing row and
+   * `rows`, the collection as it would stand if the commit landed: every
+   * draft overlaid, entry rows appended, deletion-marked rows removed.
+   *
+   * ```tsx
+   * tableValidators: {
+   *   onSubmit: ({ value, rowId, rows }) =>
+   *     rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+   *       ? { fields: { code: "Duplicate code" } }
+   *       : undefined,
+   * }
+   * ```
+   *
+   * Runs at every commit, after the row's own validators, and again per
+   * parked row during `saveDrafts` - a draft another edit has invalidated
+   * blocks the save. Pathed issues land on the committing row's cells,
+   * pathless ones on the row.
+   */
+  tableValidators?: TMDataGridTableValidators<TData>;
   /** Rows the pencil skips - `false` keeps a row read-only in every mode. */
   isRowEditable?: (row: Row<TMDataGridFeatures, TData>) => boolean;
   /**
@@ -1219,6 +1241,8 @@ export function useTMDataGrid<TData extends RowData>({
     editMode: editMode ?? "cell",
     draft: editDraft,
     rowValidators: editing?.rowValidators,
+    tableValidators: editing?.tableValidators as
+      TMDataGridEditEngineContext["tableValidators"],
     editableColumnIds: editing?.columns,
     isRowEditable:
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],

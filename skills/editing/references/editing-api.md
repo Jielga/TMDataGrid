@@ -14,6 +14,7 @@ kind.
 | `editing.columns` | `ReadonlyArray<string>` | every column mapping to a data path | The column ids that take edits. Gates before `meta.edit`, never past it: a column left out takes no edits whatever its meta says, and a listed column still answers to its `meta.edit.enabled`. Also decides which cells an entry row opens. |
 | `editing.isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
 | `editing.rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
+| `editing.tableValidators` | `TMDataGridTableValidators` | – | Cross-row rules, handed the collection with every draft overlaid. |
 | `editing.newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
 | `editing.newRowsSticky` | `boolean` | `false` | `draft: true` only. Keeps entered new rows pinned in the entry block until the save, instead of letting them scroll with the body. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while `editing` is set | Editing turns the cell cursor on; set it explicitly to override. |
