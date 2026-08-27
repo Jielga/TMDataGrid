@@ -122,12 +122,20 @@ a layout effect once the mapped value has rendered.
 
 ## Validation
 
-The validators are TanStack Form's own, Standard Schema included, so a Zod
-schema passes straight through.
+The validators are TanStack Form's own: a Standard Schema (Zod, Valibot,
+ArkType) or a plain function returning an error message or nothing.
 
 ```tsx
-// Per column: field-level validators. A bare schema means { onChange: schema }.
+// Per column: field-level validators. A bare schema or function means { onChange: it }.
 meta: { edit: { validate: z.string().min(2, "Too short") } }
+
+// The same rule without a schema library:
+meta: {
+  edit: {
+    validate: ({ value }) =>
+      typeof value === "string" && value.length < 2 ? "Too short" : undefined,
+  },
+}
 
 // Per row: form-level validators - cross-field rules live here.
 useTMDataGrid({
@@ -164,7 +172,7 @@ the grid. See [A query builder inside a form](/docs/query-builder).
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `meta.edit.editor` | Column meta | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. |
-| `meta.edit.validate` | Column meta | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
+| `meta.edit.validate` | Column meta | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema or function means `onChange`. |
 | `meta.edit.mapValue` | Column meta | `TMDataGridEditValueMap` | – | Maps each value an editor writes, before it reaches the draft. |
 | `editing.rowValidators` | Option | `TMDataGridRowValidators` | – | Form-level validation, for cross-field rules. |
 | `TMDataGridEditorArgs` | Export | type | – | What an editor component receives: `field`, `commit`, `cancel`, `row`, `column`. |

@@ -55,7 +55,9 @@ columnHelper.accessor("salary", {
 
 `"sum"`, `"min"`, `"max"`, `"extent"`, `"mean"`, `"median"`, `"unique"`,
 `"uniqueCount"` and `"count"` are registered, as is `"auto"` - which picks
-`sum` for numbers and `extent` for dates. A function is accepted too. Pass
+`sum` for numbers and `extent` for dates. A function is accepted too, with
+TanStack's signature `(columnId, leafRows, childRows)`; `leafRows` are the
+group's data rows, each record on `row.original`. Pass
 `aggregatedCell` to render the group row's value differently from the data
 rows.
 

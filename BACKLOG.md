@@ -43,6 +43,25 @@ past 1.0.0 on 2026-08-01.
   Grid's `cellClassRules` is the reference. Wants the same CSS-variable
   vocabulary as the row hooks so it composes with the draft and selection
   layers rather than fighting them.
+- Paste into a cell range - raised by a test consumer 2026-08-27 (depot
+  maintenance board). Cell selection has a range, Ctrl+C and CSV export;
+  paste is the missing half. `edit.setCellValue` already validates and parks
+  a programmatic write, so this is composition rather than new machinery.
+- Multi-row `edit.setValues` - the batched sibling of `setRowValues`: one
+  store write and one flush for N rows, results per row as `addRows` reports
+  them. A loop of `setCellValue` works today; this is the scaling question.
+- Pinning ergonomics - a column cannot declare its own initial pin, and
+  `initialState.columnPinning` takes TanStack's full `ColumnPinningState`,
+  so the partial `{ left: [...] }` a consumer tries first does not compile
+  while `initialState: { grouping: [...] }` teaches that partials are fine.
+  Raised 2026-08-27.
+- Type the `meta.options` function form - `row.original` arrives as
+  `unknown` although the callback sits on a `TData`-bound column helper, so
+  the docs show a cast. Making the callback generic removes it. Raised
+  2026-08-27.
+- `meta.edit.enabled` reads `data`, not the pending draft - a gate that
+  depends on a field being edited runs a render behind. Predicted by a test
+  consumer 2026-08-27, not hit.
 
 ## Done
 

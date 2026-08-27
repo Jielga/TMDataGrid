@@ -128,10 +128,12 @@ meta: {
 meta: { type: "select", options: "faceted" }
 
 // Computed. `row` is set when a cell editor asks and absent for the filter
-// panel, so row-dependent options can branch on it:
+// panel, so row-dependent options can branch on it. `row.original` is
+// `unknown` here - cast it to the row type:
 meta: {
   type: "select",
-  options: ({ row }) => citiesFor(row?.original.country),
+  options: ({ row }) =>
+    row ? citiesFor((row.original as Employee).country) : allCities,
 }
 ```
 

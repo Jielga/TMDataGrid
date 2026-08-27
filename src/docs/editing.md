@@ -26,11 +26,17 @@ const grid = useTMDataGrid({
   editing: {
     mode: "cell",
     onCommit: async ({ rowId, value, changes }) => {
-      await api.patch(rowId, changes);
+      // changes is a list of descriptors, not a patch object
+      await api.patch(rowId, Object.fromEntries(changes.map((c) => [c.field, c.next])));
     },
   },
 });
 ```
+
+`onCommit` receives `{ rowId, value, original, changes, source }`.
+`value` is the whole row as edited, `original` the row as editing began, and
+`changes` the per-field diff: `Array<{ columnId, field, previous, next }>`, one
+entry in cell mode.
 
 `editing` requires `getRowId`: drafts are keyed by row id, and the index
 fallback would name a different record after any sort. `onSaveDrafts` is
@@ -194,8 +200,16 @@ height: 440
 `onRowAdd` / `onRowDelete` loop by default, or through one
 `onSaveDrafts({ updated, created, deleted })` call when that is set - the whole
 store in one payload, for a server that applies it as a transaction.
-`updated` entries carry a `rowId`, `created` entries a `tempId`, and `deleted`
-is a list of row ids.
+`updated` entries are the shape `onCommit` receives -
+`{ rowId, value, original, changes, source }`. `created` entries are
+`{ tempId, value }`, and `deleted` is a list of row ids.
+
+`changes` is a list of descriptors, not a patch object; spreading it into a row
+compiles and writes nothing. To build a patch:
+
+```tsx
+const patch = Object.fromEntries(entry.changes.map((c) => [c.field, c.next]));
+```
 
 ### Saving part of the store
 
@@ -387,12 +401,12 @@ The built-in controls do everything through `edit`, which is public.
 | Member | Does |
 | --- | --- |
 | `edit.begin({ rowId, columnId })` | Opens a row into form state. On a committed row, takes it back out of the draft store |
-| `edit.commit(rowId)` | Submits one row: into the draft store under `draft: true`, to `onCommit` otherwise. `false` if validation blocked it |
-| `edit.commitAll()` | Submits every open row. `false` when one stayed open |
+| `edit.commit(rowId)` | Submits one row: into the draft store under `draft: true`, to `onCommit` otherwise. Resolves `false` if validation blocked it |
+| `edit.commitAll()` | Submits every open row. Resolves `false` when one stayed open |
 | `edit.saveDrafts()` | Sends the draft store. Open rows are left alone |
 | `edit.submitAll()` | **Deprecated** - `commitAll()` then `saveDrafts()` |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts - form state and the draft store alike |
-| `edit.setCellValue(rowId, columnId, value)` | Writes one cell and commits the row, with no editor. `false` if the cell takes no edit, or validation refused the value |
+| `edit.setCellValue(rowId, columnId, value)` | Writes one cell and commits the row, with no editor. Resolves `false` if the cell takes no edit, or validation refused the value |
 | `edit.setRowValues(rowId, values)` | The same for several cells of one row, in one commit. All or nothing |
 | `edit.clearCell(rowId, columnId)` | Writes the type's empty value and commits it - what Delete does |
 | `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
@@ -401,6 +415,10 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
 | `edit.getForm(rowId)` | The row's live `FormApi` |
 | `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, entry rows, deletion marks |
+
+`commit`, `commitAll`, `saveDrafts`, `setCellValue`, `setRowValues`,
+`clearCell` and `addRows` return promises. Await each call before starting the
+next when driving edits in a loop.
 
 `getForm` returns the row's own `FormApi`. Render it in a drawer or side panel
 and it shares values, dirty state and errors with the inline cells.
@@ -442,7 +460,7 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.columns`             | Member         | `ReadonlyArray<string>`                          | Every mapped column | The column ids that take edits. Gates before `meta.edit`, never past it.                       |
 | `editing.isRowEditable`       | Member         | `(row) => boolean`                               | –                 | Closes a whole row to editing.                                                                   |
 | `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
-| `editing.onCommit`            | Callback       | `({ rowId, value, changes }) => void \| Promise` | –                 | Applies one row's change. Reject to keep the draft.                                              |
+| `editing.onCommit`            | Callback       | `({ rowId, value, original, changes, source }) => void \| Promise` | – | Applies one row's change. Reject to keep the draft.                                              |
 | `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | `draft: true` only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
 | `editing.onCommitDrafts`      | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps entered new rows pinned in the entry block until the save.             |

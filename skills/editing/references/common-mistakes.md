@@ -120,9 +120,9 @@ and the grid shows the old value as though nothing happened.
 Wrong:
 
 ```tsx
-onCommit: async ({ rowId, changes }) => {
+onCommit: async ({ rowId, value }) => {
   try {
-    await api.patch(rowId, changes);
+    await api.put(rowId, value);
   } catch (error) {
     console.error(error);
   }

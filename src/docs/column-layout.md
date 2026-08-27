@@ -42,6 +42,13 @@ A pinned column also becomes fixed-width, since sticky offsets cannot be
 computed from an `fr` value. The grid writes the column's rendered width into
 `columnSizing` as it is pinned, so nothing jumps.
 
+To start pinned, set `initialState.columnPinning`. The slice is TanStack's
+full `ColumnPinningState`, so a partial does not compile - name both sides:
+
+```tsx
+initialState: { columnPinning: { left: ["registration"], right: [] } }
+```
+
 The generated lanes stay outside both pinned lanes: pinning a column right puts
 it to the left of the edit lane, so the row's Save, Cancel and Delete remain
 last in the row.
