@@ -1,5 +1,29 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.6
+
+### Minor Changes
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`e36c7c7`](https://github.com/Jielga/TMDataGrid/commit/e36c7c7a39a1f0227ea3b248cdc131f1837bdf05) Thanks [@Psvensso](https://github.com/Psvensso)! - Programmatic edits and a column allowlist.
+
+  - `edit.setCellValue(rowId, columnId, value)` and `edit.setRowValues(rowId, values)` write through the edit engine, so a toolbar action or bulk fill lands in the draft store as a typed edit does - change markers, per-row revert and all. Rows need not be mounted. `meta.edit.validate` runs; `meta.edit.mapValue` does not, as with `clearCell`.
+  - `editing.columns` names the columns that take edits, instead of switching every other column off with `meta.edit.enabled: false`. Unset, every column mapping to a data path stays editable.
+  - `edit.isColumnEditable(column)` answers the column's half of the rule with no row in hand.
+  - `aggregateColumn` reads the filtered model's `flatRows`, so a tree built with `getSubRows` totals its children instead of only its roots. Flat and grouped grids are unchanged.
+  - The `number` editor no longer writes `NaN` when the text is not yet a number - partial input such as `-` or `1e` leaves the field empty and stays on screen.
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`e1f413a`](https://github.com/Jielga/TMDataGrid/commit/e1f413ae0b71cda4bc16b5ddaa96cc071b312294) Thanks [@Psvensso](https://github.com/Psvensso)! - `editing.tableValidators` - cross-row validation.
+
+  - `onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`, where `rows` is the collection as it would stand if the commit landed: every draft overlaid, entry rows appended, deletion-marked rows removed.
+  - Same result vocabulary as `rowValidators`; pathed issues land on the committing row's cells, pathless ones on the row.
+  - Runs at every commit after the row's own validators, and again per parked row during `saveDrafts`, so a draft a later edit invalidated blocks the save.
+
+### Patch Changes
+
+- [`cd5839d`](https://github.com/Jielga/TMDataGrid/commit/cd5839d0eb0e35c704173b29d8d3dc91631c20f2) Thanks [@Psvensso](https://github.com/Psvensso)! - The toolbar summary count no longer wraps - it stays on one line.
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`f2a5c6d`](https://github.com/Jielga/TMDataGrid/commit/f2a5c6d92c39c485def0dd59c39c5611390d1429) Thanks [@Psvensso](https://github.com/Psvensso)! - A live `size` (or `meta.rowHeight`) change now re-estimates virtualized row heights, so the scroll range follows the new density instead of keeping the old one.
+
 ## 2.0.0-beta.5
 
 ### Major Changes
