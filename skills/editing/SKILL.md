@@ -1,24 +1,20 @@
 ---
 name: editing
 description: >
-  Edit cells and rows in TMDataGrid. Covers the editing option with its four
-  mode policies (cell, cellConfirm, row, draft), the required getRowId,
+  Edit cells and rows in TMDataGrid. Covers the editing option and its two
+  axes (mode: cell, cellConfirm, row; draft), the required getRowId,
   editing.onCommit and editing.onSaveDrafts, why the grid never mutates data,
-  per-column gating with editing.columns, meta.edit.enabled and meta.edit.field,
-  the six built-in editors picked by meta.type and the value each one writes,
-  custom editors through meta.edit.editor,
-  per-keystroke value mapping with meta.edit.mapValue, field validation with
-  meta.edit.validate, cross-field rules with editing.rowValidators (Standard
-  Schema and Zod), cross-row rules with editing.tableValidators (duplicates,
-  overlaps, totals over the draft-overlaid collection), adding and deleting
-  rows with edit.addRow,
-  editing.newRowDefaults, editing.onRowAdd and editing.onRowDelete, the
-  generated edit lane, TMDataGrid.DraftActions with its renderActions slot, and
-  the public edit engine (begin, commit, commitAll, saveDrafts, addRows,
-  setCellValue, setRowValues, getForm, store). Load when making a grid editable,
-  choosing an edit mode, wiring a save, writing a cell editor, validating an
-  edit, writing cells from a toolbar action or a bulk fill, or when cells will
-  not open.
+  gating with editing.columns, meta.edit.enabled and meta.edit.field, the
+  built-in editors picked by meta.type, custom editors via meta.edit.editor,
+  value mapping with meta.edit.mapValue, validation at every level -
+  meta.edit.validate, cross-field editing.rowValidators, cross-row
+  editing.tableValidators over the draft-overlaid collection - adding and
+  deleting rows (edit.addRow, newRowDefaults, onRowAdd, onRowDelete), the
+  edit lane, TMDataGrid.DraftActions and renderActions, and the edit engine
+  (begin, commit, commitAll, saveDrafts, addRows, setCellValue, setRowValues,
+  getForm, store). Load when making a grid editable, choosing an edit mode,
+  wiring a save, writing a cell editor, validating an edit, writing cells
+  from a toolbar action or bulk fill, or when cells will not open.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
