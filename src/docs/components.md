@@ -170,6 +170,7 @@ No props.
 
 The row count, as shown over total.
 The total comes from `meta.totalRowCount` when set, and from the unfiltered row count otherwise.
+While a column is grouped the shown count includes the group rows and the total keeps counting records, so `42 / 42` reads `48 / 42` under six groups; pass `children` to show a count of your own.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -188,11 +189,14 @@ The slot argument carries the state, the two operations and the built-in buttons
 
 | Field | Type | What it is |
 | --- | --- | --- |
-| `state.pendingCount` | `number` | Rows with a dirty draft or pending deletion. |
-| `state.isSubmitting` | `boolean` | `true` while any open row is submitting. |
-| `actions.save` | `() => Promise<boolean>` | Commits every draft. Resolves `false` when a row stayed open. |
-| `actions.discard` | `() => void` | Drops every draft. |
-| `Controls.Save` · `Controls.Discard` | `() => ReactNode` | The built-in buttons, to place in your own layout. |
+| `state.draftCount` | `number` | Rows parked in the draft store - what Save sends. |
+| `state.openCount` | `number` | Rows still open, not part of a save. |
+| `state.pendingCount` | `number` | **Deprecated** - reads as `draftCount + openCount`. |
+| `state.isSubmitting` | `boolean` | `true` while a submit is in flight. |
+| `actions.save` | `() => Promise<boolean>` | Saves the draft store. Open rows are left alone. |
+| `actions.commitAll` | `() => Promise<boolean>` | Submits every open row. Resolves `false` when one stayed open. |
+| `actions.discard` | `() => void` | Drops everything - open form state and the draft store alike. |
+| `Controls.Save` · `Controls.Discard` · `Controls.OpenRowsNote` | `() => ReactNode` | The built-in pieces, to place in your own layout. |
 
 ## TMDataGrid.Footer
 

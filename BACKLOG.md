@@ -21,11 +21,13 @@ starts without the stakeholder's go.
   `autoResetExpanded` turns into a render loop.
 - H4 - details ergonomics (`detailsTrigger`, `detailsMode`). Wants H3 shipped
   first for its rule.
-- H5 - density. Closed as recipe, not feature: the size scale and its recipe
-  are on [styling.md](src/docs/styling.md) and
-  `getting-started/DensityAndLayout.tsx` is the runtime toggle, both shipped
-  with the docs restructure. What is left is a test pinning that a live
-  `size` change re-estimates virtualized row heights.
+- H7 - warning severity for validation. Raised 2026-08-27 (tariff desk):
+  validation is binary today, so "unusual, are you sure" - the second class
+  every pricing or budget grid has - is rebuilt by hand per consumer without
+  the corner marker, tooltip or store projection. A `severity: "error" |
+  "warning"` on an issue reuses the whole pipeline: amber corner, same
+  tooltip, `warningFields` beside `errorFields`. Related to H3 in name only -
+  H3 is dev-time misconfiguration, this is end-user data.
 
 **Parked** - U1, container-based column visibility (`meta.hideBelow`). Called
 past 1.0.0 on 2026-08-01.
@@ -34,8 +36,111 @@ past 1.0.0 on 2026-08-01.
 
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing.
+- Cell-level styling (`meta.cellStyle`, `meta.cellClassName`) - the cell
+  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
+  rather than to what a `cell` renderer puts inside it. Raised by a test
+  consumer 2026-08-26: colouring a value today means a wrapper component
+  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
+  so it cannot reach the cell's background layers the way `rowStyle` does. AG
+  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
+  vocabulary as the row hooks so it composes with the draft and selection
+  layers rather than fighting them.
+- Paste into a cell range - raised by a test consumer 2026-08-27 (depot
+  maintenance board). Cell selection has a range, Ctrl+C and CSV export;
+  paste is the missing half. `edit.setCellValue` already validates and parks
+  a programmatic write, so this is composition rather than new machinery.
+- Multi-row `edit.setValues` - the batched sibling of `setRowValues`: one
+  store write and one flush for N rows, results per row as `addRows` reports
+  them. A loop of `setCellValue` works today; this is the scaling question.
+- Pinning ergonomics - a column cannot declare its own initial pin, and
+  `initialState.columnPinning` takes TanStack's full `ColumnPinningState`,
+  so the partial `{ left: [...] }` a consumer tries first does not compile
+  while `initialState: { grouping: [...] }` teaches that partials are fine.
+  Raised 2026-08-27.
+- Type the `meta.options` function form - `row.original` arrives as
+  `unknown` although the callback sits on a `TData`-bound column helper, so
+  the docs show a cast. Making the callback generic removes it. Raised
+  2026-08-27.
+- `meta.edit.enabled` reads `data`, not the pending draft - a gate that
+  depends on a field being edited runs a render behind. Predicted by a test
+  consumer 2026-08-27, not hit. Also untyped: `row.original` arrives as
+  `unknown` although the helper is `TData`-bound, same fix as the
+  `meta.options` item above.
+- Tree lane width - the generated group column is a fixed ~250px, pinned
+  left, and no option or CSS variable narrows it. Raised by two test
+  consumers 2026-08-27; one dropped `columnPinning` because the lane had
+  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`.
+- `table.options.meta` as a consumer-extensible channel - columns are module
+  scope, so a cell renderer has no supported way to read page state; `meta`
+  is the natural channel but the docs only name `loading`, `totalRowCount`
+  and `rowHeight`, and whether consumers may add keys (and how to type them)
+  is uncommitted. Raised 2026-08-27. Deciding yes is one docs paragraph plus
+  declaration merging.
+- Draft-aware aggregates - `aggregatedCell` and `footer` read `data`, so a
+  grouped total cannot show the pending split while a batch is held. An
+  `aggregateColumn`-style helper overlaying `edit.store`'s values would let a
+  consumer render the pending total anywhere. Raised 2026-08-27; what would
+  make a `tableValidators` group rule visible on the group row.
+- `edit.commitAll()` resolving `{ committed, open }` the way `addRows` does -
+  today one boolean for the batch, so "3 approved, 1 blocked" needs a
+  hand-rolled loop over `commit(rowId)`. Raised 2026-08-27.
+- `edit` (or its store) in `TMDataGridEditorArgs` - a custom editor showing
+  "the total this flag would land on" can only reach saved siblings through
+  `table`, so its hint is stale while a sibling row is drafted. Raised
+  2026-08-27.
+- Pathless row-error text in the store projection - the lane's tooltip shows
+  it, but `edit.store` only carries `hasRowError: boolean`, so a custom error
+  surface has to reach into `getForm(rowId).state.errors`. A `rowError:
+  string | null` beside `errorMessages` keeps the store the single read
+  surface. Raised 2026-08-27.
+- `SummaryCount` counts group rows in the numerator (`48 / 42` under six
+  groups) while the denominator counts records. Flagged by two test
+  consumers 2026-08-27; documented as-is for now. Decide: exclude group rows,
+  or keep and leave the docs sentence.
+- A range column type - `meta.type: "dateRange"` (and a numeric sibling).
+  The editor is small; the filter operators (overlaps, contains, within) are
+  the part nobody wants to write twice, and `meta.type` already couples
+  editor, control and operators. Raised 2026-08-27.
+- A header-group edit gate - locking a locale/group means repeating the same
+  `meta.edit.enabled` predicate per leaf column. A gate on
+  `columnHelper.group`, or a documented pattern. Raised 2026-08-27.
+- An unfiltered `aggregateColumn` - the summary row follows the filters by
+  design, but a desk often wants both "filtered sums to 34%" and "the book
+  sums to 100%"; the second is computed outside the grid today. An
+  `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Cross-row validation (H6)** - **done 2026-08-27**.
+Raised independently by two test consumers (traffic split, tariff desk).
+`editing.tableValidators` takes `onSubmit` / `onSubmitAsync`, each handed
+`{ value, rowId, isNew, rows }` where `rows` is the collection as it would
+stand if the commit landed: every draft overlaid, entry rows appended,
+deletion-marked rows removed - the scaffolding both consumers had hand-rolled.
+Same result vocabulary as `rowValidators`; errors land on the committing row.
+Folded into the composed submit pass, so it runs at every commit and re-runs
+per parked row during `saveDrafts` - the save gate came free. Scope cut from
+the sketch: no `groupValidators` sugar (a `rows.filter()` is the group rule)
+and no group-row marking, which wants draft-aware aggregates (To explore).
+
+**Density (H5)** - **done 2026-08-27**. Closed as recipe, not feature: the
+size scale and its recipe are on [styling.md](src/docs/styling.md) and
+`getting-started/DensityAndLayout.tsx` is the runtime toggle, both shipped
+with the docs restructure. The last piece landed 2026-08-27: a live `size`
+change now calls the virtualizer's `measure()`, with a test pinning that the
+row-height estimates follow - they did not before, since TanStack Virtual's
+measurement cache does not list `estimateSize` among its dependencies.
+
+**Programmatic edits and a column allowlist** - **done 2026-08-26**.
+From a test consumer's report on building a rebalancing desk from the skills
+alone. `edit.setCellValue` / `edit.setRowValues` write through the engine, so a
+toolbar action lands in the draft store as a typed edit does; the three-call
+`begin` + `getForm(…)?.setFieldValue` + `commit` sequence it replaces was never
+reliable, since `begin` defers in `"cell"` mode when another row is open.
+`editing.columns` names the editable columns instead of switching every other
+one off. `edit.isColumnEditable` answers the column's half of the rule.
+Alongside: `aggregateColumn` reads `flatRows` so a `getSubRows` tree totals its
+children, and the `number` editor no longer writes `NaN` for partial input.
 
 **Partial draft saves** - **done 2026-08-26**.
 Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33). `onSaveDrafts`
@@ -184,6 +289,15 @@ with its demo, the way it ships with a changeset.
 Known gaps, no decision to build:
 
 - Column virtualization (all cells of a row mount today).
+- Value-change flash (`meta.flashOnChange`, a `--dg-cell-flash-bg` variable) -
+  a brief tint on a cell whose value moved. Raised by a test consumer
+  2026-08-26 as the trading grid's most-asked-for feature, and the reason it is
+  here rather than left to consumers: it needs previous-value tracking inside
+  the row model, which nothing outside the grid can hold.
+- Undo across the draft store. `revert-row` reverts one row and `discard-all`
+  clears every draft; there is nothing between them, so a bulk write that
+  touched five rows takes five reverts. Wants a real undo stack, which the
+  engine has no notion of today.
 - Row drag-reordering.
 - Multi-range cell selection (explicitly scoped out in docs).
 - Tree data from hierarchical source (`getSubRows` passthrough undocumented).

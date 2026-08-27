@@ -93,6 +93,45 @@ export type TMDataGridRowValidators = {
   onSubmitAsyncDebounceMs?: number;
 };
 
+/** What `editing.tableValidators` is handed for one commit. */
+export type TMDataGridTableValidateArgs<
+  TData extends RowData = TMDataGridRowData,
+> = {
+  /** The committing row, as drafted. */
+  value: TData;
+  /** Its id - `addRow`'s temp id for an entry row. */
+  rowId: string;
+  /** Whether the row is an entry row, not yet in `data`. */
+  isNew: boolean;
+  /**
+   * The collection as it would stand if this commit landed: every data row
+   * overlaid with its draft where one is held (this row's `value` included),
+   * entry rows appended, deletion-marked rows removed. Unfiltered - a rule
+   * sees the whole collection whatever the view shows.
+   */
+  rows: ReadonlyArray<{ rowId: string; value: TData }>;
+};
+
+/**
+ * `editing.tableValidators` - rules that need the other rows: no duplicate
+ * keys, no overlapping ranges, allocations summing to a total. Run at every
+ * commit, after the row's own validators, and again per parked row during
+ * `saveDrafts` - so a draft invalidated by a later edit blocks the save.
+ *
+ * Return nothing to pass, a message, or Form's `{ form, fields }` shape;
+ * pathed issues land on the committing row's cells, pathless ones on the row.
+ * `onSubmit` runs first, and its failure stands without `onSubmitAsync`
+ * running.
+ */
+export type TMDataGridTableValidators<
+  TData extends RowData = TMDataGridRowData,
+> = {
+  onSubmit?: (args: TMDataGridTableValidateArgs<TData>) => unknown;
+  onSubmitAsync?: (
+    args: TMDataGridTableValidateArgs<TData>,
+  ) => unknown | Promise<unknown>;
+};
+
 /** One field's before/after across a commit. */
 export type TMDataGridEditChange = {
   /** Column the field maps back to, for consumers thinking in columns. */
@@ -388,6 +427,12 @@ export type TMDataGridEditEngineContext = {
   /** `editing.draft` - whether a commit parks instead of reaching out. */
   draft: boolean;
   rowValidators?: TMDataGridRowValidators;
+  tableValidators?: TMDataGridTableValidators;
+  /**
+   * `editing.columns` - the allowlist, or `undefined` for "every column that
+   * maps to a field".
+   */
+  editableColumnIds?: ReadonlyArray<string>;
   isRowEditable?: (row: ErasedRow) => boolean;
   onEditCommit?: (
     args: TMDataGridEditCommitArgs<TMDataGridRowData>,
@@ -490,6 +535,13 @@ export type TMDataGridEditApi<
   /** Whether the row takes edits at all - the edit lane's pencil gate. */
   canEditRow: (row: ErasedRow) => boolean;
   /**
+   * Whether the column takes edits at all, with no row in hand: it maps to a
+   * field, `editing.columns` lists it if that option is set, and
+   * `meta.edit.enabled` is not `false`. A per-row `enabled` predicate is the
+   * row's half of the question - `canEditCell` asks both.
+   */
+  isColumnEditable: (column: ErasedColumn) => boolean;
+  /**
    * Opens an editor. In row mode the whole row opens either way and `columnId`
    * only says which cell takes the caret; `null` (the lane's pencil) leaves it
    * to the row's first editable cell.
@@ -534,6 +586,38 @@ export type TMDataGridEditApi<
   submitAll: () => Promise<boolean>;
   /** Writes the type's empty value into a cell and commits it - Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
+  /**
+   * Writes one cell and commits the row - a typed edit without the typing,
+   * for toolbar actions and bulk fills. Under `editing.draft` the row parks
+   * in the draft store exactly as a hand-made edit does, so it carries the
+   * same change markers and the same per-row revert.
+   *
+   * The row need not be mounted; a row inside a collapsed group takes the
+   * write. Resolves `false` when the cell takes no edit - no such row or
+   * column, `editing.columns` excludes it, `meta.edit.enabled` is off, or the
+   * row is not editable - and when validation refuses the value, which leaves
+   * the row open carrying its errors.
+   *
+   * `value` is the stored value: no editor runs, so `meta.edit.mapValue`
+   * does not either. `meta.edit.validate` does.
+   */
+  setCellValue: (
+    rowId: string,
+    columnId: string,
+    value: unknown,
+  ) => Promise<boolean>;
+  /**
+   * {@link setCellValue} for several cells of one row, in a single commit -
+   * one consumer call and one draft entry rather than one per column. Keys
+   * are column ids.
+   *
+   * All or nothing: if any named cell takes no edit, nothing is written and
+   * this resolves `false`.
+   */
+  setRowValues: (
+    rowId: string,
+    values: Record<string, unknown>,
+  ) => Promise<boolean>;
   /**
    * Opens a new entry row (the sticky block under the header) seeded from
    * `newRowDefaults`. `values` overrides that seed key by key, so
@@ -741,15 +825,22 @@ export function createEditEngine(
   let draftAddCollector: Array<TMDataGridRowAddArgs<TMDataGridRowData>> | null =
     null;
 
+  /**
+   * The column's half of the rule, with no row in hand: it is a consumer
+   * column mapping to a field, `editing.columns` lists it if that is set, and
+   * `meta.edit.enabled` has not switched it off outright. A per-row predicate
+   * on `enabled` is the row's half and is not asked here.
+   */
+  const isColumnEditable = (column: ErasedColumn): boolean => {
+    if (isControlColumn(column.id)) return false;
+    if (getEditFieldName(column) === null) return false;
+    const allowed = getContext().editableColumnIds;
+    if (allowed !== undefined && !allowed.includes(column.id)) return false;
+    return !isColumnEditSwitchedOff(column);
+  };
+
   const editableColumns = (): Array<ErasedColumn> =>
-    getContext()
-      .table.getAllLeafColumns()
-      .filter(
-        (column) =>
-          !isControlColumn(column.id) &&
-          !isColumnEditSwitchedOff(column) &&
-          getEditFieldName(column) !== null,
-      );
+    getContext().table.getAllLeafColumns().filter(isColumnEditable);
 
   /**
    * Every column's `meta.edit.validate`, run against a row's values.
@@ -793,9 +884,124 @@ export function createEditEngine(
   };
 
   /**
-   * The row's `validators`, with column validation folded into the submit
-   * pass. The consumer's own `rowValidators` are passed through untouched
-   * except for `onSubmitAsync`, which now also carries the column rules.
+   * The collection as a table validator sees it: every data row overlaid
+   * with its draft where a form holds one, entry rows appended, and rows
+   * marked deleted removed. The committing row contributes the values being
+   * submitted, not what `data` still says. Built from the core row model, so
+   * it is unfiltered and never contains group rows.
+   */
+  const mergedRows = (
+    rowId: string,
+    value: TMDataGridRowData,
+    isNew: boolean,
+  ): Array<{ rowId: string; value: TMDataGridRowData }> => {
+    const deleted = new Set(store.state.deletedRowIds);
+    const rows: Array<{ rowId: string; value: TMDataGridRowData }> = [];
+    for (const row of getContext().table.getCoreRowModel().flatRows) {
+      if (deleted.has(row.id)) continue;
+      if (row.id === rowId) {
+        rows.push({ rowId, value });
+        continue;
+      }
+      const held = forms.get(row.id);
+      rows.push({
+        rowId: row.id,
+        value:
+          held === undefined
+            ? (row.original as TMDataGridRowData)
+            : (held.form.state.values as TMDataGridRowData),
+      });
+    }
+    for (const newRow of store.state.newRows) {
+      if (newRow.tempId === rowId) continue;
+      const held = forms.get(newRow.tempId);
+      if (held === undefined || deleted.has(newRow.tempId)) continue;
+      rows.push({
+        rowId: newRow.tempId,
+        value: held.form.state.values as TMDataGridRowData,
+      });
+    }
+    if (isNew) rows.push({ rowId, value });
+    return rows;
+  };
+
+  /**
+   * Runs `editing.tableValidators` for one commit. `onSubmit` first; its
+   * failure stands and `onSubmitAsync` is not consulted, mirroring how the
+   * column triggers short-circuit.
+   */
+  const runTableValidators = async (
+    value: TMDataGridRowData,
+    rowId: string,
+    isNew: boolean,
+  ): Promise<unknown> => {
+    const validators = getContext().tableValidators;
+    if (
+      validators?.onSubmit === undefined &&
+      validators?.onSubmitAsync === undefined
+    ) {
+      return undefined;
+    }
+    const args: TMDataGridTableValidateArgs = {
+      value,
+      rowId,
+      isNew,
+      rows: mergedRows(rowId, value, isNew),
+    };
+    const sync = validators.onSubmit?.(args);
+    if (isValidationError(sync)) return sync;
+    return await validators.onSubmitAsync?.(args);
+  };
+
+  /**
+   * One submit pass's results folded into Form's error shape. A single
+   * source passes through untouched (its own shape preserved); several merge
+   * into `{ form, fields }`, the later source winning a field collision and
+   * the form slot alike.
+   */
+  const mergeSubmitResults = (
+    results: ReadonlyArray<unknown>,
+    fields: Record<string, unknown> | undefined,
+  ): unknown => {
+    const errors = results.filter(isValidationError);
+    if (errors.length === 0) {
+      return fields === undefined ? undefined : { fields };
+    }
+    if (errors.length === 1) {
+      const only = errors[0];
+      if (fields === undefined) return only;
+      if (typeof only === "object" && only !== null) {
+        const shape = only as { fields?: Record<string, unknown> };
+        return { ...shape, fields: { ...fields, ...(shape.fields ?? {}) } };
+      }
+      return { form: only, fields };
+    }
+    let form: unknown;
+    let mergedFields: Record<string, unknown> = { ...(fields ?? {}) };
+    for (const error of errors) {
+      if (typeof error === "object" && error !== null) {
+        const shape = error as {
+          form?: unknown;
+          fields?: Record<string, unknown>;
+        };
+        if (isValidationError(shape.form)) form = shape.form;
+        mergedFields = { ...mergedFields, ...(shape.fields ?? {}) };
+      } else {
+        form = error;
+      }
+    }
+    const merged: { form?: unknown; fields?: Record<string, unknown> } = {};
+    if (form !== undefined) merged.form = form;
+    if (Object.keys(mergedFields).length > 0) merged.fields = mergedFields;
+    return merged;
+  };
+
+  /**
+   * The row's `validators`, with column validation and the table rules folded
+   * into the submit pass. The consumer's own `rowValidators` are passed
+   * through untouched except for `onSubmitAsync`, which now also carries the
+   * column rules and `editing.tableValidators` - later sources win a merge,
+   * so the order is columns, then the table rules, then the row's own.
    */
   const composeValidators = (
     rowId: string,
@@ -809,30 +1015,14 @@ export function createEditEngine(
     return {
       ...rowValidators,
       onSubmitAsync: async (args: { value: unknown }) => {
+        const value = args.value as TMDataGridRowData;
         const fromConsumer =
           consumerAsync === undefined
             ? undefined
             : await (consumerAsync as (a: unknown) => unknown)(args);
-        const fields = await validateColumnFields(
-          args.value as TMDataGridRowData,
-          rowId,
-          isNew,
-        );
-        if (fields === undefined) return fromConsumer;
-        if (!isValidationError(fromConsumer)) return { fields };
-        // The consumer's row-level result stands alongside the column
-        // errors: theirs keeps whatever shape it had, ours lands on fields.
-        if (typeof fromConsumer === "object" && fromConsumer !== null) {
-          const consumerShape = fromConsumer as {
-            form?: unknown;
-            fields?: Record<string, unknown>;
-          };
-          return {
-            ...consumerShape,
-            fields: { ...fields, ...(consumerShape.fields ?? {}) },
-          };
-        }
-        return { form: fromConsumer, fields };
+        const fromTable = await runTableValidators(value, rowId, isNew);
+        const fields = await validateColumnFields(value, rowId, isNew);
+        return mergeSubmitResults([fromTable, fromConsumer], fields);
       },
     };
   };
@@ -1052,8 +1242,7 @@ export function createEditEngine(
   const canEditCell = (row: ErasedRow, column: ErasedColumn): boolean => {
     const context = getContext();
     if (row.getIsGrouped()) return false;
-    if (isControlColumn(column.id)) return false;
-    if (getEditFieldName(column) === null) return false;
+    if (!isColumnEditable(column)) return false;
     if (!isColumnEditableForRow(column, row)) return false;
     if (context.isRowEditable !== undefined && !context.isRowEditable(row)) {
       return false;
@@ -1455,23 +1644,79 @@ export function createEditEngine(
     return committedOk && savedOk;
   };
 
+  /**
+   * The write path behind `clearCell`, `setCellValue` and `setRowValues`:
+   * fill the row's own form and commit it, exactly as a ✓ on an open editor
+   * would. Uses the form already open on the row when there is one, so a
+   * programmatic write joins an edit in progress rather than discarding it.
+   *
+   * No editor is involved, so `meta.edit.mapValue` does not run - the caller
+   * writes the stored value itself. Validation is untouched: this is the same
+   * `commit`, so `meta.edit.validate` and `editing.rowValidators` still decide
+   * whether the row lands, and a failure leaves the row open carrying its
+   * errors.
+   */
+  const writeFields = async (
+    rowId: string,
+    writes: ReadonlyArray<{ field: string; value: unknown }>,
+  ): Promise<boolean> => {
+    const row = getRow(rowId);
+    if (row === undefined) return false;
+    if (writes.length === 0) return true;
+    const entry = forms.get(rowId) ?? createForm(rowId, row.original, false);
+    for (const { field, value } of writes) {
+      entry.form.setFieldValue(field as never, value as never);
+    }
+    return commit(rowId);
+  };
+
+  /** The field a cell writes to, or `null` when that cell takes no edit. */
+  const writableField = (rowId: string, columnId: string): string | null => {
+    const row = getRow(rowId);
+    const column = getContext().table.getColumn(columnId);
+    if (row === undefined || column === undefined) return null;
+    if (!canEditCell(row, column)) return null;
+    return getEditFieldName(column);
+  };
+
   const clearCell = async (
     rowId: string,
     columnId: string,
   ): Promise<boolean> => {
-    const context = getContext();
-    const row = getRow(rowId);
-    const column = context.table.getColumn(columnId);
-    if (row === undefined || column === undefined) return false;
-    if (!canEditCell(row, column)) return false;
-    const field = getEditFieldName(column);
+    const column = getContext().table.getColumn(columnId);
+    const field = writableField(rowId, columnId);
+    if (field === null || column === undefined) return false;
+    return writeFields(rowId, [
+      {
+        field,
+        value: clearedValueForType(column.columnDef.meta?.type ?? "string"),
+      },
+    ]);
+  };
+
+  const setCellValue = async (
+    rowId: string,
+    columnId: string,
+    value: unknown,
+  ): Promise<boolean> => {
+    const field = writableField(rowId, columnId);
     if (field === null) return false;
-    const entry = forms.get(rowId) ?? createForm(rowId, row.original, false);
-    entry.form.setFieldValue(
-      field as never,
-      clearedValueForType(column.columnDef.meta?.type ?? "string") as never,
-    );
-    return commit(rowId);
+    return writeFields(rowId, [{ field, value }]);
+  };
+
+  const setRowValues = async (
+    rowId: string,
+    values: Record<string, unknown>,
+  ): Promise<boolean> => {
+    const writes: Array<{ field: string; value: unknown }> = [];
+    for (const [columnId, value] of Object.entries(values)) {
+      const field = writableField(rowId, columnId);
+      // All or nothing: one cell that takes no edit fails the call before
+      // anything is written, so a bulk action cannot half-apply unnoticed.
+      if (field === null) return false;
+      writes.push({ field, value });
+    }
+    return writeFields(rowId, writes);
   };
 
   return {
@@ -1482,6 +1727,7 @@ export function createEditEngine(
     getForm: (rowId) => forms.get(rowId)?.form,
     canEditCell,
     canEditRow,
+    isColumnEditable,
     begin,
     commit,
     cancel,
@@ -1491,6 +1737,8 @@ export function createEditEngine(
     saveDrafts,
     submitAll,
     clearCell,
+    setCellValue,
+    setRowValues,
     addRow,
     addRows,
     deleteRow,

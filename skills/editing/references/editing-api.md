@@ -11,8 +11,10 @@ kind.
 | `editing.mode` | `"cell" \| "cellConfirm" \| "row"` | – | What counts as a commit, and which controls trigger it. |
 | `editing.draft` | `boolean` | `false` | Where a commit goes. On, it parks in the grid's draft store until `edit.saveDrafts()`. |
 | `getRowId` | `(row) => string` | – | A TanStack table option, required once `editing` is set. Drafts are keyed by it. |
+| `editing.columns` | `ReadonlyArray<string>` | every column mapping to a data path | The column ids that take edits. Gates before `meta.edit`, never past it: a column left out takes no edits whatever its meta says, and a listed column still answers to its `meta.edit.enabled`. Also decides which cells an entry row opens. |
 | `editing.isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
 | `editing.rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
+| `editing.tableValidators` | `TMDataGridTableValidators` | – | Cross-row rules, handed the collection with every draft overlaid. |
 | `editing.newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
 | `editing.newRowsSticky` | `boolean` | `false` | `draft: true` only. Keeps entered new rows pinned in the entry block until the save, instead of letting them scroll with the body. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while `editing` is set | Editing turns the cell cursor on; set it explicitly to override. |
@@ -29,7 +31,7 @@ the type.
 | `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
 | `editing.onCommitDrafts` | `{ updated, created, deleted }` | **Deprecated** - renamed to `onSaveDrafts`. Still honoured; the new name wins if both are set. |
 | `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
-| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row, and puts the trash can in the edit lane. |
+| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too. |
 
 `changes` entries are `{ columnId, field, previous, next }`; `field` is the data
 path, which may be dotted.
@@ -60,11 +62,14 @@ path, which may be dotted.
 | `deactivate` | `() => void` | Closes the editor without touching the draft, as blur does under `"cellConfirm"`. |
 | `submitAll` | `() => Promise<boolean>` | **Deprecated** - `commitAll()` then `saveDrafts()`. |
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
+| `setCellValue` | `(rowId, columnId, value) => Promise<boolean>` | Writes one cell and commits the row, with no editor - toolbar actions and bulk fills. The row need not be mounted; a row inside a collapsed group takes the write. `value` is the stored value, so `meta.edit.mapValue` does not run and `meta.edit.validate` does. Under `draft: true` the row parks like any hand-made edit. `false` when the cell takes no edit, or when validation refused the value and left the row open with its errors. |
+| `setRowValues` | `(rowId, values) => Promise<boolean>` | `setCellValue` for several cells of one row in a single commit - one consumer call and one draft entry. Keys are column ids. All or nothing: if any named cell takes no edit, nothing is written and it resolves `false`. |
 | `addRow` | `(values?) => string` | Opens an entry row, returns its `tempId`. `values` overrides `editing.newRowDefaults` key by key for that row; with no argument the row is `newRowDefaults` alone. |
 | `addRows` | `(rows, options?) => Promise<{ committed, open }>` | Opens a batch in one write, each row seeded as `addRow` seeds. `{ commit: true }` submits each as it lands - valid rows commit, invalid ones stay open with their errors. |
 | `deleteRow` | `(rowId) => void` | `editing.onRowDelete`, or a deletion mark under `draft: true`. Toggles: a second call restores the row. |
-| `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. |
+| `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. Both halves: the column's and the row's. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
+| `isColumnEditable` | `(column) => boolean` | The column's half alone, with no row in hand: it maps to a field, `editing.columns` lists it when that is set, and `meta.edit.enabled` is not `false`. |
 | `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
 | `getForm` | `(rowId) => TMDataGridRowEditForm \| undefined` | The row's live `FormApi`. |
 | `state` | `TMDataGridEditState` | Snapshot, for reads outside React. |
@@ -132,6 +137,10 @@ holds:
 
 `"cell"` and `"cellConfirm"` have no lane unless `editing.draft` or
 `editing.onRowDelete` asks for one.
+
+The trash itself shows when the deletion has somewhere to report to:
+`onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is - a deletion
+mark is part of the save.
 
 What the lane holds follows the row's state, one axis each. An open row shows
 the mode's own controls, `save-row` and `cancel-row`. A parked row shows

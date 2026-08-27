@@ -5,7 +5,9 @@ Colouring rows by their contents, such as an overdue invoice in red.
 ```tsx
 <TMDataGrid.Table<Employee>
   rowStyle={(row) =>
-    row.original.status === "Terminated" ? { "--row-bg": "var(--mantine-color-red-0)" } : undefined
+    row.original.status === "Terminated"
+      ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)" }
+      : undefined
   }
 />
 ```
@@ -30,6 +32,11 @@ rowStyle={() => ({ "--row-bg": "pink" })}          // both still show
 `rowStyle` accepts `CSSProperties` or an object of custom properties. The type
 is a union, so a callback returning either compiles.
 
+Pick a colour that reads under both colour schemes. A `-0` Mantine shade
+(`red-0`) is near-white, which turns unreadable behind light text in the dark
+scheme; mixing a mid shade into transparency tints both schemes evenly:
+`color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)`.
+
 ## Classes instead
 
 `rowClassName` takes the same shape and adds to the grid's own classes, for
@@ -43,7 +50,7 @@ when the styling belongs in a stylesheet:
 
 ```css
 .overdue {
-  --row-bg: var(--mantine-color-red-0);
+  --row-bg: color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent);
   font-weight: 600;
 }
 ```
@@ -70,14 +77,17 @@ it without a callback:
 | `data-selected` | Selected rows |
 | `data-selected-bg` | Selected rows that also take the background |
 | `data-highlighted` | The highlighted row |
-| `data-grouped` | Group rows |
+| `data-grouped` | Every row: `"true"` on group rows, `"false"` on the rest |
 | `data-depth` | Every row. The nesting level |
 | `data-context-menu` | The row whose context menu is open |
 | `data-row-id` | Every row. Its id, which [tests](/docs/testing) key off |
 
+The state attributes are published as `"true"` or `"false"`, so match the
+value; the bare attribute selector matches every row:
+
 ```css
-[data-dg-part="row"][data-grouped] {
-  --row-bg: var(--mantine-color-gray-0);
+[data-dg-part="row"][data-grouped="true"] {
+  --row-bg: color-mix(in srgb, var(--mantine-color-gray-6) 12%, transparent);
   font-weight: 600;
 }
 ```

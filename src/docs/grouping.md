@@ -38,7 +38,11 @@ tree column's menu, one item per grouped column. **Expand all groups** and
 
 To keep a grouped column in the grid instead of removing it, pass
 `groupedColumnMode: "reorder"`, which is TanStack's own default and moves
-grouped columns to the front.
+grouped columns to the front. Note that the kept column's data cells render as
+TanStack's grouped-cell placeholder - blank - with the value only on group
+rows, so it repeats what the tree lane already shows and cannot be typed into.
+To set the grouped field on a new row, seed it through `edit.addRow(values)` -
+see [Editing](/docs/editing#adding-and-deleting-rows).
 
 ## Aggregation
 
@@ -55,7 +59,9 @@ columnHelper.accessor("salary", {
 
 `"sum"`, `"min"`, `"max"`, `"extent"`, `"mean"`, `"median"`, `"unique"`,
 `"uniqueCount"` and `"count"` are registered, as is `"auto"` - which picks
-`sum` for numbers and `extent` for dates. A function is accepted too. Pass
+`sum` for numbers and `extent` for dates. A function is accepted too, with
+TanStack's signature `(columnId, leafRows, childRows)`; `leafRows` are the
+group's data rows, each record on `row.original`. Pass
 `aggregatedCell` to render the group row's value differently from the data
 rows.
 
@@ -91,8 +97,10 @@ A group row is built on its first child's record rather than on one of its own,
 so it does not fire `onRowClick`, cannot be highlighted, cannot be
 [pinned](/docs/row-pinning) and has no details panel.
 
-Rows carry `data-grouped` and `data-depth` for styling, and
-`--dg-row-group-bg` sets their background.
+`data-grouped` is published on every row, `"true"` on group rows and `"false"`
+on the rest, so match the value - `[data-grouped="true"]` - rather than the
+bare attribute. `data-depth` carries the nesting level, and
+`--dg-row-group-bg` sets a group row's background.
 
 ## Grouping and pagination
 
@@ -136,5 +144,5 @@ server-side can set `enableGrouping: true` alongside `manualGrouping: true`. See
 | `getGroupDataRows` | Export | `(row) => Row[]` | – | Every record under a group row, at any depth. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything. `false` while grouped. |
 | `--dg-row-group-bg` | CSS variable | colour | Themed | Group row background. |
-| `data-grouped` | Data attribute | – | – | On every group row. |
+| `data-grouped` | Data attribute | `"true" \| "false"` | – | `"true"` on group rows. Published on every row. |
 | `data-depth` | Data attribute | `number` | – | Nesting level, on every row. |

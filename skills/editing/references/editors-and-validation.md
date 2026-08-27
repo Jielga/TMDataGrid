@@ -8,14 +8,20 @@ bad value being committed. Both follow from the column.
 `meta.type` picks one, `meta.options` feeds the two select editors from the same
 declaration the filter panel reads.
 
-| `meta.type` | Editor | Export |
-| --- | --- | --- |
-| `"string"` (default) | Text input | `TMDataGridStringEditor` |
-| `"number"` | Number input | `TMDataGridNumberEditor` |
-| `"boolean"` | Checkbox | `TMDataGridBooleanEditor` |
-| `"date"` | Native `<input type="date">`, ISO `YYYY-MM-DD` | `TMDataGridDateEditor` |
-| `"select"` | Searchable select, commits on pick under `"cell"` | `TMDataGridSelectEditor` |
-| `"multiSelect"` | Multi-select, same source | `TMDataGridMultiSelectEditor` |
+| `meta.type` | Editor | Writes | Export |
+| --- | --- | --- | --- |
+| `"string"` (default) | Text input | `string` | `TMDataGridStringEditor` |
+| `"number"` | Number input | `number`, or `null` while the cell is empty or the text is not yet a number | `TMDataGridNumberEditor` |
+| `"boolean"` | Checkbox | `boolean` | `TMDataGridBooleanEditor` |
+| `"date"` | Native `<input type="date">` | A `Date`, or the ISO `"YYYY-MM-DD"` string; `null` when cleared | `TMDataGridDateEditor` |
+| `"select"` | Searchable select, commits on pick under `"cell"` | `string \| null` | `TMDataGridSelectEditor` |
+| `"multiSelect"` | Multi-select, same source | `string[]` | `TMDataGridMultiSelectEditor` |
+
+**Writes** is the value the editor puts into the draft: what `meta.edit.mapValue` is handed, what `meta.edit.validate` checks, and what a commit carries in `value` and in `changes[].next`.
+
+The number editor writes `null` rather than `NaN` while the text does not parse, so a half-typed number leaves the field empty instead of committing a number no rule can describe.
+The date editor picks between its two types once, when it opens, from what the cell held: a `Date` cell keeps receiving `Date`s and a string cell keeps receiving `"YYYY-MM-DD"` strings, so clearing and retyping cannot flip the type.
+A validator for a date column has to accept whichever of the two that column's data holds.
 
 ```tsx
 columnHelper.accessor("department", {
@@ -56,6 +62,12 @@ inputs should take it.
 Bind any control to `field` exactly as inside any TanStack Form:
 `field.state.value`, `field.state.meta.errors`, `field.handleChange`,
 `field.handleBlur`.
+
+Binding `field.state.meta.errors` is what shows a refused commit: the built-in
+editors pass the first error to the input's `error` prop, and an editor that
+binds nothing leaves a blocked save as `data-invalid` on the cell with no
+message on screen. An entry is a string from a function validator, or an issue
+carrying a `message` from a schema.
 
 ```tsx
 import { Slider } from "@mantine/core";
@@ -155,6 +167,9 @@ Left unmapped on purpose:
   edited, mark a pristine row dirty and swallow the select-all.
 - `edit.clearCell()`, the Delete key: it writes the type's empty value through
   the form, so there is no input to map.
+- `edit.setCellValue()` and `edit.setRowValues()`: they write through the form
+  too, and the caller passes the stored value itself. `meta.edit.validate` still
+  runs on the commit.
 - An editor calling `field.setValue`. `handleChange` is the mapped path.
 
 The built-in string and number editors restore the caret after a mapped write,
@@ -209,12 +224,46 @@ const grid = useTMDataGrid({
 ```
 
 Issues with a path land on the matching column's cell; pathless issues land on
-the row. A nested schema's issues follow the same rule, so a `address.city`
-issue lands on the column whose `editField` is `"address.city"`.
+the row, where the message shows in the edit lane's tooltip - on the open
+row's ✓, and on the parked row's marker. A nested schema's issues follow the
+same rule, so a `address.city` issue lands on the column whose `editField` is
+`"address.city"`.
 
 Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
 unedited value and cannot pass. Use `"row"`.
+
+## Cross-row rules
+
+`editing.tableValidators` holds the rules that need the other rows. Its
+`onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`:
+`value` is the committing row as drafted, and `rows` is
+`Array<{ rowId, value }>` - the collection as it would stand if the commit
+landed, with every draft overlaid, entry rows appended and deletion-marked
+rows removed. `rows` is unfiltered and never contains group rows.
+
+```tsx
+editing: {
+  mode: "cell",
+  draft: true,
+  tableValidators: {
+    onSubmit: ({ value, rowId, rows }) =>
+      rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+        ? { fields: { code: "Codes must be unique" } }
+        : undefined,
+  },
+}
+```
+
+The result is the `rowValidators` vocabulary: nothing passes, a string is a
+row-level message, `{ form, fields }` lands pathed issues on the committing
+row's cells. `onSubmit` runs first, and its failure stands without
+`onSubmitAsync` running. Errors land on the committing row only.
+
+The rules run at every commit - typed, ✓, `edit.setCellValue`, an entry
+row's - after the row's own validators, and again for every parked row during
+`saveDrafts`: a draft that a later edit invalidated fails there, keeps its
+markers, and the save resolves `false`.
 
 ## Server-side errors
 
@@ -245,9 +294,11 @@ row.
 | The cell's own value | A held draft is displayed: the cell renders the draft value through the column's `cell` renderer, in every mode |
 | Blue cell corner | The field is dirty against its original value |
 | Red cell corner | The field carries a validation error |
-| Row error text | A pathless rule failed, or a commit was rejected |
+| Row error text | A pathless rule failed, or a commit was rejected. In the lane's tooltip: the open row's ✓, or the parked row's marker |
 | `data-dirty` on the row | The row holds a dirty draft |
 
 The same information is readable from `edit.store`: `rows[rowId].dirtyFields`,
-`rows[rowId].errorFields`, `rows[rowId].hasRowError`,
-`rows[rowId].isSubmitting`, and `rows[rowId].values` for the draft itself.
+`rows[rowId].errorFields`, `rows[rowId].errorMessages` (`{ field, message }`
+pairs), `rows[rowId].hasRowError`, `rows[rowId].isSubmitting`, and
+`rows[rowId].values` for the draft itself. The pathless message's text is not
+in the store; read it from `edit.getForm(rowId)?.state.errors`.

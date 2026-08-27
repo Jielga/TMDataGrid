@@ -15,14 +15,19 @@ height: 440
 `meta.type` picks one, and `meta.options` feeds the select editors from the same
 source the filter panel reads. Neither lives under `meta.edit`.
 
-| `meta.type` | Editor |
-| --- | --- |
-| `string` (default) | Text input |
-| `number` | Number input |
-| `boolean` | Checkbox |
-| `date` | Native `<input type="date">` |
-| `select` | Searchable select from `meta.options`. Commits on pick under `"cell"` |
-| `multiSelect` | Multi-select, same source |
+| `meta.type` | Editor | Writes |
+| --- | --- | --- |
+| `string` (default) | Text input | `string` |
+| `number` | Number input | `number`, or `null` while the cell is empty or the text is not yet a number |
+| `boolean` | Checkbox | `boolean` |
+| `date` | Native `<input type="date">` | A `Date`, or the `"YYYY-MM-DD"` string; `null` when cleared |
+| `select` | Searchable select from `meta.options`. Commits on pick under `"cell"` | `string \| null` |
+| `multiSelect` | Multi-select, same source | `string[]` |
+
+**Writes** is the value the editor puts into the draft: what `meta.edit.mapValue` is handed, what `meta.edit.validate` checks, and what a commit carries in `value` and in `changes[].next`.
+
+The number editor writes `null` rather than `NaN` while the text does not parse, so a half-typed number leaves the field empty instead of committing a number no rule can describe.
+The date editor picks between its two types once, when it opens, from what the cell held: a `Date` cell keeps receiving `Date`s and a string cell keeps receiving `"YYYY-MM-DD"` strings, so clearing and retyping cannot flip the type.
 
 Each is a named export (`TMDataGridStringEditor`, `TMDataGridNumberEditor`,
 `TMDataGridBooleanEditor`, `TMDataGridDateEditor`, `TMDataGridSelectEditor`,
@@ -49,6 +54,20 @@ meta: { edit: { editor: SalaryEditor } }
 
 **Define editors at module scope.** An inline arrow function gets a new identity
 on every render, which remounts the editor mid-edit and discards what was typed.
+
+A custom editor renders its own error text. The built-in editors bind the
+field's first error to the input's `error` prop; an editor that binds nothing
+shows a refused commit as `data-invalid` on the cell with no message on screen.
+An entry of `field.state.meta.errors` is a string from a function validator, or
+an issue carrying a `message` from a schema:
+
+```tsx
+const error = field.state.meta.errors
+  .map((e) => (typeof e === "string" ? e : e?.message))
+  .find(Boolean);
+
+<Slider value={field.state.value} onChange={field.handleChange} error={error} />;
+```
 
 ## Mapping the value as it is typed
 
@@ -80,11 +99,9 @@ through, so one declaration covers all six built-in editors, your own
 `meta.edit.editor`, and the character that opened the editor when typing started
 the edit.
 
-Two writes are not mapped: the value the editor opens with, and
-`edit.clearCell()`, the Delete key, which writes the type's empty value through
-the form rather than through an editor. An editor calling `field.setValue`
-instead of `field.handleChange` also bypasses the map. `handleChange` is the
-mapped path.
+Some writes are not mapped: the value the editor opens with, and the writes that go through the form rather than through an editor - `edit.clearCell()`, the Delete key, `edit.setCellValue()` and `edit.setRowValues()`.
+An editor calling `field.setValue` instead of `field.handleChange` also bypasses the map.
+`handleChange` is the mapped path.
 
 The map receives the row and column as well, so it can depend on the record
 being edited:
@@ -119,12 +136,20 @@ a layout effect once the mapped value has rendered.
 
 ## Validation
 
-The validators are TanStack Form's own, Standard Schema included, so a Zod
-schema passes straight through.
+The validators are TanStack Form's own: a Standard Schema (Zod, Valibot,
+ArkType) or a plain function returning an error message or nothing.
 
 ```tsx
-// Per column: field-level validators. A bare schema means { onChange: schema }.
+// Per column: field-level validators. A bare schema or function means { onChange: it }.
 meta: { edit: { validate: z.string().min(2, "Too short") } }
+
+// The same rule without a schema library:
+meta: {
+  edit: {
+    validate: ({ value }) =>
+      typeof value === "string" && value.length < 2 ? "Too short" : undefined,
+  },
+}
 
 // Per row: form-level validators - cross-field rules live here.
 useTMDataGrid({
@@ -140,7 +165,11 @@ useTMDataGrid({
 });
 ```
 
-Pathed issues land on the matching cells; pathless ones on the row.
+Pathed issues land on the matching cells; pathless ones on the row, where the
+message shows in the edit lane's tooltip - on the open row's ✓, and on the
+parked row's marker. To show a pathless message somewhere of your own, read it
+from `edit.getForm(rowId)?.state.errors`; `edit.store` carries the flag
+(`hasRowError`) and the field messages (`errorMessages`), not the row text.
 
 A commit blocked by validation keeps the editor open with the message on the
 input. A rejected `editing.onCommit` keeps the draft too, with the error on the
@@ -152,18 +181,64 @@ Cross-field rules need a mode that commits the whole row at once. Under
 satisfied by either one. Use `editing.rowValidators.onSubmit` with `"row"`. See
 [Editing](/docs/editing#row-editing).
 
-A rule about the whole collection, such as "at least one row" or "no
-duplicates", is neither a field rule nor a row rule. It belongs to a form around
-the grid. See [A query builder inside a form](/docs/query-builder).
+A rule about the whole collection, such as "no duplicates" or "shares sum to
+100", is neither a field rule nor a row rule. It takes
+`editing.tableValidators` - see [Cross-row rules](#cross-row-rules).
+
+## Cross-row rules
+
+`editing.tableValidators` holds the rules that need the other rows: no
+duplicate keys, no overlapping ranges, allocations summing to a total. Its
+validators receive the committing row and `rows`, the collection as it would
+stand if the commit landed - every draft overlaid, entry rows appended,
+deletion-marked rows removed:
+
+```tsx
+editing: {
+  mode: "cell",
+  draft: true,
+  tableValidators: {
+    onSubmit: ({ value, rowId, rows }) =>
+      rows.some((r) => r.rowId !== rowId && r.value.code === value.code)
+        ? { fields: { code: "Codes must be unique" } }
+        : undefined,
+  },
+}
+```
+
+The result is the `rowValidators` vocabulary: nothing passes, a string is a
+row-level message, and `{ form, fields }` lands pathed issues on the
+committing row's cells. `onSubmit` runs first, and its failure stands without
+`onSubmitAsync` running.
+
+The rules run at every commit, after the row's own validators, and again for
+every parked row during `saveDrafts` - a draft that a later edit has
+invalidated fails there, keeps its markers, and the save resolves `false`.
+Errors land on the committing row only; the row it clashes with is not
+marked.
+
+`rows` is unfiltered, so a rule sees the whole collection whatever the view
+shows, and it never contains group rows.
+
+```demo
+file: editing/TableValidation.tsx
+hint: Give two teams the same code, or push the shares past 100, and the commit is refused. Drafts count - a clash with a pending edit is caught too.
+height: 380
+```
+
+A grid inside an outer form can put collection rules in the form's own field
+validator instead. See [A query builder inside a form](/docs/query-builder).
 
 ## Reference
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `meta.edit.editor` | Column meta | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. |
-| `meta.edit.validate` | Column meta | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
+| `meta.edit.validate` | Column meta | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema or function means `onChange`. |
 | `meta.edit.mapValue` | Column meta | `TMDataGridEditValueMap` | – | Maps each value an editor writes, before it reaches the draft. |
 | `editing.rowValidators` | Option | `TMDataGridRowValidators` | – | Form-level validation, for cross-field rules. |
+| `editing.tableValidators` | Option | `TMDataGridTableValidators` | – | Cross-row rules, handed the collection with every draft overlaid. See [Cross-row rules](#cross-row-rules). |
+| `TMDataGridTableValidateArgs` | Export | type | – | What a table validator receives: `value`, `rowId`, `isNew`, `rows`. |
 | `TMDataGridEditorArgs` | Export | type | – | What an editor component receives: `field`, `commit`, `cancel`, `row`, `column`. |
 | `TMDataGridEditValueMapArgs` | Export | type | – | What `mapValue` receives: `value`, `previous`, `row`, `column`, `table`. |
 | `TMDataGridStringEditor` · `NumberEditor` · `BooleanEditor` · `DateEditor` · `SelectEditor` · `MultiSelectEditor` | Exports | components | – | The six built-ins, for wrapping. |

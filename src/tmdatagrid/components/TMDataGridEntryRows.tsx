@@ -14,7 +14,7 @@ import {
   isColumnEditableForRow,
   isControlColumn,
 } from "../core/columnUtils";
-import { getEditFieldName } from "../core/editEngine";
+import type { TMDataGridEditApi } from "../core/editEngine";
 import { focusEditorContent } from "../core/editorFocus";
 import {
   tmDataGridFeatures,
@@ -34,9 +34,9 @@ type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 function isEntryCellEditable(
   row: Row<TMDataGridFeatures, TMDataGridRowData>,
   column: ErasedColumn,
+  edit: TMDataGridEditApi,
 ): boolean {
-  if (isControlColumn(column.id)) return false;
-  if (getEditFieldName(column) === null) return false;
+  if (!edit.isColumnEditable(column)) return false;
   return isColumnEditableForRow(column, row);
 }
 
@@ -201,7 +201,7 @@ export function TMDataGridEntryRows({
           const cell = cellsById.get(column.id);
           const layout = layoutFor(column.id);
           const editable =
-            cell !== undefined && isEntryCellEditable(entryRow, column);
+            cell !== undefined && isEntryCellEditable(entryRow, column, edit);
           return (
             <div
               key={column.id}

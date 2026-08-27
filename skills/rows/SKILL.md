@@ -194,7 +194,7 @@ Returning an empty list leaves the column with no menu button at all.
   striped
   rowStyle={(row) =>
     row.original.status === "Terminated"
-      ? { "--row-bg": "var(--mantine-color-red-0)" }
+      ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)" }
       : undefined
   }
   rowClassName={(row) => (row.original.overdue ? classes.overdue : undefined)}
@@ -210,7 +210,11 @@ are not striped.
 
 Rows carry `data-selected`, `data-selected-bg`, `data-highlighted`,
 `data-grouped`, `data-depth`, `data-context-menu` and `data-row-id`, so a
-stylesheet can target any of it without a callback.
+stylesheet can target any of it without a callback. The boolean attributes are
+published on every row as `"true"` or `"false"`, so match the value
+(`[data-grouped="true"]`), not the bare attribute. Pick a `--row-bg` that
+reads under both colour schemes - a `-0` Mantine shade is near-white and
+unreadable in dark mode; mix a mid shade into transparency instead.
 
 ## The details panel
 

@@ -18,6 +18,10 @@ export type TMDataGridAggregationName = keyof typeof aggregationFns;
  * Filtered rather than paginated rows, so the total covers everything the
  * filters left (all pages), and follows the filters as they change. Reuses
  * TanStack's registered aggregation functions; `fn` defaults to `"sum"`.
+ *
+ * Every data row counts once. Grouping builds its group rows from this model
+ * rather than into it, so a grouped grid totals its records, not its records
+ * plus their subtotals; a tree counts parents and children alike.
  */
 export function aggregateColumn<TData extends RowData>({
   table,
@@ -29,7 +33,11 @@ export function aggregateColumn<TData extends RowData>({
   fn?: TMDataGridAggregationName;
 }): unknown {
   const erased = table as unknown as TMDataGridTable<TMDataGridRowData>;
-  const rows = erased.getFilteredRowModel().rows;
-  // Leaf and child rows are the same set here: the filtered model is flat.
+  // `flatRows`, not `rows`: the filtered model nests under `getSubRows`, and
+  // the top-level array would total a tree's roots and drop every child.
+  // Grouping does not nest it - the group rows are built from this model, not
+  // held in it - so a grouped grid is unaffected either way.
+  const rows = erased.getFilteredRowModel().flatRows;
+  // Leaf and child rows are the same set here: this is already every row.
   return aggregationFns[fn](columnId, rows, rows);
 }

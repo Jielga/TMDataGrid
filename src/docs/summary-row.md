@@ -29,6 +29,14 @@ anything: a static label, a count, or its own calculation.
 (all pages, following the filters live) through the registered aggregation
 functions. `fn` defaults to `"sum"`.
 
+Every data row counts once.
+Grouping builds its group rows from this model rather than into it, so a grouped grid totals its records and not its records plus their subtotals.
+A tree built with `getSubRows` counts parents and children alike.
+
+It totals `data`, so under [`editing.draft`](/docs/editing) a parked edit is not in the total until `edit.saveDrafts()` sends it and the new `data` arrives.
+An edited cell shows its draft and the summary row does not follow it.
+The same holds for a group row's `aggregatedCell`: no group row has a form, so aggregates read the committed values throughout.
+
 ```tsx
 aggregateColumn({ table, columnId: "salary" });                 // sum
 aggregateColumn({ table, columnId: "age", fn: "mean" });        // average

@@ -101,6 +101,8 @@ export {
   type TMDataGridRowDeleteArgs,
   type TMDataGridRowEditForm,
   type TMDataGridRowValidators,
+  type TMDataGridTableValidateArgs,
+  type TMDataGridTableValidators,
 } from "./core/editEngine";
 export type {
   TMDataGridColumnFilterOptions,
