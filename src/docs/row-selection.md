@@ -99,7 +99,7 @@ touching the flag:
 ```tsx
 <TMDataGrid
   {...grid}
-  style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }}
+  style={{ "--dg-row-selected-bg": "color-mix(in srgb, var(--mantine-color-blue-6) 12%, transparent)" }}
 />
 ```
 

@@ -73,6 +73,44 @@ meta: { edit: { editor: SalaryEditor } },
 
 Source: `src/docs/editors.md`, `src/tmdatagrid/core/editEngine.ts`.
 
+## HIGH A custom editor that binds no error text
+
+The built-in editors bind the field's first error to the input's `error` prop.
+A custom editor that binds nothing still blocks the commit, but all the user
+sees is `data-invalid` on the cell - the row stays open with no message
+anywhere on screen, which reads as a broken grid rather than a rejected value.
+
+Wrong:
+
+```tsx
+const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => (
+  <Slider value={field.state.value} onChange={field.handleChange} onChangeEnd={() => void commit()} />
+);
+```
+
+Correct:
+
+```tsx
+const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => {
+  const error = field.state.meta.errors
+    .map((e) => (typeof e === "string" ? e : e?.message))
+    .find(Boolean);
+  return (
+    <Slider
+      value={field.state.value}
+      onChange={field.handleChange}
+      onChangeEnd={() => void commit()}
+      error={error}
+    />
+  );
+};
+```
+
+An entry of `field.state.meta.errors` is a string from a function validator,
+or an issue carrying a `message` from a schema.
+
+Source: `src/docs/editors.md` (Writing your own).
+
 ## HIGH A cross-field rule under `editing.mode: "cell"`
 
 Under `"cell"` each cell commits on its own, so a rule spanning two columns
@@ -186,6 +224,25 @@ Both write the stored value through the row's form, so `meta.edit.mapValue` does
 A refused value leaves the row open carrying its errors and the call resolves `false`, so read the result rather than assuming the fill landed.
 
 Source: `src/tmdatagrid/core/editEngine.ts` (`begin`, `writeFields`).
+
+## MEDIUM A computed column frozen while a row is edited
+
+A held draft is displayed by the column that owns the field. A column computed
+from other fields - `accessorFn` or `display` - reads `row.original`, which is
+`data`, so it keeps showing the saved record while the values it derives from
+are being typed.
+
+Correct: read the drafted row from `edit.store` inside the cell renderer:
+
+```tsx
+function useDraftedRow(rowId: string, original: Product): Product {
+  const { edit } = useTMDataGridContext();
+  const values = useSelector(edit.store, (state) => state.rows[rowId]?.values);
+  return (values as Product | undefined) ?? original;
+}
+```
+
+Source: `src/docs/editing.md` (Draft lifetime).
 
 ## MEDIUM Reading a commit's result as the saved value
 

@@ -38,6 +38,13 @@ An accessor may be a key of the row or a function over it. A function needs an
 explicit `id`, and a `meta.label` for the name shown in menus and the columns
 panel.
 
+A dotted `accessorKey` reads a nested field, and the column id it derives
+replaces the dots: `accessorKey: "address.city"` makes column id
+`address_city`, while the edit path stays `"address.city"`. Anything that
+addresses the column by id - `initialState`, `editing.columns`, `moveColumn`,
+a test selector - takes the underscore form; the dotted form silently matches
+nothing.
+
 ## meta
 
 `meta` carries what a TanStack column definition has no field for. What the
@@ -108,6 +115,11 @@ comparison is by calendar day either way, and filter values always travel as ISO
 strings. The date control is the native `<input type="date">`; `@mantine/dates`
 is not used.
 
+A column whose value is none of the six types - an object such as a
+`{ from, to }` range - renders through its own `cell`, but sorting, the filter
+panel and quick search operate on the raw value. Set `enableSorting`,
+`enableColumnFilter` and `enableGlobalFilter` to `false` on such a column.
+
 ### Options
 
 `select` and `multiSelect` columns declare their choices once, in `meta.options`,
@@ -148,7 +160,19 @@ form for very large sets.
 ## Header groups
 
 `columnHelper.group` nests columns under a shared header. The group is a header
-row, not a column - the leaves keep all the behaviour.
+row, not a column - the leaves keep all the behaviour. `columns` takes another
+`columnHelper.columns` call, not a bare array:
+
+```tsx
+columnHelper.group({
+  id: "person",
+  header: "Person",
+  columns: columnHelper.columns([
+    columnHelper.accessor("firstName", { header: "First" }),
+    columnHelper.accessor("lastName", { header: "Last" }),
+  ]),
+});
+```
 
 ```demo
 file: getting-started/HeaderGroups.tsx

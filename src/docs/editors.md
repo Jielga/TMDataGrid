@@ -55,6 +55,20 @@ meta: { edit: { editor: SalaryEditor } }
 **Define editors at module scope.** An inline arrow function gets a new identity
 on every render, which remounts the editor mid-edit and discards what was typed.
 
+A custom editor renders its own error text. The built-in editors bind the
+field's first error to the input's `error` prop; an editor that binds nothing
+shows a refused commit as `data-invalid` on the cell with no message on screen.
+An entry of `field.state.meta.errors` is a string from a function validator, or
+an issue carrying a `message` from a schema:
+
+```tsx
+const error = field.state.meta.errors
+  .map((e) => (typeof e === "string" ? e : e?.message))
+  .find(Boolean);
+
+<Slider value={field.state.value} onChange={field.handleChange} error={error} />;
+```
+
 ## Mapping the value as it is typed
 
 A column can rewrite every value on its way into the draft: uppercase a code,
@@ -151,7 +165,11 @@ useTMDataGrid({
 });
 ```
 
-Pathed issues land on the matching cells; pathless ones on the row.
+Pathed issues land on the matching cells; pathless ones on the row, where the
+message shows in the edit lane's tooltip - on the open row's ✓, and on the
+parked row's marker. To show a pathless message somewhere of your own, read it
+from `edit.getForm(rowId)?.state.errors`; `edit.store` carries the flag
+(`hasRowError`) and the field messages (`errorMessages`), not the row text.
 
 A commit blocked by validation keeps the editor open with the message on the
 input. A rejected `editing.onCommit` keeps the draft too, with the error on the

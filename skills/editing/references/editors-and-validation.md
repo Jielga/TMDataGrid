@@ -63,6 +63,12 @@ Bind any control to `field` exactly as inside any TanStack Form:
 `field.state.value`, `field.state.meta.errors`, `field.handleChange`,
 `field.handleBlur`.
 
+Binding `field.state.meta.errors` is what shows a refused commit: the built-in
+editors pass the first error to the input's `error` prop, and an editor that
+binds nothing leaves a blocked save as `data-invalid` on the cell with no
+message on screen. An entry is a string from a function validator, or an issue
+carrying a `message` from a schema.
+
 ```tsx
 import { Slider } from "@mantine/core";
 import type { TMDataGridEditorComponent } from "@jielga/tmdatagrid";
@@ -218,8 +224,10 @@ const grid = useTMDataGrid({
 ```
 
 Issues with a path land on the matching column's cell; pathless issues land on
-the row. A nested schema's issues follow the same rule, so a `address.city`
-issue lands on the column whose `editField` is `"address.city"`.
+the row, where the message shows in the edit lane's tooltip - on the open
+row's ✓, and on the parked row's marker. A nested schema's issues follow the
+same rule, so a `address.city` issue lands on the column whose `editField` is
+`"address.city"`.
 
 Cross-field rules need a mode that commits the whole row at once. Under `"cell"`
 each cell commits alone, so the rule is evaluated against the other column's
@@ -254,9 +262,11 @@ row.
 | The cell's own value | A held draft is displayed: the cell renders the draft value through the column's `cell` renderer, in every mode |
 | Blue cell corner | The field is dirty against its original value |
 | Red cell corner | The field carries a validation error |
-| Row error text | A pathless rule failed, or a commit was rejected |
+| Row error text | A pathless rule failed, or a commit was rejected. In the lane's tooltip: the open row's ✓, or the parked row's marker |
 | `data-dirty` on the row | The row holds a dirty draft |
 
 The same information is readable from `edit.store`: `rows[rowId].dirtyFields`,
-`rows[rowId].errorFields`, `rows[rowId].hasRowError`,
-`rows[rowId].isSubmitting`, and `rows[rowId].values` for the draft itself.
+`rows[rowId].errorFields`, `rows[rowId].errorMessages` (`{ field, message }`
+pairs), `rows[rowId].hasRowError`, `rows[rowId].isSubmitting`, and
+`rows[rowId].values` for the draft itself. The pathless message's text is not
+in the store; read it from `edit.getForm(rowId)?.state.errors`.

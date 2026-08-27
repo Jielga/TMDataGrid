@@ -55,6 +55,26 @@ const columns = columnHelper.columns([
 Define columns at module scope. A new array on every render rebuilds the table's
 column model.
 
+A dotted `accessorKey` reads a nested field, and the column id it derives
+replaces the dots: `accessorKey: "address.city"` makes column id
+`address_city`, while the edit path stays `"address.city"`. Anything that
+addresses the column by id - `initialState`, `editing.columns`, `moveColumn`,
+a test selector - takes the underscore form.
+
+`columnHelper.group` nests columns under a shared header; `columns` takes
+another `columnHelper.columns` call, not a bare array:
+
+```tsx
+columnHelper.group({
+  id: "person",
+  header: "Person",
+  columns: columnHelper.columns([
+    columnHelper.accessor("firstName", { header: "First" }),
+    columnHelper.accessor("lastName", { header: "Last" }),
+  ]),
+});
+```
+
 ## meta
 
 | Field | Type | Default | Description |
@@ -280,6 +300,28 @@ columnHelper.accessor("email", {
 ```
 
 Source: `src/docs/column-layout.md` (Sizing).
+
+### HIGH Addressing a dotted column by its accessor key
+
+A dotted `accessorKey` produces a column id with underscores, so state and
+calls keyed by column id silently match nothing when given the dotted form.
+
+Wrong:
+
+```tsx
+initialState: { columnVisibility: { "address.city": false } },
+```
+
+Correct:
+
+```tsx
+initialState: { columnVisibility: { address_city: false } },
+```
+
+The edit path is the exception: `meta.edit.field` and validation issue paths
+stay dotted, because they address the data, not the column.
+
+Source: `src/docs/columns.md` (The column helper).
 
 ### CRITICAL A component header without `meta.label`
 

@@ -5,7 +5,7 @@ standard `size` scale. Both are set on the root element, so a grid can be
 themed per instance without a provider.
 
 ```tsx
-<TMDataGrid {...grid} size="sm" style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }} />
+<TMDataGrid {...grid} size="sm" style={{ "--dg-row-selected-bg": "color-mix(in srgb, var(--mantine-color-blue-6) 12%, transparent)" }} />
 ```
 
 ```demo

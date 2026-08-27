@@ -30,7 +30,7 @@ the type.
 | `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
 | `editing.onCommitDrafts` | `{ updated, created, deleted }` | **Deprecated** - renamed to `onSaveDrafts`. Still honoured; the new name wins if both are set. |
 | `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
-| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row, and puts the trash can in the edit lane. |
+| `editing.onRowDelete` | `{ rowId, row }` | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too. |
 
 `changes` entries are `{ columnId, field, previous, next }`; `field` is the data
 path, which may be dotted.
@@ -136,6 +136,10 @@ holds:
 
 `"cell"` and `"cellConfirm"` have no lane unless `editing.draft` or
 `editing.onRowDelete` asks for one.
+
+The trash itself shows when the deletion has somewhere to report to:
+`onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is - a deletion
+mark is part of the save.
 
 What the lane holds follows the row's state, one axis each. An open row shows
 the mode's own controls, `save-row` and `cancel-row`. A parked row shows

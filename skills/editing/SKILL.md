@@ -298,19 +298,23 @@ The generated edit lane (`EDIT_COLUMN_ID`, pinned right) appears when `editing.m
 Nothing else adds it.
 It holds one thing per axis: the mode's own controls while a row is open - Save and Cancel under `"row"` - and, once a row is parked, the row-state marker with Revert or Restore.
 A parked row never offers a save.
+The trash shows when the deletion has somewhere to report to: `onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is.
+If validation blocks a row, its marker - or the open row's ✓ - turns red with the message in the tooltip, which is where a pathless `rowValidators` message shows.
 Every control carries a tooltip from the labels.
 
-`TMDataGrid.DraftActions` is Save with the pending count plus Discard. It greys
-out while nothing is pending, spins while a submit is in flight, renders nothing
-while editing is off, and works under any mode, not only draft.
+`TMDataGrid.DraftActions` is Save with the draft-store count, Discard, and a
+note counting the rows still open. Save sends the store and leaves open rows
+alone, it greys out while nothing is parked, and the component renders nothing
+while editing is off.
 
-`renderActions` replaces the pair and hands over its pieces:
+`renderActions` replaces the set and hands over its pieces:
 
 ```tsx
 <TMDataGrid.DraftActions
   renderActions={({ state, Controls }) => (
     <Group>
-      {state.pendingCount > 0 && <Badge>{state.pendingCount}</Badge>}
+      {state.draftCount > 0 && <Badge>{state.draftCount}</Badge>}
+      <Controls.OpenRowsNote />
       <Controls.Save />
       <Controls.Discard />
     </Group>
@@ -318,7 +322,9 @@ while editing is off, and works under any mode, not only draft.
 />
 ```
 
-`state` is `{ pendingCount, isSubmitting }`, `actions` is `{ save, discard }`.
+`state` is `{ draftCount, openCount, isSubmitting }`, `actions` is
+`{ save, commitAll, discard }`, and `Controls` is
+`{ Save, Discard, OpenRowsNote }`.
 
 ## The engine: `edit`
 
@@ -327,6 +333,9 @@ while editing is off, and works under any mode, not only draft.
 `setCellValue` / `setRowValues` / `clearCell`, `addRow` / `addRows` /
 `deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
 [Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
+`edit.store` publishes each open or parked row's drafted values as
+`rows[rowId].values`, which is what a computed cell or a cross-row check reads
+- `useTMDataGridContext()` reaches the engine from inside a cell renderer.
 Every member with its signature, the gates, `isColumnEditable`, `deactivate`,
 and the `edit.store` shape are in
 [references/editing-api.md](references/editing-api.md#the-edit-engine).
@@ -361,8 +370,9 @@ The validation split follows from what each side can see: **a rule decidable
 from one row belongs to the grid (`meta.edit.validate`,
 `editing.rowValidators`); a rule needing the other rows or the collection ("has
 rows", "no duplicates") belongs to the form's field validator.** A row's form
-cannot see the array, and `edit.store` publishes field names but not values, so
-the form cannot see a draft.
+cannot see the array. The outer form can see the drafts: `edit.store` publishes
+each row's drafted values as `rows[rowId].values`, so a collection rule that
+must count pending values merges them over `data` first.
 
 ## Common mistakes
 
@@ -374,11 +384,13 @@ are in [references/common-mistakes.md](references/common-mistakes.md).
 | CRITICAL | Expecting the grid to write into `data` - without `editing.onCommit` the cell reverts |
 | CRITICAL | `getRowId` built from the row index - drafts follow the index, not the record |
 | HIGH | A cell editor defined inside the component - a new type per render unmounts the editor |
+| HIGH | A custom editor that binds no error text - a refused commit shows no message; bind `field.state.meta.errors` |
 | HIGH | A cross-field rule under `mode: "cell"` - `rowValidators` needs `"row"` |
 | HIGH | An `accessorFn` column with no `meta.edit.field` - it maps to nothing and stays read-only |
 | HIGH | Swallowing the error in `editing.onCommit` - a resolved catch drops the draft |
 | HIGH | Submitting an outer form while the grid holds a draft - it saves stale rows |
 | HIGH | A bulk write built from `begin` + `getForm` + `commit` - `getForm` can be `undefined`; `edit.setCellValue` is the write |
+| MEDIUM | A computed column frozen while a row is edited - `accessorFn` reads `data`; read the draft from `edit.store`'s `rows[rowId].values` |
 | MEDIUM | Reading a commit's result as the saved value - it is a `boolean` about the form |
 | MEDIUM | Expecting `editing.onRowDelete` to fire under draft - the mark waits for `saveDrafts` |
 

@@ -21,6 +21,23 @@ starts without the stakeholder's go.
   `autoResetExpanded` turns into a render loop.
 - H4 - details ergonomics (`detailsTrigger`, `detailsMode`). Wants H3 shipped
   first for its rule.
+- H6 - cross-row validation. Raised independently by two test consumers
+  2026-08-27 (traffic split, tariff desk): "allocations sum to 100% per
+  group", "no overlapping date ranges", "no duplicate keys" have no home -
+  `meta.edit.validate` sees one field, `rowValidators` one row, and the outer
+  form answer only applies when there is an outer form. Both consumers built
+  the same ~20 lines of scaffolding (a data ref, an engine ref, a merge of
+  saved rows with `rows[id].values`). Sketch: `editing.tableValidators` or
+  `groupValidators: { by, onSubmit }` handed the merged view, returning the
+  existing `{ form, fields }` shape, marking the group row and gating
+  `saveDrafts`. Wants draft-aware aggregates (see below) to be visible.
+- H7 - warning severity for validation. Raised 2026-08-27 (tariff desk):
+  validation is binary today, so "unusual, are you sure" - the second class
+  every pricing or budget grid has - is rebuilt by hand per consumer without
+  the corner marker, tooltip or store projection. A `severity: "error" |
+  "warning"` on an issue reuses the whole pipeline: amber corner, same
+  tooltip, `warningFields` beside `errorFields`. Related to H3 in name only -
+  H3 is dev-time misconfiguration, this is end-user data.
 - H5 - density. Closed as recipe, not feature: the size scale and its recipe
   are on [styling.md](src/docs/styling.md) and
   `getting-started/DensityAndLayout.tsx` is the runtime toggle, both shipped
@@ -61,7 +78,51 @@ past 1.0.0 on 2026-08-01.
   2026-08-27.
 - `meta.edit.enabled` reads `data`, not the pending draft - a gate that
   depends on a field being edited runs a render behind. Predicted by a test
-  consumer 2026-08-27, not hit.
+  consumer 2026-08-27, not hit. Also untyped: `row.original` arrives as
+  `unknown` although the helper is `TData`-bound, same fix as the
+  `meta.options` item above.
+- Tree lane width - the generated group column is a fixed ~250px, pinned
+  left, and no option or CSS variable narrows it. Raised by two test
+  consumers 2026-08-27; one dropped `columnPinning` because the lane had
+  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`.
+- `table.options.meta` as a consumer-extensible channel - columns are module
+  scope, so a cell renderer has no supported way to read page state; `meta`
+  is the natural channel but the docs only name `loading`, `totalRowCount`
+  and `rowHeight`, and whether consumers may add keys (and how to type them)
+  is uncommitted. Raised 2026-08-27. Deciding yes is one docs paragraph plus
+  declaration merging.
+- Draft-aware aggregates - `aggregatedCell` and `footer` read `data`, so a
+  grouped total cannot show the pending split while a batch is held. An
+  `aggregateColumn`-style helper overlaying `edit.store`'s values would let a
+  consumer render the pending total anywhere. Raised 2026-08-27; pairs with
+  H6.
+- `edit.commitAll()` resolving `{ committed, open }` the way `addRows` does -
+  today one boolean for the batch, so "3 approved, 1 blocked" needs a
+  hand-rolled loop over `commit(rowId)`. Raised 2026-08-27.
+- `edit` (or its store) in `TMDataGridEditorArgs` - a custom editor showing
+  "the total this flag would land on" can only reach saved siblings through
+  `table`, so its hint is stale while a sibling row is drafted. Raised
+  2026-08-27.
+- Pathless row-error text in the store projection - the lane's tooltip shows
+  it, but `edit.store` only carries `hasRowError: boolean`, so a custom error
+  surface has to reach into `getForm(rowId).state.errors`. A `rowError:
+  string | null` beside `errorMessages` keeps the store the single read
+  surface. Raised 2026-08-27.
+- `SummaryCount` counts group rows in the numerator (`48 / 42` under six
+  groups) while the denominator counts records. Flagged by two test
+  consumers 2026-08-27; documented as-is for now. Decide: exclude group rows,
+  or keep and leave the docs sentence.
+- A range column type - `meta.type: "dateRange"` (and a numeric sibling).
+  The editor is small; the filter operators (overlaps, contains, within) are
+  the part nobody wants to write twice, and `meta.type` already couples
+  editor, control and operators. Raised 2026-08-27.
+- A header-group edit gate - locking a locale/group means repeating the same
+  `meta.edit.enabled` predicate per leaf column. A gate on
+  `columnHelper.group`, or a documented pattern. Raised 2026-08-27.
+- An unfiltered `aggregateColumn` - the summary row follows the filters by
+  design, but a desk often wants both "filtered sums to 34%" and "the book
+  sums to 100%"; the second is computed outside the grid today. An
+  `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
 

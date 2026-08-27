@@ -135,7 +135,8 @@ The edit lane holds two things at once, one per axis: the mode's own controls wh
 
 A parked row has had its submit, so the lane never offers to save it again - `TMDataGrid.DraftActions` is what sends it.
 A parked row also hides the trash: revert first, then delete.
-If validation blocks a row, its icon turns red with the message in the tooltip.
+If validation blocks a row, its icon turns red with the message in the tooltip: the parked row's marker, or the open row's ✓.
+A pathless issue from `rowValidators` has no cell to land on, so that tooltip is where its message shows.
 
 ### Marking the drafts
 
@@ -148,6 +149,11 @@ Rows publish what they are holding, for styling and for tests:
 | `data-deleted` | Body row | Marked for deletion |
 | `data-new` | Entry row | An entered row, committed or not |
 
+A row attribute is published on every body row, `"true"` or `"false"`, so match
+the value - `[data-draft="true"]` - rather than the bare attribute, which
+matches every row. A cell's `data-dirty` is present only while the cell is
+dirty.
+
 The grid paints none of them beyond the markers already described. To
 highlight everything pending a save, and to let the user toggle it, use
 `rowStyle` on the Table:
@@ -156,7 +162,7 @@ highlight everything pending a save, and to let the user toggle it, use
 <TMDataGrid.Table
   rowStyle={(row) =>
     showPending && grid.edit.state.committedRowIds.includes(row.id)
-      ? { "--row-bg": "var(--mantine-color-yellow-0)" }
+      ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-yellow-6) 15%, transparent)" }
       : undefined
   }
 />
@@ -290,6 +296,22 @@ state: blue for a dirty draft, red for a validation error, and the row carries
 `data-dirty`. A red corner outlives the editor that found the error: it stands
 until that field's value changes.
 
+The draft is displayed by the column that owns the field. A column computed
+from other fields - `accessorFn` or `display` - reads `row.original`, which is
+`data`, so it shows the saved record while the row is edited. To make a
+computed cell follow the draft, read the drafted row from `edit.store`:
+
+```tsx
+function useDraftedRow(rowId: string, original: Product): Product {
+  const { edit } = useTMDataGridContext();
+  const values = useSelector(edit.store, (state) => state.rows[rowId]?.values);
+  return (values as Product | undefined) ?? original;
+}
+```
+
+`useTMDataGridContext()` reaches the engine from inside a cell renderer, and
+the selector re-renders the cell as the draft changes.
+
 ## Adding and deleting rows
 
 `edit.addRow()` opens an **entry row** in a sticky block under the header, so a
@@ -322,12 +344,19 @@ useTMDataGrid({
 <Button onClick={() => grid.edit.addRow()}>Add row</Button>;
 ```
 
+Annotate `newRowDefaults`' return type: a bare object literal widens a union
+field to `string`, and `(): Product => ({ ... })` keeps it checked.
+
 `addRow` takes the values the row starts from. They override `newRowDefaults`
 key by key, so `addRow()` opens the `newRowDefaults` row and
 `addRow({ department: "Sales" })` opens that row with `department` filled in.
 Passing a whole row duplicates it. The entry row is an ordinary form either way:
 the seeded values are editable, validate like any other, and nothing reaches
 `onRowAdd` until the row is committed.
+
+A grouped column has no cell on the entry row - under the default
+`groupedColumnMode: "remove"` it is not in the grid at all - so an entry row
+cannot type the grouped field. Seed it: `addRow({ region: "EMEA" })`.
 
 ```tsx
 <Button onClick={() => grid.edit.addRow({ department: "Sales", active: true })}>
@@ -387,8 +416,9 @@ any confirmation in that callback. Under `draft: true` it toggles a mark
 instead: the row renders struck through and inert
 (`data-deleted`), the lane shows Restore, and `saveDrafts` reports the ids in
 `deleted`. A deletion mark is a decision the moment it is made, so it goes
-straight into the draft store - there is nothing to type. Setting `onRowDelete`
-puts the trash can in the edit lane.
+straight into the draft store - there is nothing to type. The trash can shows
+when the deletion has somewhere to report to: `onRowDelete` is set, or under
+`draft: true`, `onSaveDrafts` is.
 
 The grid still never mutates `data`: you apply adds and deletes, and the new
 rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not
@@ -466,7 +496,7 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps entered new rows pinned in the entry block until the save.             |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |
-| `editing.onRowDelete`         | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row, and puts the trash in the edit lane.                                              |
+| `editing.onRowDelete`         | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too.                |
 | `meta.edit.enabled`           | Column meta    | `boolean \| (row) => boolean`                    | `true`            | Whether a column's cells edit.                                                                   |
 | `meta.edit.field`             | Column meta    | `string`                                         | The `accessorKey` | The data path an edit writes to.                                                                 |
 | `meta.edit.mapValue`          | Column meta    | `({ value, previous, row, column }) => unknown`  | –                 | Maps each value an editor writes. See [Editors](/docs/editors#mapping-the-value-as-it-is-typed). |
