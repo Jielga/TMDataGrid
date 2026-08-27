@@ -105,7 +105,7 @@ returned.
 | `features`                                              | Feature flags, re-derived each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
 | `labels`                                                | The resolved [dictionary](/docs/localization).                                                  |
 | `resetSettings`                                         | [Clears the layout](/docs/column-layout#reset-the-layout).                                      |
-| `scrollToRow` · `scrollerRef`                           | [Scrolling](/docs/scrolling#scrolling-to-a-row).                                                |
+| `scrollToRow`                                           | [Scrolling](/docs/scrolling#scrolling-to-a-row).                                                |
 | `renderDetails` · `renderDetailsEstHeight` · `overscan` | Passed through to the Table.                                                                    |
 
 Read state through TanStack Store's

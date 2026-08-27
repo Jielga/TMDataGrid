@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,11 +7,13 @@ import { z } from "zod";
 import {
   bodyRows,
   cellAt,
+  countScrolls,
   part,
   parts,
   queryPart,
   renderWithMantine,
 } from "../../test/gridHarness";
+import type { TMDataGridDraftActionsSlotArgs } from "./TMDataGridDraftActions";
 import type { TMDataGridEditorComponent } from "../core/editEngine";
 import { TMDataGrid } from "./TMDataGrid";
 import {
@@ -615,6 +618,7 @@ describe("cell editing", () => {
     onRowDelete,
     newRowDefaults,
     newRowsSticky,
+    renderActions,
   }: {
     mode?: "cell" | "cellConfirm" | "row";
     columns?: UseTMDataGridOptions<Employee>["columns"];
@@ -624,6 +628,7 @@ describe("cell editing", () => {
     onRowDelete?: () => void;
     newRowDefaults?: () => Employee;
     newRowsSticky?: boolean;
+    renderActions?: (args: TMDataGridDraftActionsSlotArgs) => ReactNode;
   }) {
     const grid = useTMDataGrid<Employee>({
       data: editRows,
@@ -647,7 +652,7 @@ describe("cell editing", () => {
           <button type="button" onClick={() => grid.edit.addRow()}>
             add
           </button>
-          <TMDataGrid.DraftActions />
+          <TMDataGrid.DraftActions renderActions={renderActions} />
         </TMDataGrid.Toolbar>
         <TMDataGrid.Table<Employee> />
       </TMDataGrid>
@@ -865,6 +870,73 @@ describe("cell editing", () => {
     expect(within(entryRow).queryByRole("textbox")).not.toBeInTheDocument();
     expect(entryRow).toHaveTextContent("Ny Person");
     expect(adds.length).toBe(0);
+  });
+
+  it("counts an open entry row as reached without scrolling to it", async () => {
+    const user = userEvent.setup();
+    let slot: TMDataGridDraftActionsSlotArgs | null = null;
+    renderWithMantine(
+      <DraftGrid
+        newRowDefaults={entryDefaults}
+        renderActions={(args) => {
+          slot = args;
+          return null;
+        }}
+      />,
+    );
+
+    await typeIntoEntryRow(user, "Ny Person");
+
+    const args = slot as unknown as TMDataGridDraftActionsSlotArgs;
+    expect(args.state.openRowIds).toEqual(["__new__1"]);
+
+    // The entry block is sticky under the header, so the row is on screen
+    // already - and it is not in the virtualized order to scroll to anyway.
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = args.actions.scrollToFirstOpenRow();
+      }),
+    ).toBe(0);
+    expect(answer).toBe(true);
+  });
+
+  it("does not let an open entry row hide an open body row", async () => {
+    const user = userEvent.setup();
+    let slot: TMDataGridDraftActionsSlotArgs | null = null;
+    renderWithMantine(
+      <DraftGrid
+        mode="row"
+        newRowDefaults={entryDefaults}
+        renderActions={(args) => {
+          slot = args;
+          return null;
+        }}
+      />,
+    );
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.dblClick(cellAt(1, 0));
+    // Scoped to the body row: the open entry row has an "Edit Name" too.
+    await user.type(
+      within(part("row", { rowId: "2" })).getByRole("textbox", {
+        name: "Edit Name",
+      }),
+      " Berg",
+    );
+
+    const args = slot as unknown as TMDataGridDraftActionsSlotArgs;
+    expect(args.state.openRowIds).toEqual(["__new__1", "2"]);
+
+    // The entry row is first in the engine's order and answers true on its
+    // own; the body row is what the user cannot see, so it wins.
+    let answer: boolean | null = null;
+    expect(
+      countScrolls(() => {
+        answer = args.actions.scrollToFirstOpenRow();
+      }),
+    ).toBe(1);
+    expect(answer).toBe(true);
   });
 
   it("keeps a confirmed entry row sticky when newRowsSticky is set", async () => {

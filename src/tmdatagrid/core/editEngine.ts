@@ -230,6 +230,30 @@ const EMPTY_EDIT_STATE: TMDataGridEditState = {
   deletedRowIds: [],
 };
 
+/**
+ * The rows still *open*: holding a live form nobody has decided yet.
+ *
+ * Narrower than {@link TMDataGridEditState.openRowIds}, which is every row
+ * with a form, the parked ones included. A row qualifies here when it is not
+ * parked in the draft store and there is something to lose - an entered row
+ * always counts, an existing one only once a value has moved.
+ *
+ * The order is the engine's: the order the forms were opened.
+ */
+export function getOpenRowIds(
+  state: TMDataGridEditState,
+): ReadonlyArray<string> {
+  return state.openRowIds.filter(
+    (rowId) =>
+      !state.committedRowIds.includes(rowId) &&
+      !state.newRows.some(
+        (newRow) => newRow.tempId === rowId && newRow.committed,
+      ) &&
+      (state.newRows.some((newRow) => newRow.tempId === rowId) ||
+        (state.rows[rowId]?.dirtyFields.length ?? 0) > 0),
+  );
+}
+
 type ErasedRow = Row<TMDataGridFeatures, TMDataGridRowData>;
 type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 
