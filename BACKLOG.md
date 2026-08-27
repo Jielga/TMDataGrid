@@ -38,11 +38,6 @@ starts without the stakeholder's go.
   "warning"` on an issue reuses the whole pipeline: amber corner, same
   tooltip, `warningFields` beside `errorFields`. Related to H3 in name only -
   H3 is dev-time misconfiguration, this is end-user data.
-- H5 - density. Closed as recipe, not feature: the size scale and its recipe
-  are on [styling.md](src/docs/styling.md) and
-  `getting-started/DensityAndLayout.tsx` is the runtime toggle, both shipped
-  with the docs restructure. What is left is a test pinning that a live
-  `size` change re-estimates virtualized row heights.
 
 **Parked** - U1, container-based column visibility (`meta.hideBelow`). Called
 past 1.0.0 on 2026-08-01.
@@ -125,6 +120,14 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Density (H5)** - **done 2026-08-27**. Closed as recipe, not feature: the
+size scale and its recipe are on [styling.md](src/docs/styling.md) and
+`getting-started/DensityAndLayout.tsx` is the runtime toggle, both shipped
+with the docs restructure. The last piece landed 2026-08-27: a live `size`
+change now calls the virtualizer's `measure()`, with a test pinning that the
+row-height estimates follow - they did not before, since TanStack Virtual's
+measurement cache does not list `estimateSize` among its dependencies.
 
 **Programmatic edits and a column allowlist** - **done 2026-08-26**.
 From a test consumer's report on building a rebalancing desk from the skills

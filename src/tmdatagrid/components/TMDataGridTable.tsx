@@ -970,6 +970,21 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     initialRect: { height: 600, width: 1200 },
   });
 
+  /**
+   * A live `size` (or `meta.rowHeight`) change moves what `estimateSize`
+   * answers, but the virtualizer's measurement cache does not list that option
+   * among its dependencies - by its own docs, changing the estimate means
+   * calling `measure()`. Without this the spacers keep the old height until
+   * something else invalidates the cache, so the scroll range and the window
+   * disagree with the rows actually painted.
+   */
+  const prevRowHeightRef = useRef(rowHeight);
+  useEffect(() => {
+    if (prevRowHeightRef.current === rowHeight) return;
+    prevRowHeightRef.current = rowHeight;
+    virtualizer.measure();
+  }, [rowHeight, virtualizer]);
+
   const virtualItems = virtualizer.getVirtualItems();
   const paddingTop = virtualItems[0]?.start ?? 0;
   const paddingBottom =

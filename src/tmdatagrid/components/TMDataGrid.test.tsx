@@ -23,6 +23,7 @@ import {
   type TestRow,
 } from "../../test/gridHarness";
 import { aggregateColumn } from "../core/summary";
+import { SIZE_ROW_HEIGHT, type TMDataGridSize } from "../core/sizes";
 import { TMDATAGRID_LABELS_SV } from "../core/labelsSv";
 import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
@@ -820,6 +821,58 @@ describe("scrollToRow", () => {
     // Parked at the edge: already on screen, and out of the scrolling order.
     expect(api.scrollToRow({ rowId: "300" })).toBe(true);
     expect(part("row", { rowId: "300" }, part("pinned-top"))).toBeInTheDocument();
+  });
+});
+
+describe("size", () => {
+  const manyRows = makeRows(500);
+
+  function SizedGrid({ size }: { size: TMDataGridSize }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: manyRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+    });
+    return (
+      <TMDataGrid {...grid} size={size}>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>
+    );
+  }
+
+  /**
+   * The spacer standing in for the rows below the virtual window - the last
+   * `aria-hidden` child of the rowgroup. jsdom lays nothing out, so the
+   * mounted rows measure zero; the spacer's inline height is pure estimate
+   * arithmetic, `(total - mounted) × rowHeight`, which makes it the one
+   * number the estimates can be read back through.
+   */
+  const bottomSpacerHeight = () => {
+    const rowgroup = bodyRows()[0]?.parentElement;
+    if (!rowgroup) throw new Error("no rowgroup");
+    const spacer = Array.from(rowgroup.children)
+      .filter((child) => child.hasAttribute("aria-hidden"))
+      .at(-1);
+    if (!(spacer instanceof HTMLElement)) throw new Error("no bottom spacer");
+    return Number.parseFloat(spacer.style.height);
+  };
+
+  const expectedSpacer = (size: TMDataGridSize) =>
+    (manyRows.length - bodyRows().length) * SIZE_ROW_HEIGHT[size];
+
+  it("re-estimates virtualized row heights when size changes live", () => {
+    const { rerender } = renderWithMantine(<SizedGrid size="md" />);
+    expect(bottomSpacerHeight()).toBe(expectedSpacer("md"));
+
+    // The runtime density toggle: same grid, new size. The virtualizer's
+    // measurement cache does not list `estimateSize`, so without the
+    // `measure()` call on a rowHeight change the spacer would keep the md
+    // arithmetic.
+    rerender(<SizedGrid size="xs" />);
+    expect(bottomSpacerHeight()).toBe(expectedSpacer("xs"));
+
+    rerender(<SizedGrid size="xl" />);
+    expect(bottomSpacerHeight()).toBe(expectedSpacer("xl"));
   });
 });
 
