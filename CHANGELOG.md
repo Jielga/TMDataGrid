@@ -1,5 +1,26 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.7
+
+### Minor Changes
+
+- [#49](https://github.com/Jielga/TMDataGrid/pull/49) [`001dd75`](https://github.com/Jielga/TMDataGrid/commit/001dd753a815f023dea65544d2af42f3255e55d9) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.DraftActions`' `renderActions` can take the user to a row that is
+  still open. Closes [#46](https://github.com/Jielga/TMDataGrid/issues/46).
+
+  - `state.openRowIds` is the ids behind `openCount`, in the order the grid
+    opened them.
+  - `actions.scrollToRow` is `grid.scrollToRow`, passed through.
+  - `actions.scrollToFirstOpenRow(align?)` scrolls to the first open row in
+    display order - which need not be `openRowIds[0]` - and answers whether one
+    was reached. An open entry row or a pinned open row answers `true` without
+    scrolling.
+
+  `Controls.OpenRowsNote` is unchanged: it is a label, not a button.
+
+  Docs: the `DraftActions` slot table listed neither `draftCount`, `openCount`,
+  `commitAll` nor `OpenRowsNote`, and `scrollerRef` was documented as the scroll
+  container element, which it has never been.
+
 ## 2.0.0-beta.6
 
 ### Minor Changes
