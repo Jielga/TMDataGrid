@@ -16,6 +16,11 @@
 # left for this job to find is a source doc changing under a skill, which a
 # schedule catches perfectly well.
 #
+# Diverges from the upstream template in one way, and `intent setup` would
+# undo it: the template installs the CLI globally at `latest`, which validated
+# CI against a different version than the pinned devDependency anyone runs
+# locally. Both jobs use the repo's own copy through scripts/intent.mjs.
+#
 # intent-workflow-version: 3
 #
 # Package label below is substituted by `intent setup`.
@@ -44,18 +49,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
 
-      - name: Install intent
-        run: npm install -g @tanstack/intent
+      - run: npm ci
 
       - name: Validate skills
-        run: intent validate --github-summary
+        run: node scripts/intent.mjs validate --github-summary
 
   review:
     name: Check intent skill coverage
@@ -63,22 +68,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
 
-      - name: Install intent
-        run: npm install -g @tanstack/intent
+      - run: npm ci
 
       - name: Check skills
         id: stale
         run: |
-          intent stale --github-review --package-label "@jielga/tmdatagrid"
+          node scripts/intent.mjs stale --github-review --package-label "@jielga/tmdatagrid"
 
       - name: Open or update review PR
         if: steps.stale.outputs.has_review == 'true'

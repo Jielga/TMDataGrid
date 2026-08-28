@@ -61,6 +61,7 @@
     "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rolldown -c rolldown.dts.config.mjs",
     "lint": "oxlint",
     "check:style": "node scripts/check-house-style.mjs",
+    "check:skills": "node scripts/intent.mjs validate",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",

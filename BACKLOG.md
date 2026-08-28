@@ -205,6 +205,23 @@ An empty root now takes whatever a run is publishing, the decision moved into `s
 
 The back lines were seeded by hand afterwards: `v1.0`, `v1.1`, `v2.0` and `next` are all live, and `v1.1` serves the root.
 
+**A release that cannot be skipped** - **done 2026-08-28.**
+`2.0.0-beta.6` was versioned, changelogged and never published, with a green Release run and no way to tell from the outside.
+`changesets/action` is a single switch: when any changeset on main is still unconsumed it runs `version` and returns, never reaching its publish script.
+Merging the version pull request seconds after two feature pull requests left exactly that, so the version the merge was meant to release was lost and the next one, `beta.7`, shipped its code under someone else's release notes.
+Publishing now happens in a step of its own, before the action rather than through it - the action's version step switches the checkout to the release branch, so afterwards `package.json` holds the *next* version.
+The rule is that every push to main publishes what main's `package.json` says whenever the registry does not have it, so merge order stops mattering and a skipped version is picked up by the next push.
+That step tags and writes the GitHub release too, from the changelog section `scripts/changelog-entry.mjs` extracts.
+`npm run test` now gates the job; it never did, and CI's own run does not gate this workflow.
+`beta.6` is left unpublished: its code is in `beta.7`.
+
+**Skill validation that runs before CI** - **done 2026-08-28.**
+The skills check failed in CI on things that take a millisecond to catch locally, and nothing local caught them.
+Two causes.
+`@tanstack/intent` and `@tanstack/devtools-event-client` both declare a bin called `intent`, so `npx intent` runs whichever won the name and crashes; and CI installed the CLI globally at `latest` while the repository pins it, so the two never validated with the same version.
+`scripts/intent.mjs` is now the one place that resolves the pinned CLI by path, the pre-commit hook validates through it, and both jobs in `check-skills.yml` use the repository's own copy.
+That workflow diverges from the upstream template as a result, and `intent setup` would undo it.
+
 **Docs previews on pull requests** - **dropped 2026-08-28.**
 The deploy ran on `pull_request` to publish a labelled branch at `b/<branch>/` and to take the copy down again when the label or the pull request went away.
 It never once worked, and it turned every merge into a red run: a `pull_request` run's ref is `refs/pull/<n>/merge`, which is not a branch, so it matches no deployment branch policy on the `github-pages` environment - not the `main` entry and not the `*` entry either.

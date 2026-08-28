@@ -21,12 +21,17 @@ Do not start planned work without the stakeholder's go - the backlog names what 
 | `npm run dev` | Demo site: docs, examples, playground |
 | `npm run test` | Vitest once (`test:watch` to iterate) |
 | `npm run lint` | oxlint - types are **not** checked here |
+| `npm run check:style` | House style over the markdown |
+| `npm run check:skills` | `intent validate` over `skills/*/SKILL.md` |
 | `npx tsc -b` | The typecheck, run it separately |
 | `npm run build:lib` | The package into `dist/` |
 | `npm run build` | The demo site into `dist-demo/` |
 
-The pre-commit hook runs lint, `tsc -b`, the changeset check, and `build:lib` when `src/tmdatagrid/` changed.
+The pre-commit hook runs lint, both checks above, `tsc -b`, the changeset check, and `build:lib` when `src/tmdatagrid/` changed.
 Run those before committing rather than discovering them at the hook.
+
+Run intent through `scripts/intent.mjs`, never `npx intent`.
+Two installed packages declare a bin by that name and the one that wins is an install-order accident; the wrong one crashes on startup.
 
 Playwright is expensive. Use it deliberately, not as a way to look around.
 
