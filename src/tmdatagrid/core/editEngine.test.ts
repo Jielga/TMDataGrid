@@ -125,6 +125,7 @@ describe("getOpenRowIds", () => {
     openRowIds: [],
     rows: {},
     committedRowIds: [],
+    committedValues: {},
     newRows: [],
     deletedRowIds: [],
     ...over,
@@ -1558,7 +1559,7 @@ describe("reading rows as shown", () => {
     ]);
   });
 
-  it("reads a parked draft, not what data still says", async () => {
+  it("reads a parked draft, which the table's own row now holds too", async () => {
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
@@ -1570,7 +1571,11 @@ describe("reading rows as shown", () => {
     await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
 
     expect(edit.getRowValues("1")?.name).toBe("Annika");
-    expect(grid.current.table.getRow("1").original.name).toBe("Anna");
+    // The draft is the row as far as the table is concerned - sorting and
+    // filtering read it - while `data` itself is untouched.
+    expect(grid.current.table.getRow("1").original.name).toBe("Annika");
+    expect(grid.current.table.options.data[0]?.name).toBe("Annika");
+    expect(people[0]?.name).toBe("Anna");
     expect(edit.getRows()[0]?.value.name).toBe("Annika");
   });
 
@@ -1621,6 +1626,74 @@ describe("reading rows as shown", () => {
     const grid = renderEditGrid({ mode: "row", draft: true });
 
     expect(grid.current.edit.getRowValues("nope")).toBeUndefined();
+  });
+
+  it("hands the table the consumer's own array while nothing is committed", () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit: vi.fn(),
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    expect(grid.current.table.options.data).toBe(people);
+
+    // Open and undecided: the overlay is the per-cell one, and `data` is
+    // still the array that came in.
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+
+    expect(grid.current.table.options.data).toBe(people);
+  });
+
+  it("snapshots a committed row, keeps it across a reopen and drops it on cancel", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit: vi.fn(),
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+
+    // Reopened: undecided again, and the snapshot stays, so the row keeps
+    // the place the last decision gave it.
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annalena");
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+
+    edit.cancel("1");
+
+    expect(edit.state.committedValues["1"]).toBeUndefined();
+  });
+
+  it("refreshes the snapshot when a parked row is written to again", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit: vi.fn(),
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+
+    // A second write commits the row afresh - it never left the draft store,
+    // and the table has to see both values.
+    await expect(edit.setCellValue("1", "age", 44)).resolves.toBe(true);
+
+    expect(edit.state.committedValues["1"]).toMatchObject({
+      name: "Annika",
+      age: 44,
+    });
   });
 });
 
@@ -1940,9 +2013,11 @@ describe("editing.tableValidators", () => {
     edit.getForm("2")?.setFieldValue("name", "Erik B");
     await expect(edit.commit("2")).resolves.toBe(true);
 
-    // And a data row committed afterwards sees the parked entry's values.
+    // And a data row committed afterwards sees the parked entry's values -
+    // once, at the front: a committed entry row is in the table's own rows
+    // by then, ahead of `data`.
     expect(seen[1]?.isNew).toBe(false);
-    expect(seen[1]?.rows.map((row) => row.rowId)).toEqual(["1", "2", tempId]);
+    expect(seen[1]?.rows.map((row) => row.rowId)).toEqual([tempId, "1", "2"]);
     expect(seen[1]?.rows.find((row) => row.rowId === tempId)?.value.name).toBe(
       "Ny",
     );

@@ -61,11 +61,10 @@ past 1.0.0 on 2026-08-01.
   `unknown` although the callback sits on a `TData`-bound column helper, so
   the docs show a cast. Making the callback generic removes it. Raised
   2026-08-27.
-- `meta.edit.enabled` reads `data`, not the pending draft - a gate that
-  depends on a field being edited runs a render behind. Predicted by a test
-  consumer 2026-08-27, not hit. Also untyped: `row.original` arrives as
-  `unknown` although the helper is `TData`-bound, same fix as the
-  `meta.options` item above.
+- `meta.edit.enabled` is untyped: `row.original` arrives as `unknown` although
+  the helper is `TData`-bound, same fix as the `meta.options` item above.
+  Raised 2026-08-27. The other half of that item - the gate reading `data`
+  rather than the pending draft - is closed by **Drafts as shown** (Done).
 - Tree lane width - the generated group column is a fixed ~250px, pinned
   left, and no option or CSS variable narrows it. Raised by two test
   consumers 2026-08-27; one dropped `columnPinning` because the lane had
@@ -76,11 +75,6 @@ past 1.0.0 on 2026-08-01.
   and `rowHeight`, and whether consumers may add keys (and how to type them)
   is uncommitted. Raised 2026-08-27. Deciding yes is one docs paragraph plus
   declaration merging.
-- Draft-aware aggregates - `aggregatedCell` and `footer` read `data`, so a
-  grouped total cannot show the pending split while a batch is held. An
-  `aggregateColumn`-style helper overlaying `edit.store`'s values would let a
-  consumer render the pending total anywhere. Raised 2026-08-27; what would
-  make a `tableValidators` group rule visible on the group row.
 - `edit.commitAll()` resolving `{ committed, open }` the way `addRows` does -
   today one boolean for the batch, so "3 approved, 1 blocked" needs a
   hand-rolled loop over `commit(rowId)`. Raised 2026-08-27.
@@ -111,6 +105,13 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Drafts as shown** - **done 2026-08-28**.
+Under `editing.draft` a committed draft is the table's row: it stands in for the consumer's record in the table's `data`, so sorting, filtering, quick search, grouping, aggregates, facets, export, selection, the row counts, `edit.getRows()` and `tableValidators` all read it, and the row callbacks receive it as `row.original`.
+A committed entry row is one of them too - an ordinary body row marked `data-new`, sorted and filtered with the rest, in place of the in-flow block it used to render in; `editing.newRowsSticky` keeps committed rows in the entry block instead, out of the body's sort and out of the row count.
+`TMDataGridEditState.committedValues` is what the table reads: the draft store's values per row, snapshotted at every commit and kept across a reopen, so a row edited again holds its place until it commits or is cancelled.
+`data` itself is never modified, and only top-level rows are overlaid - `getSubRows` children keep their `data` values.
+Closes two To-explore items for committed rows: draft-aware aggregates, and `meta.edit.enabled` reading `data` rather than the draft. An open row's undecided values are still its own; only a decision moves the collection.
+
 **Cross-row validation (H6)** - **done 2026-08-27**.
 Raised independently by two test consumers (traffic split, tariff desk).
 `editing.tableValidators` takes `onSubmit` / `onSubmitAsync`, each handed
@@ -121,7 +122,8 @@ Same result vocabulary as `rowValidators`; errors land on the committing row.
 Folded into the composed submit pass, so it runs at every commit and re-runs
 per parked row during `saveDrafts` - the save gate came free. Scope cut from
 the sketch: no `groupValidators` sugar (a `rows.filter()` is the group rule)
-and no group-row marking, which wants draft-aware aggregates (To explore).
+and no group-row marking, which wants draft-aware aggregates (**Drafts as
+shown**, Done).
 
 **Density (H5)** - **done 2026-08-27**. Closed as recipe, not feature: the
 size scale and its recipe are on [styling.md](src/docs/styling.md) and
@@ -192,6 +194,8 @@ icon and revert/restore/remove, and nothing reaches a callback before Save
 all. `onCommitBatch` became `onCommitDrafts`; the rename table is in the
 changeset. Fixed along the way: Restore on a deletion-marked row was
 unclickable in real browsers.
+Entered rows moved again on 2026-08-28: a committed one is a body row, sorted
+in with the rest rather than scrolling above them - see **Drafts as shown**.
 
 **Versioned documentation** - **done 2026-08-21**, corrected the same day.
 The docs site publishes several complete builds under one Pages root, held on a `gh-pages` branch: the newest release at the root, the tip of main at `next/`, one directory per minor line at `v1.1/`, and a branch published by hand at `b/<name>/`.

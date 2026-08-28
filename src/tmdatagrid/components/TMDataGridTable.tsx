@@ -286,10 +286,22 @@ function TMDataGridBodyCell({
   // The whole draft, not one field: a computed or custom renderer may read any
   // field off the row, so every data cell of a drafted row repaints together
   // when its draft moves - and only then, `values` being reference-stable
-  // across meta-only form events. `undefined` everywhere else.
-  const draftValues = useSelector(edit.store, (state) =>
-    isControl ? undefined : state.rows[cellRowId]?.values,
-  );
+  // across meta-only form events. `undefined` everywhere else - including a
+  // committed row, whose draft already *is* the row: the hook feeds the draft
+  // store's values to the table as `data`, so `row.original` holds them.
+  // Only an open form's undecided values need the overlay.
+  const draftValues = useSelector(edit.store, (state) => {
+    if (isControl) return undefined;
+    if (state.committedRowIds.includes(cellRowId)) return undefined;
+    if (
+      state.newRows.some(
+        (newRow) => newRow.tempId === cellRowId && newRow.committed,
+      )
+    ) {
+      return undefined;
+    }
+    return state.rows[cellRowId]?.values;
+  });
   return (
     <div
       // `gridcell` rather than `cell` is what tells a screen reader the arrow
@@ -750,7 +762,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Row mode opens whole rows and any number of them at once, so which rows
   // are showing editors is the set of open forms, not the single active slot.
   const editOpenRowIds = useSelector(edit.store, (state) => state.openRowIds);
-  const newRowCount = useSelector(edit.store, (state) => state.newRows.length);
+  // Entry rows, for the block's mount and for `data-new` on the committed
+  // ones that have joined the body. Identity-stable across typing.
+  const newRows = useSelector(edit.store, (state) => state.newRows);
+  const newRowCount = newRows.length;
   const deletedRowIds = useSelector(edit.store, (state) => state.deletedRowIds);
   // Rows carrying a dirty draft, for the row-level marker. Derived from the
   // same projections the cells subscribe to; the array's identity churns with
@@ -2258,10 +2273,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               // A parked row is not one of them. It keeps its form, so it is
               // still "open", but it has been decided: it renders its draft
               // through the column's own renderer until `begin` reopens it.
+              // A committed entry row in the body has a form too - every
+              // entry row does - but it is a value row until reopened, and
+              // reopening takes it back to the entry block.
               const rowEditing =
                 features.editMode === "row" &&
                 editOpenRowIds.includes(row.id) &&
-                !editDraftRowIds.includes(row.id);
+                !editDraftRowIds.includes(row.id) &&
+                !newRows.some((newRow) => newRow.tempId === row.id);
               // Cell selection takes the body's tab stop off the row and puts
               // it on a cell - two stops per row would make Tab a way of
               // walking the grid, which is what the arrow keys are for. Space
@@ -2338,10 +2357,20 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     editDirtyRowIds.length > 0 &&
                     editDirtyRowIds.includes(row.id)
                   }
-                  // Committed into the draft store, waiting for Save.
+                  // Committed into the draft store, waiting for Save. A
+                  // committed entry row is one too - it is in the body
+                  // because it is committed - and carries `data-new` besides.
                   data-draft={
-                    editDraftRowIds.length > 0 &&
-                    editDraftRowIds.includes(row.id)
+                    (editDraftRowIds.length > 0 &&
+                      editDraftRowIds.includes(row.id)) ||
+                    (newRowCount > 0 &&
+                      newRows.some((newRow) => newRow.tempId === row.id))
+                  }
+                  // An entered row not yet in `data`, committed into the draft
+                  // store and sorted, filtered and grouped with the rest.
+                  data-new={
+                    newRowCount > 0 &&
+                    newRows.some((newRow) => newRow.tempId === row.id)
                   }
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is

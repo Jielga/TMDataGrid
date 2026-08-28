@@ -1,4 +1,5 @@
-import { useCreateStore } from "@tanstack/react-store";
+import { useCreateStore, useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
 import {
   aggregationFns,
   type ColumnDef,
@@ -293,6 +294,9 @@ const DEFAULT_DETAILS_EST_HEIGHT = 160;
 
 /** Rows kept mounted on each side of the viewport. See `overscan`. */
 const DEFAULT_OVERSCAN = 6;
+
+/** One empty array, so a selector answering "none" never changes identity. */
+const EMPTY_IDS: ReadonlyArray<string> = [];
 
 /**
  * Chrome state that is *not* table state: which panels are open, and which
@@ -608,11 +612,12 @@ export type TMDataGridEditingOptions<TData extends RowData> =
             | TMDataGridSaveDraftsResult
             | Promise<void | TMDataGridSaveDraftsResult>;
           /**
-           * Keep parked entry rows pinned in the sticky entry block until
-           * the draft store is saved. Off by default: a parked row joins the
-           * scrolling flow above the body rows instead - the block a row is
-           * *typed* into is always sticky, but parked rows scroll, so
-           * entering many cannot fill the viewport with sticky chrome.
+           * Keep committed entry rows pinned in the sticky entry block until
+           * the draft store is saved, out of the body's sort. Off by default:
+           * a committed row joins the body rows instead, sorted and filtered
+           * with them - the block a row is *typed* into is always sticky, but
+           * committed rows scroll, so entering many cannot fill the viewport
+           * with sticky chrome.
            */
           newRowsSticky?: boolean;
         }
@@ -1169,6 +1174,101 @@ export function useTMDataGrid<TData extends RowData>({
     [],
   );
 
+  // The edit engine. Built once per mount; everything it needs later - the
+  // table, the mode, the consumer's callbacks - is read through a ref updated
+  // every render, so forms created at `begin()` always call the latest
+  // `onEditCommit` (the onHighlightedRowChangeRef pattern, applied wholesale).
+  // Created ahead of the table because the table's `data` reads its store;
+  // the ref is filled in once the table exists, and the engine only reads it
+  // inside verbs, never while being built.
+  const editContextRef = useRef<TMDataGridEditEngineContext>(null as never);
+  // The engine is erased; the row type comes back on the way out, which is
+  // what makes `edit.addRow(values)` check against `TData`.
+  const [edit] = useState(
+    () =>
+      createEditEngine(
+        () => editContextRef.current,
+      ) as unknown as TMDataGridEditApi<TData>,
+  );
+
+  // The rows as shown. Under `editing.draft` a committed row is a row like any
+  // other to the table: its draft replaces the consumer's record and a
+  // committed entry row is prepended, so sorting, filtering, grouping and
+  // aggregates all read the draft store's values. Rows still being typed
+  // into are not here - their values are undecided, and re-sorting under a
+  // caret is not something anyone wants. `newRowsSticky` keeps committed
+  // entry rows in the entry block, so those stay out too.
+  //
+  // Everything is keyed on identities the engine keeps stable while nothing
+  // is decided, so a keystroke in an open editor never rebuilds the model.
+  // `committedValues` rather than `committedRowIds`: the snapshot outlives a
+  // reopen, so a parked row being edited again keeps its place until the
+  // next commit or a cancel decides otherwise.
+  const editCommittedValues = useSelector(
+    edit.store,
+    (state) => state.committedValues,
+  );
+  const newRowsSticky = features.editNewRowsSticky;
+  const editCreatedIds = useSelector(
+    edit.store,
+    (state) =>
+      newRowsSticky
+        ? EMPTY_IDS
+        : state.newRows
+            .filter((newRow) => newRow.committed)
+            .map((newRow) => newRow.tempId),
+    { compare: shallow },
+  );
+  // Read through a ref, not listed as a dependency: an inline `getRowId` is
+  // a fresh function every render, and the merged array must keep its
+  // identity across renders or the table rebuilds its row models on each.
+  const consumerGetRowIdRef = useRef(options.getRowId);
+  consumerGetRowIdRef.current = options.getRowId;
+  const shown = useMemo(() => {
+    const consumerGetRowId = consumerGetRowIdRef.current;
+    const idOf = new Map<object, string>();
+    const created: Array<TData> = [];
+    for (const tempId of editCreatedIds) {
+      const values = editCommittedValues[tempId];
+      if (values === undefined) continue;
+      idOf.set(values, tempId);
+      created.push(values as TData);
+    }
+    const snapshots = Object.keys(editCommittedValues).length;
+    if (snapshots === 0) return { rows: options.data, idOf };
+    // Every snapshot may stand in for a record; only the created ones are
+    // known not to. The rest are looked up by the record's own id.
+    const rows =
+      snapshots === created.length
+        ? options.data
+        : options.data.map((record, index) => {
+            const rowId =
+              consumerGetRowId?.(record, index, undefined) ?? String(index);
+            const values = editCommittedValues[rowId];
+            if (values === undefined) return record;
+            idOf.set(values, rowId);
+            return values as TData;
+          });
+    return {
+      rows: created.length === 0 ? rows : [...created, ...rows],
+      idOf,
+    };
+  }, [options.data, editCommittedValues, editCreatedIds]);
+  const shownIdOfRef = useRef(shown.idOf);
+  shownIdOfRef.current = shown.idOf;
+  // A stable id resolver over the merged rows. A draft answers the id of the
+  // record it stands in for - the consumer's `getRowId` never sees a draft
+  // object, so an editable id field cannot rename the row - and a created
+  // row answers its temp id. Everything else is the consumer's own, or
+  // TanStack's index fallback.
+  const shownGetRowId = useCallback(
+    (record: TData, index: number, parent?: Row<TMDataGridFeatures, TData>) =>
+      shownIdOfRef.current.get(record) ??
+      consumerGetRowIdRef.current?.(record, index, parent) ??
+      (parent !== undefined ? `${parent.id}.${index}` : String(index)),
+    [],
+  );
+
   const table = useTable({
     // The grid paints a running drag itself, one style write per frame - see
     // the resize preview in TMDataGridTable - and takes the width into state
@@ -1191,6 +1291,10 @@ export function useTMDataGrid<TData extends RowData>({
     // `"reorder"` to keep the column and have it moved to the front instead.
     groupedColumnMode: "remove",
     ...options,
+    // The rows as shown - see `shown` above. The consumer's own array passes
+    // through untouched while nothing is committed.
+    data: shown.rows,
+    getRowId: shownGetRowId,
     // Row details ride on `expanded`, the same state the tree uses - but a data
     // row answers `getCanExpand()` false, since TanStack's fallback is
     // `subRows.length > 0`. `() => true` is the right answer for a group row
@@ -1267,11 +1371,7 @@ export function useTMDataGrid<TData extends RowData>({
     },
   }, selectSettledState);
 
-  // The edit engine. Built once per mount; everything it needs later - the
-  // table, the mode, the consumer's callbacks - is read through a ref updated
-  // every render, so forms created at `begin()` always call the latest
-  // `onEditCommit` (the onHighlightedRowChangeRef pattern, applied wholesale).
-  const editContextRef = useRef<TMDataGridEditEngineContext>(null as never);
+  // The engine's view of this render - see the engine's creation above.
   editContextRef.current = {
     table: table as unknown as TMDataGridTable<TMDataGridRowData>,
     editMode: editMode ?? "cell",
@@ -1293,14 +1393,6 @@ export function useTMDataGrid<TData extends RowData>({
     onRowDelete:
       editing?.onRowDelete as TMDataGridEditEngineContext["onRowDelete"],
   };
-  // The engine is erased; the row type comes back on the way out, which is
-  // what makes `edit.addRow(values)` check against `TData`.
-  const [edit] = useState(
-    () =>
-      createEditEngine(
-        () => editContextRef.current,
-      ) as unknown as TMDataGridEditApi<TData>,
-  );
 
   // Switching either axis mid-flight drops every draft: the policies disagree
   // about what an open form means, and carrying one across is how a row

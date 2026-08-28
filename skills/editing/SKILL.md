@@ -108,9 +108,12 @@ commit. Rows accumulate: opening a second row leaves the first open, and each
 row's ✓ and ✕ act on that row alone.
 
 Under `draft: true` nothing reaches a callback until `saveDrafts`.
-The mode's own commit gesture parks the row instead of sending it, Escape drops that one draft, and parked rows accumulate, surviving filters, sorts and scrolling.
+The mode's own commit gesture parks the row instead of sending it, Escape drops that one draft, and parked rows accumulate.
 `edit.commit(rowId)` parks too, so there is no per-row escape hatch to the consumer.
 A parked row is displayed: the cell renders the draft value through the column's own `cell` renderer, with the blue corner marking it dirty and `data-dirty` on the row.
+It is a row like any other to the table: sorting, filtering, quick search, grouping, aggregates, export, selection, the row counts, `edit.getRows()` and `editing.tableValidators` all read its draft values, and the row callbacks receive it with the draft as `row.original`.
+A parked row that stops matching a filter leaves the view, and the Save bar still counts it.
+`data` itself is never modified, and only top-level rows are overlaid - `getSubRows` children keep their `data` values.
 An entry row is row-shaped in every mode - every editable cell open at once, the browser's Tab, and the lane's ✓ to enter it.
 
 The edit lane is the change indicator and the per-row undo: an edited row shows
@@ -134,9 +137,9 @@ an unnamed id saved. A kept row stays committed, so the next `saveDrafts()`
 retries it, and `saveDrafts()` resolves `false` when anything was kept.
 
 Rows carry `data-dirty` (values typed in), `data-draft` (committed, waiting for
-Save), `data-deleted` and, on entry rows, `data-new`. The grid paints none of
-them; use `rowStyle` / `rowClassName` or the attributes to highlight what is
-pending.
+Save), `data-deleted` and `data-new` - a committed new row in the body, or an
+entry row in the block. The grid paints none of them; use `rowStyle` /
+`rowClassName` or the attributes to highlight what is pending.
 
 ## What a commit receives
 
@@ -219,7 +222,8 @@ corners mark both: blue for a dirty draft, red for a validation error.
 duplicate keys, no overlapping ranges, shares summing to a total. Its
 `onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`, where
 `rows` is the collection as it would stand if the commit landed: every draft
-overlaid, entry rows appended, deletion-marked rows removed. Same result
+overlaid, committed new rows among them, the entry rows the table does not hold
+appended, deletion-marked rows removed. Each row appears once. Same result
 vocabulary as `rowValidators`; errors land on the committing row. The rules
 re-run per parked row during `saveDrafts`, so a draft a later edit
 invalidated blocks the save.
@@ -255,12 +259,14 @@ parks the row in the draft store, validated, and
 `saveDrafts` reports it in `added`. Escape, or ✕, discards the entry. An entry
 row never OK'd is not part of a save - it stays open.
 
-Under `draft: true` an entered row renders as a value row with no inputs, marked
-`data-new` and `data-committed` and tinted with `--dg-row-new-bg`. By default it
-joins the scrolling flow above the body rows; `editing.newRowsSticky: true`
-keeps committed rows pinned in the entry block until the save. Double-click, or
-the lane's pencil, reopens it; ✕ removes it. To limit how many entry rows are
-open at once, gate the Add button on
+Under `draft: true` a committed entry row leaves the entry block and becomes a
+body row with no inputs, marked `data-new` and `data-draft`, tinted with
+`--dg-row-new-bg`, and sorted, filtered and counted with the rest on the values
+it was entered with. `editing.newRowsSticky: true` keeps committed rows in the
+entry block until the save instead, out of the body's sort and out of the row
+count. Double-click, or the lane's pencil, reopens it back into the entry block;
+✕ removes it. To limit how many entry rows are open at once, gate the Add
+button on
 `useSelector(grid.edit.store, (s) => s.newRows.some((n) => !n.committed))`.
 
 ```tsx

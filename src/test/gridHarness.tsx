@@ -208,10 +208,15 @@ export const bodyRows = () => parts("row");
  * How many rows the grid says it has, mounted or not. Virtualization decides
  * what is in the DOM - and under jsdom, which has no layout, it mounts a
  * handful - so a count of rows has to come off `aria-rowcount`, minus the one
- * header row it includes.
+ * header row it includes. The role is `grid` rather than `table` once cell
+ * selection is on, which `editing` switches on by itself.
  */
 export const gridRowCount = () =>
-  Number(screen.getByRole("table").getAttribute("aria-rowcount")) - 1;
+  Number(
+    (screen.queryByRole("table") ?? screen.getByRole("grid")).getAttribute(
+      "aria-rowcount",
+    ),
+  ) - 1;
 
 /** Row ids in the order they are rendered. */
 export const renderedRowIds = () =>

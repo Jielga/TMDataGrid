@@ -90,6 +90,13 @@
   --row-bg: var(--dg-row-striped-bg);
 }
 
+/* An entered row committed into the draft store, sorted in with the body.
+   The same tint the entry block gives it; declared before the hover and
+   selection rules, which win at equal specificity. */
+.bodyRow[data-new="true"] {
+  --row-bg: var(--dg-row-new-bg, var(--mantine-color-body));
+}
+
 .bodyRow:hover {
   --row-bg: var(--mantine-color-default-hover);
 }
@@ -360,15 +367,6 @@
 }
 
 .entryRow {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
-}
-
-/* Confirmed entry rows in the scrolling flow (the default; `newRowsSticky`
-   keeps them in the sticky block instead). Same tracks, no stickiness - they
-   sit above the body rows and scroll with them. */
-.entryFlowBlock {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
