@@ -86,11 +86,16 @@ describe("edit modes", () => {
 
   type Gesture = "enter" | "tab" | "blur" | "escape";
 
-  const perform = async (user: UserEvent, gesture: Gesture) => {
+  const perform = async (user: UserEvent, gesture: Gesture, mode: TMDataGridEditMode) => {
     if (gesture === "blur") return clickAway(user);
-    await user.keyboard(
-      gesture === "enter" ? "{Enter}" : gesture === "tab" ? "{Tab}" : "{Escape}",
-    );
+    if (gesture === "tab") {
+      // The confirming editor's ✓ and ✕ are its own form: Tab reaches them
+      // first, and the gesture the table is about is the one past the ✕.
+      const presses = mode === "cellConfirm" ? 3 : 1;
+      for (let index = 0; index < presses; index += 1) await user.tab();
+      return;
+    }
+    await user.keyboard(gesture === "enter" ? "{Enter}" : "{Escape}");
   };
 
   /** What a gesture did to the row, in the vocabulary of the mode table. */
@@ -152,7 +157,7 @@ describe("edit modes", () => {
           );
 
           await startEditing(user);
-          await perform(user, gesture);
+          await perform(user, gesture, mode);
 
           if (outcome === "commits") {
             if (draft) {

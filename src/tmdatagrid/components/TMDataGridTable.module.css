@@ -22,6 +22,18 @@
   display: grid;
 }
 
+/* The pair of focusable elements bracketing the body, which is how the body
+   stays one tab stop. Out of flow so neither claims a row track in the grid,
+   and zero-sized so neither can be seen or clicked; the outline is dropped
+   because focus only ever rests here for the instant of a Tab. */
+.tabGuard {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  outline: none;
+}
+
 /* Rows are real layout boxes (not display: contents) so position: sticky works,
    and subgrid keeps their cells on the parent's column tracks. */
 .headerRow {

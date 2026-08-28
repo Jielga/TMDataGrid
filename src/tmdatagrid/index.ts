@@ -1,6 +1,5 @@
 export { TMDataGrid, type TMDataGridProps } from "./components/TMDataGrid";
 export {
-  useCellControlTabIndex,
   useTMDataGridContext,
   type TMDataGridContextValue,
   type TMDataGridRowData,

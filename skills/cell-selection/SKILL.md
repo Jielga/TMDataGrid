@@ -4,7 +4,7 @@ description: >
   Cell cursor, ranges, clipboard and CSV export in TMDataGrid. Covers the
   cellSelection option and its none / single / range modes, the keyboard map
   (arrows, Shift+arrows, PageUp/PageDown, Home/End, Enter, F2, Escape, Space,
-  Ctrl+C), the one-tab-stop rule and useCellControlTabIndex for controls inside
+  Ctrl+C), the one-tab-stop rule and the in-row Tab walk over controls inside
   cells, the role flip from table/cell to grid/gridcell, ui.state.focusedCell
   and ui.state.cellRange keyed by id, onFocusedCellChange, the copy and export
   context menu, the cellExport options and their Nordic Excel defaults, and
@@ -70,29 +70,21 @@ a cell's contents own their own keys.
 
 ## One tab stop
 
-Tab from a cell leaves the grid. What makes that true is that controls inside
-body cells - the checkbox, the tree chevron, the details chevron - take
-`tabindex="-1"` while cell selection is on. Left tabbable, Tab would walk through
-one per mounted row, and how many that is depends on the scroll position.
+The body is one tab stop in each direction. Tab from a cell leaves the grid and
+Shift+Tab leaves it backwards, however many rows are mounted and whatever those
+rows hold.
 
-They stay reachable: Enter or F2 steps in, Escape steps out, and Space ticks the
-row from any of its cells. Header controls are untouched - the header row is not
-part of cell navigation.
+A control inside a body cell needs no `tabIndex`. Enter or F2 steps into the
+cell and onto its first control, Escape steps back out to the cell, and Space
+ticks the row from any of its cells without stepping in.
 
-A custom cell with a control in it wants the same treatment:
+Once the focus is on a control, Tab walks the rest of that row's controls - its
+open editors, the buttons in its cells, and on an open row the edit lane's save
+and cancel. Past the row's last control the cursor moves to the next row's first
+cell, and Shift+Tab before its first control moves to the previous row's last
+cell; neither opens the row it lands on. From the last row, Tab leaves the grid.
 
-```tsx
-import { useCellControlTabIndex } from "@jielga/tmdatagrid";
-
-const OpenButton = ({ row }) => (
-  <Button tabIndex={useCellControlTabIndex()} onClick={() => open(row.id)}>
-    Open
-  </Button>
-);
-```
-
-The hook returns `-1` while cell selection is on and `0` otherwise, so the same
-cell works either way.
+Header controls are untouched - the header row is not part of cell navigation.
 
 ## Where the selection lives
 
@@ -151,26 +143,27 @@ for it:
 
 ## Common mistakes
 
-### CRITICAL A custom cell control that breaks the single tab stop
+### CRITICAL A cell control given a tab index of its own
 
-A `<Button>` or `<Checkbox>` rendered in a body cell keeps its default tab index,
-so Tab walks through one per mounted row. How many that is depends on the scroll
-position, which makes the bug look intermittent.
+The grid keeps every control in a body cell out of the page's tab order and
+reaches them by stepping into the cell. A `<Button>` or `<Checkbox>` handed
+`tabIndex={0}` puts one tab stop per mounted row back, and how many that is
+depends on the scroll position, which makes the bug look intermittent.
 
 Wrong:
 
 ```tsx
-const OpenButton = ({ row }) => <Button onClick={() => open(row.id)}>Open</Button>;
+const OpenButton = ({ row }) => (
+  <Button tabIndex={0} onClick={() => open(row.id)}>
+    Open
+  </Button>
+);
 ```
 
 Correct:
 
 ```tsx
-const OpenButton = ({ row }) => (
-  <Button tabIndex={useCellControlTabIndex()} onClick={() => open(row.id)}>
-    Open
-  </Button>
-);
+const OpenButton = ({ row }) => <Button onClick={() => open(row.id)}>Open</Button>;
 ```
 
 Source: `src/docs/cell-selection.md` (One tab stop).
@@ -224,7 +217,6 @@ Source: `src/docs/cell-selection.md` (Copy and export).
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |
 | `ui.state.cellRange` | UI state | `{ anchor, focus } \| null` | `null` | The rectangle's two corners. |
 | `ui.actions.setFocusedCell` · `setCellRange` | UI actions | – | – | Move either from your own code. |
-| `useCellControlTabIndex` | Hook | `() => 0 \| -1` | – | The tab index a control inside a body cell wants. |
 | `exportGridToCsv` | Export | `({ table, options? }) => void` | – | Downloads every filtered row as CSV. |
 | `buildGridCellMatrix` · `buildCellMatrix` | Exports | – | – | The value matrix behind the file, for post-processing. |
 | `toClipboardText` · `toExcelCsv` · `writeClipboardText` · `downloadTextFile` | Exports | – | – | The pieces behind Ctrl+C and the file. |

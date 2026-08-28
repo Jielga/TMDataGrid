@@ -310,6 +310,50 @@ describe("cell editing", () => {
     await waitFor(() => expect(commits.length).toBe(1));
   });
 
+  it("walks the ✓ and ✕ before Tab leaves a cellConfirm editor", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid
+        editing={{
+          mode: "cellConfirm",
+          onCommit: (args) => void commits.push(args),
+        }}
+      />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    const input = editorInput();
+    await user.type(input, "x");
+
+    // The ✓ and ✕ beside the input are the cell's own form: Tab reaches them
+    // before it moves on, and Shift+Tab comes back the same way.
+    await user.tab();
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Save" }),
+    );
+    await user.tab();
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Cancel" }),
+    );
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Save" }),
+    );
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(input);
+
+    // Past the ✕ the editor closes with the draft kept, nothing committed.
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
+    expect(commits.length).toBe(0);
+    expect(cellAt(0, 0)).toHaveAttribute("data-dirty", "true");
+  });
+
   it("row mode opens every editable cell from the pencil and saves them as one commit", async () => {
     const user = userEvent.setup();
     const commits: unknown[] = [];
@@ -440,6 +484,61 @@ describe("cell editing", () => {
       within(bodyRows()[1]!).getByRole("textbox", { name: "Edit Name" }),
     );
     expect(parts("save-row")).toHaveLength(2);
+  });
+
+  it("row mode walks the open row with Tab, lane included", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(
+      <EditGrid editing={{ mode: "row", onCommit: () => {} }} />,
+    );
+
+    const rowOne = () => bodyRows()[0]!;
+    await user.click(cellAt(0, 0));
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(
+      within(rowOne()).getByRole("textbox", { name: "Edit Name" }),
+    );
+
+    // An open row is a form: its editors first, in column order, then the
+    // lane's two buttons. Note is not editable, so it holds no stop.
+    await user.tab();
+    expect(document.activeElement).toBe(
+      within(rowOne()).getByRole("textbox", { name: "Edit Age" }),
+    );
+
+    await user.tab();
+    expect(document.activeElement).toBe(
+      within(rowOne()).getByRole("button", { name: "Save row" }),
+    );
+
+    await user.tab();
+    expect(document.activeElement).toBe(
+      within(rowOne()).getByRole("button", { name: "Cancel edit" }),
+    );
+
+    // Past the last control the cursor moves on to the next row's first cell.
+    // The row it left is still open - Tab walked out of it, it did not decide
+    // anything - and the row it arrived at is not opened.
+    await user.tab();
+    expect(document.activeElement).toBe(cellAt(1, 0));
+    expect(parts("save-row")).toHaveLength(1);
+    expect(queryPart("save-row", { rowId: "1" })).toBeInTheDocument();
+  });
+
+  it("row mode leaves the body backwards from the first row's first editor", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(
+      <EditGrid editing={{ mode: "row", onCommit: () => {} }} />,
+    );
+
+    await user.click(cellAt(0, 0));
+    await user.keyboard("{Enter}");
+    await user.tab({ shift: true });
+
+    // No row before this one, so the walk ends the way Tab from a cell does.
+    expect(
+      (document.activeElement as HTMLElement).closest('[data-dg-part="row"]'),
+    ).toBeNull();
   });
 
   it("places the caret in a custom editor that never asks for focus", async () => {

@@ -1,11 +1,15 @@
 /**
- * What Enter and F2 step into. Deliberately the plain list rather than a full
- * tabbable audit: a cell holds a control or it doesn't, and anything exotic
- * enough to fool this is exotic enough to handle its own keys.
+ * What Enter and F2 step into, and what the Tab walk within a row steps
+ * through. Deliberately the plain list rather than a full tabbable audit: a
+ * cell holds a control or it doesn't, and anything exotic enough to fool this
+ * is exotic enough to handle its own keys.
+ *
+ * A hidden input is excluded: Mantine's Select keeps its value in one, and it
+ * is focusable enough to swallow a Tab step meant for the next control.
  */
 export const FOCUSABLE_IN_CELL = [
   "button:not([disabled])",
-  "input:not([disabled])",
+  'input:not([disabled]):not([type="hidden"])',
   "select:not([disabled])",
   "textarea:not([disabled])",
   "a[href]",

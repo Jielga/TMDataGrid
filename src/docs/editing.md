@@ -55,7 +55,7 @@ counts as a commit and which controls trigger it.
 | Mode            | Commit                                     | Cancel            | Controls                 |
 | --------------- | ------------------------------------------ | ----------------- | ------------------------ |
 | `"cell"`        | Enter, Tab or leaving the cell             | Escape            | none                     |
-| `"cellConfirm"` | ✓ or Enter; Tab and leaving keep the draft | ✕ or Escape       | ✓ / ✕ beside the input   |
+| `"cellConfirm"` | ✓ or Enter; Tab walks input, ✓, ✕ and then leaves, keeping the draft | ✕ or Escape       | ✓ / ✕ beside the input   |
 | `"row"`         | Save in the edit lane, or Enter            | Cancel, or Escape | generated edit lane      |
 
 An entry row from `edit.addRow()` is row-shaped in every mode: every editable cell opens at once, Tab walks them, and the lane's ✓ is what enters it.

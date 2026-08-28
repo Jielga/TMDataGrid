@@ -3,7 +3,7 @@ import { useSelector } from "@tanstack/react-store";
 import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
 import classes from "./TMDataGridTable.module.css";
 import {
-  useCellControlTabIndex,
+  useBodyControlTabIndex,
   useTMDataGridContext,
 } from "../TMDataGridContext";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
@@ -69,6 +69,10 @@ function RowStateIndicator({
  * pathless `.refine()` has nowhere else to land, and a field error outlives
  * the editor that found it. A parked row never offers a save: it has had its
  * submit, and `TMDataGrid.DraftActions` is what sends it.
+ *
+ * The lane's controls take the tab index every body control does - see
+ * useBodyControlTabIndex. The open row's save and cancel are the exception,
+ * see where they are built.
  */
 function EditLaneCell<TData extends RowData>({
   row,
@@ -76,7 +80,7 @@ function EditLaneCell<TData extends RowData>({
   row: Row<TMDataGridFeatures, TData>;
 }) {
   const { edit, features, labels } = useTMDataGridContext();
-  const tabIndex = useCellControlTabIndex();
+  const tabIndex = useBodyControlTabIndex();
   const rowId = row.id;
   const isOpen = useSelector(edit.store, (state) =>
     state.openRowIds.includes(rowId),
@@ -312,12 +316,15 @@ function EditLaneCell<TData extends RowData>({
     );
   }
 
+  // An open row is a form, and its save and cancel are the form's last two
+  // fields: Tab walks into them from the last editor. The closed lane's
+  // controls stay out of the tab order like every other control in a cell.
   const save = (
     <ActionIcon
       variant="subtle"
       color={hasErrors ? "red" : "green"}
       size="sm"
-      tabIndex={tabIndex}
+      tabIndex={0}
       aria-label={labels.saveRow}
       data-dg-part="save-row"
       data-row-id={rowId}
@@ -346,7 +353,7 @@ function EditLaneCell<TData extends RowData>({
           variant="subtle"
           color="gray"
           size="sm"
-          tabIndex={tabIndex}
+          tabIndex={0}
           aria-label={labels.cancelRowEdit}
           data-dg-part="cancel-row"
           data-row-id={rowId}
