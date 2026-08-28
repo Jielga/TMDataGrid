@@ -1,5 +1,35 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.9
+
+### Minor Changes
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`b6e2876`](https://github.com/Jielga/TMDataGrid/commit/b6e287645a1f89e2cb981551e263c9939950ffea) Thanks [@Psvensso](https://github.com/Psvensso)! - The body is one tab stop in each direction, bracketed by two `tab-guard` parts.
+  A control inside a body cell needs no `tabIndex` of its own.
+
+  - Inside a row, Tab walks its controls - the open editors, the buttons in its cells and the edit lane's save and cancel - and past the last one the cursor moves to the next row's first cell.
+  - **Breaking.** `useCellControlTabIndex` is removed. Drop the `tabIndex` it fed; nothing replaces it.
+  - Pressing a control inside a cell keeps the selected block instead of collapsing it to that cell.
+  - Scrolling a focused row into view accounts for the sticky header, the pinned rows and the summary row.
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`401dde9`](https://github.com/Jielga/TMDataGrid/commit/401dde9b4a0b83953409b160d3cd6f16f288cd2b) Thanks [@Psvensso](https://github.com/Psvensso)! - New: `edit.getRowValues(rowId)` and `edit.getRows()` - rows as shown, drafts overlaid, deletion marks and entry rows flagged rather than filtered. New type `TMDataGridEditRowSnapshot`.
+
+- [#54](https://github.com/Jielga/TMDataGrid/pull/54) [`36657fd`](https://github.com/Jielga/TMDataGrid/commit/36657fd69fc95af64938fa39e5a8e52f7d222c4c) Thanks [@Psvensso](https://github.com/Psvensso)! - Under `editing.draft`, committed drafts and committed new rows are the table's
+  rows: they sort, filter, group and aggregate on their draft values, and
+  `edit.getRows()` and `editing.tableValidators` read the same collection.
+  `editing.newRowsSticky` keeps committed new rows in the entry block instead.
+
+  - Body rows publish `data-new`; a committed new row is a `row` part, no longer
+    an `entry-row`, and `data-dg-entry-flow-block` is gone.
+  - New `TMDataGridEditState.committedValues` - the draft store's values, kept
+    across a reopen so the row holds its place.
+  - Row callbacks now receive the draft as `row.original`; a new row carries its
+    temp id.
+
+### Patch Changes
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`7e472b1`](https://github.com/Jielga/TMDataGrid/commit/7e472b1b72635e416cb849364f35854047fb9db0) Thanks [@Psvensso](https://github.com/Psvensso)! - The cell focus ring no longer paints over a pinned column: a focused cell that is not pinned now scrolls under the pinned lanes, and a focused pinned cell keeps its ring above the row sliding past it.
+
 ## 2.0.0-beta.8
 
 ### Patch Changes
