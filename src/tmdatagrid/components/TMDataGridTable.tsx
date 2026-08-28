@@ -35,6 +35,11 @@ import {
 } from "./TMDataGridCellEditor";
 import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
 import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import {
+  resizePreview,
+  type TMDataGridColumnTrack,
+} from "../core/resizePreview";
+import { useSettledTableState } from "../core/useSettledTableState";
 import { draftCellContext } from "../core/draftCellContext";
 import {
   getEditFieldName,
@@ -726,9 +731,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     scrollerRef,
   } = useTMDataGridContext();
 
-  // The body depends on every state slice (sorting, filters, paging, sizing,
-  // visibility, selection), so it subscribes to the whole table store.
-  useSelector(table.store);
+  // The body depends on every settled state slice (sorting, filters, paging,
+  // sizing, visibility, selection). Not on the transient resize deltas: those
+  // publish on every pointer move and the drag paints itself, see below.
+  useSettledTableState(table.store);
   // The active row lives in the chrome store, so it needs its own subscription.
   const highlightedRowId = useSelector(ui, (state) => state.highlightedRowId);
   // As does the focused cell. Selected separately from the row above so a grid
@@ -1082,19 +1088,26 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Pinned columns are always exact: their sticky offsets come from
   // `getStart()` / `getAfter()`, which sum `getSize()` and cannot see an `fr`.
   const columnSizing = table.store.state.columnSizing;
-  const columnTracks = orderedColumns.map((column) => {
-    const isFixed = column.columnDef.minSize === column.columnDef.maxSize;
-    const isResized = column.id in columnSizing;
-    const isPinned = column.getIsPinned() !== false;
-    const minWidth = column.columnDef.minSize ?? 80;
-    if (isFixed || isResized || isPinned) {
-      return { track: `${column.getSize()}px`, minWidth: column.getSize() };
-    }
-    return {
-      track: `minmax(${minWidth}px, ${column.columnDef.meta?.flex ?? 1}fr)`,
-      minWidth,
-    };
-  });
+  const columnTracks: Array<TMDataGridColumnTrack> = orderedColumns.map(
+    (column) => {
+      const isFixed = column.columnDef.minSize === column.columnDef.maxSize;
+      const isResized = column.id in columnSizing;
+      const isPinned = column.getIsPinned() !== false;
+      const minWidth = column.columnDef.minSize ?? 80;
+      if (isFixed || isResized || isPinned) {
+        return {
+          id: column.id,
+          track: `${column.getSize()}px`,
+          minWidth: column.getSize(),
+        };
+      }
+      return {
+        id: column.id,
+        track: `minmax(${minWidth}px, ${column.columnDef.meta?.flex ?? 1}fr)`,
+        minWidth,
+      };
+    },
+  );
   const gridTemplateColumns = columnTracks.map((c) => c.track).join(" ");
   const gridMinWidth = columnTracks.reduce((sum, c) => sum + c.minWidth, 0);
 
@@ -1141,6 +1154,65 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   }
   const layoutFor = (columnId: string) =>
     columnLayout.get(columnId) ?? UNPINNED_LAYOUT;
+
+  /**
+   * A running resize drag paints itself, straight onto the grid element.
+   *
+   * Every row sits on the grid's own column tracks through `subgrid`, so the
+   * whole drag is one style write per frame. Letting the drag render instead -
+   * `columnResizeMode: "onChange"`, which publishes a width on every pointer
+   * move - costs a React pass over every mounted cell for each of those moves,
+   * and the gesture turns choppy on a grid wide enough to be worth resizing.
+   *
+   * TanStack still owns the gesture and still commits the width into
+   * `columnSizing` when the pointer is released; the render that follows lands
+   * on the same numbers the last frame painted.
+   */
+  const previewRef = useRef<{
+    tracks: Array<TMDataGridColumnTrack>;
+    leftLane: Array<string>;
+    rightLane: Array<string>;
+  }>({ tracks: columnTracks, leftLane: [], rightLane: [] });
+  useEffect(() => {
+    previewRef.current = {
+      tracks: columnTracks,
+      leftLane: leftLeafColumns.map((column) => column.id),
+      // Outermost last, the order the offsets above accumulate in.
+      rightLane: [...rightLeafColumns].reverse().map((column) => column.id),
+    };
+  });
+  useEffect(() => {
+    const element = gridElementRef.current;
+    if (!element) return;
+
+    // Painted straight from the store's publish rather than on a frame of its
+    // own: the browser already coalesces pointer moves to one per frame, and a
+    // `requestAnimationFrame` stops firing altogether while the window is
+    // occluded - which would leave the drag frozen under the pointer.
+    let painted = "";
+    const subscription = table.store.subscribe((state) => {
+      const preview = resizePreview({
+        progress: state.columnResizing,
+        boundsOf: (columnId) => table.getColumn(columnId)?.columnDef ?? {},
+        ...previewRef.current,
+      });
+      if (!preview || preview.gridTemplateColumns === painted) return;
+      painted = preview.gridTemplateColumns;
+      element.style.gridTemplateColumns = preview.gridTemplateColumns;
+      element.style.minWidth = `${preview.minWidth}px`;
+      // Only the pinned lanes, and only while the drag is resizing one of
+      // them: their sticky offsets are the one measurement that does not
+      // follow from the track list alone.
+      for (const { columnId, side, offset } of preview.offsets) {
+        for (const cell of element.querySelectorAll<HTMLElement>(
+          `[data-column-id="${CSS.escape(columnId)}"]`,
+        )) {
+          cell.style[side] = `${offset}px`;
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [table]);
 
   // Pinned rows count as content: with every visible row pinned to an edge,
   // an empty-state message beside them would contradict what is on screen.

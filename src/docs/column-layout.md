@@ -118,7 +118,11 @@ Columns are fluid by default. Each track is `minmax(minSize, flex fr)`.
 | `size` | Applied once the column becomes fixed by resizing or pinning. |
 
 Drag a divider to resize. A column switches to a fixed pixel width the moment
-it is resized or pinned, and the width is stored in `columnSizing`.
+it is resized or pinned, and the width is stored in `columnSizing`. The drag
+starts from the width the column is rendered with, and the grid paints it on
+its own column tracks while the pointer moves; the width reaches `columnSizing`
+when the pointer is released. `columnResizeMode: "onChange"` publishes it on
+every move instead, at the cost of a render of the grid for each one.
 
 ### Autosizing
 

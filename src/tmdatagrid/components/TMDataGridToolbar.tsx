@@ -5,6 +5,7 @@ import classes from "./TMDataGridToolbar.module.css";
 import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";
+import { useSettledTableState } from "../core/useSettledTableState";
 import { isFilterActive } from "../core/filterOperators";
 import { BurgerIcon, FilterIcon } from "./icons";
 import { openColumnFilter } from "../useTMDataGrid";
@@ -52,7 +53,7 @@ export function TMDataGridLoadingIndicator() {
  */
 export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
   const { table, controlSize } = useTMDataGridContext();
-  useSelector(table.store);
+  useSettledTableState(table.store);
 
   const shown = table.getRowCount();
   const total =

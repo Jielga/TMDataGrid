@@ -49,7 +49,7 @@ rather than forwarded to TanStack.
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Cell selection](/docs/cell-selection). |
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
-| `columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | Resize update strategy. |
+| `columnResizeMode` | `"onChange" \| "onEnd"` | `"onEnd"` | When a resize drag writes `columnSizing`. The grid paints a running drag itself either way; `"onChange"` also publishes a width on every pointer move, which re-renders the grid with each of them. |
 | `initialState` | `Partial<TableState>` | – | Starting state, read once on mount. Merged over the [grid defaults](#default-initial-state). |
 | `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange`. See [Controlled state](#controlled-state). |
 | `atoms` | `Partial<Record<slice, Atom>>` | – | External atoms owning state slices. No callback required. Takes precedence over `state`. |

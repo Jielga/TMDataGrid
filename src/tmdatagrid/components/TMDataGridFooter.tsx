@@ -1,10 +1,10 @@
 import { ActionIcon, Group, Select, Text, Tooltip } from "@mantine/core";
 import type { RowData } from "@tanstack/react-table";
-import { useSelector } from "@tanstack/react-store";
 import { useMemo, type ReactNode } from "react";
 import classes from "./TMDataGridFooter.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";
+import { useSettledTableState } from "../core/useSettledTableState";
 import { isPagingActive } from "../core/rowSelection";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import type { TMDataGridTable } from "../useTMDataGrid";
@@ -122,7 +122,7 @@ function PaginationPageSize({
   pageSizeOptions: ReadonlyArray<number>;
 }) {
   const { table, features, labels, controlSize } = useTMDataGridContext();
-  useSelector(table.store);
+  useSettledTableState(table.store);
   const paging = isPagingActive(table, features);
   const { pageSize } = table.store.state.pagination;
   // A page size restored from storage, or set through `initialState`, need not
@@ -163,7 +163,7 @@ function PaginationPageSize({
 
 function PaginationRange() {
   const { table, features, labels, controlSize } = useTMDataGridContext();
-  useSelector(table.store);
+  useSettledTableState(table.store);
   const paging = isPagingActive(table, features);
   const { pageIndex, pageSize } = table.store.state.pagination;
   const total = table.getRowCount();
@@ -184,7 +184,7 @@ function PaginationRange() {
 
 function PaginationPager() {
   const { table, features, labels } = useTMDataGridContext();
-  useSelector(table.store);
+  useSettledTableState(table.store);
   const paging = isPagingActive(table, features);
 
   return (
@@ -250,7 +250,7 @@ export function TMDataGridFooter({
   renderPagination,
 }: TMDataGridFooterProps) {
   const { table, features, labels } = useTMDataGridContext();
-  useSelector(table.store);
+  useSettledTableState(table.store);
 
   // Bound once per option list rather than per render, so the controls keep
   // their identity and the elements they render keep theirs.

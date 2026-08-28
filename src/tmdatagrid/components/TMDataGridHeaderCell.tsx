@@ -133,6 +133,9 @@ export function TMDataGridHeaderCell({
     (filter) => filter.id === column.id && isFilterActive(filter.value),
   );
   const isResizing = resizingColumnId === column.id;
+  // Any column, not just this one: a resize elsewhere must not leave a
+  // neighbouring header ready to start a native drag under the pointer.
+  const isAnyResizing = resizingColumnId !== false;
   const pinnedAt = layout.pinnedAt;
 
   // Every affordance below mirrors a TanStack capability check, so switching a
@@ -223,21 +226,50 @@ export function TMDataGridHeaderCell({
   }
 
   /**
+   * Writes the width this header's columns are rendered with into
+   * `columnSizing`, for the ones that have no width there yet.
+   *
+   * An unresized column is a fluid (`fr`) track: it renders at whatever share
+   * of the grid it is given, while `column.getSize()` keeps reporting the
+   * declared `size`. Anything that switches a column to exact pixels has to
+   * close that gap first, or the column jumps from the width on screen to the
+   * declared one.
+   *
+   * Under a held pointer that jump is more than cosmetic: it slides the
+   * divider out from under the cursor onto the neighbouring header, where the
+   * browser starts a native column-move drag instead. That drag swallows the
+   * `mouseup` the resize listens for, so the resize keeps running after the
+   * button is released.
+   */
+  function freezeRenderedWidths() {
+    const container = cellRef.current?.closest<HTMLElement>(
+      "[data-dg-scroll-container]",
+    );
+    if (!container) return;
+    const sizing = table.store.state.columnSizing;
+    const frozen: Record<string, number> = {};
+    for (const leaf of header.getLeafHeaders()) {
+      const id = leaf.column.id;
+      if (id in sizing) continue;
+      const width = container
+        .querySelector<HTMLElement>(
+          `[role="columnheader"][data-column-id="${CSS.escape(id)}"]`,
+        )
+        ?.getBoundingClientRect().width;
+      if (width) frozen[id] = Math.round(width);
+    }
+    if (Object.keys(frozen).length === 0) return;
+    table.setColumnSizing((previous) => ({ ...previous, ...frozen }));
+  }
+
+  /**
    * Pinned columns are positioned with `getStart()` / `getAfter()`, which sum
    * `column.getSize()`. Fluid (`fr`) columns don't report their rendered width
    * there, so freeze the measured width into `columnSizing` as we pin - that
    * keeps the column looking the same and keeps the offsets exact.
    */
   function setPinned(position: "left" | "right" | false) {
-    if (position && !(column.id in table.store.state.columnSizing)) {
-      const width = cellRef.current?.getBoundingClientRect().width;
-      if (width) {
-        table.setColumnSizing((prev) => ({
-          ...prev,
-          [column.id]: Math.round(width),
-        }));
-      }
-    }
+    if (position) freezeRenderedWidths();
     column.pin(position);
     // `pin("right")` appends, which would leave the column outside the edit
     // lane. Normalising after the pin rather than writing the lane by hand
@@ -514,10 +546,12 @@ export function TMDataGridHeaderCell({
           : undefined
       }
       className={cellClass}
-      // Dropped while a resize is running, so that dragging the separator
-      // resizes the column instead of starting to move it. The resize handler
-      // records the column on mousedown, before the first pointer move.
-      draggable={canReorder && !isResizing}
+      // Dropped while any column is resizing, so that dragging the separator
+      // resizes the column instead of starting to move it - and so that a
+      // header the divider passes under cannot start a move of its own. The
+      // resize handler records the column on mousedown, before the first
+      // pointer move.
+      draggable={canReorder && !isAnyResizing}
       onDragStart={canReorder ? handleDragStart : undefined}
       onDragEnd={canReorder ? handleDragEnd : undefined}
       onDragOver={isDropTarget ? handleDragOver : undefined}
@@ -671,15 +705,26 @@ export function TMDataGridHeaderCell({
           // Keeps a drag that starts on the separator from being picked up by
           // the draggable header around it.
           draggable={false}
+          // The drag starts from `column.getSize()`, so the rendered width has
+          // to be in `columnSizing` before the handler reads it - otherwise
+          // the first pointer move snaps a fluid column to its declared size.
           onMouseDown={
             canResize
               ? (event) => {
                   suppressSortRef.current = true;
+                  freezeRenderedWidths();
                   header.getResizeHandler()(event);
                 }
               : undefined
           }
-          onTouchStart={canResize ? header.getResizeHandler() : undefined}
+          onTouchStart={
+            canResize
+              ? (event) => {
+                  freezeRenderedWidths();
+                  header.getResizeHandler()(event);
+                }
+              : undefined
+          }
           onClick={(event) => event.stopPropagation()}
           // The spreadsheet gesture: double-click the divider, the column
           // fits its content. Same measurement as the menu item.

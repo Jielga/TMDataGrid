@@ -1137,8 +1137,44 @@ export function useTMDataGrid<TData extends RowData>({
   republishControlledStateRef.current = false;
   controlledStateRef.current = controlledState;
 
+  /**
+   * What the hook's own subscription watches.
+   *
+   * `useTable` re-renders whoever called it whenever a state slice changes
+   * identity, and `columnResizing` publishes a new delta on every pointer move
+   * of a resize drag - so without this the consumer's component, and the whole
+   * grid under it, would re-render for each of those moves. The slice is
+   * pinned to the identity it had when the drag started: a drag starting and a
+   * drag ending still publish, the deltas in between do not.
+   *
+   * The live deltas stay on `table.store.state`, which is where the grid reads
+   * them - see the resize preview in TMDataGridTable.
+   */
+  const pinnedResizingRef = useRef<
+    TableState<TMDataGridFeatures>["columnResizing"] | null
+  >(null);
+  const selectSettledState = useCallback(
+    (state: TableState<TMDataGridFeatures>) => {
+      const resizing = state.columnResizing;
+      const pinned = pinnedResizingRef.current;
+      if (
+        pinned === null ||
+        pinned.isResizingColumn !== resizing.isResizingColumn
+      ) {
+        pinnedResizingRef.current = resizing;
+        return state;
+      }
+      return { ...state, columnResizing: pinned };
+    },
+    [],
+  );
+
   const table = useTable({
-    columnResizeMode: "onChange",
+    // The grid paints a running drag itself, one style write per frame - see
+    // the resize preview in TMDataGridTable - and takes the width into state
+    // once, when the pointer is released. `"onChange"` publishes a width on
+    // every pointer move instead, which re-renders the grid for each of them.
+    columnResizeMode: "onEnd",
     enableSorting: true,
     enableColumnResizing: true,
     // The quick search's matcher. Fuzzy by default (Q4); `"contains"` keeps
@@ -1229,7 +1265,7 @@ export function useTMDataGrid<TData extends RowData>({
         ...persistedState.pagination,
       },
     },
-  });
+  }, selectSettledState);
 
   // The edit engine. Built once per mount; everything it needs later - the
   // table, the mode, the consumer's callbacks - is read through a ref updated
@@ -1393,10 +1429,11 @@ export function useTMDataGrid<TData extends RowData>({
   // from an effect on a state snapshot) means nothing is missed, including
   // changes made straight through the table API by the consumer.
   //
-  // Writes are debounced because `columnResizeMode: "onChange"` publishes a new
-  // state on every pointer move of a resize drag, and `setItem` serialises
-  // synchronously on the main thread. The trailing edge is enough: storage only
-  // has to agree with the table once the user stops.
+  // Writes are debounced because a state change can arrive on every pointer
+  // move - a resize drag under `columnResizeMode: "onChange"`, a range
+  // selection - and `setItem` serialises synchronously on the main thread. The
+  // trailing edge is enough: storage only has to agree with the table once the
+  // user stops.
   useEffect(() => {
     if (!hasPersistenceKeys(persist)) return;
     writePersistedState(table.store.state, persist);
