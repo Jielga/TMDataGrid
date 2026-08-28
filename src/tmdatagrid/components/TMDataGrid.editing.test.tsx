@@ -850,6 +850,41 @@ describe("cell editing", () => {
     expect(entryRow.closest("[data-dg-entry-block]")).toBeNull();
   });
 
+  it("reopens a committed entry row only from a cell that takes an edit", async () => {
+    const user = userEvent.setup();
+    const helper = createTMDataGridColumnHelper<Employee>();
+    const columns = helper.columns([
+      helper.accessor("name", { header: "Name" }),
+      helper.accessor((row) => row.age * 2, {
+        id: "doubleAge",
+        header: "Double age",
+        meta: { edit: { enabled: false } },
+      }),
+    ]);
+    renderWithMantine(
+      <DraftGrid columns={columns} newRowDefaults={entryDefaults} />,
+    );
+
+    await typeIntoEntryRow(user, "Ny Person");
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+    const entryRow = () => part("entry-row", { rowId: "__new__1" });
+    expect(entryRow()).toHaveAttribute("data-committed", "true");
+
+    // The computed column takes no edit, so its cell answers nothing - the
+    // same as a body cell of that column.
+    await user.dblClick(
+      entryRow().querySelector('[data-column-id="doubleAge"]')!,
+    );
+    expect(entryRow()).toHaveAttribute("data-committed", "true");
+    expect(within(entryRow()).queryByRole("textbox")).not.toBeInTheDocument();
+
+    // The editable one reopens the row.
+    await user.dblClick(entryRow().querySelector('[data-column-id="name"]')!);
+    expect(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+    ).toBeInTheDocument();
+  });
+
   it("confirms an entry row on Enter inside its editor", async () => {
     const user = userEvent.setup();
     const adds: unknown[] = [];

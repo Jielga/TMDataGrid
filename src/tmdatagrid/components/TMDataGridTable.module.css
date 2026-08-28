@@ -422,16 +422,16 @@
   justify-content: center;
 }
 
-/* A confirmed entry row - entered, awaiting Save all. It reads as a value
+/* A committed entry row - entered, awaiting Save all. It reads as a value
    row: text padding, the body's border weight, and the "new" tint instead of
    the editing underline. */
-.entryRow[data-confirmed="true"] .entryCell {
+.entryRow[data-committed="true"] .entryCell {
   padding: 0 var(--dg-padding);
   border-bottom: 1px solid var(--mantine-color-default-border);
   background-color: var(--dg-row-new-bg, var(--mantine-color-body));
 }
 
-.entryRow[data-confirmed="true"] .entryCell[data-control-column="true"] {
+.entryRow[data-committed="true"] .entryCell[data-control-column="true"] {
   padding: 0;
 }
 

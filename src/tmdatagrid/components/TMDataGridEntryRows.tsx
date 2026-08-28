@@ -210,13 +210,14 @@ export function TMDataGridEntryRows({
               data-align={getColumnAlign(column)}
               data-control-column={isControlColumn(column.id)}
               // A committed row re-opens where it is double-clicked, the
-              // same gesture a body cell answers.
+              // same gesture a body cell answers - and, like a body cell, a
+              // cell that takes no edit answers nothing.
               onDoubleClick={
-                committed && !isControlColumn(column.id)
+                committed && editable
                   ? () =>
                       edit.begin({
                         rowId: entryRow.id,
-                        columnId: editable ? column.id : null,
+                        columnId: column.id,
                       })
                   : undefined
               }
