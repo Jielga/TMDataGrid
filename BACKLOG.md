@@ -182,7 +182,7 @@ changeset. Fixed along the way: Restore on a deletion-marked row was
 unclickable in real browsers.
 
 **Versioned documentation** - **done 2026-08-21**, corrected the same day.
-The docs site publishes several complete builds under one Pages root, held on a `gh-pages` branch: the newest release at the root, the tip of main at `next/`, one directory per minor line at `v1.1/`, and previews at `b/<branch>/` while a pull request carries the `docs-preview` label.
+The docs site publishes several complete builds under one Pages root, held on a `gh-pages` branch: the newest release at the root, the tip of main at `next/`, one directory per minor line at `v1.1/`, and a branch published by hand at `b/<name>/`.
 The header's version badge became the menu that moves between them, carrying the page you are on across.
 What a run publishes is decided against the branch's own state rather than against git history, so a run is idempotent and a missed line is picked up by the next push.
 Copies built before the menu existed get a standalone one injected, which is what keeps an older release reachable when that is what the root serves.
@@ -191,7 +191,14 @@ The first deploy left the site's entry point answering 404.
 Mirroring to the root required a stable release, the 2.0 prerelease wave produces none, and the manual seeding run meant to cover the gap was never made, so `next/` and `v2.0/` were the only copies and nothing served the root.
 An empty root now takes whatever a run is publishing, the decision moved into `scripts/docs-plan.mjs` as a pure function with tests, and the two deploy scripts share one prerelease-aware comparison so a stable release can take the root from the prerelease it led up to.
 
-Two steps are left, both wanting repository access rather than a commit: `v1.0` and `v1.1` have never been published and want a `workflow_dispatch` each, and pull request previews cannot deploy until the `github-pages` environment allows branches other than `main`.
+The back lines were seeded by hand afterwards: `v1.0`, `v1.1`, `v2.0` and `next` are all live, and `v1.1` serves the root.
+
+**Docs previews on pull requests** - **dropped 2026-08-28.**
+The deploy ran on `pull_request` to publish a labelled branch at `b/<branch>/` and to take the copy down again when the label or the pull request went away.
+It never once worked, and it turned every merge into a red run: a `pull_request` run's ref is `refs/pull/<n>/merge`, which is not a branch, so it matches no deployment branch policy on the `github-pages` environment - not the `main` entry and not the `*` entry either.
+The job was rejected at the environment gate before its first step, so the teardown path failed even when its plan was empty.
+Relaxing the environment was the earlier reading of this and is not a fix; the constraint is that a pull request ref cannot deploy to Pages under the artifact flow at all.
+The trigger is gone, and a branch is published with a `workflow_dispatch` into a `b/<name>` slug instead.
 
 **Editing options namespace (2.0)** - **done 2026-08-22**, breaking. The flat
 editing options of `useTMDataGrid` moved under one `editing` object:

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { planDispatch, planPullRequest, planPush } from "./docs-plan.mjs";
+import { planDispatch, planPush } from "./docs-plan.mjs";
 
 /**
  * The deploy planner, which decides what a run publishes and - the part that
@@ -109,30 +109,6 @@ describe("planPush", () => {
     const moved = { ...seeded, version: "2.0.0-beta.1" };
     expect(planPush(moved).targets[1].ref).toBe("v2.0.0-beta.1");
     expect(planPush({ ...moved, hasTag: false }).targets[1].ref).toBe("");
-  });
-});
-
-describe("planPullRequest", () => {
-  const pull = { branch: "feat/thing", version: "2.0.0-beta.0", labelled: true, closed: false, hasCopy: false };
-
-  test("publishes a labelled branch under a slug of its name", () => {
-    const plan = planPullRequest(pull);
-    expect(plan.targets).toEqual([
-      { slug: "b/feat-thing", ref: "", version: "2.0.0-beta.0", label: "feat/thing", kind: "preview", mirrorRoot: false },
-    ]);
-  });
-
-  test("takes the preview down when the branch stops carrying the label", () => {
-    expect(planPullRequest({ ...pull, labelled: false, hasCopy: true }).remove).toEqual(["b/feat-thing"]);
-  });
-
-  test("takes the preview down when the pull request closes", () => {
-    expect(planPullRequest({ ...pull, closed: true, hasCopy: true }).remove).toEqual(["b/feat-thing"]);
-  });
-
-  test("does nothing for a pull request that never had a preview", () => {
-    const plan = planPullRequest({ ...pull, labelled: false, hasCopy: false });
-    expect(plan).toEqual({ targets: [], remove: [] });
   });
 });
 

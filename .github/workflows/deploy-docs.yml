@@ -5,7 +5,7 @@ name: Deploy docs
 #   /TMDataGrid/              the newest release, or the newest line there is
 #   /TMDataGrid/next/         the tip of main
 #   /TMDataGrid/v2.0/         one directory per minor line
-#   /TMDataGrid/b/<branch>/   previews, while a pull request is labelled
+#   /TMDataGrid/b/<branch>/   a build published by hand from a branch
 #   /TMDataGrid/versions.json the manifest the header's version menu reads
 #
 # The gh-pages branch is the store: a run writes its directories there and then
@@ -18,11 +18,16 @@ name: Deploy docs
 # Changesets creates tags with GITHUB_TOKEN and events raised by that token do
 # not start workflow runs. See scripts/docs-plan.mjs for the rules.
 
+# Only a push to main, and a build asked for by hand. Not `pull_request`: such
+# a run's ref is `refs/pull/<n>/merge`, which is not a branch and so matches no
+# deployment branch policy on the `github-pages` environment - not even a `*`
+# entry. The job is rejected at the environment gate before its first step,
+# whatever it was going to publish, so a pull request cannot deploy to Pages
+# under this flow at all. A branch is previewed with a `workflow_dispatch` into
+# a `b/<name>` slug instead.
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
   workflow_dispatch:
     inputs:
       ref:
@@ -41,7 +46,6 @@ permissions:
   contents: write # commit the built site to gh-pages
   pages: write
   id-token: write
-  pull-requests: write # the preview link comment
 
 # Every run writes the same branch and deploys the same site, so they queue
 # rather than overlap. Not cancel-in-progress: a run stopped between the push
@@ -52,13 +56,6 @@ concurrency:
 
 jobs:
   deploy:
-    # Previews are opt in, and a fork's pull request has no token to push with.
-    if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       (contains(github.event.pull_request.labels.*.name, 'docs-preview') ||
-        github.event.action == 'unlabeled' ||
-        github.event.action == 'closed'))
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -234,38 +231,3 @@ jobs:
       - id: deployment
         if: steps.plan.outputs.work == 'true'
         uses: actions/deploy-pages@v4
-
-      - name: Link the preview from the pull request
-        if: >-
-          steps.plan.outputs.work == 'true' &&
-          github.event_name == 'pull_request' &&
-          github.event.action != 'closed'
-        uses: actions/github-script@v7
-        env:
-          PLAN: ${{ steps.plan.outputs.plan }}
-        with:
-          script: |
-            const plan = JSON.parse(process.env.PLAN);
-            const preview = plan.targets.find((t) => t.kind === "preview");
-            if (!preview) return;
-
-            const marker = "<!-- docs-preview -->";
-            const url = `${{ steps.deployment.outputs.page_url }}${preview.slug}/`;
-            const body = `${marker}\nDocs preview for this branch: ${url}`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              ...context.repo,
-              issue_number: context.issue.number,
-            });
-            const mine = comments.find((c) => c.body?.startsWith(marker));
-
-            // One comment kept current, rather than one per push.
-            if (mine) {
-              await github.rest.issues.updateComment({
-                ...context.repo, comment_id: mine.id, body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                ...context.repo, issue_number: context.issue.number, body,
-              });
-            }

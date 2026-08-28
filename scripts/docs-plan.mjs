@@ -10,15 +10,9 @@ import { compareVersions, isPrerelease, lineOf } from "./semver.mjs";
 
 export { lineOf };
 
-export const PREVIEW_LABEL = "docs-preview";
-
-/** A branch name as a single path segment. */
-export function previewSlug(branch) {
-  return `b/${branch.replaceAll(/[^A-Za-z0-9._-]+/g, "-")}`;
-}
-
 function kindOf(slug, version) {
   if (slug === "next") return "dev";
+  // A `b/<name>` build is only ever asked for by hand; see planDispatch.
   if (slug.startsWith("b/")) return "preview";
   return isPrerelease(version) ? "prerelease" : "stable";
 }
@@ -34,34 +28,6 @@ export function planDispatch({ slug, ref, version, mirrorRoot }) {
         label: slug === "next" ? "next" : (version ?? slug),
         kind: kindOf(slug, version),
         mirrorRoot: mirrorRoot === true,
-      },
-    ],
-    remove: [],
-  };
-}
-
-/**
- * A pull request preview, published while the branch carries the label and
- * taken down when it stops - closed, merged, or the label removed.
- */
-export function planPullRequest({ branch, labelled, closed, version, hasCopy }) {
-  const slug = previewSlug(branch);
-
-  if (closed || !labelled) {
-    // Only when there is something to take down. A pull request that never had
-    // the label closing is not a reason to republish the site.
-    return { targets: [], remove: hasCopy ? [slug] : [] };
-  }
-
-  return {
-    targets: [
-      {
-        slug,
-        ref: "",
-        version,
-        label: branch,
-        kind: "preview",
-        mirrorRoot: false,
       },
     ],
     remove: [],
