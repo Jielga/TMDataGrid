@@ -466,6 +466,8 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true` |
 | `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
 | `edit.getForm(rowId)` | The row's live `FormApi` |
+| `edit.getRowValues(rowId)` | The row as shown: its draft where one is held, else the `data` value. `undefined` for an unknown row |
+| `edit.getRows()` | Every row as shown - drafts overlaid, entry rows appended, deletion-marked rows included and flagged `deleted` |
 | `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, entry rows, deletion marks |
 
 `commit`, `commitAll`, `saveDrafts`, `setCellValue`, `setRowValues`,
@@ -474,6 +476,17 @@ next when driving edits in a loop.
 
 `getForm` returns the row's own `FormApi`. Render it in a drawer or side panel
 and it shares values, dirty state and errors with the inline cells.
+
+`getRowValues` and `getRows` read what the grid shows rather than what `data` holds: an open form's values, a parked draft, or the `data` value when neither exists.
+`getRows` walks the core row model, so it is unfiltered and never contains group rows, and it filters nothing out - a row marked deleted comes back flagged `deleted`, an entry row flagged `isNew` under its temp id.
+
+```tsx
+const selected = grid.table
+  .getSelectedRowModel()
+  .rows.flatMap((row) => grid.edit.getRowValues(row.id) ?? []);
+
+const surviving = grid.edit.getRows().filter((row) => !row.deleted);
+```
 
 For the inverse, a `@tanstack/react-form` form _around_ the grid holding the row
 array, see [A query builder inside a form](/docs/query-builder).

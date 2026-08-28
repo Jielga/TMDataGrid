@@ -93,6 +93,7 @@ export {
   type TMDataGridEditorArgs,
   type TMDataGridEditorComponent,
   type TMDataGridEditRowProjection,
+  type TMDataGridEditRowSnapshot,
   type TMDataGridEditState,
   type TMDataGridEditValueMap,
   type TMDataGridEditValueMapArgs,
