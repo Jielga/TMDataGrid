@@ -125,15 +125,20 @@ jobs:
           case "$VERSION" in *-*) set -- "$@" --prerelease ;; esac
           "$@"
 
-      # `publish` is kept, and is a no-op: the step above has already published
-      # anything missing, so `changeset publish` finds nothing and skips
-      # `prepublishOnly` with it. Dropping the input would change the version
-      # pull request's body to say the packages must be published by hand,
-      # which is not true of this repository.
+      # `publish` is set but does not publish. The step above has already
+      # published anything missing, and the input has to be non-empty or the
+      # version pull request's body says the packages must be published by
+      # hand, which is not true of this repository.
+      #
+      # It cannot be `npm run release`: `changeset publish` asks the registry
+      # whether the version exists, and seconds after the publish above the
+      # registry can still say no, so it published again and npm refused the
+      # duplicate with a 409. 2.0.0-beta.8 failed that way, with the release
+      # already on the registry.
       - uses: changesets/action@v1.9.0
         with:
           version: npm run version-packages
-          publish: npm run release
+          publish: echo published by the step above
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
