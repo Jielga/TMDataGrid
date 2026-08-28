@@ -1,5 +1,5 @@
 import { MantineProvider } from "@mantine/core";
-import { render, renderHook, screen, within } from "@testing-library/react";
+import { act, render, renderHook, screen, within } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import {
@@ -243,6 +243,33 @@ export const selectedCells = () =>
   Array.from(
     document.querySelectorAll<HTMLElement>('[data-cell][data-selected="true"]'),
   ).map((cell) => `${cell.dataset.rowId}:${cell.dataset.columnId}`);
+
+/**
+ * How many times the body asked its scroll container to move.
+ *
+ * The offset it asks for is TanStack Virtual's to compute, and jsdom cannot
+ * check it: nothing is laid out, the ResizeObserver is a stub, and the
+ * virtualizer measures everything as zero. What is testable here is the part
+ * this grid owns - whether a row resolves to a scroll at all. That the rows
+ * then mount is a browser-level concern; see the Testing docs page.
+ */
+export function countScrolls(run: () => void): number {
+  const container = document.querySelector<HTMLElement>(
+    "[data-dg-scroll-container]",
+  );
+  if (container === null) throw new Error("no scroll container");
+  const original = container.scrollTo;
+  let calls = 0;
+  container.scrollTo = (() => {
+    calls += 1;
+  }) as typeof container.scrollTo;
+  try {
+    act(run);
+  } finally {
+    container.scrollTo = original;
+  }
+  return calls;
+}
 
 type UserEvent = ReturnType<typeof userEvent.setup>;
 

@@ -10,7 +10,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.5'
+  library_version: '2.0.0-beta.7'
 sources:
   - 'Jielga/TMDataGrid:src/docs/server-side.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'

@@ -185,18 +185,25 @@ It renders nothing unless `editing` is set. See [Editing](/docs/editing).
 | --- | --- | --- | --- |
 | `renderActions` | `(args: TMDataGridDraftActionsSlotArgs) => ReactNode` | – | Replaces both buttons. Receives `{ state, actions, Controls }`. |
 
-The slot argument carries the state, the two operations and the built-in buttons:
+The slot argument carries the state, the operations and the built-in pieces:
 
 | Field | Type | What it is |
 | --- | --- | --- |
-| `state.draftCount` | `number` | Rows parked in the draft store - what Save sends. |
-| `state.openCount` | `number` | Rows still open, not part of a save. |
-| `state.pendingCount` | `number` | **Deprecated** - reads as `draftCount + openCount`. |
-| `state.isSubmitting` | `boolean` | `true` while a submit is in flight. |
-| `actions.save` | `() => Promise<boolean>` | Saves the draft store. Open rows are left alone. |
-| `actions.commitAll` | `() => Promise<boolean>` | Submits every open row. Resolves `false` when one stayed open. |
-| `actions.discard` | `() => void` | Drops everything - open form state and the draft store alike. |
+| `state.draftCount` | `number` | Rows in the draft store: committed edits, committed entry rows and deletion marks. This is what Save sends. |
+| `state.openCount` | `number` | Rows still open, so not part of the save. |
+| `state.openRowIds` | `ReadonlyArray<string>` | The ids behind `openCount`, in the order the grid opened them. An entered row appears as its `tempId`. |
+| `state.pendingCount` | `number` | **Deprecated.** Reads as `draftCount + openCount`. |
+| `state.isSubmitting` | `boolean` | `true` while any open row is submitting. |
+| `actions.save` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone. |
+| `actions.commitAll` | `() => Promise<boolean>` | Submits every open row, committing the ones that validate. |
+| `actions.discard` | `() => void` | Drops open form state and the draft store alike. |
+| `actions.scrollToRow` | `({ rowId, align? }) => boolean` | [`scrollToRow`](/docs/scrolling#scrolling-to-a-row), passed through. |
+| `actions.scrollToFirstOpenRow` | `(align?) => boolean` | Scrolls to the first open row in display order. `false` when none could be reached. |
 | `Controls.Save` · `Controls.Discard` · `Controls.OpenRowsNote` | `() => ReactNode` | The built-in pieces, to place in your own layout. |
+
+The two orderings differ: `openRowIds` is the order the grid opened the rows,
+while `scrollToFirstOpenRow` takes "first" in display order, so it follows the
+current sort, filter and page. `openRowIds[0]` need not be the row it reaches.
 
 ## TMDataGrid.Footer
 

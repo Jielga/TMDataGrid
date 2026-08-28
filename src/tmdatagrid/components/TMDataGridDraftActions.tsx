@@ -1,7 +1,14 @@
 import { Button, Group, Text } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
 import type { ReactNode } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
+import { getOpenRowIds } from "../core/editEngine";
+import { getDisplayedRows } from "../core/rowSelection";
+import type {
+  TMDataGridScrollAlign,
+  TMDataGridScrollToRowArgs,
+} from "../useTMDataGrid";
 
 /**
  * How many rows the draft store holds - parked edits, parked entry rows and
@@ -26,19 +33,17 @@ function useDraftCount(): number {
  */
 function useOpenCount(): number {
   const { edit } = useTMDataGridContext();
-  return useSelector(
-    edit.store,
-    (state) =>
-      state.openRowIds.filter(
-        (rowId) =>
-          !state.committedRowIds.includes(rowId) &&
-          !state.newRows.some(
-            (newRow) => newRow.tempId === rowId && newRow.committed,
-          ) &&
-          (state.newRows.some((newRow) => newRow.tempId === rowId) ||
-            (state.rows[rowId]?.dirtyFields.length ?? 0) > 0),
-      ).length,
-  );
+  return useSelector(edit.store, (state) => getOpenRowIds(state).length);
+}
+
+/**
+ * The ids behind {@link useOpenCount}. Shallow-compared: the array would
+ * otherwise be a new one on every edit-store publish, and it is handed to
+ * `renderActions`, where it may well end up in a dependency array.
+ */
+function useOpenRowIds(): ReadonlyArray<string> {
+  const { edit } = useTMDataGridContext();
+  return useSelector(edit.store, getOpenRowIds, { compare: shallow });
 }
 
 /*
@@ -124,6 +129,17 @@ export type TMDataGridDraftActionsState = {
    */
   openCount: number;
   /**
+   * The ids behind {@link openCount}, in the order the grid opened them - a
+   * sort, a filter or a page never moves this list. An entered row appears as
+   * its `tempId`.
+   *
+   * Narrower than `edit.state.openRowIds`, which is every row holding a form,
+   * the parked ones included. And note the ordering:
+   * {@link TMDataGridDraftActionsActions.scrollToFirstOpenRow} takes "first"
+   * in display order, so it need not be `openRowIds[0]`.
+   */
+  openRowIds: ReadonlyArray<string>;
+  /**
    * @deprecated Was "everything uncommitted", which Save no longer sends.
    * Reads as `draftCount + openCount`; use whichever you meant.
    */
@@ -140,6 +156,26 @@ export type TMDataGridDraftActionsActions = {
   commitAll: () => Promise<boolean>;
   /** Drops everything - open form state and the draft store alike. */
   discard: () => void;
+  /**
+   * `grid.scrollToRow`, so a control in here can take the user to a row
+   * without the grid being threaded down to it.
+   */
+  scrollToRow: (args: TMDataGridScrollToRowArgs) => boolean;
+  /**
+   * Scrolls to the first row still open, taking "first" in display order: the
+   * topmost open row under the current sort, filter and page. That need not
+   * be {@link TMDataGridDraftActionsState.openRowIds}`[0]`, which is the
+   * order the grid opened them in.
+   *
+   * Answers whether an open row could be reached. `false` when nothing is
+   * open, and when every open row is filtered out, on another page or
+   * collapsed inside a group. An open entry row answers `true` without
+   * scrolling - it is sticky under the header, so it is on screen already -
+   * and so does an open row pinned to an edge. The scroll goes through
+   * `scrollToRow`, so before `TMDataGrid.Table` has mounted there is nothing
+   * to scroll and the answer is `false`.
+   */
+  scrollToFirstOpenRow: (align?: TMDataGridScrollAlign) => boolean;
 };
 
 /** The pre-bound pieces of the built-in edit chrome. */
@@ -200,9 +236,9 @@ export type TMDataGridDraftActionsProps = {
 export function TMDataGridDraftActions({
   renderActions,
 }: TMDataGridDraftActionsProps = {}) {
-  const { edit, features } = useTMDataGridContext();
+  const { edit, features, table, scrollToRow } = useTMDataGridContext();
   const draftCount = useDraftCount();
-  const openCount = useOpenCount();
+  const openRowIds = useOpenRowIds();
   const isSubmitting = useSelector(edit.store, (state) =>
     state.openRowIds.some((rowId) => state.rows[rowId]?.isSubmitting === true),
   );
@@ -213,14 +249,38 @@ export function TMDataGridDraftActions({
     return renderActions({
       state: {
         draftCount,
-        openCount,
-        pendingCount: draftCount + openCount,
+        openCount: openRowIds.length,
+        openRowIds,
+        pendingCount: draftCount + openRowIds.length,
         isSubmitting,
       },
       actions: {
         save: () => edit.saveDrafts(),
         commitAll: () => edit.commitAll(),
         discard: () => edit.cancelAll(),
+        scrollToRow,
+        scrollToFirstOpenRow: (align) => {
+          // Read through the store rather than closing over this render's
+          // arrays: display order is only decided here, at the click.
+          const state = edit.state;
+          const openIds = getOpenRowIds(state);
+          if (openIds.length === 0) return false;
+          const open = new Set(openIds);
+          const first = getDisplayedRows(table, features).find((row) =>
+            open.has(row.id),
+          );
+          if (first !== undefined) {
+            return scrollToRow({ rowId: first.id, align });
+          }
+          // Nothing left in the scrolling order, which does not mean nothing
+          // is visible: an entry row is sticky under the header, and a pinned
+          // row is parked at an edge - `scrollToRow` answers for that one.
+          return openIds.some(
+            (rowId) =>
+              state.newRows.some((newRow) => newRow.tempId === rowId) ||
+              scrollToRow({ rowId, align }),
+          );
+        },
       },
       Controls: EDIT_ACTIONS_CONTROLS,
     });

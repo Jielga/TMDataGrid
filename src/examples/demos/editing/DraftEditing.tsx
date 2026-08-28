@@ -1,4 +1,4 @@
-import { Button } from "@mantine/core";
+import { Button, Group } from "@mantine/core";
 import { useCallback, useState } from "react";
 import { useSelector } from "@tanstack/react-store";
 import { z } from "zod";
@@ -54,7 +54,7 @@ const newEmployee = (): Employee => ({
 });
 
 export function DraftEditing() {
-  const [employees, setEmployees] = useState(() => makeEmployees(20, 2000));
+  const [employees, setEmployees] = useState(() => makeEmployees(60, 2000));
 
   // The whole draft store (edits, additions, deletions) arrives here at once,
   // so the server can apply it as a single transaction.
@@ -130,9 +130,28 @@ export function DraftEditing() {
         >
           Add to Sales
         </Button>
-        {/* Save and Discard for every pending draft, disabled while nothing
-            is pending and while anything is invalid. */}
-        <TMDataGrid.DraftActions />
+        {/* Save and Discard for every pending draft, plus a way back to a row
+            left undecided - `scrollToFirstOpenRow` takes "first" in display
+            order, so it follows the sort rather than the order rows opened. */}
+        <TMDataGrid.DraftActions
+          renderActions={({ state, actions, Controls }) => (
+            <Group gap="xs" wrap="nowrap">
+              <Button
+                size="compact-xs"
+                variant="light"
+                disabled={state.openCount === 0}
+                onClick={() => {
+                  actions.scrollToFirstOpenRow("center");
+                }}
+              >
+                Go to open row
+              </Button>
+              <Controls.OpenRowsNote />
+              <Controls.Save />
+              <Controls.Discard />
+            </Group>
+          )}
+        />
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

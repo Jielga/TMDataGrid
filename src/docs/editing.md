@@ -179,15 +179,30 @@ visible rather than silently left behind.
 The toolbar is declarative: the grid does not add or remove this component for you, so include it when the grid runs a draft store - without `draft: true` there is nothing to save and Save stays disabled.
 
 `renderActions` replaces the set and hands over its pieces: `state.draftCount`,
-`state.openCount`, `state.isSubmitting`, the `save`, `commitAll` and `discard`
-actions, and `Controls.Save` / `Controls.Discard` / `Controls.OpenRowsNote` as
-the built-in pieces:
+`state.openCount`, `state.openRowIds`, `state.isSubmitting`, the `save`,
+`commitAll`, `discard`, `scrollToRow` and `scrollToFirstOpenRow` actions, and
+`Controls.Save` / `Controls.Discard` / `Controls.OpenRowsNote` as the built-in
+pieces.
+
+Counting the open rows is only half the job on a long grid: the row that still
+needs a decision may be nowhere near the viewport, and the grid is always
+[virtualized](/docs/scrolling), so it may have no element to scroll to.
+`actions.scrollToFirstOpenRow(align?)` goes to the topmost one and answers
+whether it could be reached.
 
 ```tsx
 <TMDataGrid.DraftActions
-  renderActions={({ state, Controls }) => (
+  renderActions={({ state, actions, Controls }) => (
     <Group>
       {state.draftCount > 0 && <Badge>{state.draftCount} ready</Badge>}
+      <Button
+        disabled={state.openCount === 0}
+        onClick={() => {
+          actions.scrollToFirstOpenRow("center");
+        }}
+      >
+        Go to open row
+      </Button>
       <Controls.OpenRowsNote />
       <Controls.Save />
       <Controls.Discard />
@@ -196,9 +211,16 @@ the built-in pieces:
 />
 ```
 
+`state.openRowIds` is the ids behind `openCount`, for a control the grid does
+not offer - a list, or a next-open-row cycle. It is in the order the grid
+opened the rows, while `scrollToFirstOpenRow` takes "first" in display order,
+so the two need not name the same row. An entered row appears as its `tempId`;
+those are always on screen in the entry block, so the scroll answers `true`
+without moving.
+
 ```demo
 file: editing/DraftEditing.tsx
-hint: Double-click a row, ✓ parks it, enter new rows, mark deletions with the trash - nothing leaves the grid until Save.
+hint: Double-click a row, ✓ parks it, "Go to open row" returns to one left undecided - nothing leaves the grid until Save.
 height: 440
 ```
 
@@ -503,7 +525,8 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `meta.edit.mapValue`          | Column meta    | `({ value, previous, row, column }) => unknown`  | –                 | Maps each value an editor writes. See [Editors](/docs/editors#mapping-the-value-as-it-is-typed). |
 | `EDIT_COLUMN_ID`              | Export         | `"__edit__"`                                     | –                 | Id of the generated edit lane.                                                                   |
 | `TMDataGrid.DraftActions`      | Component      | –                                                | –                 | Save and Discard for pending edits.                                                              |
-| `DraftActions` `renderActions` | Slot           | `({ state, actions, Controls }) => ReactNode`    | Built-in pair     | Replaces the buttons, and hands over their pieces.                                               |
+| `DraftActions` `renderActions` | Slot           | `({ state, actions, Controls }) => ReactNode`    | Built-in pair     | Replaces the buttons, and hands over their pieces. See [Components](/docs/components#tmdatagriddraftactions). |
+| `actions.scrollToFirstOpenRow` | Slot action    | `(align?) => boolean`                            | `align: "auto"`   | Scrolls to the first open row in display order. `false` when none could be reached.              |
 | `clearedValueForType`         | Export         | `(type) => unknown`                              | –                 | What Delete writes for each column type.                                                         |
 | `--dg-entry-height`           | CSS variable   | length                                           | From `size`       | Height of the sticky entry block.                                                                |
 | `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of an entered new row.                                                                |

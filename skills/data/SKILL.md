@@ -6,16 +6,16 @@ description: >
   enablePagination, manualPagination), the Footer's renderPagination slot over {
   state, actions, Controls }, getTMDataGridPaginationApi, isPagingActive versus
   canPaginate, always-on virtualization with overscan and meta.rowHeight,
-  scrollToRow and scrollerRef, the edge callbacks onScrollToBottom /
-  onScrollToRight and why onReachEnd is better for loading more, the header and
-  pinned-lane depth shadows, and the four empty states in precedence order with
-  meta.loading, renderEmptyState, hasActiveFilters, TMDataGrid.LoadingIndicator
-  and TMDataGrid.SummaryCount. Load when adding a pager, tuning scrolling,
-  scrolling to a row, or deciding what an empty grid should say.
+  scrollToRow, the edge callbacks onScrollToBottom / onScrollToRight and why
+  onReachEnd is better for loading more, the header and pinned-lane depth
+  shadows, and the four empty states in precedence order with meta.loading,
+  renderEmptyState, hasActiveFilters, TMDataGrid.LoadingIndicator and
+  TMDataGrid.SummaryCount. Load when adding a pager, tuning scrolling, scrolling
+  to a row, or deciding what an empty grid should say.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.5'
+  library_version: '2.0.0-beta.7'
 sources:
   - 'Jielga/TMDataGrid:src/docs/pagination.md'
   - 'Jielga/TMDataGrid:src/docs/scrolling.md'
@@ -118,8 +118,13 @@ grid.scrollToRow({ rowId: "42", align: "center" });
 
 `scrollToRow` exists because the target row may not be mounted, and
 `element.scrollIntoView()` cannot find an element that is not rendered. `align`
-is `"start"`, `"center"`, `"end"` or `"auto"`. `scrollerRef` is the scroll
-container itself.
+is `"start"`, `"center"`, `"end"` or `"auto"`. It answers whether the row could
+be reached: `false` when it is filtered out, on another page or an id matching
+no row, and a pinned row answers `true` without scrolling.
+
+The hook reaches the virtualizer through `scrollerRef`, which
+`TMDataGrid.Table` fills in. That is internal wiring, not an API - spread the
+whole grid object onto `<TMDataGrid>` or nothing scrolls.
 
 `TMDataGrid.Table` reports arrivals at each edge - `onScrollToTop`,
 `onScrollToBottom`, `onScrollToLeft`, `onScrollToRight` - firing **once** on
@@ -286,7 +291,6 @@ Source: `src/docs/pagination.md` (Grouping suspends it).
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height in pixels. The virtualizer needs a number. |
 | `scrollToRow` | Hook return | `({ rowId, align? }) => boolean` | `align: "auto"` | Scrolls a row into view, mounted or not. |
-| `scrollerRef` | Hook return | `RefObject<HTMLDivElement>` | – | The scroll container. |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | Table props | `() => void` | – | Fire once on arriving at that edge. |
 | `TMDataGridScrollAlign` | Export | `"start" \| "center" \| "end" \| "auto"` | – | The `align` argument. |
 | `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. Takes precedence over every empty message. |
