@@ -1,5 +1,26 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.8
+
+### Patch Changes
+
+- [`0c5b921`](https://github.com/Jielga/TMDataGrid/commit/0c5b92175e6753b2ede924eb3348a23d0cdfe9ae) Thanks [@Psvensso](https://github.com/Psvensso)! - Column resizing is smooth again, and no longer jumps on mouse down.
+
+  - A drag starts from the width the column is rendered with, not its declared
+    `size`. The jump could also drop the divider onto a neighbouring header and
+    start a column move, which swallowed the mouse up and left the resize running
+    after the button was released.
+  - A running drag is painted on the grid's own column tracks instead of through
+    state, so nothing re-renders while the pointer moves.
+  - `columnResizeMode` now defaults to `"onEnd"`: the width reaches `columnSizing`
+    when the pointer is released. Set `"onChange"` to publish it on every move,
+    at the cost of a render of the grid for each one.
+
+- [`7fbb5d6`](https://github.com/Jielga/TMDataGrid/commit/7fbb5d6d9961e03dd5ea9e0d67c392d84e41b0fb) Thanks [@Psvensso](https://github.com/Psvensso)! - Committed entry rows under `editing.draft`:
+
+  - A cell that takes no edit (`meta.edit.enabled: false`, or a column with no field) no longer reopens the row on double-click, the same as a body cell.
+  - The row now gets the value-row padding, border and `--dg-row-new-bg` tint; the stylesheet still keyed on the old `data-confirmed` name.
+
 ## 2.0.0-beta.7
 
 ### Minor Changes
