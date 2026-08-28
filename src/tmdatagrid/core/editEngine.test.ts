@@ -1542,6 +1542,89 @@ describe("writing a cell from outside an editor", () => {
 });
 
 /**
+ * `getRowValues` and `getRows` - the rows as the grid shows them. What these
+ * guard is the overlay: a draft wins over `data`, an entry row answers under
+ * its temp id, and a deletion mark is reported rather than filtered out.
+ */
+describe("reading rows as shown", () => {
+  it("reads data values while nothing is edited", () => {
+    const grid = renderEditGrid({ mode: "row", draft: true });
+    const { edit } = grid.current;
+
+    expect(edit.getRowValues("1")).toEqual(people[0]);
+    expect(edit.getRows()).toEqual([
+      { rowId: "1", value: people[0], isNew: false, deleted: false },
+      { rowId: "2", value: people[1], isNew: false, deleted: false },
+    ]);
+  });
+
+  it("reads a parked draft, not what data still says", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit: vi.fn(),
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+
+    expect(edit.getRowValues("1")?.name).toBe("Annika");
+    expect(grid.current.table.getRow("1").original.name).toBe("Anna");
+    expect(edit.getRows()[0]?.value.name).toBe("Annika");
+  });
+
+  it("reads an open row's form values", () => {
+    const grid = renderEditGrid({ mode: "row", draft: true });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Eva");
+
+    expect(edit.getRowValues("2")?.name).toBe("Eva");
+  });
+
+  it("keeps a row marked deleted, flagged", () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    edit.deleteRow("1");
+
+    const rows = edit.getRows();
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ rowId: "1", deleted: true });
+    expect(edit.getRowValues("1")).toEqual(people[0]);
+  });
+
+  it("appends an entry row under its temp id", () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    const tempId = edit.addRow({ name: "New" });
+
+    const rows = edit.getRows();
+    expect(rows).toHaveLength(3);
+    expect(rows[2]).toMatchObject({ rowId: tempId, isNew: true, deleted: false });
+    expect(rows[2]?.value.name).toBe("New");
+    expect(edit.getRowValues(tempId)?.name).toBe("New");
+  });
+
+  it("answers undefined for a row the grid does not have", () => {
+    const grid = renderEditGrid({ mode: "row", draft: true });
+
+    expect(grid.current.edit.getRowValues("nope")).toBeUndefined();
+  });
+});
+
+/**
  * `editing.columns` - the allowlist. It gates before `meta.edit` and never
  * past it, so both halves are tested: a column left out takes no edit whatever
  * its meta says, and a column listed still answers to its own meta.

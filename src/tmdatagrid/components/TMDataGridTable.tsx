@@ -349,19 +349,22 @@ function TMDataGridBodyCell({
         left: layout.pinnedAt === "left" ? layout.offset : undefined,
         right: layout.pinnedAt === "right" ? layout.offset : undefined,
         // The focus ring is drawn inside the cell's own box, so the cell has to
-        // be able to stack above its neighbours - a plain one to lift the ring
-        // over the pinned lane it sits beside, a pinned one to keep the ring
-        // whole while the rest of the row slides under it. Values from the
-        // stacking ladder in TMDataGrid.module.css.
+        // stack above the cells it shares an edge with - but not above the
+        // pinned lanes, or the ring rides over them once the row scrolls
+        // sideways. A focused cell that is itself pinned takes the slot above
+        // them, keeping its ring whole while the rest of the row slides under
+        // it. Values from the stacking ladder in TMDataGrid.module.css.
         position: layout.pinnedAt
           ? "sticky"
           : nav?.focused
             ? "relative"
             : undefined,
-        zIndex: nav?.focused
-          ? "var(--dg-z-focused-cell, 3)"
-          : layout.pinnedAt
-            ? "var(--dg-z-pinned-cell, 2)"
+        zIndex: layout.pinnedAt
+          ? nav?.focused
+            ? "var(--dg-z-pinned-focused-cell, 3)"
+            : "var(--dg-z-pinned-cell, 2)"
+          : nav?.focused
+            ? "var(--dg-z-focused-cell, 1)"
             : undefined,
       }}
     >
@@ -858,27 +861,63 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   });
 
   /**
-   * The header's height, published as `--dg-header-height` for the entry
-   * block to stick under - never measured otherwise (`top: 0` needs no
-   * number). A ResizeObserver, mounted only while the block is in use: the
-   * same discipline `renderDetails` applies to `measureElement`.
+   * Everything the body rows start after, and how much of it stays on screen
+   * once they scroll: the header rows, the entry block and the pinned top
+   * block all sit in the same scroll content, above the first virtual row.
+   *
+   * Three readers, one measurement.
+   *
+   * `--dg-header-height` is the header total alone, published for the entry
+   * block to stick under and only while a block is in use - the stylesheet's
+   * per-`size` value is what the header cells are laid out against otherwise,
+   * and it is not the sum of a stacked group's rows.
+   *
+   * `bodyOffsetTop` is the whole stack, and it is the virtualizer's
+   * `scrollMargin`: item offsets start at zero, so without it every one of
+   * them is short by the height of what the rows begin after. `stickyCoverTop`
+   * leaves out the entry rows that flow with the body (`editNewRowsSticky`
+   * off), and is its `scrollPaddingStart` - the part of the stack that stays
+   * put and would otherwise be covering the row `align: "auto"` just scrolled
+   * to.
+   *
+   * The observer is mounted whatever the grid shows, unlike the block
+   * measurements below it: the header is there in every case, and the
+   * virtualizer needs its height from the first paint.
    */
   const gridElementRef = useRef<HTMLDivElement>(null);
+  const [bodyOffsetTop, setBodyOffsetTop] = useState(0);
+  const [stickyCoverTop, setStickyCoverTop] = useState(0);
+  const [stickyCoverBottom, setStickyCoverBottom] = useState(0);
   useEffect(() => {
-    if (newRowCount === 0 && pinnedTopRows.length === 0) return;
     const grid = gridElementRef.current;
     if (grid === null) return;
     const headerRows = grid.querySelectorAll<HTMLElement>(
       "[data-dg-header-row]",
     );
+    const stickyBlocks = grid.querySelectorAll<HTMLElement>(
+      '[data-dg-entry-block], [data-dg-part="pinned-top"]',
+    );
+    const flowBlocks = grid.querySelectorAll<HTMLElement>(
+      "[data-dg-entry-flow-block]",
+    );
     const measure = () => {
-      let total = 0;
-      for (const headerRow of headerRows) total += headerRow.offsetHeight;
-      grid.style.setProperty("--dg-header-height", `${total}px`);
+      let header = 0;
+      for (const headerRow of headerRows) header += headerRow.offsetHeight;
+      if (newRowCount > 0 || pinnedTopRows.length > 0) {
+        grid.style.setProperty("--dg-header-height", `${header}px`);
+      }
+      let cover = header;
+      for (const block of stickyBlocks) cover += block.offsetHeight;
+      let offset = cover;
+      for (const block of flowBlocks) offset += block.offsetHeight;
+      setStickyCoverTop(cover);
+      setBodyOffsetTop(offset);
     };
     measure();
     const observer = new ResizeObserver(measure);
-    for (const headerRow of headerRows) observer.observe(headerRow);
+    for (const element of [...headerRows, ...stickyBlocks, ...flowBlocks]) {
+      observer.observe(element);
+    }
     return () => observer.disconnect();
   }, [newRowCount, pinnedTopRows.length]);
 
@@ -974,6 +1013,17 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     getItemKey: useCallback((index: number) => rows[index]?.id ?? index, [rows]),
     overscan,
     initialRect: { height: 600, width: 1200 },
+    /**
+     * The rows are not the first thing in the scroll container - the header,
+     * the entry block and the pinned top block come before them. The margin is
+     * what puts an item's offset in the container's own scroll coordinates;
+     * the two paddings are the sticky blocks at either end, which cover the
+     * viewport without shrinking it, so `align: "auto"` has to scroll past
+     * them rather than stopping underneath.
+     */
+    scrollMargin: bodyOffsetTop,
+    scrollPaddingStart: stickyCoverTop,
+    scrollPaddingEnd: stickyCoverBottom,
   });
 
   /**
@@ -991,10 +1041,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     virtualizer.measure();
   }, [rowHeight, virtualizer]);
 
+  // The spacers stand in for the rows that are not mounted, so they measure
+  // from the first row rather than from the top of the scroll container:
+  // `scrollMargin` is included in every item's `start` and `end` and excluded
+  // from `getTotalSize()`, and taking it back off here is what keeps a spacer
+  // the height of the rows it replaces.
   const virtualItems = virtualizer.getVirtualItems();
-  const paddingTop = virtualItems[0]?.start ?? 0;
+  const paddingTop = (virtualItems[0]?.start ?? bodyOffsetTop) - bodyOffsetTop;
   const paddingBottom =
-    virtualizer.getTotalSize() - (virtualItems.at(-1)?.end ?? 0);
+    virtualizer.getTotalSize() -
+    ((virtualItems.at(-1)?.end ?? bodyOffsetTop) - bodyOffsetTop);
 
   /**
    * `api.scrollToRow`, implemented where the virtualizer is.
@@ -1238,6 +1294,31 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     (column) => column.columnDef.footer !== undefined,
   );
 
+  /**
+   * The other end of the same story as `stickyCoverTop`: the pinned bottom
+   * block and the summary row stick to the container's bottom edge, so the
+   * virtualizer takes their height as `scrollPaddingEnd` and stops scrolling a
+   * row to just underneath them. Down here rather than beside the other
+   * measurements because `hasSummaryRow` is only known this far into the
+   * render.
+   */
+  useEffect(() => {
+    const grid = gridElementRef.current;
+    if (grid === null) return;
+    const blocks = grid.querySelectorAll<HTMLElement>(
+      '[data-dg-part="pinned-bottom"], [data-dg-part="summary-row"]',
+    );
+    const measure = () => {
+      let total = 0;
+      for (const block of blocks) total += block.offsetHeight;
+      setStickyCoverBottom(total);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    for (const block of blocks) observer.observe(block);
+    return () => observer.disconnect();
+  }, [pinnedBottomRows.length, hasSummaryRow]);
+
   // "row" mode: the row itself is the selection control, with the modifier
   // conventions of any desktop list - see resolveRowSelectionClick.
   const selectsOnRowClick = features.rowClickSelects;
@@ -1337,6 +1418,23 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   /** The last position the effect acted on, so it can tell a move from a re-render. */
   const appliedCellRef = useRef<TMDataGridCellPosition | null>(null);
 
+  /**
+   * The two focusable elements that bracket the body, and the flag that says
+   * which way focus is passing through one.
+   *
+   * They are what makes the body one tab stop without asking anything of the
+   * cell renderers. Tab inside the body parks the focus on the guard past the
+   * edge being left, and the browser's default Tab then continues from there -
+   * so the next stop is whatever follows the grid, however many tabbable
+   * controls the mounted rows happen to hold. Focus arriving at a guard any
+   * other way came from outside the body, and is forwarded to the cursor cell.
+   * `guardHopRef` is what tells the two apart; the grid raises it just before
+   * it moves the focus itself.
+   */
+  const leadingGuardRef = useRef<HTMLDivElement>(null);
+  const trailingGuardRef = useRef<HTMLDivElement>(null);
+  const guardHopRef = useRef(false);
+
   // O(n) per keystroke and per render while a cell is focused. Fine at any row
   // count a grid actually holds, and the alternative - an id→index map rebuilt
   // whenever sorting, filtering or grouping changes - costs more than it saves.
@@ -1353,13 +1451,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     virtualItems.some((item) => item.index === focusedRowIndex);
 
   /**
-   * The one cell in the body that Tab can reach.
+   * The cell the tab guards hand the focus to when Tab enters the body.
    *
    * The focused cell when it is on screen. When it is not - the grid has never
    * been entered, or the user scrolled the focus away with the wheel - the
-   * first mounted cell stands in, so the body always has exactly one tab stop.
-   * Without the fallback, scrolling the focused row out of the DOM would take
-   * the grid out of the tab order entirely.
+   * first mounted cell stands in, so entering the body always lands somewhere.
+   * No body cell is itself in the tab order: the guards are the body's only
+   * tab stops, which is what keeps a cell from turning up between two of a
+   * row's controls when Tab walks them.
    */
   const firstMountedRow = rows[virtualItems[0]?.index ?? -1];
   const tabStopCell: TMDataGridCellPosition | null = !cellSelection
@@ -1369,6 +1468,35 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       : firstMountedRow && orderedColumns[0]
         ? { rowId: firstMountedRow.id, columnId: orderedColumns[0].id }
         : null;
+
+  /**
+   * Focus landing on either guard.
+   *
+   * A raised hop flag means the grid put it there on its way out, so the
+   * browser's default Tab is about to carry on from the guard - nothing to do
+   * but lower the flag. Anything else is Tab off the last header control onto
+   * the leading guard, or Shift+Tab from below the grid onto the trailing one:
+   * both mean "enter the body", and the body is entered at the cursor cell.
+   *
+   * The state is moved as well as the DOM focus, because the cell may not be
+   * the one the ring is on; the direct focus is so it happens in this event
+   * rather than a frame later.
+   *
+   * With no rows there is no cell to hand it to. The guard keeps the focus and
+   * the next Tab leaves the grid the way it came in.
+   */
+  const handleGuardFocus = () => {
+    if (guardHopRef.current) {
+      guardHopRef.current = false;
+      return;
+    }
+    if (tabStopCell === null) return;
+    wantsCellFocusRef.current = true;
+    ui.actions.setFocusedCell(tabStopCell);
+    const container = scrollContainerRef.current;
+    if (container === null) return;
+    findCellElement(container, tabStopCell)?.focus({ preventScroll: true });
+  };
 
   const isCellAt = (
     position: TMDataGridCellPosition | null,
@@ -1719,14 +1847,109 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const handleGridKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
 
-    // Focus is on something inside a cell - a checkbox, a link, an editor. Its
-    // keys are its own; the one the grid still answers is the way back out.
+    // The body cell the key was pressed in, whether the focus is on the cell
+    // itself or on a control inside it. `null` for a header control or a tab
+    // guard, neither of which is part of cell navigation.
+    const keyCellElement =
+      target.dataset.cell === "true"
+        ? target
+        : target.closest<HTMLElement>('[data-cell="true"]');
+    if (keyCellElement === null) return;
+
+    if (event.key === "Tab") {
+      // Inside a row's controls the row is a form, and Tab walks it the way
+      // the browser walks any form: through the row's open editors, the
+      // buttons in its cells and, on an open row, the lane's save and cancel.
+      // That part is left to the browser. What the grid decides is the two
+      // ends: past the row's last control the cursor moves to the next row's
+      // first cell, and before its first control to the previous row's last -
+      // the cell is put on the cursor and left alone, whatever it holds. A cell
+      // editor never gets here, it claims Tab itself to commit and move on.
+      if (target.dataset.cell !== "true") {
+        const rowElement = keyCellElement.closest<HTMLElement>(
+          '[data-dg-part="row"]',
+        );
+        const tabbables =
+          rowElement === null
+            ? []
+            : Array.from(
+                rowElement.querySelectorAll<HTMLElement>(FOCUSABLE_IN_CELL),
+              ).filter((element) => element.tabIndex >= 0);
+        const index = tabbables.indexOf(target);
+        // A control the walk cannot place is left to the browser rather than
+        // guessed about.
+        if (index < 0) return;
+        // The step itself is taken here rather than left to the browser: a
+        // select editor keeps its option list in the row, and the browser's
+        // Tab lands on that scrollable list, which the editor then closes
+        // under the focus. Walking the controls, and only the controls, is
+        // what the browser would do if the list were not there.
+        const nextControl = tabbables[index + (event.shiftKey ? -1 : 1)];
+        if (nextControl !== undefined) {
+          event.preventDefault();
+          nextControl.focus();
+          // What Tab does on a text field, and what the caret otherwise loses.
+          if (nextControl instanceof HTMLInputElement) nextControl.select();
+          return;
+        }
+        const rowIndex = rows.findIndex(
+          (row) => row.id === keyCellElement.dataset.rowId,
+        );
+        const nextRowIndex = rowIndex + (event.shiftKey ? -1 : 1);
+        const nextRow = rowIndex < 0 ? undefined : rows[nextRowIndex];
+        const nextColumn = event.shiftKey
+          ? orderedColumns[orderedColumns.length - 1]
+          : orderedColumns[0];
+        if (nextRow !== undefined && nextColumn !== undefined) {
+          event.preventDefault();
+          moveFocusedCell({
+            rowIndex: nextRowIndex,
+            columnIndex: event.shiftKey ? orderedColumns.length - 1 : 0,
+          });
+          // The focus-following effect stands down while the focus sits in an
+          // editor, which is exactly where it sits now: move it by hand. The
+          // adjacent row is mounted whenever there is any overscan; without
+          // one, letting go of the editor is what lets the effect take over.
+          const container = scrollContainerRef.current;
+          const nextCell =
+            container === null
+              ? null
+              : findCellElement(container, {
+                  rowId: nextRow.id,
+                  columnId: nextColumn.id,
+                });
+          if (nextCell !== null) nextCell.focus({ preventScroll: true });
+          else target.blur();
+          return;
+        }
+        // No row past this one: the body is left, below.
+      }
+
+      // Tab leaves the body in one hop, from a cell or from the last control
+      // of the last row. Not prevented: the focus is moved onto the guard past
+      // the edge being left and the browser's own Tab then runs from there,
+      // which is what puts it on the next thing after the grid - or, going
+      // back, on the last header control, since the leading guard sits below
+      // them.
+      const guard = event.shiftKey
+        ? leadingGuardRef.current
+        : trailingGuardRef.current;
+      if (guard === null) return;
+      guardHopRef.current = true;
+      guard.focus({ preventScroll: true });
+      return;
+    }
+
+    // An open editor owns the rest of its keys; the cell editor stops the
+    // ones it acts on before they get here, a row-shaped one lets them pass.
+    if (target.closest('[data-dg-part="editor"]') !== null) return;
+
+    // Focus is on something inside a cell - a checkbox, a link. Its keys are
+    // its own; the one the grid still answers is the way back out.
     if (target.dataset.cell !== "true") {
       if (event.key !== "Escape") return;
-      const cellElement = target.closest<HTMLElement>('[data-cell="true"]');
-      if (cellElement === null) return;
       event.preventDefault();
-      cellElement.focus();
+      keyCellElement.focus();
       return;
     }
 
@@ -1821,9 +2044,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     // Space selects the row, from any of its cells.
     //
     // Not routed through `handleRowActivate`, which is the *click* path and only
-    // selects in `"row"` mode: with the cell cursor on, the checkbox is no
-    // longer a tab stop (see useCellControlTabIndex), so this is the keyboard's
-    // way to a selection under every mode that has one - checkbox included.
+    // selects in `"row"` mode: the checkbox is not in the page's tab order, so
+    // this is the keyboard's way to a selection under every mode that has one -
+    // checkbox included.
     if (event.key === " ") {
       event.preventDefault();
       const row = rows[rowIndex];
@@ -1887,6 +2110,19 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (
       !wantsCellFocusRef.current &&
       !container.contains(document.activeElement)
+    ) {
+      return;
+    }
+    // Mid-hop: Tab parked the focus on a guard and the browser is about to
+    // carry it out of the grid. This effect can run in between - a discrete
+    // event flushes its renders before the default action - and pulling the
+    // focus back onto the cell here would send the browser's Tab off from
+    // the cell instead. A guard the user *arrived* on has already asked for
+    // the cell, and that intent is honoured.
+    if (
+      !wantsCellFocusRef.current &&
+      document.activeElement instanceof Element &&
+      document.activeElement.closest('[data-dg-part="tab-guard"]') !== null
     ) {
       return;
     }
@@ -2204,6 +2440,24 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             ))}
           </div>
 
+          {/* The leading tab guard, below the header controls and above the
+              first body row - see `handleGuardFocus`. Not `aria-hidden`: it
+              is focusable, and a focusable node hidden from the tree is what
+              screen readers have no way to describe.
+              Out of the tab order while there is no cell to hand focus to,
+              so an empty body is not two dead stops. */}
+          {cellSelection && (
+            <div
+              ref={leadingGuardRef}
+              tabIndex={tabStopCell === null ? -1 : 0}
+              role="presentation"
+              data-dg-part="tab-guard"
+              data-guard="leading"
+              className={classes.tabGuard}
+              onFocus={handleGuardFocus}
+            />
+          )}
+
           {/* The entry block - new rows being typed, stuck under the header.
               Present only while `edit.addRow()` has open entries. */}
           {features.editing && newRowCount > 0 && (
@@ -2492,13 +2746,10 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                                 row.id,
                                 cell.column.id,
                               ),
-                              tabIndex: isCellAt(
-                                tabStopCell,
-                                row.id,
-                                cell.column.id,
-                              )
-                                ? 0
-                                : -1,
+                              // Focusable by click and by the grid, never by
+                              // Tab - the guards are the way in. See
+                              // `tabStopCell`.
+                              tabIndex: -1,
                               // "Selected" means "in the block Ctrl+C would
                               // take" - which under `"single"` is the one cell
                               // the user is standing on.
@@ -2524,6 +2775,24 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                               // Right-click is the menu's; the middle button is
                               // the browser's.
                               if (event.button !== 0) return;
+                              // Pressing a control in the cell - a checkbox, a
+                              // chevron, a button a renderer put there - is not
+                              // a selection gesture, and a block the user built
+                              // should not pay for it. The focus still follows
+                              // the press, through the bubbling `onFocus`, so
+                              // the cursor ends up on the row acted on; only
+                              // the range survives.
+                              const pressed = event.target as HTMLElement;
+                              const control =
+                                pressed === event.currentTarget
+                                  ? null
+                                  : pressed.closest(FOCUSABLE_IN_CELL);
+                              if (
+                                control !== null &&
+                                event.currentTarget.contains(control)
+                              ) {
+                                return;
+                              }
                               // Shift+click would otherwise smear the browser's
                               // own text selection across everything between
                               // the two cells.
@@ -2763,6 +3032,20 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 );
               })}
             </div>
+          )}
+
+          {/* The trailing tab guard, last child of the grid so that Shift+Tab
+              from below the grid meets it before any cell. */}
+          {cellSelection && (
+            <div
+              ref={trailingGuardRef}
+              tabIndex={tabStopCell === null ? -1 : 0}
+              role="presentation"
+              data-dg-part="tab-guard"
+              data-guard="trailing"
+              className={classes.tabGuard}
+              onFocus={handleGuardFocus}
+            />
           )}
         </div>
       </div>

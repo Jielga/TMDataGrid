@@ -55,17 +55,6 @@ The value carries every field `useTMDataGrid` returns, plus three resolved from 
 | `rowHeight` | `number` | Row height in pixels, from `size` and `meta.rowHeight`. |
 | `controlSize` | `TMDataGridSize` | The Mantine control size that pairs with `size`. |
 
-## useCellControlTabIndex
-
-Returns the `tabIndex` for a control inside a body cell: `-1` while [cell selection](/docs/cell-selection) is on, `0` otherwise.
-Set it on any interactive element you render in a cell, so the grid keeps one tab stop instead of one per mounted row.
-
-```tsx
-<Checkbox tabIndex={useCellControlTabIndex()} />
-```
-
-`useCellControlTabIndex(): 0 | -1`
-
 ## TMDataGrid
 
 The root element.
@@ -304,7 +293,6 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | --- | --- | --- | --- | --- |
 | `useTMDataGrid` | Hook | `(options) => TMDataGridApi` | – | Creates the table, UI store and edit engine. |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | The grid, from inside any part. Throws outside `TMDataGrid`. |
-| `useCellControlTabIndex` | Hook | `() => 0 \| -1` | – | The `tabIndex` for a control inside a body cell. |
 | `TMDataGrid` | Component | – | – | The root element. Provides the grid through context. |
 | `TMDataGrid.Table` | Component | – | – | Header, virtualized body and filter panel. |
 | `TMDataGrid.Toolbar` · `.Spacer` | Components | – | – | The toolbar row, and the gap that pushes items right. |

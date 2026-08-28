@@ -82,8 +82,14 @@
   /* The stacking ladder, stated once. Body cells sit at auto (0); everything
      sticky stacks over them in this order, and a sticky row crossing a sticky
      column takes the row's slot plus one. */
+  /* The focus ring is drawn inside the focused cell's own box, so the cell
+     takes a slot of its own - above the plain cells beside it, but under the
+     pinned lanes, which a scrolling row has to pass beneath ring and all. A
+     focused cell that is itself pinned goes above them instead, so its ring
+     stays whole while the rest of the row slides under it. */
+  --dg-z-focused-cell: 1;
   --dg-z-pinned-cell: 2;
-  --dg-z-focused-cell: 3;
+  --dg-z-pinned-focused-cell: 3;
   /* The pinned-row slot serves both sticky rows: the summary along the
      bottom and the entry block under the header. */
   --dg-z-pinned-row: 4;

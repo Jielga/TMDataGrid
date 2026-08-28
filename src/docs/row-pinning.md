@@ -30,8 +30,6 @@ function PinToggle({ row }: { row: Row<TMDataGridFeatures, Employee> }) {
     <ActionIcon
       variant={pinned === false ? "subtle" : "light"}
       color={pinned === false ? "gray" : "blue"}
-      // A body control is reached by stepping into its cell, not by Tab.
-      tabIndex={useCellControlTabIndex()}
       aria-label={pinned === false ? "Pin to top" : "Unpin"}
       // The row underneath may select or highlight on click.
       onClick={(event) => {

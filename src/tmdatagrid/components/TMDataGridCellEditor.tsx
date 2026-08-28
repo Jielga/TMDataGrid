@@ -19,6 +19,7 @@ import {
   type TMDataGridEditValueMap,
 } from "../core/editEngine";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
+import { FOCUSABLE_IN_CELL } from "../core/editorFocus";
 import { CheckIcon, CloseIcon } from "./icons";
 import { TMDataGridBooleanEditor } from "./editors/TMDataGridBooleanEditor";
 import { TMDataGridDateEditor } from "./editors/TMDataGridDateEditor";
@@ -186,6 +187,13 @@ export function TMDataGridCellEditor({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Enter on the ✓ or ✕ is the button's own press, and does what a click on
+    // it does: commit and stay, or cancel. Left to the branch below it would
+    // commit and move down, and the same button would mean two things.
+    if (event.key === "Enter" && event.target instanceof HTMLButtonElement) {
+      event.stopPropagation();
+      return;
+    }
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
@@ -201,8 +209,20 @@ export function TMDataGridCellEditor({
       event.preventDefault();
       event.stopPropagation();
       // `cellConfirm` is the one mode where leaving a cell decides nothing:
-      // the caret moves on and the draft waits for its ✓.
+      // the caret moves on and the draft waits for its ✓. The ✓ and ✕ beside
+      // the input are the cell's own form, so Tab reaches them first - input,
+      // ✓, ✕ - and only past the last of them moves on.
       if (features.editMode === "cellConfirm") {
+        const tabbables = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_IN_CELL),
+        ).filter((element) => element.tabIndex >= 0);
+        const index = tabbables.indexOf(event.target as HTMLElement);
+        const next = tabbables[index + (event.shiftKey ? -1 : 1)];
+        if (index >= 0 && next !== undefined) {
+          next.focus();
+          if (next instanceof HTMLInputElement) next.select();
+          return;
+        }
         deferAndClose(event.shiftKey ? "defer-shift-tab" : "defer-tab");
       } else {
         void commitAndClose(event.shiftKey ? "shift-tab" : "tab");

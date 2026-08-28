@@ -34,6 +34,13 @@ past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- Editing navigation style - `editing.navigation: "spreadsheet" | "row"`.
+  `"spreadsheet"` is today's behaviour: Enter commits and moves down, Tab
+  commits and moves right. `"row"` treats the row as the record: Enter and
+  Tab both move to the next editable cell to the right and wrap to the next
+  row's first, Shift+Enter mirrors Shift+Tab. ✓ confirms and stays under
+  both. A table-level choice, never per column. Raised 2026-08-28 while
+  settling the tab order; held until a consumer asks.
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing.
 - Cell-level styling (`meta.cellStyle`, `meta.cellClassName`) - the cell

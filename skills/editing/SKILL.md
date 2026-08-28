@@ -82,7 +82,7 @@ They are independent, and every pair is legal.
 | Mode | Commits on | Cancels on | Controls |
 | --- | --- | --- | --- |
 | `"cell"` | Enter, Tab, leaving the cell | Escape | none |
-| `"cellConfirm"` | ✓ or Enter; Tab and leaving keep the draft | ✕ or Escape | ✓ / ✕ beside the input |
+| `"cellConfirm"` | ✓ or Enter; Tab walks input, ✓, ✕ and then leaves, keeping the draft | ✕ or Escape | ✓ / ✕ beside the input |
 | `"row"` | Save in the edit lane, or Enter | Cancel, or Escape | generated edit lane |
 
 | `editing.draft` | Where a commit goes |

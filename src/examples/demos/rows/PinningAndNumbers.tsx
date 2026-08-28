@@ -5,7 +5,6 @@ import { useSelector } from "@tanstack/react-store";
 import {
   createTMDataGridColumnHelper,
   TMDataGrid,
-  useCellControlTabIndex,
   useTMDataGrid,
   type TMDataGridFeatures,
 } from "../../../tmdatagrid";
@@ -33,8 +32,6 @@ function PinToggle({ row }: { row: Row<TMDataGridFeatures, Employee> }) {
       variant={pinned === false ? "subtle" : "light"}
       color={pinned === false ? "gray" : "blue"}
       size="sm"
-      // A body control is reached by stepping into its cell, not by Tab.
-      tabIndex={useCellControlTabIndex()}
       aria-label={pinned === false ? "Pin to top" : "Unpin"}
       // The row highlights on click; pinning is its own gesture.
       onClick={(event) => {

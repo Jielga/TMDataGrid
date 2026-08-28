@@ -5,12 +5,51 @@ import { describe, expect, it } from "vitest";
 import {
   bodyRows,
   cellAt,
+  parts,
   renderedRowIds,
   renderGridUi,
   selectedCells,
+  testColumns,
   testRows,
+  type TestRow,
 } from "../../test/gridHarness";
+import { createTMDataGridColumnHelper } from "../useTMDataGrid";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
+
+/** Where the keyboard is, read off the DOM rather than off the store. */
+const focused = () => document.activeElement as HTMLElement;
+
+const focusedCoords = () => {
+  const cell = document.querySelector<HTMLElement>(
+    '[data-cell="true"][data-focused="true"]',
+  );
+  return cell === null
+    ? null
+    : { rowId: cell.dataset.rowId, columnId: cell.dataset.columnId };
+};
+
+/** Whether the keyboard is anywhere in the body at all. */
+const focusIsInABody = () => focused().closest('[data-dg-part="row"]') !== null;
+
+/**
+ * The harness columns plus a lane whose cell holds a plain button - the custom
+ * cell a consumer writes, with no `tabIndex` of its own. Module scope for the
+ * same reason `testColumns` is: `useTMDataGrid` memoizes on the reference.
+ */
+const buttonColumns = (() => {
+  const helper = createTMDataGridColumnHelper<TestRow>();
+  return [
+    ...testColumns,
+    helper.display({
+      id: "open",
+      header: "Open",
+      cell: () => <button type="button">Open</button>,
+    }),
+  ];
+})();
+
+/** The button lane's cell, on a grid rendered with `buttonColumns`. */
+const buttonCell = (rowIndex: number) => cellAt(rowIndex, 5);
 
 /**
  * The cell cursor and the range rectangle. Split from TMDataGrid.test.tsx
@@ -22,18 +61,6 @@ describe("cell selection", () => {
    * to a 600px viewport, which is more than they need - so a move never has to
    * wait for a scroll to mount its target here.
    */
-  /** Where the keyboard is, read off the DOM rather than off the store. */
-  const focused = () => document.activeElement as HTMLElement;
-
-  const focusedCoords = () => {
-    const cell = document.querySelector<HTMLElement>(
-      '[data-cell="true"][data-focused="true"]',
-    );
-    return cell === null
-      ? null
-      : { rowId: cell.dataset.rowId, columnId: cell.dataset.columnId };
-  };
-
   it("is off unless asked for", () => {
     renderGridUi();
 
@@ -56,17 +83,19 @@ describe("cell selection", () => {
     expect(cellAt(0, 4)).toHaveAttribute("aria-colindex", "5");
   });
 
-  it("gives the body exactly one tab stop", () => {
+  it("keeps every cell out of the tab order and enters through the guards", () => {
     renderGridUi({ cellSelection: "single" });
 
+    // No cell is a tab stop of its own: a cell in the tab order would turn up
+    // between two of a row's controls when Tab walks them. The two guards
+    // bracketing the body are where Tab lands, and they hand the focus on.
     const stops = screen
       .getAllByRole("gridcell")
       .filter((cell) => cell.getAttribute("tabindex") === "0");
-
-    // The first cell stands in until the grid has been entered, so Tab always
-    // has somewhere to land - and only one somewhere.
-    expect(stops).toHaveLength(1);
-    expect(stops[0]).toBe(cellAt(0, 0));
+    expect(stops).toHaveLength(0);
+    const guards = document.querySelectorAll('[data-dg-part="tab-guard"]');
+    expect(guards).toHaveLength(2);
+    for (const guard of guards) expect(guard).toHaveAttribute("tabindex", "0");
   });
 
   it("takes the body's controls out of the tab order", () => {
@@ -108,7 +137,83 @@ describe("cell selection", () => {
 
     // Out of the body entirely - not into the next row's checkbox, and not into
     // a control inside the cell just left.
-    expect(focused().closest(`[data-dg-part="row"]`)).toBeNull();
+    expect(focusIsInABody()).toBe(false);
+  });
+
+  it("is one tab stop backwards too", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ cellSelection: "single" });
+
+    await user.click(cellAt(1, 2));
+    await user.tab({ shift: true });
+
+    expect(focusIsInABody()).toBe(false);
+  });
+
+  it("keeps a custom cell's button out of the page's tab order", () => {
+    renderGridUi({ cellSelection: "single", columns: buttonColumns });
+
+    // The consumer set no `tabIndex`, so the button is tabbable in itself.
+    // What keeps it out of the page's order is that Tab never walks the body:
+    // it enters at the cursor cell, and leaves it for the guard past the edge,
+    // from where the browser's own Tab carries on out of the grid.
+    const [leading, trailing] = parts("tab-guard");
+    expect(
+      screen.getAllByRole("button", { name: "Open" })[0],
+    ).not.toHaveAttribute("tabindex");
+
+    leading!.focus();
+    expect(focused()).toBe(cellAt(0, 0));
+
+    // `fireEvent`, not `user.tab()`: user-event picks its destination from the
+    // element the key was pressed on, so it walks into a button the browser
+    // would never stop at. The hop onto the guard is the part the grid owns.
+    fireEvent.keyDown(cellAt(0, 0), { key: "Tab" });
+    expect(focused()).toBe(trailing);
+    expect(focusIsInABody()).toBe(false);
+  });
+
+  it("steps into a custom cell's button and back out again", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ cellSelection: "single", columns: buttonColumns });
+
+    await user.click(buttonCell(0));
+    await user.keyboard("{Enter}");
+    expect(focused()).toBe(within(buttonCell(0)).getByRole("button"));
+
+    await user.keyboard("{Escape}");
+    expect(focused()).toBe(buttonCell(0));
+  });
+
+  it("moves the cursor to the next row past a row's last control", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ cellSelection: "single", columns: buttonColumns });
+
+    await user.click(buttonCell(0));
+    await user.keyboard("{Enter}");
+    await user.tab();
+
+    // The next row's first cell, and the cell itself - the row it lands on is
+    // not stepped into.
+    expect(focused()).toBe(cellAt(1, 0));
+
+    // Backwards, the same rule the other way: the previous row's last cell.
+    await user.click(buttonCell(2));
+    await user.keyboard("{Enter}");
+    await user.tab({ shift: true });
+    expect(focused()).toBe(cellAt(1, 5));
+  });
+
+  it("leaves the body from the last row's last control", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ cellSelection: "single", columns: buttonColumns });
+
+    const lastRow = bodyRows().length - 1;
+    await user.click(buttonCell(lastRow));
+    await user.keyboard("{Enter}");
+    await user.tab();
+
+    expect(focusIsInABody()).toBe(false);
   });
 
   it("selects the row from Space under the checkbox mode too", async () => {
@@ -158,15 +263,21 @@ describe("cell selection", () => {
     expect(focused()).toBe(cellAt(0, 2));
   });
 
-  it("moves the tab stop with the focus", async () => {
+  it("hands the focus to the cursor cell when Tab arrives at a guard", async () => {
     const user = userEvent.setup();
     renderGridUi({ cellSelection: "single" });
 
     await user.click(cellAt(0, 2));
     await user.keyboard("{ArrowDown}");
+    expect(focused()).toBe(cellAt(1, 2));
 
-    expect(cellAt(1, 2)).toHaveAttribute("tabindex", "0");
-    expect(cellAt(0, 2)).toHaveAttribute("tabindex", "-1");
+    // Focus arriving at a guard from outside the body is forwarded to the
+    // cursor, so Shift+Tab from below the grid comes back to where it was.
+    const [, trailing] = document.querySelectorAll<HTMLElement>(
+      '[data-dg-part="tab-guard"]',
+    );
+    trailing!.focus();
+    expect(focused()).toBe(cellAt(1, 2));
   });
 
   it("takes Home and End across the row, and Ctrl to the corners", async () => {
@@ -293,6 +404,41 @@ describe("cell selection", () => {
 
     expect(moves).toEqual(["1:name", "2:name"]);
   });
+
+  /**
+   * The stacking ladder, read off the DOM. A pinned lane stays over the row
+   * scrolling under it, ring and all - so a focused cell only outranks the
+   * lane when it is pinned itself.
+   */
+  it("keeps the focus ring under a pinned lane unless the cell is pinned too", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      cellSelection: "single",
+      initialState: { columnPinning: { left: ["id"], right: [] } },
+    });
+
+    const pinnedCell = () =>
+      document.querySelector<HTMLElement>(
+        '[data-cell="true"][data-row-id="1"][data-column-id="id"]',
+      )!;
+    const focusedCell = () =>
+      document.querySelector<HTMLElement>(
+        '[data-cell="true"][data-focused="true"]',
+      )!;
+
+    await user.click(cellAt(0, 3));
+
+    expect(focusedCell().dataset.columnId).not.toBe("id");
+    expect(focusedCell().style.zIndex).toBe("var(--dg-z-focused-cell, 1)");
+    expect(pinnedCell().style.zIndex).toBe("var(--dg-z-pinned-cell, 2)");
+
+    await user.click(pinnedCell());
+
+    expect(focusedCell().dataset.columnId).toBe("id");
+    expect(focusedCell().style.zIndex).toBe(
+      "var(--dg-z-pinned-focused-cell, 3)",
+    );
+  });
 });
 
 describe("cell selection - ranges", () => {
@@ -364,6 +510,25 @@ describe("cell selection - ranges", () => {
     await user.keyboard("{/Shift}");
 
     expect(selectedCells()).toEqual(["2:name", "3:name", "4:name"]);
+  });
+
+  it("keeps the block when a control inside a cell is pressed", async () => {
+    const user = userEvent.setup();
+    renderGridUi({ cellSelection: "range", columns: buttonColumns });
+
+    await user.click(cellAt(0, 2));
+    await user.keyboard("{Shift>}");
+    await user.click(cellAt(2, 3));
+    await user.keyboard("{/Shift}");
+    const block = selectedCells();
+    expect(block.length).toBeGreaterThan(1);
+
+    await user.click(within(buttonCell(4)).getByRole("button"));
+
+    // Pressing a button is not a selection gesture: the block survives it. The
+    // cursor still follows the press, so it names the row acted on.
+    expect(selectedCells()).toEqual(block);
+    expect(focusedCoords()).toEqual({ rowId: "5", columnId: "open" });
   });
 
   it("extends the block with Shift+arrows, and collapses it without", async () => {

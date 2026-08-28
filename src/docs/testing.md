@@ -92,6 +92,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `editor-confirm`, `editor-cancel` | `cellConfirm`'s ✓ and ✕ |
 | `editor-input` | The input inside a built-in editor |
 | `sort-index` | A column's position in a multi-column sort |
+| `tab-guard` | The body's tab stop under [cell selection](/docs/cell-selection); `data-guard` is `leading` (before the rows) or `trailing` (after them). Zero-size, and focusing one puts the cursor on a cell |
 
 ### Keyed by `data-row-id`
 

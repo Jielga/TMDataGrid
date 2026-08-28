@@ -535,6 +535,20 @@ export type TMDataGridAddRowsResult = {
   open: Array<string>;
 };
 
+/** One row of {@link TMDataGridEditApi.getRows}. */
+export type TMDataGridEditRowSnapshot<
+  TData extends RowData = TMDataGridRowData,
+> = {
+  /** The row's id - `addRow`'s temp id for an entry row. */
+  rowId: string;
+  /** The row as shown: its draft where a form holds one, else `data`'s value. */
+  value: TData;
+  /** An entry row, not yet in `data`. */
+  isNew: boolean;
+  /** Marked deleted, awaiting `saveDrafts`. */
+  deleted: boolean;
+};
+
 /**
  * The engine plus its store - `api.edit`.
  *
@@ -551,6 +565,20 @@ export type TMDataGridEditApi<
   readonly state: TMDataGridEditState;
   /** rowId → live form. The source of truth for everything mid-edit. */
   getForm: (rowId: string) => TMDataGridRowEditForm | undefined;
+  /**
+   * The row as shown: its draft values where a form holds one - open or
+   * parked in the draft store - else what `data` says. `undefined` when no
+   * such row exists. A deletion mark does not change the answer; check
+   * `state.deletedRowIds` for that.
+   */
+  getRowValues: (rowId: string) => TData | undefined;
+  /**
+   * Every row as shown, nothing filtered out: data rows overlaid with their
+   * drafts, entry rows appended, deletion-marked rows included and flagged.
+   * Built from the core row model, so it is unfiltered, unsorted and never
+   * contains group rows. Filter on `deleted` / `isNew` for the set you want.
+   */
+  getRows: () => ReadonlyArray<TMDataGridEditRowSnapshot<TData>>;
   /**
    * Whether this cell may open an editor: the column maps to a field, nothing
    * switched it off, and the row takes edits at all.
@@ -1743,12 +1771,49 @@ export function createEditEngine(
     return writeFields(rowId, writes);
   };
 
+  const getRowValues = (rowId: string): TMDataGridRowData | undefined => {
+    const held = forms.get(rowId);
+    // Entry rows exist only as forms, so this covers them too.
+    if (held !== undefined) return held.form.state.values as TMDataGridRowData;
+    return getRow(rowId)?.original as TMDataGridRowData | undefined;
+  };
+
+  const getRows = (): ReadonlyArray<TMDataGridEditRowSnapshot> => {
+    const deleted = new Set(store.state.deletedRowIds);
+    const rows: Array<TMDataGridEditRowSnapshot> = [];
+    for (const row of getContext().table.getCoreRowModel().flatRows) {
+      const held = forms.get(row.id);
+      rows.push({
+        rowId: row.id,
+        value:
+          held === undefined
+            ? (row.original as TMDataGridRowData)
+            : (held.form.state.values as TMDataGridRowData),
+        isNew: false,
+        deleted: deleted.has(row.id),
+      });
+    }
+    for (const newRow of store.state.newRows) {
+      const held = forms.get(newRow.tempId);
+      if (held === undefined) continue;
+      rows.push({
+        rowId: newRow.tempId,
+        value: held.form.state.values as TMDataGridRowData,
+        isNew: true,
+        deleted: deleted.has(newRow.tempId),
+      });
+    }
+    return rows;
+  };
+
   return {
     store,
     get state() {
       return store.state;
     },
     getForm: (rowId) => forms.get(rowId)?.form,
+    getRowValues,
+    getRows,
     canEditCell,
     canEditRow,
     isColumnEditable,

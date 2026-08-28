@@ -1,13 +1,16 @@
-import { Code, Group, SegmentedControl } from "@mantine/core";
+import { Button, Code, Group, SegmentedControl } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
   type TMDataGridCellSelectionMode,
 } from "../../../tmdatagrid";
-import { employeeColumns } from "../../data/employeeColumns";
+import { compactEmployeeColumns } from "../../data/employeeColumns";
 import { EMPLOYEES, type Employee } from "../../data/employees";
+
+const columnHelper = createTMDataGridColumnHelper<Employee>();
 
 const MODES = [
   { value: "none", label: "none" },
@@ -22,10 +25,39 @@ const MODES = [
 
 export function CellSelection() {
   const [mode, setMode] = useState<TMDataGridCellSelectionMode>("range");
+  const [opened, setOpened] = useState<string | null>(null);
+
+  // A plain button in a body cell - no `tabIndex`, no hook on it. The body is
+  // still exactly one tab stop: Tab from anywhere in it leaves the grid, and
+  // Enter or F2 steps into the cell to reach the button.
+  const columns = useMemo(
+    () => [
+      ...compactEmployeeColumns,
+      columnHelper.display({
+        id: "open",
+        header: "",
+        size: 90,
+        minSize: 90,
+        maxSize: 90,
+        meta: { label: "Open", align: "center" },
+        enableResizing: false,
+        cell: ({ row }) => (
+          <Button
+            size="compact-xs"
+            variant="light"
+            onClick={() => setOpened(row.id)}
+          >
+            Open
+          </Button>
+        ),
+      }),
+    ],
+    [],
+  );
 
   const grid = useTMDataGrid({
     data: EMPLOYEES,
-    columns: employeeColumns,
+    columns,
     getRowId: (row) => String(row.id),
     cellSelection: mode,
     selectionMode: "highlight",
@@ -51,6 +83,7 @@ export function CellSelection() {
             ? `${focusedCell.rowId} · ${focusedCell.columnId}`
             : "no cell"}
         </Code>
+        <Code>{opened === null ? "nothing opened" : `opened ${opened}`}</Code>
       </Group>
 
       <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>

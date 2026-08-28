@@ -72,10 +72,15 @@ function installBrowserStubs() {
   window.HTMLElement.prototype.scrollIntoView = () => {};
 
   // jsdom lays nothing out, so every element measures zero and the grid's
-  // virtualizer concludes the viewport shows no rows. Giving elements a
-  // viewport-sized box makes the scroll container big enough to render into;
-  // row heights come from `estimateSize`, not from measurement, so this does
-  // not distort them.
+  // virtualizer concludes the viewport shows no rows. Giving the scroll
+  // container a viewport-sized box makes it big enough to render into; row
+  // heights come from `estimateSize`, not from measurement, so this does not
+  // distort them.
+  //
+  // The box is the container's alone. Handing it to every element through the
+  // prototype made a header row, an entry block and a pinned block each 600px
+  // tall, and the grid measures those to place the rows - a viewport of
+  // headers, and nothing is left to scroll.
   const VIEWPORT = { width: 1200, height: 600 };
   for (const [name, value] of [
     ["offsetWidth", VIEWPORT.width],
@@ -83,7 +88,9 @@ function installBrowserStubs() {
   ] as const) {
     Object.defineProperty(window.HTMLElement.prototype, name, {
       configurable: true,
-      get: () => value,
+      get(this: HTMLElement) {
+        return this.hasAttribute("data-dg-scroll-container") ? value : 0;
+      },
     });
   }
   window.Element.prototype.getBoundingClientRect = function (): DOMRect {
