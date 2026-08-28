@@ -349,19 +349,22 @@ function TMDataGridBodyCell({
         left: layout.pinnedAt === "left" ? layout.offset : undefined,
         right: layout.pinnedAt === "right" ? layout.offset : undefined,
         // The focus ring is drawn inside the cell's own box, so the cell has to
-        // be able to stack above its neighbours - a plain one to lift the ring
-        // over the pinned lane it sits beside, a pinned one to keep the ring
-        // whole while the rest of the row slides under it. Values from the
-        // stacking ladder in TMDataGrid.module.css.
+        // stack above the cells it shares an edge with - but not above the
+        // pinned lanes, or the ring rides over them once the row scrolls
+        // sideways. A focused cell that is itself pinned takes the slot above
+        // them, keeping its ring whole while the rest of the row slides under
+        // it. Values from the stacking ladder in TMDataGrid.module.css.
         position: layout.pinnedAt
           ? "sticky"
           : nav?.focused
             ? "relative"
             : undefined,
-        zIndex: nav?.focused
-          ? "var(--dg-z-focused-cell, 3)"
-          : layout.pinnedAt
-            ? "var(--dg-z-pinned-cell, 2)"
+        zIndex: layout.pinnedAt
+          ? nav?.focused
+            ? "var(--dg-z-pinned-focused-cell, 3)"
+            : "var(--dg-z-pinned-cell, 2)"
+          : nav?.focused
+            ? "var(--dg-z-focused-cell, 1)"
             : undefined,
       }}
     >

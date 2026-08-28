@@ -293,6 +293,41 @@ describe("cell selection", () => {
 
     expect(moves).toEqual(["1:name", "2:name"]);
   });
+
+  /**
+   * The stacking ladder, read off the DOM. A pinned lane stays over the row
+   * scrolling under it, ring and all - so a focused cell only outranks the
+   * lane when it is pinned itself.
+   */
+  it("keeps the focus ring under a pinned lane unless the cell is pinned too", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      cellSelection: "single",
+      initialState: { columnPinning: { left: ["id"], right: [] } },
+    });
+
+    const pinnedCell = () =>
+      document.querySelector<HTMLElement>(
+        '[data-cell="true"][data-row-id="1"][data-column-id="id"]',
+      )!;
+    const focusedCell = () =>
+      document.querySelector<HTMLElement>(
+        '[data-cell="true"][data-focused="true"]',
+      )!;
+
+    await user.click(cellAt(0, 3));
+
+    expect(focusedCell().dataset.columnId).not.toBe("id");
+    expect(focusedCell().style.zIndex).toBe("var(--dg-z-focused-cell, 1)");
+    expect(pinnedCell().style.zIndex).toBe("var(--dg-z-pinned-cell, 2)");
+
+    await user.click(pinnedCell());
+
+    expect(focusedCell().dataset.columnId).toBe("id");
+    expect(focusedCell().style.zIndex).toBe(
+      "var(--dg-z-pinned-focused-cell, 3)",
+    );
+  });
 });
 
 describe("cell selection - ranges", () => {
