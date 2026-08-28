@@ -164,17 +164,14 @@ export function TMDataGridEntryRows({
   const committedById = new Map(
     newRows.map((newRow) => [newRow.tempId, newRow.committed]),
   );
-  // A row being *typed* into is always sticky - it exists nowhere else to
-  // scroll back to. A committed row joins the scrolling flow unless
-  // `newRowsSticky` keeps it pinned, so entering many rows cannot fill the
-  // viewport with sticky chrome.
+  // A row being *typed* into is always here - it exists nowhere else to
+  // scroll back to. A committed row is a body row, sorted and filtered with
+  // the rest (the hook feeds it to the table as `data`), unless
+  // `newRowsSticky` keeps it pinned here until the save.
   const stickyRows = entryRows.filter(
     (entryRow) =>
       features.editNewRowsSticky || committedById.get(entryRow.id) !== true,
   );
-  const flowRows = features.editNewRowsSticky
-    ? []
-    : entryRows.filter((entryRow) => committedById.get(entryRow.id) === true);
 
   const renderEntryRow = (
     entryRow: (typeof entryRows)[number],
@@ -277,19 +274,6 @@ export function TMDataGridEntryRows({
         >
           {stickyRows.map((entryRow) =>
             renderEntryRow(entryRow, "var(--dg-z-pinned-row-pinned-cell, 5)"),
-          )}
-        </div>
-      )}
-      {flowRows.length > 0 && (
-        <div
-          role="rowgroup"
-          data-dg-entry-flow-block
-          className={classes.entryFlowBlock}
-        >
-          {/* In flow, so a pinned cell stacks like a body row's, under the
-              sticky blocks it scrolls past. */}
-          {flowRows.map((entryRow) =>
-            renderEntryRow(entryRow, "var(--dg-z-pinned-cell, 2)"),
           )}
         </div>
       )}

@@ -211,6 +211,16 @@ export type TMDataGridEditState = {
    */
   committedRowIds: ReadonlyArray<string>;
   /**
+   * The draft store's values, per row - what a committed row *is* to the
+   * table. Snapshotted when a row commits (existing and entry rows alike)
+   * and kept across a reopen until the row commits again or is dropped, so
+   * a row keeps its place in the sort while a second cell is being typed
+   * into. The hook feeds these into the table's `data` in place of the
+   * consumer's records, which is how sorting, filtering, grouping and
+   * aggregates see a draft.
+   */
+  committedValues: Readonly<Record<string, TMDataGridRowData>>;
+  /**
    * Rows being created, not yet in `data`. `committed` is the draft store's
    * add slice: the entry row passed its submit and renders as a value row
    * until `begin` re-opens it. Without `editing.draft` a commit adds through
@@ -226,6 +236,7 @@ const EMPTY_EDIT_STATE: TMDataGridEditState = {
   openRowIds: [],
   rows: {},
   committedRowIds: [],
+  committedValues: {},
   newRows: [],
   deletedRowIds: [],
 };
@@ -949,7 +960,8 @@ export function createEditEngine(
   ): Array<{ rowId: string; value: TMDataGridRowData }> => {
     const deleted = new Set(store.state.deletedRowIds);
     const rows: Array<{ rowId: string; value: TMDataGridRowData }> = [];
-    for (const row of getContext().table.getCoreRowModel().flatRows) {
+    const model = getContext().table.getCoreRowModel();
+    for (const row of model.flatRows) {
       if (deleted.has(row.id)) continue;
       if (row.id === rowId) {
         rows.push({ rowId, value });
@@ -964,8 +976,11 @@ export function createEditEngine(
             : (held.form.state.values as TMDataGridRowData),
       });
     }
+    // Entry rows the table does not hold: the open ones, and the committed
+    // ones under `newRowsSticky`. A committed row in flow is in `data`
+    // already, so it was listed above.
     for (const newRow of store.state.newRows) {
-      if (newRow.tempId === rowId) continue;
+      if (newRow.tempId === rowId || newRow.tempId in model.rowsById) continue;
       const held = forms.get(newRow.tempId);
       if (held === undefined || deleted.has(newRow.tempId)) continue;
       rows.push({
@@ -973,7 +988,7 @@ export function createEditEngine(
         value: held.form.state.values as TMDataGridRowData,
       });
     }
-    if (isNew) rows.push({ rowId, value });
+    if (isNew && !(rowId in model.rowsById)) rows.push({ rowId, value });
     return rows;
   };
 
@@ -1142,37 +1157,89 @@ export function createEditEngine(
     store.setState((prev) => ({ ...prev, active }));
   };
 
+  /**
+   * A commit's snapshot into `committedValues`. Refreshed on every commit,
+   * not only the first - `setCellValue` on a parked row writes and commits
+   * again without the row ever leaving the draft store. A reopen leaves the
+   * snapshot alone: the table keeps showing the last decided values until
+   * the next decision.
+   */
+  const snapshotCommitted = (
+    prev: TMDataGridEditState,
+    rowId: string,
+  ): TMDataGridEditState["committedValues"] => {
+    const values = forms.get(rowId)?.form.state.values as
+      | TMDataGridRowData
+      | undefined;
+    if (values === undefined || prev.committedValues[rowId] === values) {
+      return prev.committedValues;
+    }
+    return { ...prev.committedValues, [rowId]: values };
+  };
+
   const setNewRowCommitted = (tempId: string, committed: boolean) => {
     store.setState((prev) => {
       const target = prev.newRows.find((newRow) => newRow.tempId === tempId);
-      if (target === undefined || target.committed === committed) return prev;
+      if (target === undefined) return prev;
+      const committedValues = committed
+        ? snapshotCommitted(prev, tempId)
+        : prev.committedValues;
+      if (
+        target.committed === committed &&
+        committedValues === prev.committedValues
+      ) {
+        return prev;
+      }
       return {
         ...prev,
-        newRows: prev.newRows.map((newRow) =>
-          newRow.tempId === tempId ? { ...newRow, committed } : newRow,
-        ),
+        committedValues,
+        newRows:
+          target.committed === committed
+            ? prev.newRows
+            : prev.newRows.map((newRow) =>
+                newRow.tempId === tempId ? { ...newRow, committed } : newRow,
+              ),
       };
     });
   };
 
   /**
    * Moves an existing row across the line between form state and the draft
-   * store. The values never move - they stay in the row's form; this records
-   * which side the row is on, and the entry's flag keeps the two in step.
+   * store. The values stay in the row's form; this records which side the
+   * row is on, snapshots them for the table on the way in, and the entry's
+   * flag keeps the two in step.
    */
   const setCommitted = (rowId: string, committed: boolean) => {
     const entry = forms.get(rowId);
     if (entry !== undefined) entry.committed = committed;
     store.setState((prev) => {
       const has = prev.committedRowIds.includes(rowId);
-      if (has === committed) return prev;
+      const committedValues = committed
+        ? snapshotCommitted(prev, rowId)
+        : prev.committedValues;
+      if (has === committed && committedValues === prev.committedValues) {
+        return prev;
+      }
       return {
         ...prev,
-        committedRowIds: committed
-          ? [...prev.committedRowIds, rowId]
-          : prev.committedRowIds.filter((id) => id !== rowId),
+        committedValues,
+        committedRowIds:
+          has === committed
+            ? prev.committedRowIds
+            : committed
+              ? [...prev.committedRowIds, rowId]
+              : prev.committedRowIds.filter((id) => id !== rowId),
       };
     });
+  };
+
+  const withoutCommittedValues = (
+    prev: TMDataGridEditState,
+    rowId: string,
+  ): TMDataGridEditState["committedValues"] => {
+    if (!(rowId in prev.committedValues)) return prev.committedValues;
+    const { [rowId]: _dropped, ...rest } = prev.committedValues;
+    return rest;
   };
 
   const drop = (rowId: string) => {
@@ -1189,6 +1256,7 @@ export function createEditEngine(
         rows,
         openRowIds: [...forms.keys()],
         committedRowIds: prev.committedRowIds.filter((id) => id !== rowId),
+        committedValues: withoutCommittedValues(prev, rowId),
         newRows: entry.isNew
           ? prev.newRows.filter((newRow) => newRow.tempId !== rowId)
           : prev.newRows,
@@ -1457,6 +1525,7 @@ export function createEditEngine(
       ...prev,
       active: null,
       committedRowIds: [],
+      committedValues: {},
       deletedRowIds: [],
     }));
   };
@@ -1781,7 +1850,8 @@ export function createEditEngine(
   const getRows = (): ReadonlyArray<TMDataGridEditRowSnapshot> => {
     const deleted = new Set(store.state.deletedRowIds);
     const rows: Array<TMDataGridEditRowSnapshot> = [];
-    for (const row of getContext().table.getCoreRowModel().flatRows) {
+    const model = getContext().table.getCoreRowModel();
+    for (const row of model.flatRows) {
       const held = forms.get(row.id);
       rows.push({
         rowId: row.id,
@@ -1789,11 +1859,13 @@ export function createEditEngine(
           held === undefined
             ? (row.original as TMDataGridRowData)
             : (held.form.state.values as TMDataGridRowData),
-        isNew: false,
+        isNew: held?.isNew === true,
         deleted: deleted.has(row.id),
       });
     }
+    // Entry rows the table does not hold - see mergedRows.
     for (const newRow of store.state.newRows) {
+      if (newRow.tempId in model.rowsById) continue;
       const held = forms.get(newRow.tempId);
       if (held === undefined) continue;
       rows.push({

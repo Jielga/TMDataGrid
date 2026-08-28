@@ -16,7 +16,7 @@ kind.
 | `editing.rowValidators` | `TMDataGridRowValidators` | – | Form-level validation. Cross-field rules live here. |
 | `editing.tableValidators` | `TMDataGridTableValidators` | – | Cross-row rules, handed the collection with every draft overlaid. |
 | `editing.newRowDefaults` | `TData \| (() => TData)` | – | Seeds the entry row's form. A function is called per added row. |
-| `editing.newRowsSticky` | `boolean` | `false` | `draft: true` only. Keeps entered new rows pinned in the entry block until the save, instead of letting them scroll with the body. |
+| `editing.newRowsSticky` | `boolean` | `false` | `draft: true` only. Keeps committed entry rows in the sticky entry block, out of the body's sort and out of the row count, until the save. Off, a committed entry row becomes a body row. |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"single"` while `editing` is set | Editing turns the cell cursor on; set it explicitly to override. |
 
 Passing any other member of `editing` without `mode` is a compile error, and
@@ -99,6 +99,11 @@ type TMDataGridEditState = {
   // The draft store's edit slice: existing rows whose form passed its submit,
   // parked for `saveDrafts`. Empty without `editing.draft`.
   committedRowIds: ReadonlyArray<string>;
+  // What a committed row *is* to the table: the draft store's values per row,
+  // snapshotted at each commit and kept across a reopen, so the row holds its
+  // place until it commits again or is dropped. The grid feeds these to the
+  // table in place of the consumer's records.
+  committedValues: Readonly<Record<string, TMDataGridRowData>>;
   // `committed` is "in the store, awaiting the save". Without `editing.draft`
   // a commit adds through `onRowAdd`, so it stays `false`.
   newRows: ReadonlyArray<{ tempId: string; committed: boolean }>;
@@ -156,11 +161,11 @@ Every control carries a tooltip from the labels, `revertRow`, `rowStateNew`,
 | Name | Kind | What it is |
 | --- | --- | --- |
 | `--dg-entry-height` | CSS variable | Height of the sticky entry block. From `size`. |
-| `--dg-row-new-bg` | CSS variable | Background of an entered new row. A green tint. |
+| `--dg-row-new-bg` | CSS variable | Background of a committed new row, in the body or the entry block. A green tint. |
 | `data-deleted` | Row attribute | On a row marked for deletion under `draft: true`. |
 | `data-dirty` | Row attribute | On a body row holding a dirty draft. Also on the cell whose field is dirty. |
-| `data-new` / `data-committed` | Entry row attributes | On an entry row; `data-committed` once it is committed, awaiting the save. |
-| `data-dg-entry-flow-block` | Attribute | The in-flow block above the body rows holding entered new rows, unless `editing.newRowsSticky` keeps them in the sticky entry block. |
+| `data-new` | Row attribute | On a body row that is a committed new row, and on an entry row. |
+| `data-committed` | Entry row attribute | On an entry row once it is committed, awaiting the save. Seen only under `editing.newRowsSticky`. |
 | `data-dg-part="editor-input"` | Part | The control inside an editing cell. |
 | `data-dg-part="save-row"` / `"cancel-row"` | Parts | The edit lane's buttons on an open row, with `data-row-id`. |
 | `data-dg-part="row-state"` | Part | The draft store's change marker, with `data-row-id` and `data-state` of `new`, `edited` or `deleted`. |

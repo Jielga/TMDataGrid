@@ -111,7 +111,14 @@ editing: {
 ```
 
 A committed row is displayed: the cell renders the draft value through the column's own `cell` renderer, with the blue corner marking it dirty.
-Committed rows accumulate across filters, sorts and scrolling.
+It is also a row like any other to the table: it sorts, filters, groups, aggregates and counts on its draft values.
+A committed row that stops matching a filter or the quick search leaves the view, and the Save bar still counts it.
+
+Everything that reads a row reads the draft: sorting, filtering, quick search, grouping, `aggregatedCell` and `footer`, the faceted filter options, export, row selection, the row numbers and counts, `edit.getRows()` and `editing.tableValidators`.
+The row callbacks are handed the same rows: `onRowClick`, `renderRowContextMenu`, `renderDetails`, `isRowEditable`, `meta.edit.enabled`, `rowClassName`, `rowStyle` and `enableRowPinning` receive a row whose `original` is the committed draft, and for an entered row a record under its temp id, carrying no server id.
+`data` itself is never modified, and `getRowCount()` with a `rowCount` you set does not grow.
+Only top-level rows are overlaid: children reached through `getSubRows` keep their `data` values.
+A row reopened for a further edit keeps its place until it commits again or is cancelled.
 
 A row left open is not lost and not sent. It keeps everything typed into it,
 stays open across a save, and joins the next save once it is committed. This
@@ -147,7 +154,7 @@ Rows publish what they are holding, for styling and for tests:
 | `data-dirty` | Body row, cell | Values typed in, decided or not |
 | `data-draft` | Body row, entry row | Committed into the draft store, waiting for Save |
 | `data-deleted` | Body row | Marked for deletion |
-| `data-new` | Entry row | An entered row, committed or not |
+| `data-new` | Body row, entry row | An entered row, committed (body) or not (entry block) |
 
 A row attribute is published on every body row, `"true"` or `"false"`, so match
 the value - `[data-draft="true"]` - rather than the bare attribute, which
@@ -344,12 +351,13 @@ Escape, or ✕, discards the entry.
 Clicking away decides nothing - an entry row is row-shaped in every mode.
 An entry row never OK'd is not part of a save; it stays open.
 
-Under `draft: true` a committed row renders as a value row above the body rows,
-marked new (`data-new`, `data-committed`) and tinted with `--dg-row-new-bg`.
-By default it scrolls with the body; set `newRowsSticky: true` to keep
-committed rows pinned in the entry block until the save. Double-click, or the
-lane's pencil, reopens the row - which takes it back out of the draft store
-until it is committed again; ✕ removes it.
+Under `draft: true` a committed entry row leaves the entry block and becomes a
+body row: marked `data-new` and `data-draft`, tinted with `--dg-row-new-bg`, and
+sorted, filtered and counted with the rest on the values it was entered with.
+Set `newRowsSticky: true` to keep committed rows in the entry block until the
+save instead, out of the body's sort and out of the row count. Double-click, or
+the lane's pencil, reopens the row back into the entry block - which takes it
+out of the draft store until it is committed again; ✕ removes it.
 
 ```tsx
 useTMDataGrid({
@@ -468,7 +476,7 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.getForm(rowId)` | The row's live `FormApi` |
 | `edit.getRowValues(rowId)` | The row as shown: its draft where one is held, else the `data` value. `undefined` for an unknown row |
 | `edit.getRows()` | Every row as shown - drafts overlaid, entry rows appended, deletion-marked rows included and flagged `deleted` |
-| `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, entry rows, deletion marks |
+| `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, the committed values the table shows (`committedValues`), entry rows, deletion marks |
 
 `commit`, `commitAll`, `saveDrafts`, `setCellValue`, `setRowValues`,
 `clearCell` and `addRows` return promises. Await each call before starting the
@@ -479,6 +487,7 @@ and it shares values, dirty state and errors with the inline cells.
 
 `getRowValues` and `getRows` read what the grid shows rather than what `data` holds: an open form's values, a parked draft, or the `data` value when neither exists.
 `getRows` walks the core row model, so it is unfiltered and never contains group rows, and it filters nothing out - a row marked deleted comes back flagged `deleted`, an entry row flagged `isNew` under its temp id.
+The order is the core row model's, committed new rows ahead of the `data` rows, and then the entry rows the table does not hold: the ones still being typed into, and the committed ones under `newRowsSticky`.
 
 ```tsx
 const selected = grid.table
@@ -529,7 +538,7 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.onCommit`            | Callback       | `({ rowId, value, original, changes, source }) => void \| Promise` | – | Applies one row's change. Reject to keep the draft.                                              |
 | `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | `draft: true` only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
 | `editing.onCommitDrafts`      | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
-| `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps entered new rows pinned in the entry block until the save.             |
+| `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps committed entry rows in the sticky entry block, out of the body's sort, until the save. |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |
 | `editing.onRowDelete`         | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too.                |
@@ -542,7 +551,8 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `actions.scrollToFirstOpenRow` | Slot action    | `(align?) => boolean`                            | `align: "auto"`   | Scrolls to the first open row in display order. `false` when none could be reached.              |
 | `clearedValueForType`         | Export         | `(type) => unknown`                              | –                 | What Delete writes for each column type.                                                         |
 | `--dg-entry-height`           | CSS variable   | length                                           | From `size`       | Height of the sticky entry block.                                                                |
-| `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of an entered new row.                                                                |
+| `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of a committed new row, in the body or the entry block.                               |
 | `data-deleted`                | Data attribute | –                                                | –                 | On a row marked for deletion under `draft: true`.                                                |
 | `data-dirty`                  | Data attribute | –                                                | –                 | On a body row holding a dirty draft.                                                             |
-| `data-new` / `data-committed` | Data attribute | –                                                | –                 | On an entry row; `data-committed` once it is committed, awaiting the save.                       |
+| `data-new`                    | Data attribute | –                                                | –                 | On a body row that is a committed new row, and on an entry row.                                  |
+| `data-committed`              | Data attribute | –                                                | –                 | On an entry row once it is committed, awaiting the save. Seen only under `newRowsSticky`.        |

@@ -66,7 +66,7 @@ rather than forwarded to TanStack.
 | `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange` - see below. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration, see below. |
 | `persist` | `TMDataGridPersistence` | – | State persistence, see below. |
-| `editing` | `TMDataGridEditingOptions` | off | Turns editing on. Two axes: `mode` (`"cell" \| "cellConfirm" \| "row"`) picks what counts as a commit, `draft` picks whether it parks in the draft store; the object also holds `onCommit`, `onSaveDrafts`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `newRowsSticky`, `onRowAdd` and `onRowDelete` - see the `editing` skill. |
+| `editing` | `TMDataGridEditingOptions` | off | Turns editing on. Two axes: `mode` (`"cell" \| "cellConfirm" \| "row"`) picks what counts as a commit, `draft` picks whether it parks in the draft store; the object also holds `onCommit`, `onSaveDrafts`, `rowValidators`, `isRowEditable`, `newRowDefaults`, `newRowsSticky` (keeps committed new rows in the sticky entry block instead of sorting them in with the body), `onRowAdd` and `onRowDelete` - see the `editing` skill. |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings and `aria-label`s. |
 
 ### Default initial state

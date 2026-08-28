@@ -129,11 +129,11 @@ export type TMDataGridFeatureFlags = {
    */
   editDraft: boolean;
   /**
-   * Whether a parked entry row stays pinned in the sticky entry block until
-   * the draft store is saved - `editing.newRowsSticky`, which needs
-   * `editing.draft`. Off by default: a parked row joins the scrolling flow
-   * instead, so entering many rows cannot fill the viewport with sticky
-   * chrome.
+   * Whether a committed entry row stays pinned in the sticky entry block
+   * until the draft store is saved - `editing.newRowsSticky`, which needs
+   * `editing.draft`. Off by default: a committed row joins the body rows
+   * instead, sorted and filtered with them, so entering many rows cannot
+   * fill the viewport with sticky chrome.
    */
   editNewRowsSticky: boolean;
   /** The generated row-number gutter - `enableRowNumbers`. Off by default. */

@@ -48,7 +48,7 @@ the `grid` role.
 | Grid | `table`, or `grid` under cell selection | `aria-rowcount`, `aria-colcount`, `aria-busy`, `data-dg-row-count` |
 | Header row | `row` | `aria-rowindex` |
 | Header cell | `columnheader` | `data-dg-part="header"`, `data-column-id`, `aria-sort`, `data-active` |
-| Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-dirty`, `data-draft`, `data-striped` |
+| Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-dirty`, `data-draft`, `data-new`, `data-striped` |
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
 
 **The role changes with cell selection.** `cellSelection` turns the grid's
@@ -98,8 +98,8 @@ so a part that repeats is addressed by adding the coordinate.
 
 | `data-dg-part` | What it is |
 | --- | --- |
-| `row` | A body row, pinned or not |
-| `entry-row` | An entry row. Carries `data-new`, and `data-committed` / `data-draft` once parked in the draft store |
+| `row` | A body row, pinned or not. A committed new row is one of them, marked `data-new` |
+| `entry-row` | An entry row being typed into. Carries `data-new`, and `data-committed` / `data-draft` once committed, which is where a committed row stays under `editing.newRowsSticky` |
 | `details` | A row's detail panel |
 | `select-row` | Its selection checkbox |
 | `details-toggle`, `group-toggle` | Its detail and tree chevrons |
