@@ -14,7 +14,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.9'
+  library_version: '2.0.0-beta.10'
 sources:
   - 'Jielga/TMDataGrid:src/docs/grouping.md'
   - 'Jielga/TMDataGrid:src/docs/summary-row.md'

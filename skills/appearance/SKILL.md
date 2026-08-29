@@ -11,13 +11,13 @@ description: >
   features argument under the React Compiler, and localization through the
   labels option, TMDATAGRID_LABELS_EN, TMDATAGRID_LABELS_SV, mergeLabels and
   grid.labels. Load when styling or theming the grid, choosing a density,
-  building a toolbar, adding a button beside the built-in ones, filling the
-  grid menu (TMDataGrid.Menu, the column chooser as menu items), or
-  translating the interface.
+  building a toolbar, adding a button beside the built-in ones, filling the grid
+  menu (TMDataGrid.Menu, the column chooser as menu items), or translating the
+  interface.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.9'
+  library_version: '2.0.0-beta.10'
 sources:
   - 'Jielga/TMDataGrid:src/docs/styling.md'
   - 'Jielga/TMDataGrid:src/docs/toolbar.md'

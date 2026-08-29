@@ -4,14 +4,14 @@ description: >
   Set up TMDataGrid, a compound React data grid built on TanStack Table v9 and
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
   catalog (Table, Footer, Toolbar, Spacer, SummaryCount, Search,
-  LoadingIndicator, DraftActions, FilterButton, Menu, FilterPanel,
-  FilterPills, ColumnsPanel), the size scale and the bounded-height layout
-  requirement. Load when adding a grid, choosing which parts to render, or when
-  rows do not appear.
+  LoadingIndicator, DraftActions, FilterButton, Menu, FilterPanel, FilterPills,
+  ColumnsPanel), the size scale and the bounded-height layout requirement. Load
+  when adding a grid, choosing which parts to render, or when rows do not
+  appear.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.9'
+  library_version: '2.0.0-beta.10'
 sources:
   - 'Jielga/TMDataGrid:src/docs/getting-started.md'
   - 'Jielga/TMDataGrid:src/docs/anatomy.md'
