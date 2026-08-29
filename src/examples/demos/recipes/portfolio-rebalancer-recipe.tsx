@@ -5,7 +5,7 @@ import {
   createTMDataGridColumnHelper,
   TMDataGrid,
   useTMDataGrid,
-} from "@jielga/tmdatagrid";
+} from "../../../tmdatagrid";
 
 type Holding = {
   id: string;
