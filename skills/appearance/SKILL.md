@@ -11,8 +11,9 @@ description: >
   features argument under the React Compiler, and localization through the
   labels option, TMDATAGRID_LABELS_EN, TMDATAGRID_LABELS_SV, mergeLabels and
   grid.labels. Load when styling or theming the grid, choosing a density,
-  building a toolbar, adding a button beside the built-in ones, or translating
-  the interface.
+  building a toolbar, adding a button beside the built-in ones, filling the
+  grid menu (TMDataGrid.Menu, the column chooser as menu items), or
+  translating the interface.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -20,6 +21,7 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:src/docs/styling.md'
   - 'Jielga/TMDataGrid:src/docs/toolbar.md'
+  - 'Jielga/TMDataGrid:src/docs/menu.md'
   - 'Jielga/TMDataGrid:src/docs/localization.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/capabilities.ts'
   - 'Jielga/TMDataGrid:src/tmdatagrid/core/labels.ts'
@@ -118,13 +120,48 @@ element, and `TMDataGrid.Spacer` pushes what follows to the right.
   <TMDataGrid.LoadingIndicator />
   <ExportButton />
   <TMDataGrid.FilterButton />
-  <TMDataGrid.ColumnsButton />
+  <TMDataGrid.Menu>
+    <TMDataGrid.Menu.Columns />
+  </TMDataGrid.Menu>
 </TMDataGrid.Toolbar>
 ```
 
 Each built-in renders nothing when its feature is off, so a read-only grid needs
 no conditionals: `FilterButton` under `enableColumnFilters: false` renders
 nothing at all.
+
+### The grid menu
+
+`TMDataGrid.Menu` is the burger: a Mantine `Menu` whose children are the
+dropdown, so your own `Menu.Item`s sit beside the built-in items. It takes
+Mantine `MenuProps` (defaults `position="bottom-end"`, `shadow="md"`,
+`width={260}`, `withinPortal`), `icon` and `label` (default `labels.menuButton`).
+
+```tsx
+import { Menu } from "@mantine/core";
+
+<TMDataGrid.Menu>
+  <Menu.Item onClick={exportCsv}>Export CSV</Menu.Item>
+  <Menu.Divider />
+  <Menu.Label>Columns</Menu.Label>
+  <TMDataGrid.Menu.Columns />
+</TMDataGrid.Menu>
+```
+
+`TMDataGrid.Menu.Columns` is the column chooser as menu items: `Menu.Search`,
+one `Menu.CheckboxItem` per hideable column, show/hide all and reset layout;
+it renders nothing when no column can be hidden. Its pieces
+`TMDataGrid.Menu.ColumnToggles` (`search` narrows the list),
+`.ShowHideAll` and `.ResetLayout` are exported for menus that want only some of
+them. Every piece needs a Mantine `Menu` around it and reads the grid from
+context, so it works in any Mantine menu rendered inside `TMDataGrid`, and in a
+`Menu.Sub` (pass `searchable={false}` there: `Menu.Search` registers on the
+root menu and switches off its type-ahead and arrow keys).
+
+The menu always renders, since it cannot see what its children render; a menu
+holding only `Menu.Columns` should be hidden with `canHideAny` under
+`enableHiding: false`. `TMDataGrid.ColumnsPanel` is the same chooser as plain
+controls, for a Popover, a Drawer or an inline layout.
 
 A button of your own reads the grid from context, which returns
 `{ table, ui, features, labels, controlSize, resetSettings }`:

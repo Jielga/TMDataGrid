@@ -5,12 +5,15 @@ Colouring rows by their contents, such as an overdue invoice in red.
 ```tsx
 <TMDataGrid.Table<Employee>
   rowStyle={(row) =>
-    row.original.status === "Terminated"
+    !row.getIsGrouped() && row.original.status === "Terminated"
       ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)" }
       : undefined
   }
 />
 ```
+
+Group rows are handed to `rowStyle` and `rowClassName` too, and a group row's `original` is an arbitrary child's record.
+Guard a callback that reads `original` with `row.getIsGrouped()`, or match `data-grouped="true"` to style the group rows themselves.
 
 ```demo
 file: rows/RowStyling.tsx
@@ -36,6 +39,8 @@ Pick a colour that reads under both colour schemes. A `-0` Mantine shade
 (`red-0`) is near-white, which turns unreadable behind light text in the dark
 scheme; mixing a mid shade into transparency tints both schemes evenly:
 `color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)`.
+
+The grid composes `--row-bg` over the theme's body colour, so a translucent value tints the row and stays opaque under the pinned columns and the pinned rows.
 
 ## Classes instead
 
@@ -100,6 +105,6 @@ value; the bare attribute selector matches every row:
 | `rowClassName` | Table prop | `string \| (row) => string \| undefined` | – | Class for a body row, added after the grid's own. |
 | `striped` | Table prop | `boolean` | `false` | Every second row takes `--dg-row-striped-bg`. |
 | `TMDataGridRowStyle` | Export | type | – | `CSSProperties` or an object of `--*` custom properties. |
-| `--row-bg` | CSS variable | colour | – | The row's own background, composed under hover, selection and range. |
+| `--row-bg` | CSS variable | colour | – | The row's own background, composed over the body colour and under hover, selection and range. |
 | `--dg-row-striped-bg` | CSS variable | colour | Themed | The stripe colour. |
 | `--dg-row-height` | CSS variable | length | From `size` | Row height. `meta.rowHeight` is the supported way to change it. |

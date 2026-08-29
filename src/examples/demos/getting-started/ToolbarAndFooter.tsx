@@ -53,7 +53,9 @@ export function ToolbarAndFooter() {
             {/* Everything after the spacer is pushed to the right edge. */}
             <TMDataGrid.Spacer />
             <TMDataGrid.FilterButton />
-            <TMDataGrid.ColumnsButton />
+            <TMDataGrid.Menu>
+              <TMDataGrid.Menu.Columns />
+            </TMDataGrid.Menu>
           </TMDataGrid.Toolbar>
         )}
 

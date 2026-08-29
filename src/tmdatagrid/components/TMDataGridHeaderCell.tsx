@@ -46,6 +46,7 @@ import {
   UngroupIcon,
 } from "./icons";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
+import { TMDataGridMenuColumns } from "./TMDataGridMenu";
 import { type TMDataGridFeatures, openColumnFilter } from "../useTMDataGrid";
 
 /** The table as the header cell sees it, after the context type erasure. */
@@ -476,13 +477,19 @@ export function TMDataGridHeaderCell({
   }
   if (canManageColumns) {
     menuItems.push(
-      <Menu.Item
-        key="manage"
-        leftSection={<ColumnsIcon size={16} stroke={1.6} />}
-        onClick={() => api.ui.actions.setColumnsPanelOpen(true)}
-      >
-        {labels.manageColumns}
-      </Menu.Item>,
+      <Menu.Sub key="manage">
+        <Menu.Sub.Target>
+          <Menu.Sub.Item leftSection={<ColumnsIcon size={16} stroke={1.6} />}>
+            {labels.manageColumns}
+          </Menu.Sub.Item>
+        </Menu.Sub.Target>
+        <Menu.Sub.Dropdown>
+          {/* No search box: `Menu.Search` registers on the root menu context,
+              which switches off type-ahead and the arrow-key handling of every
+              dropdown of this menu - the column menu's included. */}
+          <TMDataGridMenuColumns searchable={false} />
+        </Menu.Sub.Dropdown>
+      </Menu.Sub>,
     );
   }
   // A trailing divider reads as a dropped item - drop the divider instead.

@@ -135,17 +135,25 @@ The filter rows: a column, an operator and a value control for each active filte
 
 No props.
 
-## TMDataGrid.ColumnsButton
+## TMDataGrid.Menu
 
-A popover holding `TMDataGrid.ColumnsPanel`.
-It renders nothing when no column can be hidden. See [Visibility, pinning and size](/docs/column-layout).
+The burger at the end of the toolbar and the Mantine `Menu` it opens.
+Its children are the dropdown. See [Grid menu](/docs/menu).
 
-No props.
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | `ReactNode` | – | The dropdown: your own `Menu.Item`s and the `TMDataGrid.Menu.*` items. |
+| `icon` | `ReactNode` | The burger | The trigger's icon. |
+| `label` | `string` | `labels.menuButton` | The trigger's tooltip and `aria-label`. |
+| Mantine `MenuProps` | | `position="bottom-end"`, `shadow="md"`, `width={260}`, `withinPortal` | Passed to the `Menu`. |
+
+`TMDataGrid.Menu.Columns`, `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` are the column chooser as menu items, for this menu or any Mantine `Menu` inside the grid.
+`Columns` takes `searchable` (default `true`), `ColumnToggles` takes `search`; the other two take no props.
 
 ## TMDataGrid.ColumnsPanel
 
-A searchable checkbox list of the hideable columns, with a show-all toggle and a reset button.
-`TMDataGrid.ColumnsButton` renders it; render it yourself only for a custom layout.
+The column chooser as plain controls: a searchable checkbox list of the hideable columns, with a show-all toggle and a reset button.
+For a Popover, a Drawer or an inline layout; `TMDataGrid.Menu.Columns` is the same thing as menu items.
 
 No props.
 
@@ -298,7 +306,7 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.Toolbar` · `.Spacer` | Components | – | – | The toolbar row, and the gap that pushes items right. |
 | `TMDataGrid.Search` | Component | – | – | Quick search input. Also `TMDataGridSearch`. |
 | `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. |
-| `TMDataGrid.ColumnsButton` · `.ColumnsPanel` | Components | – | – | Column visibility, and Reset layout. |
+| `TMDataGrid.Menu` · `.ColumnsPanel` | Components | – | – | The burger menu, and the column chooser as plain controls. |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Components | – | – | Fetch spinner, and the row count. |
 | `TMDataGrid.DraftActions` | Component | – | – | Save and Discard. Also `TMDataGridDraftActions`. |
 | `TMDataGrid.Footer` | Component | – | – | The pager bar. |

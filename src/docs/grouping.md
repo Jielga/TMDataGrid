@@ -97,6 +97,9 @@ A group row is built on its first child's record rather than on one of its own,
 so it does not fire `onRowClick`, cannot be highlighted, cannot be
 [pinned](/docs/row-pinning) and has no details panel.
 
+`rowStyle` and `rowClassName` are the exception: they are called for group rows too, with that same child's record as `original`.
+Guard a callback that reads `original` with `row.getIsGrouped()`, and set `--dg-row-group-bg` to colour the group rows themselves.
+
 `data-grouped` is published on every row, `"true"` on group rows and `"false"`
 on the rest, so match the value - `[data-grouped="true"]` - rather than the
 bare attribute. `data-depth` carries the nesting level, and

@@ -60,6 +60,9 @@ counts as a commit and which controls trigger it.
 
 An entry row from `edit.addRow()` is row-shaped in every mode: every editable cell opens at once, Tab walks them, and the lane's ✓ is what enters it.
 
+Leaving a cell commits it only once the value passes.
+A refused commit keeps the editor open, invalid, with the message in its tooltip, until the value is fixed or Escape drops it.
+
 ```demo
 file: editing/CellEditing.tsx
 hint: Double-click a cell, or press Enter or F2, or start typing on it.
@@ -128,6 +131,7 @@ stay open with their errors instead of travelling half-checked.
 
 A row that fails validation on the way out is the other way a row stays open.
 Its message outlives the editor that found it: the cell keeps its invalid marker and the lane carries the text, until the value that failed is changed.
+While an editor is open, a field's own message shows in a tooltip on it, opened by focus and by hover.
 
 The rest of this page is what `draft: true` turns on.
 

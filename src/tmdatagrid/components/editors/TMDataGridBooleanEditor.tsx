@@ -2,7 +2,7 @@ import { Checkbox } from "@mantine/core";
 import type { TMDataGridEditorArgs } from "../../core/editEngine";
 import { getColumnLabel } from "../../core/columnUtils";
 import { useTMDataGridContext } from "../../TMDataGridContext";
-import { useFieldError, useFieldValue } from "./editorShared";
+import { useFieldInvalid, useFieldValue } from "./editorShared";
 
 /** The built-in editor for `meta.type: "boolean"` - a focused checkbox. */
 export function TMDataGridBooleanEditor({
@@ -12,7 +12,7 @@ export function TMDataGridBooleanEditor({
 }: TMDataGridEditorArgs) {
   const { labels } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   return (
     <Checkbox
       size={size}
@@ -21,7 +21,7 @@ export function TMDataGridBooleanEditor({
       checked={value === true}
       onChange={(event) => field.handleChange(event.currentTarget.checked)}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

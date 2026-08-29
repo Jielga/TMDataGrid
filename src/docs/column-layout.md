@@ -12,12 +12,8 @@ hint: Drag a header to reorder · pin or hide from a column menu · drag a divid
 
 ## Hiding
 
-**Hide column** in any column menu, and **Manage columns** - the
-`ColumnsButton` and the panel behind it - for the whole list at once.
-
-`TMDataGrid.ColumnsPanel` is a search field, the column checkboxes, show/hide
-all, and **Reset layout**. It is rendered by `TMDataGrid.ColumnsButton` and
-exported for custom layouts.
+**Hide column** in any column menu, and the column chooser for the whole list at once: a search field, one checkbox per column, show/hide all, and **Reset layout**.
+The chooser is `TMDataGrid.Menu.Columns` in the [grid menu](/docs/menu), **Manage columns** in every column menu (a submenu of the same items), and `TMDataGrid.ColumnsPanel` as plain controls for a host that is not a menu.
 
 `enableHiding: false` removes all of it; on a column it removes that column's
 menu item and leaves it out of the panel, which lists what can be hidden and
@@ -43,9 +39,14 @@ computed from an `fr` value. The grid writes the column's rendered width into
 `columnSizing` as it is pinned, so nothing jumps.
 
 To start pinned, set `initialState.columnPinning`. The slice is TanStack's
-full `ColumnPinningState`, so a partial does not compile - name both sides:
+full `ColumnPinningState`, so a partial does not compile - name both sides.
+A column pinned at mount has no rendered width to store, so it takes its
+`size` - TanStack's default of `150` where none is set - and `minSize` does
+not apply. Give such a column an explicit `size`:
 
 ```tsx
+columnHelper.accessor("registration", { header: "Registration", size: 220 });
+
 initialState: { columnPinning: { left: ["registration"], right: [] } }
 ```
 
@@ -200,4 +201,4 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `keepGeneratedColumnsOutermost` | Export | `(columnPinning) => ColumnPinningState` | – | Puts the generated lanes back on the outside of both pinned lanes. The grid runs it after every pin. |
 | `getColumnRegion` | Export | `(column) => "left" \| "center" \| "right"` | – | Which pinned region a column is in. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
-| `TMDataGrid.ColumnsButton` · `TMDataGrid.ColumnsPanel` | Components | – | – | Manage columns, and Reset layout. |
+| `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | – | – | The column chooser, as menu items and as plain controls. See [Grid menu](/docs/menu). |

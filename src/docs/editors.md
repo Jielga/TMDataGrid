@@ -55,18 +55,18 @@ meta: { edit: { editor: SalaryEditor } }
 **Define editors at module scope.** An inline arrow function gets a new identity
 on every render, which remounts the editor mid-edit and discards what was typed.
 
-A custom editor renders its own error text. The built-in editors bind the
-field's first error to the input's `error` prop; an editor that binds nothing
-shows a refused commit as `data-invalid` on the cell with no message on screen.
-An entry of `field.state.meta.errors` is a string from a function validator, or
-an issue carrying a `message` from a schema:
+The field's validation message is shown by the host, in a tooltip on the
+editor: open while the input is focused, and on hover. A custom editor gets the
+same tooltip, so it renders no message of its own.
+
+The built-in editors mark the input invalid and add no inline text, since the
+message would be clipped by the width of the cell. A custom editor does the
+same by binding a boolean to the control's `error` prop:
 
 ```tsx
-const error = field.state.meta.errors
-  .map((e) => (typeof e === "string" ? e : e?.message))
-  .find(Boolean);
+const hasError = field.state.meta.errors.length > 0;
 
-<Slider value={field.state.value} onChange={field.handleChange} error={error} />;
+<Slider value={field.state.value} onChange={field.handleChange} error={hasError} />;
 ```
 
 ## Mapping the value as it is typed
@@ -146,7 +146,7 @@ meta: { edit: { validate: z.string().min(2, "Too short") } }
 // The same rule without a schema library:
 meta: {
   edit: {
-    validate: ({ value }) =>
+    validate: ({ value }: { value: unknown }) =>
       typeof value === "string" && value.length < 2 ? "Too short" : undefined,
   },
 }
@@ -165,15 +165,17 @@ useTMDataGrid({
 });
 ```
 
+A plain function is typed `TMDataGridValidator`, whose `value` is `never`, so annotate the parameter - `{ value: unknown }`, or the type the column's editor writes - rather than leaving it to be inferred.
+
 Pathed issues land on the matching cells; pathless ones on the row, where the
 message shows in the edit lane's tooltip - on the open row's ✓, and on the
 parked row's marker. To show a pathless message somewhere of your own, read it
 from `edit.getForm(rowId)?.state.errors`; `edit.store` carries the flag
 (`hasRowError`) and the field messages (`errorMessages`), not the row text.
 
-A commit blocked by validation keeps the editor open with the message on the
-input. A rejected `editing.onCommit` keeps the draft too, with the error on the
-row. Server-side field errors can be returned natively through
+A commit blocked by validation keeps the editor open, invalid, with the message
+in its tooltip. A rejected `editing.onCommit` keeps the draft too, with the
+error on the row. Server-side field errors can be returned natively through
 `editing.rowValidators.onSubmitAsync`'s `{ form, fields }` shape.
 
 Cross-field rules need a mode that commits the whole row at once. Under

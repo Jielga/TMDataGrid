@@ -28,12 +28,27 @@ starts without the stakeholder's go.
   "warning"` on an issue reuses the whole pipeline: amber corner, same
   tooltip, `warningFields` beside `errorFields`. Related to H3 in name only -
   H3 is dev-time misconfiguration, this is end-user data.
+- H8 - cell-level styling (`meta.cellStyle`, `meta.cellClassName`). The cell
+  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
+  rather than to what a `cell` renderer puts inside it. Raised by a test
+  consumer 2026-08-26: colouring a value today means a wrapper component
+  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
+  so it cannot reach the cell's background layers the way `rowStyle` does. AG
+  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
+  vocabulary as the row hooks so it composes with the draft and selection
+  layers rather than fighting them. Raised again 2026-08-28 by a third test
+  consumer (portfolio rebalancer), where it was the largest gap in both the
+  docs and the library, and the workaround - a tinted `<span>` inside `cell` -
+  cannot reach the cell's edges.
 
 **Parked** - U1, container-based column visibility (`meta.hideBelow`). Called
 past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- The column header menu's own items (sort, filter, group, pin, move, autosize, hide) as `TMDataGrid.Menu.*` components taking a `column` prop, with a `columnMenu` element on `TMDataGrid.Table` in place of the `renderColumnMenuItems` array handback.
+  The grid menu (2026-08-29) left the namespace room for them.
+  Raised 2026-08-29; held until a consumer asks.
 - Editing navigation style - `editing.navigation: "spreadsheet" | "row"`.
   `"spreadsheet"` is today's behaviour: Enter commits and moves down, Tab
   commits and moves right. `"row"` treats the row as the record: Enter and
@@ -43,15 +58,6 @@ past 1.0.0 on 2026-08-01.
   settling the tab order; held until a consumer asks.
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing.
-- Cell-level styling (`meta.cellStyle`, `meta.cellClassName`) - the cell
-  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
-  rather than to what a `cell` renderer puts inside it. Raised by a test
-  consumer 2026-08-26: colouring a value today means a wrapper component
-  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
-  so it cannot reach the cell's background layers the way `rowStyle` does. AG
-  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
-  vocabulary as the row hooks so it composes with the draft and selection
-  layers rather than fighting them.
 - Paste into a cell range - raised by a test consumer 2026-08-27 (depot
   maintenance board). Cell selection has a range, Ctrl+C and CSV export;
   paste is the missing half. `edit.setCellValue` already validates and parks
@@ -63,7 +69,8 @@ past 1.0.0 on 2026-08-01.
   `initialState.columnPinning` takes TanStack's full `ColumnPinningState`,
   so the partial `{ left: [...] }` a consumer tries first does not compile
   while `initialState: { grouping: [...] }` teaches that partials are fine.
-  Raised 2026-08-27.
+  Raised 2026-08-27. Confirmed by a third consumer 2026-08-28, who also hit
+  the mount-time width, documented under column-layout.
 - Type the `meta.options` function form - `row.original` arrives as
   `unknown` although the callback sits on a `TData`-bound column helper, so
   the docs show a cast. Making the callback generic removes it. Raised
@@ -75,7 +82,9 @@ past 1.0.0 on 2026-08-01.
 - Tree lane width - the generated group column is a fixed ~250px, pinned
   left, and no option or CSS variable narrows it. Raised by two test
   consumers 2026-08-27; one dropped `columnPinning` because the lane had
-  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`.
+  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`. A
+  third consumer 2026-08-28 measured it at 260px in a 713px container with
+  three columns pinned right, leaving the centre about 115px.
 - `table.options.meta` as a consumer-extensible channel - columns are module
   scope, so a cell renderer has no supported way to read page state; `meta`
   is the natural channel but the docs only name `loading`, `totalRowCount`
@@ -111,6 +120,11 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Grid menu** - **done 2026-08-29**, breaking.
+`TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.
+The column chooser is menu items now, `TMDataGrid.Menu.Columns` with `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` as its pieces, built on Mantine 9.4's `Menu.Search`, `Menu.CheckboxItem` and `Menu.Sub`, so it goes into any Mantine menu inside the grid; the header menu's "Manage columns" is a submenu of the same items.
+`TMDataGrid.ColumnsButton` and the `columnsPanelOpen` ui state are gone; `TMDataGrid.ColumnsPanel` stays for hosts that are not a menu.
 
 **Drafts as shown** - **done 2026-08-28**.
 Under `editing.draft` a committed draft is the table's row: it stands in for the consumer's record in the table's `data`, so sorting, filtering, quick search, grouping, aggregates, facets, export, selection, the row counts, `edit.getRows()` and `tableValidators` all read it, and the row callbacks receive it as `row.original`.

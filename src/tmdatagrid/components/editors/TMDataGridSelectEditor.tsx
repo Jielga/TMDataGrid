@@ -6,7 +6,7 @@ import {
 } from "../../core/columnOptions";
 import { getColumnLabel } from "../../core/columnUtils";
 import { useTMDataGridContext } from "../../TMDataGridContext";
-import { useFieldError, useFieldValue } from "./editorShared";
+import { useFieldInvalid, useFieldValue } from "./editorShared";
 
 /**
  * The built-in editor for `meta.type: "select"`. Options come from the same
@@ -23,7 +23,7 @@ export function TMDataGridSelectEditor({
 }: TMDataGridEditorArgs) {
   const { labels, features } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   return (
     <Select
       size={size}
@@ -45,7 +45,7 @@ export function TMDataGridSelectEditor({
         if (next !== null && features.editMode === "cell") void commit();
       }}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

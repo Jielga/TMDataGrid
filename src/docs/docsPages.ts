@@ -10,8 +10,10 @@ import gettingStartedDoc from "./getting-started.md?raw";
 import groupingDoc from "./grouping.md?raw";
 import loadingAndEmptyDoc from "./loading-and-empty.md?raw";
 import localizationDoc from "./localization.md?raw";
+import menuDoc from "./menu.md?raw";
 import paginationDoc from "./pagination.md?raw";
 import persistenceDoc from "./persistence.md?raw";
+import portfolioRebalancerDoc from "./portfolio-rebalancer.md?raw";
 import queryBuilderDoc from "./query-builder.md?raw";
 import quickSearchDoc from "./quick-search.md?raw";
 import rowDetailsDoc from "./row-details.md?raw";
@@ -234,6 +236,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     source: toolbarDoc,
   },
   {
+    id: "menu",
+    section: "Appearance",
+    label: "Grid menu",
+    description: "The burger, and the column chooser as menu items",
+    source: menuDoc,
+  },
+  {
     id: "localization",
     section: "Appearance",
     label: "Localization",
@@ -247,6 +256,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "A query builder form",
     description: "The grid as a form field",
     source: queryBuilderDoc,
+  },
+  {
+    id: "portfolio-rebalancer",
+    section: "Recipes",
+    label: "A portfolio rebalancer",
+    description: "Derived columns, and a rule spanning every row",
+    source: portfolioRebalancerDoc,
   },
 
   {

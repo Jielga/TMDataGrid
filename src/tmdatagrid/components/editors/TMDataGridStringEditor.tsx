@@ -5,7 +5,7 @@ import { useTMDataGridContext } from "../../TMDataGridContext";
 import {
   selectAllOnFocus,
   useCaretKeeper,
-  useFieldError,
+  useFieldInvalid,
   useFieldValue,
 } from "./editorShared";
 
@@ -13,7 +13,7 @@ import {
 export function TMDataGridStringEditor({ field, column, size }: TMDataGridEditorArgs) {
   const { labels } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   const { inputRef, remember } = useCaretKeeper();
   return (
     <TextInput
@@ -29,7 +29,7 @@ export function TMDataGridStringEditor({ field, column, size }: TMDataGridEditor
         field.handleChange(event.currentTarget.value);
       }}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

@@ -32,16 +32,18 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
     isNotEmpty: "är inte tom",
   },
 
-  manageColumns: "Hantera kolumner",
   filters: "Filter",
   searchPlaceholder: "Sök",
   searchLabel: "Sök rader",
   clearSearch: "Rensa sökningen",
 
+  menuButton: "Meny",
+  manageColumns: "Hantera kolumner",
+
   columnsSearchPlaceholder: "Sök",
   columnsNoMatch: (search) => `Inga kolumner matchar ”${search}”`,
   columnsShowHideAll: "Visa/dölj alla",
-  columnsReset: "ÅTERSTÄLL LAYOUT",
+  columnsReset: "Återställ layout",
   columnsResetHint:
     "Återställer kolumnernas synlighet, ordning, bredder, fästning och gruppering",
   rowNumberColumnLabel: "Radnummer",

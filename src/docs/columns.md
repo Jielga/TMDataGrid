@@ -45,6 +45,33 @@ addresses the column by id - `initialState`, `editing.columns`, `moveColumn`,
 a test selector - takes the underscore form; the dotted form silently matches
 nothing.
 
+### Columns derived from the other rows
+
+`accessorFn` is handed one row, so a value that depends on the rest - a share
+of a total, a rank, a running total - cannot be an accessor. Derive the
+collection once and hand the grid the finished shape; the column is then a
+plain `accessorKey`:
+
+```tsx
+const rows = useMemo(() => {
+  const total = holdings.reduce((sum, holding) => sum + holding.value, 0);
+
+  return holdings.map((holding) => ({
+    ...holding,
+    pctOfTotal: (holding.value / total) * 100,
+  }));
+}, [holdings]);
+
+columnHelper.accessor("pctOfTotal", {
+  header: "Share",
+  meta: { type: "number", align: "right" },
+  cell: (info) => `${info.getValue().toFixed(1)}%`,
+});
+```
+
+[A portfolio rebalancer](/docs/portfolio-rebalancer) works one through, from
+the derived rows to a validator that reads them all.
+
 ## meta
 
 `meta` carries what a TanStack column definition has no field for. What the

@@ -317,9 +317,9 @@ describe("edit modes", () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(rowOne()).toHaveAttribute("data-draft", "false");
     expect(part("open-rows-note")).toHaveTextContent("1 row still being edited");
-    // The editor is gone, and the message it found is not: the cell stays
-    // marked and the lane carries the text.
-    expect(noEditor()).toBe(true);
+    // The editor stays - a refused commit is not a decision - and the message
+    // with it: the cell is marked, and the lane's ✓ carries the text as well.
+    expect(noEditor()).toBe(false);
     expect(cellAt(0, 0)).toHaveAttribute("data-invalid", "true");
     expect(part("save-row", { rowId: "1" })).toBeInTheDocument();
     await user.hover(part("save-row", { rowId: "1" }));

@@ -7,10 +7,23 @@ export function useFieldValue(field: TMDataGridEditField): unknown {
   return useStore(field.store, (state) => state.value as unknown);
 }
 
-/** The field's first error, for the Mantine input's `error` prop. */
+/** The field's first error - the message the editor's host puts in a tooltip. */
 export function useFieldError(field: TMDataGridEditField): string | undefined {
   return useStore(field.store, (state) =>
     firstErrorText(state.meta.errors as ReadonlyArray<unknown>),
+  );
+}
+
+/**
+ * Whether the field has an error, for the Mantine input's `error` prop - the
+ * invalid border and nothing else. The message itself would wrap inside a
+ * narrow cell and be clipped, so the host shows it in a tooltip instead.
+ */
+export function useFieldInvalid(field: TMDataGridEditField): boolean {
+  return useStore(
+    field.store,
+    (state) =>
+      firstErrorText(state.meta.errors as ReadonlyArray<unknown>) !== undefined,
   );
 }
 

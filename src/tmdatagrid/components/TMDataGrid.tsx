@@ -7,10 +7,10 @@ import { TMDataGridDraftActions } from "./TMDataGridDraftActions";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 import { TMDataGridFilterPills } from "./TMDataGridFilterPills";
 import { TMDataGridFooter } from "./TMDataGridFooter";
+import { TMDataGridMenu } from "./TMDataGridMenu";
 import { TMDataGridSearch } from "./TMDataGridSearch";
 import { TMDataGridTable } from "./TMDataGridTable";
 import {
-  TMDataGridColumnsButton,
   TMDataGridFilterButton,
   TMDataGridLoadingIndicator,
   TMDataGridSummaryCount,
@@ -66,7 +66,9 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
  *   <TMDataGrid.Toolbar>
  *     <TMDataGrid.SummaryCount />
  *     <TMDataGrid.Spacer />
- *     <TMDataGrid.ColumnsButton />
+ *     <TMDataGrid.Menu>
+ *       <TMDataGrid.Menu.Columns />
+ *     </TMDataGrid.Menu>
  *   </TMDataGrid.Toolbar>
  *   <TMDataGrid.Table />
  *   <TMDataGrid.Footer />
@@ -152,7 +154,7 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
   LoadingIndicator: TMDataGridLoadingIndicator,
   Search: TMDataGridSearch,
   DraftActions: TMDataGridDraftActions,
-  ColumnsButton: TMDataGridColumnsButton,
+  Menu: TMDataGridMenu,
   FilterButton: TMDataGridFilterButton,
   Table: TMDataGridTable,
   Footer: TMDataGridFooter,
@@ -163,6 +165,9 @@ export const TMDataGrid = Object.assign(TMDataGridRoot, {
    * rendered outside `<TMDataGrid>` - a page header, for instance.
    */
   FilterPills: TMDataGridFilterPills,
-  /** Rendered by `TMDataGrid.ColumnsButton`; exported for custom layouts. */
+  /**
+   * The column chooser as plain controls, for a Popover, a Drawer or an
+   * inline layout; `TMDataGrid.Menu.Columns` is the same thing as menu items.
+   */
   ColumnsPanel: TMDataGridColumnsPanel,
 });

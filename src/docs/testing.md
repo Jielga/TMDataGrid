@@ -79,9 +79,9 @@ so a part that repeats is addressed by adding the coordinate.
 | `filter-panel`, `filter-panel-close` | The filter panel and its ✕ |
 | `filter-add`, `filter-clear-all` | The panel's footer buttons |
 | `filter-pills` | The active-filter pill group |
-| `columns-button` | The burger toggle |
-| `columns-panel`, `columns-search` | The column manager and its search |
-| `columns-toggle-all`, `columns-reset` | Its footer controls |
+| `menu-button` | The burger, `TMDataGrid.Menu` |
+| `columns-panel`, `columns-search` | The column chooser panel, and the search box in the panel or in `TMDataGrid.Menu.Columns` |
+| `columns-toggle-all`, `columns-reset` | Show/hide all and Reset layout, in the panel or in the menu |
 | `footer` | The pager row |
 | `page-size`, `page-range`, `page-prev`, `page-next` | The pager |
 | `summary-row` | The footer summary row |
@@ -119,7 +119,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `header-sort`, `header-menu`, `header-filter` | Its three action buttons |
 | `filter-row` | One row of the filter panel |
 | `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
-| `columns-toggle` | One checkbox in the column manager |
+| `columns-toggle` | The checkbox of one column, in the panel or in the menu |
 
 ### Keyed by both
 
@@ -254,7 +254,7 @@ export class DataGrid {
   }
 
   async toggleColumn(columnId: string): Promise<void> {
-    await this.part("columns-button").click();
+    await this.part("menu-button").click();
     await this.part("columns-toggle", { columnId }).click();
   }
 

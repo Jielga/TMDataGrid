@@ -6,64 +6,31 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
-import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import classes from "./TMDataGridColumnsPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
+import { useHideableColumns } from "./useHideableColumns";
 import { SearchIcon } from "./icons";
 
 /**
- * The "Manage columns" surface. Reachable from every column header menu and
- * from the grid's burger menu, so it lives on its own and is rendered by
- * `TMDataGrid.ColumnsButton`.
+ * The "Manage columns" surface as plain controls, for a host that is not a
+ * menu - a Popover, a Drawer, an inline layout. `TMDataGrid.Menu.Columns` is
+ * the same chooser as menu items.
  */
 export function TMDataGridColumnsPanel() {
-  const { table, labels, controlSize, resetSettings } = useTMDataGridContext();
+  const { labels, controlSize, resetSettings } = useTMDataGridContext();
   const [search, setSearch] = useState("");
 
-  const columnVisibility = useSelector(
-    table.store,
-    (state) => state.columnVisibility,
-  );
+  const { columns, columnVisibility, shownCount, setAllVisible } =
+    useHideableColumns();
 
-  // Only what can actually be hidden. A column with `enableHiding: false` is
-  // left out rather than listed and disabled: a box that cannot be ticked only
-  // invites the question, and every generated lane is one - the checkbox and
-  // edit lanes hold the controls the grid needs, the tree column follows the
-  // grouping state, the row-number gutter follows `enableRowNumbers`. None of
-  // them is a setting.
-  const columns = table
-    .getAllLeafColumns()
-    .filter((column) => column.getCanHide());
   const needle = search.trim().toLowerCase();
   const visibleInPanel = needle
     ? columns.filter((column) =>
         getColumnLabel(column).toLowerCase().includes(needle),
       )
     : columns;
-
-  const shownCount = columns.filter(
-    (column) => columnVisibility[column.id] !== false,
-  ).length;
-
-  /**
-   * Show or hide every listed column.
-   *
-   * Not `table.toggleAllColumnsVisible`, which writes a visibility entry for
-   * *every* leaf column: showing all would publish the tree column - hidden
-   * because nothing is grouped, not because the user hid it - and hiding all
-   * would force the same column visible, since it writes `!getCanHide()` for
-   * the columns it will not touch. Either way a lane the panel never listed
-   * changes state, and persistence then keeps it that way.
-   */
-  const setAllVisible = (visible: boolean) => {
-    table.setColumnVisibility((previous) => {
-      const next = { ...previous };
-      for (const column of columns) next[column.id] = visible;
-      return next;
-    });
-  };
 
   return (
     <div data-dg-part="columns-panel" className={classes.columnsPanel}>
