@@ -3,7 +3,7 @@ import { useRef } from "react";
 import type { TMDataGridEditorArgs } from "../../core/editEngine";
 import { getColumnLabel } from "../../core/columnUtils";
 import { useTMDataGridContext } from "../../TMDataGridContext";
-import { useFieldError, useFieldValue } from "./editorShared";
+import { useFieldInvalid, useFieldValue } from "./editorShared";
 
 /**
  * The built-in editor for `meta.type: "date"` - the native
@@ -17,7 +17,7 @@ export function TMDataGridDateEditor({
 }: TMDataGridEditorArgs) {
   const { labels } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   // The cell's original shape decides what the editor writes back: a `Date`
   // cell keeps getting Dates, an ISO-string cell keeps getting strings -
   // decided once at open, so clearing and retyping cannot flip the type.
@@ -49,7 +49,7 @@ export function TMDataGridDateEditor({
         );
       }}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

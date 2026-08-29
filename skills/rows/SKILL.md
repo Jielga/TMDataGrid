@@ -193,7 +193,7 @@ Returning an empty list leaves the column with no menu button at all.
 <TMDataGrid.Table<Employee>
   striped
   rowStyle={(row) =>
-    row.original.status === "Terminated"
+    !row.getIsGrouped() && row.original.status === "Terminated"
       ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)" }
       : undefined
   }

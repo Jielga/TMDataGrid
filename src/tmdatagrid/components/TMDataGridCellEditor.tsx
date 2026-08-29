@@ -1,4 +1,4 @@
-import { ActionIcon } from "@mantine/core";
+import { ActionIcon, Tooltip } from "@mantine/core";
 import { FieldApi } from "@tanstack/react-form";
 import type { Cell, Row } from "@tanstack/react-table";
 import {
@@ -27,6 +27,7 @@ import { TMDataGridMultiSelectEditor } from "./editors/TMDataGridMultiSelectEdit
 import { TMDataGridNumberEditor } from "./editors/TMDataGridNumberEditor";
 import { TMDataGridSelectEditor } from "./editors/TMDataGridSelectEditor";
 import { TMDataGridStringEditor } from "./editors/TMDataGridStringEditor";
+import { useFieldError } from "./editors/editorShared";
 
 const BUILT_IN_EDITORS: Record<
   string,
@@ -138,6 +139,17 @@ export function TMDataGridCellEditor({
   });
   useEffect(() => field.mount(), [field]);
 
+  // The field's message, read here rather than in each editor: the tooltip
+  // below is the host's, so a column's own `meta.edit.editor` gets it too.
+  const error = useFieldError(field);
+  // When that tooltip is up, held here rather than left to Tooltip's own
+  // `events`: those bring floating-ui's dismiss interaction with them, which
+  // puts an `onKeyDown` on the anchor and stops Escape inside the editor
+  // before the host's handler below can cancel on it. A controlled `opened`
+  // turns the interaction off, so hover and focus are tracked here instead.
+  const [messageHovered, setMessageHovered] = useState(false);
+  const [messageFocused, setMessageFocused] = useState(false);
+
   // Type-to-edit: the seed replaces the value, as it does in a spreadsheet.
   // Only for the types where keystrokes are the input.
   useEffect(() => {
@@ -234,8 +246,12 @@ export function TMDataGridCellEditor({
    * Focus left the editor entirely - a click somewhere else. Under `"cell"`
    * that commits (Sheets): a row the user has walked away from is a row they
    * are done typing into, and where the commit lands is `editing.draft`'s
-   * business. A commit blocked by validation keeps the form and its invalid
-   * marker, with the editor closed.
+   * business. A refused commit - validation, or `onCommit` rejecting - leaves
+   * the editor where it is, invalid, with the value still in it: closed, the
+   * cell would render the refused value as if it had landed, and the message
+   * would go with the editor. The engine holds the same line when another
+   * row is opened over a refused one (see `begin`). The user fixes the value,
+   * or Escapes.
    */
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (closingRef.current) return;
@@ -252,7 +268,8 @@ export function TMDataGridCellEditor({
       return;
     }
     void edit.commit(row.id).then((ok) => {
-      if (!ok) edit.deactivate();
+      // Open for another try: the next blur or key has to be able to commit.
+      if (!ok) closingRef.current = false;
     });
   };
 
@@ -289,7 +306,35 @@ export function TMDataGridCellEditor({
       onMouseDown={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
     >
-      <Editor {...args} />
+      {/* The validation message, on the editor rather than under it: inside a
+          narrow column Mantine's inline error wraps, grows the row and is
+          clipped, so the input keeps the invalid border and the text comes up
+          beside it. The editor gets a box of its own because Tooltip needs a
+          child that takes a ref, which a `meta.edit.editor` need not forward. */}
+      <Tooltip
+        label={error}
+        opened={error !== undefined && (messageHovered || messageFocused)}
+        withArrow
+        position="bottom-start"
+      >
+        <div
+          className={classes.cellEditorField}
+          onMouseEnter={() => setMessageHovered(true)}
+          onMouseLeave={() => setMessageHovered(false)}
+          onFocus={() => setMessageFocused(true)}
+          onBlur={(event) => {
+            // Focus moving inside the editor - into an open dropdown, say - is
+            // not focus leaving it.
+            const next = event.relatedTarget;
+            if (next instanceof Node && event.currentTarget.contains(next)) {
+              return;
+            }
+            setMessageFocused(false);
+          }}
+        >
+          <Editor {...args} />
+        </div>
+      </Tooltip>
       {/* cellConfirm's chrome: the draft only commits through the ✓ (or
           Enter), so the pair sits right beside the input. */}
       {features.editMode === "cellConfirm" && (

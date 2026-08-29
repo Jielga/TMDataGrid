@@ -6,7 +6,7 @@ import { useTMDataGridContext } from "../../TMDataGridContext";
 import {
   selectAllOnFocus,
   useCaretKeeper,
-  useFieldError,
+  useFieldInvalid,
   useFieldValue,
 } from "./editorShared";
 
@@ -14,7 +14,7 @@ import {
 export function TMDataGridNumberEditor({ field, column, size }: TMDataGridEditorArgs) {
   const { labels } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   const { inputRef, remember } = useCaretKeeper();
   /**
    * The last text Mantine reported instead of a number - "-" or "1e" on the
@@ -64,7 +64,7 @@ export function TMDataGridNumberEditor({ field, column, size }: TMDataGridEditor
         );
       }}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

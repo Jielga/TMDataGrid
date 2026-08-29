@@ -213,9 +213,45 @@ describe("cell editing", () => {
     await user.keyboard("{Enter}");
 
     expect(await screen.findByText("Too short")).toBeInTheDocument();
+    // In the editor's tooltip, not as text under the input: an inline message
+    // wraps inside a narrow column, grows the row and is clipped. The input
+    // keeps the invalid state and nothing else.
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Too short");
+    expect(editorInput()).toHaveAttribute("aria-invalid", "true");
+    expect(cellAt(0, 0).querySelector(".mantine-InputWrapper-error")).toBeNull();
     expect(commits.length).toBe(0);
     // Still editing - the invalid cell holds the edit.
     expect(editorInput()).toBeInTheDocument();
+  });
+
+  it("keeps an invalid editor open when focus leaves the cell", async () => {
+    const user = userEvent.setup();
+    const commits: unknown[] = [];
+    renderWithMantine(
+      <EditGrid editing={{ onCommit: (args) => void commits.push(args) }} />,
+    );
+
+    await user.dblClick(cellAt(0, 0));
+    await user.clear(editorInput());
+    await user.type(editorInput(), "A");
+    // Leaving the cell commits under `"cell"` - but a refused commit is not a
+    // decision, so the editor stays, invalid, rather than closing on a value
+    // the cell would then show as if it had landed.
+    await user.click(cellAt(1, 1));
+
+    expect(commits.length).toBe(0);
+    expect(editorInput()).toBeInTheDocument();
+    expect(editorInput()).toHaveAttribute("aria-invalid", "true");
+
+    // Fixed and left again: this time the commit lands and the editor closes.
+    await user.clear(editorInput());
+    await user.type(editorInput(), "Annika");
+    await user.click(cellAt(1, 1));
+
+    await waitFor(() => expect(commits.length).toBe(1));
+    expect(
+      screen.queryByRole("textbox", { name: "Edit Name" }),
+    ).not.toBeInTheDocument();
   });
 
   it("blocks the commit on an editing.tableValidators rule and shows the message", async () => {

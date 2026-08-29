@@ -6,7 +6,7 @@ import {
 } from "../../core/columnOptions";
 import { getColumnLabel } from "../../core/columnUtils";
 import { useTMDataGridContext } from "../../TMDataGridContext";
-import { useFieldError, useFieldValue } from "./editorShared";
+import { useFieldInvalid, useFieldValue } from "./editorShared";
 
 /**
  * The built-in editor for `meta.type: "multiSelect"` - cells holding string
@@ -22,7 +22,7 @@ export function TMDataGridMultiSelectEditor({
 }: TMDataGridEditorArgs) {
   const { labels } = useTMDataGridContext();
   const value = useFieldValue(field);
-  const error = useFieldError(field);
+  const invalid = useFieldInvalid(field);
   return (
     <MultiSelect
       size={size}
@@ -37,7 +37,7 @@ export function TMDataGridMultiSelectEditor({
       value={Array.isArray(value) ? value.map(String) : []}
       onChange={(next) => field.handleChange(next)}
       onBlur={field.handleBlur}
-      error={error}
+      error={invalid}
     />
   );
 }

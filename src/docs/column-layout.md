@@ -43,9 +43,14 @@ computed from an `fr` value. The grid writes the column's rendered width into
 `columnSizing` as it is pinned, so nothing jumps.
 
 To start pinned, set `initialState.columnPinning`. The slice is TanStack's
-full `ColumnPinningState`, so a partial does not compile - name both sides:
+full `ColumnPinningState`, so a partial does not compile - name both sides.
+A column pinned at mount has no rendered width to store, so it takes its
+`size` - TanStack's default of `150` where none is set - and `minSize` does
+not apply. Give such a column an explicit `size`:
 
 ```tsx
+columnHelper.accessor("registration", { header: "Registration", size: 220 });
+
 initialState: { columnPinning: { left: ["registration"], right: [] } }
 ```
 

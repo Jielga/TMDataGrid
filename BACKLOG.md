@@ -28,6 +28,18 @@ starts without the stakeholder's go.
   "warning"` on an issue reuses the whole pipeline: amber corner, same
   tooltip, `warningFields` beside `errorFields`. Related to H3 in name only -
   H3 is dev-time misconfiguration, this is end-user data.
+- H8 - cell-level styling (`meta.cellStyle`, `meta.cellClassName`). The cell
+  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
+  rather than to what a `cell` renderer puts inside it. Raised by a test
+  consumer 2026-08-26: colouring a value today means a wrapper component
+  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
+  so it cannot reach the cell's background layers the way `rowStyle` does. AG
+  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
+  vocabulary as the row hooks so it composes with the draft and selection
+  layers rather than fighting them. Raised again 2026-08-28 by a third test
+  consumer (portfolio rebalancer), where it was the largest gap in both the
+  docs and the library, and the workaround - a tinted `<span>` inside `cell` -
+  cannot reach the cell's edges.
 
 **Parked** - U1, container-based column visibility (`meta.hideBelow`). Called
 past 1.0.0 on 2026-08-01.
@@ -43,15 +55,6 @@ past 1.0.0 on 2026-08-01.
   settling the tab order; held until a consumer asks.
 - Loading vocabulary (skeleton rows, toolbar progress, `isSaving` spinners) -
   needs hands-on play before speccing.
-- Cell-level styling (`meta.cellStyle`, `meta.cellClassName`) - the cell
-  counterpart of `rowStyle` / `rowClassName`, applied to the cell element
-  rather than to what a `cell` renderer puts inside it. Raised by a test
-  consumer 2026-08-26: colouring a value today means a wrapper component
-  repeated in `cell`, `aggregatedCell` and `footer`, and it colours the glyphs,
-  so it cannot reach the cell's background layers the way `rowStyle` does. AG
-  Grid's `cellClassRules` is the reference. Wants the same CSS-variable
-  vocabulary as the row hooks so it composes with the draft and selection
-  layers rather than fighting them.
 - Paste into a cell range - raised by a test consumer 2026-08-27 (depot
   maintenance board). Cell selection has a range, Ctrl+C and CSV export;
   paste is the missing half. `edit.setCellValue` already validates and parks
@@ -63,7 +66,8 @@ past 1.0.0 on 2026-08-01.
   `initialState.columnPinning` takes TanStack's full `ColumnPinningState`,
   so the partial `{ left: [...] }` a consumer tries first does not compile
   while `initialState: { grouping: [...] }` teaches that partials are fine.
-  Raised 2026-08-27.
+  Raised 2026-08-27. Confirmed by a third consumer 2026-08-28, who also hit
+  the mount-time width, documented under column-layout.
 - Type the `meta.options` function form - `row.original` arrives as
   `unknown` although the callback sits on a `TData`-bound column helper, so
   the docs show a cast. Making the callback generic removes it. Raised
@@ -75,7 +79,9 @@ past 1.0.0 on 2026-08-01.
 - Tree lane width - the generated group column is a fixed ~250px, pinned
   left, and no option or CSS variable narrows it. Raised by two test
   consumers 2026-08-27; one dropped `columnPinning` because the lane had
-  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`.
+  spent the width. `--dg-group-column-width`, or `groupColumn: { size }`. A
+  third consumer 2026-08-28 measured it at 260px in a 713px container with
+  three columns pinned right, leaving the centre about 115px.
 - `table.options.meta` as a consumer-extensible channel - columns are module
   scope, so a cell renderer has no supported way to read page state; `meta`
   is the natural channel but the docs only name `loading`, `totalRowCount`

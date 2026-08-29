@@ -44,6 +44,10 @@ export function RowStyling() {
                   // its sticky pinned cells and the cell-range tint all read
                   // this variable - and hover, selection and highlight keep
                   // working on top of it. A raw `background` bypasses the lot.
+                  //
+                  // A group row's `original` is an arbitrary child's record,
+                  // so the status read off it is not the group's.
+                  if (row.getIsGrouped()) return undefined;
                   if (row.original.status === "Terminated") {
                     return { "--row-bg": "var(--mantine-color-red-light)" };
                   }

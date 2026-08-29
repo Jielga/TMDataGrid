@@ -958,32 +958,6 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     };
   }, [newRowCount, pinnedTopRows.length]);
 
-  /**
-   * The summary row's height, published as `--dg-summary-height` so the
-   * pinned bottom block sticks above it rather than underneath it.
-   */
-  useEffect(() => {
-    if (pinnedBottomRows.length === 0) return;
-    const grid = gridElementRef.current;
-    if (grid === null) return;
-    const summaryRow = grid.querySelector<HTMLElement>(
-      '[data-dg-part="summary-row"]',
-    );
-    if (summaryRow === null) return;
-    const measure = () =>
-      grid.style.setProperty(
-        "--dg-summary-height",
-        `${summaryRow.offsetHeight}px`,
-      );
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(summaryRow);
-    return () => {
-      observer.disconnect();
-      grid.style.removeProperty("--dg-summary-height");
-    };
-  }, [pinnedBottomRows.length]);
-
   // A persisted pageIndex can outlive the data that produced it; TanStack only
   // auto-resets on live filter/sort/data changes, not on restored state. The
   // guard makes the dependency-free effect idempotent.
@@ -1310,12 +1284,43 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   );
 
   /**
+   * The summary row's height, published as `--dg-summary-height`, which two
+   * things read: the pinned bottom block sticks above the summary row rather
+   * than underneath it, and the summary row's own `top` inset holds it on the
+   * bottom edge of a body too short to scroll. A layout effect, so the first
+   * paint already has the measurement - `top` would otherwise resolve to 100%
+   * for a frame and take an overflowing grid's summary row out of view. Down
+   * here rather than beside the other measurements because `hasSummaryRow` is
+   * only known this far into the render.
+   */
+  useLayoutEffect(() => {
+    if (!hasSummaryRow) return;
+    const grid = gridElementRef.current;
+    if (grid === null) return;
+    const summaryRow = grid.querySelector<HTMLElement>(
+      '[data-dg-part="summary-row"]',
+    );
+    if (summaryRow === null) return;
+    const measure = () =>
+      grid.style.setProperty(
+        "--dg-summary-height",
+        `${summaryRow.offsetHeight}px`,
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(summaryRow);
+    return () => {
+      observer.disconnect();
+      grid.style.removeProperty("--dg-summary-height");
+    };
+  }, [hasSummaryRow]);
+
+  /**
    * The other end of the same story as `stickyCoverTop`: the pinned bottom
    * block and the summary row stick to the container's bottom edge, so the
    * virtualizer takes their height as `scrollPaddingEnd` and stops scrolling a
-   * row to just underneath them. Down here rather than beside the other
-   * measurements because `hasSummaryRow` is only known this far into the
-   * render.
+   * row to just underneath them. Down here for the same reason as the
+   * measurement above.
    */
   useEffect(() => {
     const grid = gridElementRef.current;

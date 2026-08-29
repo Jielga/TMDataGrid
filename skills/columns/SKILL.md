@@ -183,7 +183,10 @@ layout**.
 **Pinning** is "Pin to left" / "Pin to right" in the column menu. A pinned
 column also becomes fixed-width: sticky offsets are computed from `getSize()`,
 which cannot resolve an `fr` value, so the grid stores the rendered width in
-`columnSizing` at the moment it is pinned and nothing jumps.
+`columnSizing` at the moment it is pinned and nothing jumps. A column pinned
+from `initialState.columnPinning` has no rendered width to store, so it takes
+its `size` - TanStack's default of `150` where none is set - and `minSize`
+does not apply.
 
 **Ordering** is header dragging plus "Move left" / "Move right". A column can
 only move **within its own pinned region** - pinning splits the grid into left,
@@ -299,7 +302,33 @@ columnHelper.accessor("email", {
 });
 ```
 
+The corollary is that a pinned column is fixed-width and does use `size`, so a
+column that is pinned needs one.
+
 Source: `src/docs/column-layout.md` (Sizing).
+
+### HIGH Pinning a column at mount without size
+
+A column pinned interactively keeps the width it was rendering, which the grid
+writes into `columnSizing`. A column pinned from `initialState.columnPinning`
+has no rendered width, so it takes `size` - TanStack's default of `150` where
+none is set - and `minSize` does not apply.
+
+Wrong:
+
+```tsx
+columnHelper.accessor("name", { header: "Name", minSize: 220 });
+initialState: { columnPinning: { left: ["name"], right: [] } },
+```
+
+Correct:
+
+```tsx
+columnHelper.accessor("name", { header: "Name", minSize: 220, size: 220 });
+initialState: { columnPinning: { left: ["name"], right: [] } },
+```
+
+Source: `src/docs/column-layout.md` (Pinning).
 
 ### HIGH Addressing a dotted column by its accessor key
 
@@ -408,6 +437,31 @@ columns are therefore immovable in both directions, whatever `meta.enableOrderin
 says.
 
 Source: `src/docs/column-layout.md` (Regions).
+
+### MEDIUM Computing a cross-row value in accessorFn
+
+`accessorFn` is handed one row, so a share of a total, a rank or a running
+total has nothing to compute against. Derive the collection once and give the
+grid the finished shape.
+
+Wrong:
+
+```tsx
+columnHelper.accessor((row) => (row.value / total) * 100, { id: "pctOfTotal" });
+```
+
+Correct:
+
+```tsx
+const rows = useMemo(() => {
+  const total = holdings.reduce((sum, h) => sum + h.value, 0);
+  return holdings.map((h) => ({ ...h, pctOfTotal: (h.value / total) * 100 }));
+}, [holdings]);
+
+columnHelper.accessor("pctOfTotal", { header: "Share" });
+```
+
+Source: `src/docs/columns.md` (Columns derived from the other rows).
 
 ## Reference
 

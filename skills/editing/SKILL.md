@@ -85,6 +85,8 @@ They are independent, and every pair is legal.
 | `"cellConfirm"` | ✓ or Enter; Tab walks input, ✓, ✕ and then leaves, keeping the draft | ✕ or Escape | ✓ / ✕ beside the input |
 | `"row"` | Save in the edit lane, or Enter | Cancel, or Escape | generated edit lane |
 
+Leaving a cell commits it only once the value passes: a refused commit keeps the editor open, invalid, with the message in its tooltip, until the value is fixed or Escape drops it.
+
 | `editing.draft` | Where a commit goes |
 | --- | --- |
 | `false` (default) | Straight out: `onCommit`, `onRowAdd`, `onRowDelete` |
@@ -216,7 +218,11 @@ rowValidators: {
 ```
 
 Pathed issues land on the matching cells, pathless ones on the row, and cell
-corners mark both: blue for a dirty draft, red for a validation error.
+corners mark both: blue for a dirty draft, red for a validation error. A
+field's message shows in a tooltip on the open editor, which the host renders
+for a custom editor as much as a built-in one; the plain-function form of a
+validator types `value` as `never`, so annotate the parameter -
+`({ value }: { value: unknown })`.
 
 `editing.tableValidators` carries the rules that need the other rows - no
 duplicate keys, no overlapping ranges, shares summing to a total. Its
@@ -428,7 +434,6 @@ are in [references/common-mistakes.md](references/common-mistakes.md).
 | CRITICAL | Expecting the grid to write into `data` - without `editing.onCommit` the cell reverts |
 | CRITICAL | `getRowId` built from the row index - drafts follow the index, not the record |
 | HIGH | A cell editor defined inside the component - a new type per render unmounts the editor |
-| HIGH | A custom editor that binds no error text - a refused commit shows no message; bind `field.state.meta.errors` |
 | HIGH | A cross-field rule under `mode: "cell"` - `rowValidators` needs `"row"` |
 | HIGH | An `accessorFn` column with no `meta.edit.field` - it maps to nothing and stays read-only |
 | HIGH | Swallowing the error in `editing.onCommit` - a resolved catch drops the draft |
@@ -437,6 +442,7 @@ are in [references/common-mistakes.md](references/common-mistakes.md).
 | MEDIUM | A computed column frozen while a row is edited - `accessorFn` reads `data`; read the draft from `edit.store`'s `rows[rowId].values` |
 | MEDIUM | Reading a commit's result as the saved value - it is a `boolean` about the form |
 | MEDIUM | Expecting `editing.onRowDelete` to fire under draft - the mark waits for `saveDrafts` |
+| MEDIUM | A custom editor that binds no invalid state - the host shows the message in a tooltip, but the control keeps its normal border; bind a boolean to `error` |
 
 ## References
 

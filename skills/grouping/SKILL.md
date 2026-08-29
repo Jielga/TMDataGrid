@@ -86,6 +86,9 @@ would pass a row that looks real but is the wrong one. Group rows therefore:
 - do not fire `onRowClick` or the cell handlers
 - cannot be highlighted, pinned, or given a details panel
 - never edit
+- are still handed to `rowStyle` and `rowClassName`, with that child's record
+  as `original`, so guard a callback reading `original` with
+  `row.getIsGrouped()` and colour the group rows with `--dg-row-group-bg`
 - carry `data-grouped="true"` and `data-depth`, with `--dg-row-group-bg`
   behind them. `data-grouped` is on every row, `"true"` or `"false"`, so match
   the value rather than the bare attribute
@@ -142,7 +145,9 @@ aggregateColumn({ table, columnId: "location", fn: "uniqueCount" });
 ```
 
 It follows the filters deliberately. A total that does not change as the user
-narrows the grid is misleading.
+narrows the grid is misleading. Its only argument is `table`, so a toolbar
+readout or any other component holding the table reads the same total without a
+`footer`.
 
 Pinned columns keep their lanes in the summary row, the generated lanes define
 no `footer` so their cells stay blank, and the row is sticky at
@@ -199,7 +204,9 @@ Source: `src/docs/grouping.md` (Grouping suspends pagination).
 Group rows do not fire `onRowClick` or the cell handlers, and cannot be pinned,
 expanded or edited. Their `row.original` is an arbitrary child's record, so a
 bulk action built from `row.original` on the tree lane acts on one record
-instead of the group.
+instead of the group. `rowStyle` and `rowClassName` are the callbacks group
+rows do reach, so one reading `row.original` colours the group by whichever
+child came first.
 
 Correct:
 
@@ -207,6 +214,14 @@ Correct:
 import { getGroupDataRows } from "@jielga/tmdatagrid";
 
 const records = getGroupDataRows(groupRow).map((row) => row.original);
+
+<TMDataGrid.Table<Employee>
+  rowStyle={(row) =>
+    !row.getIsGrouped() && row.original.status === "Terminated"
+      ? { "--row-bg": "color-mix(in srgb, var(--mantine-color-red-6) 12%, transparent)" }
+      : undefined
+  }
+/>;
 ```
 
 Source: `src/docs/grouping.md` (Group rows are not data rows).

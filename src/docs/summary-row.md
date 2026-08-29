@@ -43,6 +43,19 @@ aggregateColumn({ table, columnId: "age", fn: "mean" });        // average
 aggregateColumn({ table, columnId: "location", fn: "uniqueCount" });
 ```
 
+It takes `table`, so the same total can be read anywhere the table is in
+reach - a toolbar readout as much as a `footer`:
+
+```tsx
+const { table } = useTMDataGrid({ data, columns });
+
+<TMDataGrid.Toolbar>
+  <Text size="xs">
+    Payroll {sek(Number(aggregateColumn({ table, columnId: "salary" })))}
+  </Text>
+</TMDataGrid.Toolbar>;
+```
+
 ## Layout
 
 Pinned columns keep their lanes in the summary row, and the row sits under the

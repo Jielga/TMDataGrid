@@ -63,11 +63,11 @@ Bind any control to `field` exactly as inside any TanStack Form:
 `field.state.value`, `field.state.meta.errors`, `field.handleChange`,
 `field.handleBlur`.
 
-Binding `field.state.meta.errors` is what shows a refused commit: the built-in
-editors pass the first error to the input's `error` prop, and an editor that
-binds nothing leaves a blocked save as `data-invalid` on the cell with no
-message on screen. An entry is a string from a function validator, or an issue
-carrying a `message` from a schema.
+The message itself is the host's: it shows in a tooltip on the editor, opened
+by focus and by hover, for a custom editor as much as a built-in one. What an
+editor binds is the invalid state - the built-ins pass a boolean to the input's
+`error` prop for the border alone, and an editor that binds nothing looks
+unchanged while the commit is refused.
 
 ```tsx
 import { Slider } from "@mantine/core";
@@ -193,8 +193,13 @@ meta: { edit: { validate: z.string().min(2, "At least two characters") } }
 // Object form: pick the trigger.
 meta: { edit: { validate: { onBlur: z.string().email("Not an email address") } } }
 
-// A plain function works too.
-meta: { edit: { validate: ({ value }) => (value > 0 ? undefined : "Must be positive") } }
+// A plain function works too. `value` is typed `never`, so annotate the parameter.
+meta: {
+  edit: {
+    validate: ({ value }: { value: unknown }) =>
+      typeof value === "number" && value > 0 ? undefined : "Must be positive",
+  },
+}
 ```
 
 `normalizeFieldValidate(validate)` is exported for consumers building their own
@@ -283,9 +288,9 @@ rowValidators: {
 },
 ```
 
-A commit blocked by validation keeps the editor open with the message on the
-input. A rejected `editing.onCommit` keeps the draft too, with the error on the
-row.
+A commit blocked by validation keeps the editor open, invalid, with the message
+in its tooltip. A rejected `editing.onCommit` keeps the draft too, with the
+error on the row.
 
 ## Where the state shows
 
@@ -294,6 +299,7 @@ row.
 | The cell's own value | A held draft is displayed: the cell renders the draft value through the column's `cell` renderer, in every mode |
 | Blue cell corner | The field is dirty against its original value |
 | Red cell corner | The field carries a validation error |
+| Field error message | In a tooltip on the open editor, shown while the input has focus and on hover |
 | Row error text | A pathless rule failed, or a commit was rejected. In the lane's tooltip: the open row's ✓, or the parked row's marker |
 | `data-dirty` on the row | The row holds a dirty draft |
 
