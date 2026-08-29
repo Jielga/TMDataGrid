@@ -76,7 +76,9 @@ export function ColumnLayout() {
         >
           Reset layout
         </Button>
-        <TMDataGrid.ColumnsButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

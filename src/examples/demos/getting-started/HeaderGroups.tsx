@@ -65,7 +65,9 @@ export function HeaderGroups() {
         <TMDataGrid.SummaryCount />
         <TMDataGrid.Spacer />
         <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

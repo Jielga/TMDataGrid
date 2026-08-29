@@ -163,7 +163,9 @@ export function buildStarterSnippet({
     toolbar.push("          <TMDataGrid.FilterButton />");
   }
   if (options.enableHiding) {
-    toolbar.push("          <TMDataGrid.ColumnsButton />");
+    toolbar.push("          <TMDataGrid.Menu>");
+    toolbar.push("            <TMDataGrid.Menu.Columns />");
+    toolbar.push("          </TMDataGrid.Menu>");
   }
   toolbar.push("        </TMDataGrid.Toolbar>");
 

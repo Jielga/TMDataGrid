@@ -156,7 +156,9 @@ export function Grid({
             <TMDataGrid.DraftActions {...draftActionsProps} />
           ) : null}
           <TMDataGrid.FilterButton />
-          <TMDataGrid.ColumnsButton />
+          <TMDataGrid.Menu>
+            <TMDataGrid.Menu.Columns />
+          </TMDataGrid.Menu>
         </TMDataGrid.Toolbar>
         <TMDataGrid.Table<TestRow> {...tableProps} />
         <TMDataGrid.Footer {...footerProps} />

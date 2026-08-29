@@ -63,7 +63,7 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 **Whole-grid** (unique, no coordinate needed): `toolbar`, `summary-count`,
 `loading`, `search`, `search-clear`, `filter-button`, `filter-panel`,
 `filter-panel-close`, `filter-add`, `filter-clear-all`, `filter-pills`,
-`columns-button`, `columns-panel`, `columns-search`, `columns-toggle-all`,
+`menu-button`, `columns-panel`, `columns-search`, `columns-toggle-all`,
 `columns-reset`, `footer`, `page-size`, `page-range`, `page-prev`, `page-next`,
 `summary-row`, `pinned-top`, `pinned-bottom`, `select-all`,
 `details-toggle-all`, `save-all`, `discard-all`, `editor-confirm`,

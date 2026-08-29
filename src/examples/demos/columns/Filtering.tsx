@@ -78,7 +78,9 @@ export function Filtering() {
           Filter to Engineering + Design
         </Button>
         <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
       <TMDataGrid.Table<Employee> />
     </TMDataGrid>

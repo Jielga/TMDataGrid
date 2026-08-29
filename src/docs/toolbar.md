@@ -12,11 +12,15 @@ built-in ones; there is no slots API and no `actions` prop.
     Export
   </Button>
   <TMDataGrid.FilterButton />
-  <TMDataGrid.ColumnsButton />
+  <TMDataGrid.Menu>
+    <TMDataGrid.Menu.Columns />
+  </TMDataGrid.Menu>
 </TMDataGrid.Toolbar>
 ```
 
 `TMDataGrid.Spacer` pushes everything after it to the right.
+`TMDataGrid.Menu` is the burger; it holds the column chooser here, and anything else you put in it.
+See [Grid menu](/docs/menu).
 
 ```demo
 file: customization/ToolbarComposition.tsx
@@ -32,7 +36,7 @@ toolbar with only `Search` has only a search box.
 | --- | --- |
 | `TMDataGrid.Search` | The [quick search](/docs/quick-search) input |
 | `TMDataGrid.FilterButton` | Opens the [filter panel](/docs/filtering), with the active count |
-| `TMDataGrid.ColumnsButton` | Opens the [columns panel](/docs/column-layout#hiding) |
+| `TMDataGrid.Menu` | The burger: a [menu](/docs/menu) you fill; `TMDataGrid.Menu.Columns` is the column chooser as items |
 | `TMDataGrid.SummaryCount` | Visible rows out of total |
 | `TMDataGrid.LoadingIndicator` | A spinner while `meta.loading` |
 | `TMDataGrid.Spacer` | Pushes what follows to the right |
@@ -41,6 +45,7 @@ toolbar with only `Search` has only a search box.
 Each renders nothing when its feature is off, so a read-only grid needs no
 conditionals in the toolbar: `FilterButton` under `enableColumnFilters: false`
 renders nothing at all.
+`TMDataGrid.Menu` is the exception, since it cannot see what its children render; see [Grid menu](/docs/menu).
 
 ## Buttons of your own
 
@@ -115,7 +120,7 @@ object.
 | `TMDataGrid.Toolbar` | Component | `children` | – | The flex row above the grid. |
 | `TMDataGrid.Spacer` | Component | – | – | Pushes what follows to the right. |
 | `TMDataGrid.FilterButton` | Component | – | – | Opens the filter panel, with an active count. |
-| `TMDataGrid.ColumnsButton` | Component | – | – | Opens the columns panel. |
+| `TMDataGrid.Menu` | Component | `children` | – | The burger and its dropdown. See [Grid menu](/docs/menu). |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | `{ table, ui, features, labels, controlSize, resetSettings }`. |
 | `getGridCapabilities` | Export | `(table, features) => TMDataGridCapabilities` | – | What this grid can do. Reactive to option changes. |
 | `getColumnCapabilities` | Export | `(column, features) => TMDataGridColumnCapabilities` | – | The same for one column. |

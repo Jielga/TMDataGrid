@@ -4,7 +4,7 @@ description: >
   Set up TMDataGrid, a compound React data grid built on TanStack Table v9 and
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
   catalog (Table, Footer, Toolbar, Spacer, SummaryCount, Search,
-  LoadingIndicator, DraftActions, FilterButton, ColumnsButton, FilterPanel,
+  LoadingIndicator, DraftActions, FilterButton, Menu, FilterPanel,
   FilterPills, ColumnsPanel), the size scale and the bounded-height layout
   requirement. Load when adding a grid, choosing which parts to render, or when
   rows do not appear.
@@ -80,7 +80,9 @@ export function Employees({ data }: { data: Employee[] }) {
         <TMDataGrid.SummaryCount />
         <TMDataGrid.Spacer />
         <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
 
       <TMDataGrid.Table<Employee> />
@@ -158,9 +160,9 @@ flex column.
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
 | `TMDataGrid.DraftActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
 | `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
-| `TMDataGrid.ColumnsButton` | - | Opens column manager. Renders nothing if no column is hideable. |
+| `TMDataGrid.Menu` | `children`, `icon`, `label`, Mantine `MenuProps` | The burger and its dropdown: your own `Menu.Item`s, and `TMDataGrid.Menu.Columns`, the column chooser as menu items (renders nothing if no column is hideable). See the `appearance` skill. |
 | `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
-| `TMDataGrid.ColumnsPanel` | - | Rendered by `.ColumnsButton`; exported for custom layouts. |
+| `TMDataGrid.ColumnsPanel` | - | The column chooser as plain controls, for a Popover or a Drawer. |
 | `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
 
 Pass the row type so `onRowClick` stays typed:

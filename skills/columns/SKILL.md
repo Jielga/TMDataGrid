@@ -174,11 +174,13 @@ consumer code.
 
 All three write state that persists together, so a grid comes back arranged the
 way it was left. `resetSettings()` from the hook clears visibility, order,
-pinning and widths in one go, and the columns panel offers it as **Reset
+pinning and widths in one go, and the column chooser offers it as **Reset
 layout**.
 
 **Hiding** is `columnVisibility`, driven by "Hide column" in a column menu and by
-`TMDataGrid.ColumnsButton` with the panel behind it.
+the column chooser: `TMDataGrid.Menu.Columns` in the grid menu, **Manage
+columns** as a submenu of every column menu, and `TMDataGrid.ColumnsPanel` as
+plain controls for a host that is not a menu. See the `appearance` skill.
 
 **Pinning** is "Pin to left" / "Pin to right" in the column menu. A pinned
 column also becomes fixed-width: sticky offsets are computed from `getSize()`,
@@ -485,7 +487,7 @@ Source: `src/docs/columns.md` (Columns derived from the other rows).
 | `measureColumnContentWidth` | Export | `(args) => number` | – | The measurement behind it. |
 | `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | ids | – | The generated lanes. |
-| `TMDataGrid.ColumnsButton` · `TMDataGrid.ColumnsPanel` | Components | – | – | Manage columns, and Reset layout. |
+| `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | – | – | The column chooser, as menu items and as plain controls. |
 
 See also: the `filtering` skill for operators and filter controls, the `editing`
 skill for the editing meta fields, and the `grouping` skill for what grouping

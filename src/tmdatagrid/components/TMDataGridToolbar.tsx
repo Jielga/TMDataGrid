@@ -1,13 +1,12 @@
-import { ActionIcon, Loader, Popover, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Loader, Text, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGridToolbar.module.css";
-import { TMDataGridColumnsPanel } from "./TMDataGridColumnsPanel";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getGridCapabilities } from "../core/capabilities";
 import { useSettledTableState } from "../core/useSettledTableState";
 import { isFilterActive } from "../core/filterOperators";
-import { BurgerIcon, FilterIcon } from "./icons";
+import { FilterIcon } from "./icons";
 import { openColumnFilter } from "../useTMDataGrid";
 
 /** Row above the grid. Compose it from the pieces below, or anything else. */
@@ -70,47 +69,6 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
     >
       {children !== undefined ? children : `${shown} / ${total}`}
     </Text>
-  );
-}
-
-/**
- * Burger menu in the grid's top-right corner - opens "Manage columns".
- * Renders nothing when no column can be hidden (`enableHiding: false`).
- */
-export function TMDataGridColumnsButton() {
-  const { table, ui, features, labels, controlSize } = useTMDataGridContext();
-  const opened = useSelector(ui, (state) => state.columnsPanelOpen);
-
-  if (!getGridCapabilities(table, features).canHideAny) return null;
-
-  return (
-    <Popover
-      opened={opened}
-      onChange={ui.actions.setColumnsPanelOpen}
-      position="bottom-end"
-      shadow="md"
-      radius="md"
-      withinPortal
-      trapFocus
-    >
-      <Popover.Target>
-        <Tooltip label={labels.manageColumns} openDelay={400}>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size={controlSize}
-            aria-label={labels.manageColumns}
-            data-dg-part="columns-button"
-            onClick={ui.actions.toggleColumnsPanel}
-          >
-            <BurgerIcon size={18} stroke={1.6} />
-          </ActionIcon>
-        </Tooltip>
-      </Popover.Target>
-      <Popover.Dropdown p={0}>
-        <TMDataGridColumnsPanel />
-      </Popover.Dropdown>
-    </Popover>
   );
 }
 

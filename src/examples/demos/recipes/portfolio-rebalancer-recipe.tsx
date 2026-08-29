@@ -335,7 +335,9 @@ export function PortfolioRebalancer() {
           Turnover {money.format(turnover)}
         </Text>
         <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
 
       <TMDataGrid.Table<Position>

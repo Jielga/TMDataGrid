@@ -46,6 +46,9 @@ past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- The column header menu's own items (sort, filter, group, pin, move, autosize, hide) as `TMDataGrid.Menu.*` components taking a `column` prop, with a `columnMenu` element on `TMDataGrid.Table` in place of the `renderColumnMenuItems` array handback.
+  The grid menu (2026-08-29) left the namespace room for them.
+  Raised 2026-08-29; held until a consumer asks.
 - Editing navigation style - `editing.navigation: "spreadsheet" | "row"`.
   `"spreadsheet"` is today's behaviour: Enter commits and moves down, Tab
   commits and moves right. `"row"` treats the row as the record: Enter and
@@ -117,6 +120,11 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Grid menu** - **done 2026-08-29**, breaking.
+`TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.
+The column chooser is menu items now, `TMDataGrid.Menu.Columns` with `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` as its pieces, built on Mantine 9.4's `Menu.Search`, `Menu.CheckboxItem` and `Menu.Sub`, so it goes into any Mantine menu inside the grid; the header menu's "Manage columns" is a submenu of the same items.
+`TMDataGrid.ColumnsButton` and the `columnsPanelOpen` ui state are gone; `TMDataGrid.ColumnsPanel` stays for hosts that are not a menu.
 
 **Drafts as shown** - **done 2026-08-28**.
 Under `editing.draft` a committed draft is the table's row: it stands in for the consumer's record in the table's `data`, so sorting, filtering, quick search, grouping, aggregates, facets, export, selection, the row counts, `edit.getRows()` and `tableValidators` all read it, and the row callbacks receive it as `row.original`.

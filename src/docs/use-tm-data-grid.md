@@ -297,8 +297,6 @@ read does not subscribe the component to the store.
 | --- | --- |
 | `openFilterPanel` | `(columnId?: string \| null) => void` |
 | `closeFilterPanel` | `() => void` |
-| `setColumnsPanelOpen` | `(open: boolean) => void` |
-| `toggleColumnsPanel` | `() => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
 | `setHighlightedRow` | `(rowId: string \| null) => void` |
@@ -322,7 +320,7 @@ it adds an empty filter row for the column if none exists, then opens the panel.
 
 Almost every control is bound to the TanStack capability check for its feature,
 so setting the standard table or column option removes the corresponding
-interface. Empty menus and inactive buttons are never rendered.
+interface. Empty menus and inactive buttons are never rendered, except `TMDataGrid.Menu`, which cannot see what its children render; see [Grid menu](/docs/menu).
 
 Column ordering and pagination are the two exceptions: TanStack ships state and
 APIs for both but no `enable` option, so the grid defines `enableColumnOrdering`
@@ -335,7 +333,7 @@ to off; ordering, like the options around it, defaults to on.
 | `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel. See [Filtering](/docs/filtering) |
 | `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
 | `enableGlobalFilter: false` | Table, column | `Search`: the whole input at table level, one column's participation at column level |
-| `enableHiding: false` | Table, column | Hide column, Manage columns, `ColumnsButton`. See [Column layout](/docs/column-layout) |
+| `enableHiding: false` | Table, column | Hide column, Manage columns, `TMDataGrid.Menu.Columns`. See [Column layout](/docs/column-layout) |
 | `enableColumnPinning: false` | Table | Pin and unpin menu items. See [Column layout](/docs/column-layout) |
 | `enablePinning: false` | Column | That column's pin menu items |
 | `enableColumnResizing: false` | Table | Resize dragging, double-click autosize, the Autosize menu item. The divider remains as a separator |

@@ -15,7 +15,9 @@ const grid = useTMDataGrid({ data, columns });
     <TMDataGrid.Search />
     <TMDataGrid.Spacer />
     <TMDataGrid.FilterButton />
-    <TMDataGrid.ColumnsButton />
+    <TMDataGrid.Menu>
+      <TMDataGrid.Menu.Columns />
+    </TMDataGrid.Menu>
   </TMDataGrid.Toolbar>
   <TMDataGrid.Table />
   <TMDataGrid.Footer />
@@ -47,7 +49,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.Search`                             | Quick search input                                                           | [Quick search](/docs/quick-search)                    |
 | `TMDataGrid.FilterButton` · `.FilterPanel`      | The filter UI                                                                | [Filtering](/docs/filtering)                          |
 | `TMDataGrid.FilterPills`                        | Active filters as pills                                                      | [Filtering](/docs/filtering#filters-outside-the-grid) |
-| `TMDataGrid.ColumnsButton` · `.ColumnsPanel`    | Manage columns, and Reset layout                                             | [Column layout](/docs/column-layout#hiding)           |
+| `TMDataGrid.Menu` · `.ColumnsPanel`             | The burger menu, and the column chooser                                      | [Grid menu](/docs/menu)                               |
 | `TMDataGrid.Spacer`                             | Pushes following toolbar items right                                         | [Toolbar](/docs/toolbar)                              |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty](/docs/loading-and-empty)          |
 | `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/editing#the-draft-store)                |

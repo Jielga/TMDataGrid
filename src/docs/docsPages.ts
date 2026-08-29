@@ -10,6 +10,7 @@ import gettingStartedDoc from "./getting-started.md?raw";
 import groupingDoc from "./grouping.md?raw";
 import loadingAndEmptyDoc from "./loading-and-empty.md?raw";
 import localizationDoc from "./localization.md?raw";
+import menuDoc from "./menu.md?raw";
 import paginationDoc from "./pagination.md?raw";
 import persistenceDoc from "./persistence.md?raw";
 import portfolioRebalancerDoc from "./portfolio-rebalancer.md?raw";
@@ -233,6 +234,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Toolbar",
     description: "Composition, and buttons of your own",
     source: toolbarDoc,
+  },
+  {
+    id: "menu",
+    section: "Appearance",
+    label: "Grid menu",
+    description: "The burger, and the column chooser as menu items",
+    source: menuDoc,
   },
   {
     id: "localization",

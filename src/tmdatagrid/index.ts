@@ -40,6 +40,10 @@ export {
   TMDataGridSearch,
   type TMDataGridSearchProps,
 } from "./components/TMDataGridSearch";
+export type {
+  TMDataGridMenuColumnsProps,
+  TMDataGridMenuProps,
+} from "./components/TMDataGridMenu";
 export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,

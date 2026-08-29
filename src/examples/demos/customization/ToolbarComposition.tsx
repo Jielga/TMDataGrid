@@ -1,4 +1,5 @@
-import { Badge, Button, Divider, Menu, Switch } from "@mantine/core";
+import { Badge, Menu, Switch } from "@mantine/core";
+import { IconDownload } from "@tabler/icons-react";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
 import { exportGridToCsv, TMDataGrid, useTMDataGrid } from "../../../tmdatagrid";
@@ -53,33 +54,25 @@ export function ToolbarComposition() {
             loader would blank a grid the user is still reading. */}
         {refetching && <TMDataGrid.LoadingIndicator />}
 
-        <Menu withinPortal>
-          <Menu.Target>
-            <Button size="compact-xs" variant="subtle" color="gray">
-              Actions
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item
-              onClick={() =>
-                exportGridToCsv({
-                  table: grid.table,
-                  options: { fileName: "employees" },
-                })
-              }
-            >
-              Export CSV
-            </Menu.Item>
-            <Menu.Item onClick={() => grid.resetSettings()}>
-              Reset layout
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-
-        <Divider orientation="vertical" />
-
         <TMDataGrid.FilterButton />
-        <TMDataGrid.ColumnsButton />
+
+        {/* One menu: the app's own actions and the grid's column chooser. */}
+        <TMDataGrid.Menu>
+          <Menu.Item
+            leftSection={<IconDownload size={16} stroke={1.6} />}
+            onClick={() =>
+              exportGridToCsv({
+                table: grid.table,
+                options: { fileName: "employees" },
+              })
+            }
+          >
+            Export CSV
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Label>Columns</Menu.Label>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
 
       <TMDataGrid.Table<Employee> />

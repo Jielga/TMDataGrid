@@ -305,7 +305,6 @@ const EMPTY_IDS: ReadonlyArray<string> = [];
  */
 export type TMDataGridUiState = {
   filterPanelOpen: boolean;
-  columnsPanelOpen: boolean;
   /** Column whose filter row should be focused when the panel opens. */
   filterPanelColumnId: string | null;
   /**
@@ -351,8 +350,6 @@ export type TMDataGridUiState = {
 export type TMDataGridUiActions = {
   openFilterPanel: (columnId?: string | null) => void;
   closeFilterPanel: () => void;
-  setColumnsPanelOpen: (open: boolean) => void;
-  toggleColumnsPanel: () => void;
   startColumnDrag: (columnId: string) => void;
   endColumnDrag: () => void;
   /**
@@ -1557,7 +1554,6 @@ export function useTMDataGrid<TData extends RowData>({
   const ui = useCreateStore<TMDataGridUiState, TMDataGridUiActions>(
     {
       filterPanelOpen: false,
-      columnsPanelOpen: false,
       filterPanelColumnId: null,
       draggedColumnId: null,
       // `useCreateStore` builds the store once per mount, so this is a genuine
@@ -1580,10 +1576,6 @@ export function useTMDataGrid<TData extends RowData>({
           filterPanelOpen: false,
           filterPanelColumnId: null,
         })),
-      setColumnsPanelOpen: (open) =>
-        setState((prev) => ({ ...prev, columnsPanelOpen: open })),
-      toggleColumnsPanel: () =>
-        setState((prev) => ({ ...prev, columnsPanelOpen: !prev.columnsPanelOpen })),
       startColumnDrag: (columnId) =>
         setState((prev) => ({ ...prev, draggedColumnId: columnId })),
       endColumnDrag: () =>

@@ -17,13 +17,17 @@ export type TMDataGridLabels = {
   operators: Record<TMDataGridFilterOperator, string>;
 
   // Toolbar
-  /** "Manage columns" - the burger button and the header menu item. */
-  manageColumns: string;
   /** "Filters" - the funnel button and the filter panel's title. */
   filters: string;
   searchPlaceholder: string;
   searchLabel: string;
   clearSearch: string;
+
+  // Grid menu
+  /** Tooltip and `aria-label` of `TMDataGrid.Menu`'s burger trigger. */
+  menuButton: string;
+  /** "Manage columns" - the header menu's submenu. */
+  manageColumns: string;
 
   // Columns panel
   columnsSearchPlaceholder: string;
@@ -177,16 +181,18 @@ export type TMDataGridLabelsOverride = Partial<
 export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   operators: FILTER_OPERATOR_LABELS,
 
-  manageColumns: "Manage columns",
   filters: "Filters",
   searchPlaceholder: "Search",
   searchLabel: "Search rows",
   clearSearch: "Clear search",
 
+  menuButton: "Menu",
+  manageColumns: "Manage columns",
+
   columnsSearchPlaceholder: "Search",
   columnsNoMatch: (search) => `No columns match “${search}”`,
   columnsShowHideAll: "Show/Hide All",
-  columnsReset: "RESET LAYOUT",
+  columnsReset: "Reset layout",
   columnsResetHint:
     "Resets column visibility, order, widths, pinning and grouping",
   rowNumberColumnLabel: "Row number",

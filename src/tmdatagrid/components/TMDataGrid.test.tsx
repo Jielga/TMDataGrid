@@ -185,45 +185,46 @@ describe("sorting", () => {
 });
 
 describe("column visibility", () => {
-  it("hides a column from the columns panel", async () => {
+  it("hides a column from the grid menu", async () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await user.click(screen.getByRole("button", { name: "Manage columns" }));
-    // The panel's checkboxes are labelled by column; the row ones are all
-    // "Select row", so the column label is unambiguous.
-    await user.click(screen.getByRole("checkbox", { name: "City" }));
+    await user.click(part("menu-button"));
+    await user.click(part("columns-toggle", { columnId: "city" }));
 
     expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
     expect(header("name")).toBeInTheDocument();
   });
 
-  it("hides the columns button when hiding is off", () => {
+  it("lists no column toggles when hiding is off", async () => {
+    const user = userEvent.setup();
     renderGridUi({ enableHiding: false });
 
-    expect(
-      screen.queryByRole("button", { name: "Manage columns" }),
-    ).not.toBeInTheDocument();
+    // The menu itself still renders - it holds whatever the consumer put in
+    // it, and cannot know that this grid's only item is the column chooser.
+    await user.click(part("menu-button"));
+
+    expect(screen.queryAllByRole("menuitemcheckbox")).toHaveLength(0);
   });
 
   it("Reset layout brings a hidden column back", async () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await user.click(screen.getByRole("button", { name: "Manage columns" }));
-    await user.click(screen.getByRole("checkbox", { name: "City" }));
+    await user.click(part("menu-button"));
+    await user.click(part("columns-toggle", { columnId: "city" }));
     expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "RESET LAYOUT" }));
+    await user.click(part("columns-reset"));
 
     expect(header("city")).toBeInTheDocument();
   });
 
-  it("leaves the generated lanes out of the panel", async () => {
+  it("leaves the generated lanes out of the menu", async () => {
     const user = userEvent.setup();
     renderGridUi({ enableRowNumbers: true, initialState: { grouping: ["city"] } });
 
-    await user.click(screen.getByRole("button", { name: "Manage columns" }));
+    await user.click(part("menu-button"));
 
     // Chrome the grid generated, not a column the consumer declared: the
     // checkbox lane, the row-number gutter and the tree column are all
@@ -235,11 +236,11 @@ describe("column visibility", () => {
     ]);
   });
 
-  it("show/hide all leaves a lane the panel never listed alone", async () => {
+  it("show/hide all leaves a lane the menu never listed alone", async () => {
     const user = userEvent.setup();
     renderGridUi();
 
-    await user.click(screen.getByRole("button", { name: "Manage columns" }));
+    await user.click(part("menu-button"));
     // Off, then on again. The tree column is hidden because nothing is grouped,
     // not because anyone hid it, and the checkbox lane is not a setting either:
     // neither pass may touch them. `table.toggleAllColumnsVisible` writes an
@@ -538,9 +539,7 @@ describe("labels", () => {
   it("renders the chrome in Swedish from the preset", async () => {
     renderGridUi({ labels: TMDATAGRID_LABELS_SV });
 
-    expect(
-      screen.getByRole("button", { name: "Hantera kolumner" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Meny" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
     expect(
       screen.getByRole("checkbox", { name: "Markera alla rader" }),
@@ -549,7 +548,7 @@ describe("labels", () => {
 
   it("merges a partial override over the English defaults", () => {
     renderGridUi({
-      labels: { manageColumns: "Kolumner" },
+      labels: { menuButton: "Kolumner" },
       data: [],
     } as GridProps);
 
@@ -984,7 +983,7 @@ describe("testing contract", () => {
     await user.click(part("filter-clear-all"));
     expect(gridRowCount()).toBe(12);
 
-    await user.click(part("columns-button"));
+    await user.click(part("menu-button"));
     await user.click(part("columns-toggle", { columnId: "city" }));
     expect(queryPart("header", { columnId: "city" })).not.toBeInTheDocument();
   });

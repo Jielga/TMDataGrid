@@ -88,7 +88,9 @@ flex parent, or a fixed height. See [Layout](/docs/styling#layout).
 <TMDataGrid {...grid}>
   <TMDataGrid.Toolbar>
     <TMDataGrid.SummaryCount />
-    <TMDataGrid.ColumnsButton />
+    <TMDataGrid.Menu>
+      <TMDataGrid.Menu.Columns />
+    </TMDataGrid.Menu>
   </TMDataGrid.Toolbar>
   <TMDataGrid.Table />
   <TMDataGrid.Footer pageSizeOptions={[10, 25, 50]} />

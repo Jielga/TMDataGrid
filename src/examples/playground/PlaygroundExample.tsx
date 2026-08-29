@@ -711,7 +711,9 @@ export function PlaygroundExample() {
               {locale === "sv" ? "Exportera" : "Export"}
             </Button>
             <TMDataGrid.FilterButton />
-            <TMDataGrid.ColumnsButton />
+            <TMDataGrid.Menu>
+              <TMDataGrid.Menu.Columns />
+            </TMDataGrid.Menu>
           </TMDataGrid.Toolbar>
 
           <TMDataGrid.Table<Employee>
