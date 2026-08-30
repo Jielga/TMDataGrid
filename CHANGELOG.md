@@ -1,5 +1,25 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.10
+
+### Minor Changes
+
+- [#56](https://github.com/Jielga/TMDataGrid/pull/56) [`fe68bb6`](https://github.com/Jielga/TMDataGrid/commit/fe68bb67ef28883c8a11880e902882adf068fc25) Thanks [@Psvensso](https://github.com/Psvensso)! - The grid menu.
+
+  - `TMDataGrid.Menu` - the toolbar burger, a Mantine `Menu` filled with your own items.
+  - `TMDataGrid.Menu.Columns`, `.ColumnToggles`, `.ShowHideAll`, `.ResetLayout` - the column chooser as menu items, for any Mantine `Menu` inside the grid.
+  - **Breaking.** `TMDataGrid.ColumnsButton` is gone; render `<TMDataGrid.Menu><TMDataGrid.Menu.Columns /></TMDataGrid.Menu>`. `TMDataGrid.ColumnsPanel` stays for hosts that are not a menu.
+  - **Breaking.** `ui.columnsPanelOpen`, `setColumnsPanelOpen` and `toggleColumnsPanel` are gone; the header menu's "Manage columns" is a submenu now, and its `internalItems` entry is a `Menu.Sub`.
+  - `data-dg-part`: `menu-button` added, `columns-button` dropped.
+  - Labels: `menuButton` added; `columnsReset` reads "Reset layout".
+
+### Patch Changes
+
+- [#56](https://github.com/Jielga/TMDataGrid/pull/56) [`f94f2a6`](https://github.com/Jielga/TMDataGrid/commit/f94f2a613bc28a83e92967b769ee545df2b9efc9) Thanks [@Psvensso](https://github.com/Psvensso)! - - `--row-bg` is painted over the theme body colour, so a translucent value no longer leaves pinned columns and pinned rows see-through.
+  - The summary row sits at the bottom edge when the rows do not fill the body.
+  - A cell's validation message shows in a tooltip on the editor instead of as text under the input.
+  - Under `mode: "cell"`, leaving a cell with a value the validators refuse keeps the editor open instead of closing it on the refused value.
+
 ## 2.0.0-beta.9
 
 ### Minor Changes
