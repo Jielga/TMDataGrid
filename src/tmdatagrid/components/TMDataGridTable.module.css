@@ -1,4 +1,4 @@
-/* Anchors the filter panel, which floats over the first body rows. */
+/* Anchors the filter popup, which floats over the first body rows. */
 .tableWrapper {
   position: relative;
   flex: 1;
@@ -7,9 +7,17 @@
   flex-direction: column;
 }
 
+/* The sidebar surface is a second column of the wrapper rather than a layer
+   over the rows, so the wrapper lays its children out side by side. The
+   sidebar's own module decides which side it lands on. */
+.tableWrapper[data-dg-filter-sidebar] {
+  flex-direction: row;
+}
+
 .scrollContainer {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   /* Lets .messageRow size itself to the scrollport (100cqi) instead of the

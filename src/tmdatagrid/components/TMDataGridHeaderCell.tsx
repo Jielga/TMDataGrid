@@ -90,7 +90,7 @@ export function TMDataGridHeaderCell({
   renderColumnMenuItems?: TMDataGridColumnMenuItemsRenderer;
 }) {
   const api = useTMDataGridContext();
-  const { table, features, labels } = api;
+  const { table, features, filters, labels } = api;
   const column = header.column;
   const [menuOpened, setMenuOpened] = useState(false);
   const [contextMenuOpened, setContextMenuOpened] = useState(false);
@@ -298,7 +298,9 @@ export function TMDataGridHeaderCell({
       <Menu.Divider key="sort-divider" />,
     );
   }
-  if (canFilter) {
+  // Not under header filters: the item's only job is to reveal a control that
+  // is already on screen, one row below this menu.
+  if (canFilter && !filters.inHeader) {
     menuItems.push(
       <Menu.Item
         key="filter"
@@ -565,6 +567,11 @@ export function TMDataGridHeaderCell({
       onDragLeave={isDropTarget ? handleDragLeave : undefined}
       onDrop={isDropTarget ? handleDrop : undefined}
       style={{
+        // A group header covers the tracks of the leaves under it. Without the
+        // span it would sit in one track and leave the rest of its width with
+        // no cell at all - a gap the body rows scroll up through, since the
+        // header rows above the body are what hides them.
+        gridColumn: header.colSpan > 1 ? `span ${header.colSpan}` : undefined,
         left: pinnedAt === "left" ? layout.offset : undefined,
         right: pinnedAt === "right" ? layout.offset : undefined,
         position: pinnedAt ? "sticky" : undefined,
@@ -606,7 +613,9 @@ export function TMDataGridHeaderCell({
 
       {isLeaf && (
         <div className={classes.headerActions}>
-          {isFiltered && (
+          {/* Dropped under header filters, where the filled-in control below
+              is both the indicator and the way in. */}
+          {isFiltered && !filters.inHeader && (
             <ActionIcon
               className={classes.headerAction}
               data-pinned-visible="true"

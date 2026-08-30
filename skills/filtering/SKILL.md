@@ -4,7 +4,9 @@ description: >
   Narrow the rows a TMDataGrid shows. Covers the shared tmDataGrid filter
   function and its {operator, value} model, the eighteen operators and which
   meta.type offers each, meta.filter.defaultOperator, isFilterActive and the
-  half-typed filter, the filter panel, TMDataGrid.FilterButton,
+  half-typed filter, the filters option and its four surfaces (popup, sidebar,
+  header filters, a hand-placed panel), TMDataGrid.FilterPanel and its layout
+  prop, TMDataGrid.FilterButton,
   TMDataGrid.FilterPills with its api prop, openColumnFilter, replacing a value
   control with DgRangeSliderFilter / DgDateRangeFilter / DgAutocompleteFilter /
   DgTriStateFilter or a meta.filter.control component, per-column filterFn, and
@@ -80,13 +82,51 @@ columnHelper.accessor("salary", {
 });
 ```
 
+## Where the controls go
+
+`filters` on `useTMDataGrid` picks the surface. It is read field by field, so a
+literal is fine.
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `surface` | `"popup" \| "sidebar" \| "manual"` | `"popup"` | What `TMDataGrid.Table` renders and `FilterButton` toggles. |
+| `sidebarSide` | `"left" \| "right"` | `"right"` | Which side the sidebar sits on. |
+| `sidebarWidth` | `string` | `"280px"` | Sidebar width, any CSS length. |
+| `defaultOpen` | `boolean` | `false` | Whether the popup or sidebar starts open. Read once, at mount. |
+| `inHeader` | `boolean` | `false` | A second header row of per-column controls. Independent of `surface`. |
+
+```tsx
+useTMDataGrid({ data, columns, filters: { surface: "sidebar", inHeader: true } });
+```
+
+**Popup** - the default. Floats over the first body rows. A pointerdown
+outside, Escape, and emptying it (the last row removed, or **Clear all**) all
+close it; `FilterButton` is exempt from the click-away so it stays a toggle.
+
+**Sidebar** - the same panel beside the rows, inside the grid frame and under
+the toolbar. The rows give up the width rather than being covered, a click in
+the table does not dismiss it, and clearing the filters leaves it standing.
+Escape closes it.
+
+**Header filters** - `inHeader: true` adds a header row of value controls, one
+per filterable column, on the same column tracks as everything else. The
+column and operator dropdowns are not there: the column is the one the cell
+sits over, and the operator is a funnel button beside the input, tinted off its
+default. The column menu's Filter item and the funnel indicator both come off,
+having nothing left to reveal. A narrow column clips its control.
+
+**Manual** - `surface: "manual"` renders no panel and no `FilterButton`, so a
+hand-placed `TMDataGrid.FilterPanel` is the only one. Read
+`ui.state.filterPanelOpen` if it belongs behind a control of your own.
+
 ## The panel and the pills
 
-`TMDataGrid.FilterPanel` is column, operator and value rows under a "Filters"
-header, above "Add filter" and "Clear all". It is rendered by
-`TMDataGrid.Table`; Escape and a click outside close it, with `FilterButton`
-exempt from the click-away so it stays a toggle. Closing only hides it; the
-filters stay. **Clear all** drops every filter, half-typed ones included.
+`TMDataGrid.FilterPanel` is a plain block of column / operator / value rows over
+"Add filter" and "Clear all" - no title, no close button, no open state. It
+renders wherever it is mounted. `layout="stacked"` puts the three fields one
+under the other for a narrow host; `"row"`, the default, needs about 550px.
+Closing a surface only hides it; the filters stay. **Clear all** drops every
+filter, half-typed ones included.
 
 `TMDataGrid.FilterPills` takes the grid as an `api` prop instead of reading
 context, so active filters can live in a page header or anywhere else:
@@ -98,10 +138,12 @@ import { TMDataGridFilterPills } from "@jielga/tmdatagrid";
 ```
 
 One pill per **active** filter, `First name: Sofia ✕`, where ✕ clears it and a
-click on the label reopens the panel on its column. The label spells the
-operator out unless it is the type's default: `Age is greater than 30`, but
-`First name: Sofia`. `openColumnFilter(api, columnId)` does the same reopening
-from anywhere, seeding an empty row if the column has none.
+click on the label sends the user to that column's control. The label spells
+the operator out unless it is the type's default: `Age is greater than 30`, but
+`First name: Sofia`. `openColumnFilter(api, columnId)` does the same from
+anywhere: it seeds an empty filter if the column has none, then opens the panel
+on it - or, under `inHeader`, scrolls the column's header control into view and
+focuses it.
 
 ## Replacing the value control
 
@@ -325,7 +367,8 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `enableMatchHighlighting` | Option | `boolean` | `false` | Mark matched text in default-rendered cells. |
 | `enableGlobalFilter` | Table option | `boolean` | `true` | Also a column option. Removes the input, or one column's participation. |
 | `globalFilterFn` | Table option | filter fn | fuzzy | Overrides the matching, and the ranking with it. |
-| `TMDataGrid.FilterPanel` | Component | – | – | The panel of filter rows. |
+| `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"` | `"row"` | The panel of filter rows, as a plain block. |
+| `filters` | Table option | `TMDataGridFilterOptions` | `{ surface: "popup" }` | Which surface holds the filter controls. |
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button opening the panel, with an active count. |
 | `TMDataGrid.FilterPills` | Component | `api`, `size`, `showClearAll`, `onPillClick`, `className` | – | Active filters as removable pills, renderable anywhere. |
 | `TMDataGrid.Search` | Component | `placeholder`, `debounce` (`250`), `w` (`220`) | – | The debounced quick-search input. |

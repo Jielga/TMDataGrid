@@ -76,8 +76,11 @@ so a part that repeats is addressed by adding the coordinate.
 | `loading` | The toolbar spinner |
 | `search`, `search-clear` | Quick search input and its ✕ |
 | `filter-button` | The funnel toggle |
-| `filter-panel`, `filter-panel-close` | The filter panel and its ✕ |
+| `filter-panel` | The panel of filter rows, wherever it is rendered |
+| `filter-popup`, `filter-sidebar` | The surface holding it, under `filters.surface` |
+| `filter-panel-close` | The surface's ✕; absent on a hand-placed panel |
 | `filter-add`, `filter-clear-all` | The panel's footer buttons |
+| `header-filter-row` | The header filter row, under `filters.inHeader` |
 | `filter-pills` | The active-filter pill group |
 | `menu-button` | The burger, `TMDataGrid.Menu` |
 | `columns-panel`, `columns-search` | The column chooser panel, and the search box in the panel or in `TMDataGrid.Menu.Columns` |
@@ -117,6 +120,7 @@ so a part that repeats is addressed by adding the coordinate.
 | --- | --- |
 | `header` | A column header |
 | `header-sort`, `header-menu`, `header-filter` | Its three action buttons |
+| `header-filter-cell`, `header-filter-operator` | One column's header filter control and its operator button |
 | `filter-row` | One row of the filter panel |
 | `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
 | `columns-toggle` | The checkbox of one column, in the panel or in the menu |

@@ -249,7 +249,7 @@ Standard TanStack column options. Each also removes the corresponding interface.
 | Option | Effect when `false` |
 | --- | --- |
 | `enableSorting` | No sort indicator, no sort menu items, no click-to-sort. |
-| `enableColumnFilter` | No filter menu item. Excluded from the filter panel's column list. |
+| `enableColumnFilter` | No filter menu item. Excluded from the filter panel's column list, and its header filter cell is empty. |
 | `enableHiding` | No hide menu item. Checkbox disabled in the column manager. |
 | `enablePinning` | No pin menu items. |
 | `enableResizing` | The divider is displayed but cannot be dragged. |

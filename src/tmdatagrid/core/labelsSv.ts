@@ -62,6 +62,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   clearAllFilters: "Rensa alla",
   closeFilters: "Stäng filter",
   removeFilter: "Ta bort filter",
+  filterOperatorFor: (column) => `Filteroperator för ${column}`,
 
   activeFilters: "Aktiva filter",
   clearFilter: (column) => `Rensa filtret för ${column}`,

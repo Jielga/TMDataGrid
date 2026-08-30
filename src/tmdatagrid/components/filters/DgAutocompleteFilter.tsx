@@ -6,6 +6,7 @@ import {
   operatorTakesArrayValue,
   operatorTakesRangeValue,
 } from "../../core/filterOperators";
+import { filterFieldProps } from "./controlLayout";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
@@ -31,12 +32,13 @@ export function DgAutocompleteFilter(args: TMDataGridFilterControlArgs) {
 
   return (
     <Autocomplete
-      label={labels.filterValue}
+      {...filterFieldProps(args, { label: labels.filterValue, width: 180 })}
       size={size}
-      w={180}
-      comboboxProps={{ withinPortal: false }}
+      comboboxProps={{ withinPortal: args.layout === "header" }}
       disabled={!needsValue}
-      placeholder={needsValue ? labels.filterValuePlaceholder : ""}
+      placeholder={
+        needsValue && args.layout !== "header" ? labels.filterValuePlaceholder : ""
+      }
       data={suggestions.map((option) => option.value)}
       limit={20}
       value={needsValue && typeof value === "string" ? value : ""}

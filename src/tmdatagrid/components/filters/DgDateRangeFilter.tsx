@@ -1,6 +1,7 @@
 import { Group, TextInput } from "@mantine/core";
 import type { TMDataGridFilterControlArgs } from "../../core/filterControls";
 import { operatorTakesRangeValue } from "../../core/filterOperators";
+import { filterFieldProps } from "./controlLayout";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
@@ -16,25 +17,41 @@ export function DgDateRangeFilter(args: TMDataGridFilterControlArgs) {
     return <TMDataGridFilterValueInput {...args} />;
   }
 
+  const fills = args.layout !== "panel";
   const pair: [string, string] = Array.isArray(value)
     ? [String(value[0] ?? ""), String(value[1] ?? "")]
     : ["", ""];
 
   return (
-    <Group gap={4} wrap="nowrap" align="flex-start">
+    <Group
+      gap={4}
+      wrap="nowrap"
+      align="flex-start"
+      w={fills ? "100%" : undefined}
+    >
       <TextInput
-        label={labels.filterFrom}
+        {...filterFieldProps(
+          args,
+          { label: labels.filterFrom, width: 88 },
+          labels.filterFrom,
+        )}
         size={size}
-        w={88}
         type="date"
+        flex={fills ? 1 : undefined}
+        miw={0}
         value={pair[0]}
         onChange={(event) => onChange([event.currentTarget.value, pair[1]])}
       />
       <TextInput
-        label={labels.filterTo}
+        {...filterFieldProps(
+          args,
+          { label: labels.filterTo, width: 88 },
+          labels.filterTo,
+        )}
         size={size}
-        w={88}
         type="date"
+        flex={fills ? 1 : undefined}
+        miw={0}
         value={pair[1]}
         onChange={(event) => onChange([pair[0], event.currentTarget.value])}
       />

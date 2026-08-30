@@ -54,6 +54,7 @@ rather than forwarded to TanStack.
 | `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange`. See [Controlled state](#controlled-state). |
 | `atoms` | `Partial<Record<slice, Atom>>` | – | External atoms owning state slices. No callback required. Takes precedence over `state`. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
+| `filters` | `TMDataGridFilterOptions` | `{ surface: "popup" }` | Where the filter controls go - a popup, a sidebar, the column headers, or nowhere. See [Filtering](/docs/filtering#where-the-filter-controls-go). |
 | `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
 
@@ -243,6 +244,7 @@ identifier if several users can share a browser profile.
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
+| `filters` | `TMDataGridFilterSettings` | The `filters` option with its defaults filled in. See [Filtering](/docs/filtering#where-the-filter-controls-go). |
 | `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See [Editing](/docs/editing). |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
@@ -297,6 +299,7 @@ read does not subscribe the component to the store.
 | --- | --- |
 | `openFilterPanel` | `(columnId?: string \| null) => void` |
 | `closeFilterPanel` | `() => void` |
+| `focusColumnFilter` | `(columnId: string \| null) => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
 | `setHighlightedRow` | `(rowId: string \| null) => void` |
@@ -314,7 +317,10 @@ column is being dragged. `ui.draggedColumnId` holds the column being moved,
 since `dataTransfer` is unreadable until the drop.
 
 `openColumnFilter(grid, columnId)` combines two steps used by the column menu:
-it adds an empty filter row for the column if none exists, then opens the panel.
+it adds an empty filter row for the column if none exists, then sends the user
+to that column's control. Which control that is follows the `filters` option -
+the panel row, or, under `filters.inHeader`, the column's header control, which
+`focusColumnFilter` points at on its own.
 
 ## What each switch removes
 
@@ -330,8 +336,8 @@ to off; ordering, like the options around it, defaults to on.
 | Option | Level | Interface removed |
 | --- | --- | --- |
 | `enableSorting: false` | Table, column | Sort indicator, sort menu items, click-to-sort. See [Sorting](/docs/sorting) |
-| `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel. See [Filtering](/docs/filtering) |
-| `enableColumnFilter: false` | Column | That column's filter menu item and panel entry |
+| `enableColumnFilters: false` | Table | Filter menu item, `FilterButton`, filter panel, header filter row. See [Filtering](/docs/filtering) |
+| `enableColumnFilter: false` | Column | That column's filter menu item, panel entry and header control |
 | `enableGlobalFilter: false` | Table, column | `Search`: the whole input at table level, one column's participation at column level |
 | `enableHiding: false` | Table, column | Hide column, Manage columns, `TMDataGrid.Menu.Columns`. See [Column layout](/docs/column-layout) |
 | `enableColumnPinning: false` | Table | Pin and unpin menu items. See [Column layout](/docs/column-layout) |

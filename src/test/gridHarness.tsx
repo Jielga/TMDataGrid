@@ -209,16 +209,19 @@ export const bodyRows = () => parts("row");
 /**
  * How many rows the grid says it has, mounted or not. Virtualization decides
  * what is in the DOM - and under jsdom, which has no layout, it mounts a
- * handful - so a count of rows has to come off `aria-rowcount`, minus the one
- * header row it includes. The role is `grid` rather than `table` once cell
+ * handful - so a count of rows has to come off `aria-rowcount`, minus the
+ * header rows it includes. The role is `grid` rather than `table` once cell
  * selection is on, which `editing` switches on by itself.
+ *
+ * The header rows are counted rather than assumed to be one: header groups
+ * stack, and `filters.inHeader` adds a filter row below them.
  */
 export const gridRowCount = () =>
   Number(
     (screen.queryByRole("table") ?? screen.getByRole("grid")).getAttribute(
       "aria-rowcount",
     ),
-  ) - 1;
+  ) - document.querySelectorAll("[data-dg-header-row]").length;
 
 /** Row ids in the order they are rendered. */
 export const renderedRowIds = () =>

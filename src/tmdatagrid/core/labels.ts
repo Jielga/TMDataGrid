@@ -62,6 +62,8 @@ export type TMDataGridLabels = {
   clearAllFilters: string;
   closeFilters: string;
   removeFilter: string;
+  /** Names the operator button in a column's header filter control. */
+  filterOperatorFor: (column: string) => string;
 
   // Filter pills
   activeFilters: string;
@@ -211,6 +213,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   clearAllFilters: "Clear all",
   closeFilters: "Close filters",
   removeFilter: "Remove filter",
+  filterOperatorFor: (column) => `${column} filter operator`,
 
   activeFilters: "Active filters",
   clearFilter: (column) => `Clear ${column} filter`,
