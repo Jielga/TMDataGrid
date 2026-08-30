@@ -104,6 +104,28 @@ describe("renderPagination", () => {
     expect(renderedRowIds()).toEqual(["6", "7", "8", "9", "10"]);
   });
 
+  it("renders the page number where the layout asks for it", async () => {
+    const user = userEvent.setup();
+
+    renderGridUi({
+      ...paged,
+      footerProps: {
+        renderPagination: ({ Controls }) => (
+          <>
+            <Controls.PageNumber />
+            <Controls.Pager />
+          </>
+        ),
+      },
+    });
+
+    // Not in the default footer, so the range label is not here either.
+    expect(queryPart("page-range")).not.toBeInTheDocument();
+    expect(part("page-number")).toHaveTextContent("Page 1 of 3");
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(part("page-number")).toHaveTextContent("Page 2 of 3");
+  });
+
   it("reports paging as suspended while a grouping is active", () => {
     const seen: Array<boolean> = [];
 

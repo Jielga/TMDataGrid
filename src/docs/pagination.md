@@ -77,7 +77,25 @@ greying out while a grouping suspends paging.
 | --- | --- |
 | `Controls.PageSize` | "Rows per page" and its select |
 | `Controls.Range` | The "1–25 of 300" label |
+| `Controls.PageNumber` | The "Page 3 of 200" label |
 | `Controls.Pager` | The previous and next buttons |
+
+`PageNumber` is not in the default footer.
+It is the label a server-paged grid usually shows in place of a row range, so it is put in through the slot:
+
+```tsx
+<TMDataGrid.Footer
+  renderPagination={({ Controls }) => (
+    <>
+      <Controls.PageSize />
+      <Controls.PageNumber />
+      <Controls.Pager />
+    </>
+  )}
+/>
+```
+
+It reads `pageCount`, so a grid declaring `pageCount: -1` shows "Page 3" alone.
 
 `state` carries `pageIndex`, `pageSize`, `pageCount`, `rowCount`,
 `canPreviousPage`, `canNextPage`, the `from` / `to` bounds of the current page,

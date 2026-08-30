@@ -91,13 +91,13 @@ export function ServerSide() {
     };
   }, [pagination.pageIndex, pagination.pageSize, search, sort?.id, sort?.desc]);
 
-  const onGlobalFilterChange: OnChangeFn<string> = (updater) => {
+  // A narrower result set makes the current page index meaningless, and under
+  // `manualPagination` the grid takes itself back to page 1 - so this is the
+  // plain setter. See `resetPageOnQueryChange`.
+  const onGlobalFilterChange: OnChangeFn<string> = (updater) =>
     setSearch((previous) =>
       typeof updater === "function" ? updater(previous) : updater,
     );
-    // A narrower result set makes the current page index meaningless.
-    setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-  };
 
   const meta = useMemo(
     () => ({ loading, totalRowCount: TOTAL_ORDERS }),

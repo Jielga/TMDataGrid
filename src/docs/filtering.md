@@ -34,7 +34,9 @@ A filter with an empty value stays in state, so a panel row survives while the
 user types. (A header filter control has no row to keep alive and drops its
 entry instead - see [inHeader](#inheader).) It matches every row, does not set the header's filter
 indicator, and produces no pill. `isFilterActive(value)` tests for that
-state.
+state, and `activeColumnFilters` applies it across the whole slice, handing
+back the entries that narrow the grid with their values typed as
+`TMDataGridFilterValue` rather than as `unknown`.
 
 ## Operators
 
@@ -325,6 +327,7 @@ header control - the header cell stays, empty.
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control, seeding an empty filter. |
 | `TMDataGridFilterControlArgs` | Type | `layout: "row" \| "stacked" \| "header"` | – | What a value control is handed, `layout` saying how much room it has. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
+| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters that narrow anything, typed. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |

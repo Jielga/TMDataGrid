@@ -45,6 +45,41 @@ export type TMDataGridOptionsSource =
   | "faceted"
   | ((args: TMDataGridOptionsArgs) => ReadonlyArray<TMDataGridOption | string>);
 
+/**
+ * Columns already warned about, per table - so a warning fires once per grid
+ * and a test's grid is not silenced by another test's.
+ */
+const warnedFaceted = new WeakMap<object, Set<string>>();
+
+/**
+ * Faceted options read the distinct values in `data`, which under
+ * `manualFiltering` or `manualPagination` is whatever the server sent for the
+ * current page. The dropdown then offers the values that happen to be on the
+ * page the user is looking at, and looks correct while being wrong - so it is
+ * said out loud, once per column.
+ */
+function warnFacetedUnderManualMode(
+  table: TMDataGridTable<TMDataGridRowData>,
+  columnId: string,
+): void {
+  if (
+    table.options.manualFiltering !== true &&
+    table.options.manualPagination !== true
+  ) {
+    return;
+  }
+  let warned = warnedFaceted.get(table);
+  if (warned === undefined) {
+    warned = new Set();
+    warnedFaceted.set(table, warned);
+  }
+  if (warned.has(columnId)) return;
+  warned.add(columnId);
+  console.warn(
+    `TMDataGrid: column "${columnId}" resolves faceted options while the server owns the rows - the distinct values of one page are not the distinct values of the result set. Pass meta.options as a list or a function instead.`,
+  );
+}
+
 function addFacetValue(target: Set<string>, value: unknown): void {
   if (value === null || value === undefined || value === "") return;
   target.add(String(value));
@@ -68,6 +103,7 @@ export function resolveColumnOptions({
   if (!source) return [];
 
   if (source === "faceted") {
+    warnFacetedUnderManualMode(table, column.id);
     const values = new Set<string>();
     for (const key of column.getFacetedUniqueValues().keys()) {
       if (Array.isArray(key)) {

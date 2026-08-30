@@ -14,8 +14,9 @@ starts without the stakeholder's go.
   message and a docs link, and `acknowledgeUx?: ReadonlyArray<string>`
   silences one by key, keys being permanent once published. Opinions only - a
   misconfiguration such as `editMode` without `getRowId` stays a hard error.
-  Folds in the existing `onReachEnd`-with-pagination warning and the
-  frozen-controlled-slice one added for #39; the first new rules are
+  Folds in the existing `onReachEnd`-with-pagination warning, the
+  frozen-controlled-slice one added for #39 and the faceted-options-under-
+  manual-mode one added 2026-08-31; the first new rules are
   `detailsTrigger: "rowClick"` against a selection mode where a row click
   already acts, and unstable `data` identity, which the v9 beta's
   `autoResetExpanded` turns into a render loop.
@@ -127,6 +128,27 @@ The filter panel's place is a `filters` option: `surface: "popup"` (the default,
 `openColumnFilter` focuses the header control under `inHeader` rather than opening a panel; the panel and the header row watch separate ui slots (`filterPanelColumnId`, `headerFilterColumnId`) so the two never race for the caret, and `meta.filter.control` receives `layout`.
 Reviewed by three fresh-eyes agents before merge - docs, API surface and code - which is where the `"none"` naming, the sidebar's open-by-default, and the popup-over-header-filters overlap came from.
 Two pre-existing header bugs came out with it: a group header did not span the columns under it, and stacked header rows all pinned to the top edge.
+
+**Server-side ergonomics** - **done 2026-08-31.**
+From the build report on the server-backed search recipe, which named ten
+findings; the seven that were library work are here, the two that were not are
+in the same pull request and one was already closed by *chore: drop the
+house-style check*.
+The first-page reset (`resetPageOnQueryChange`, on by default under
+`manualPagination`) rides on the query slice's own change callback rather than
+on an effect, so the page and the query move in one event and one request goes
+out; a filter row seeded empty is not a query change.
+`activeColumnFilters` removes the cast every mapping layer opened with,
+`Controls.PageNumber` is the label a server-paged footer wants, and
+`SummaryCount` drops the denominator rather than showing the page size as the
+total.
+Two bugs closed with them: the controlled-state sync published the table store
+from inside the consumer's render, which React reported against the consumer's
+own component on the first sort or filter of any grid owning a state slice;
+and the last column's resize divider hung 5px past the last track, so a grid
+whose columns fit still carried a horizontal scrollbar.
+The demo suite now clicks a sortable header on every demo, which is what
+catches the first of those.
 
 **Grid menu** - **done 2026-08-29**, breaking.
 `TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.

@@ -106,6 +106,15 @@ import {
   stabilizeControlledState,
   withoutUndefinedSlices,
 } from "./core/controlledState";
+import {
+  beginControlledStateSync,
+  deferControlledStateSyncPublishes,
+  endControlledStateSync,
+} from "./core/controlledStateSync";
+import {
+  withPageReset,
+  type TMDataGridQueryTable,
+} from "./core/pageReset";
 import type { TMDataGridCellRange } from "./core/cellRange";
 import {
   createSelectColumn,
@@ -727,6 +736,18 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   enablePagination?: boolean;
   /**
+   * Sends the grid back to the first page whenever the query changes - a
+   * column filter, the quick search or the sort. Defaults to `true` under
+   * `manualPagination` and `false` otherwise, where TanStack's own
+   * `autoResetPageIndex` already does it.
+   *
+   * Server-side, `pageIndex` is a position in a result set the grid does not
+   * own: narrowing the query leaves it pointing past the last page, and the
+   * next request comes back empty. The reset is applied in the same event as
+   * the change, so one request goes out, for the first page of the new query.
+   */
+  resetPageOnQueryChange?: boolean;
+  /**
    * The row-number gutter: a generated lane, outermost left, numbering the
    * rows of the current view - sorted, filtered, continuing across pages,
    * with group rows unnumbered. Off by default.
@@ -1011,6 +1032,7 @@ export function useTMDataGrid<TData extends RowData>({
   labels: labelsOverride,
   enableColumnOrdering,
   enablePagination,
+  resetPageOnQueryChange,
   enableRowNumbers,
   selectionMode,
   showSelectedBackground,
@@ -1346,6 +1368,23 @@ export function useTMDataGrid<TData extends RowData>({
     [],
   );
 
+  // Filled immediately after the call below. The query-change wrappers close
+  // over it rather than over `table`, since they are built as part of the
+  // options the table is constructed from.
+  const tableRef = useRef<TMDataGridTable<TData>>(null as never);
+  // Server-side, a narrower query invalidates the page the grid is on - see
+  // pageReset.ts. On by default only where the grid does not own the result
+  // set; TanStack's `autoResetPageIndex` covers the client-side case.
+  const resetPage = resetPageOnQueryChange ?? options.manualPagination === true;
+  const getQueryTable = useCallback(
+    () => tableRef.current as unknown as TMDataGridQueryTable,
+    [],
+  );
+
+  // The sync of `state` into the table's atoms happens inside this call, in
+  // the render body, and publishing from there makes React warn about the
+  // consumer's component - see controlledStateSync.ts.
+  beginControlledStateSync();
   const table = useTable({
     // The grid paints a running drag itself, one style write per frame - see
     // the resize preview in TMDataGridTable - and takes the width into state
@@ -1368,6 +1407,32 @@ export function useTMDataGrid<TData extends RowData>({
     // `"reorder"` to keep the column and have it moved to the front instead.
     groupedColumnMode: "remove",
     ...options,
+    // The query slices, wrapped so a change also takes the grid back to the
+    // first page - see pageReset.ts. Spread conditionally: the keys carry a
+    // `makeStateUpdater` default, and an explicit `undefined` would overwrite
+    // it and leave the slice unwritable.
+    ...(resetPage
+      ? {
+          onColumnFiltersChange: withPageReset(
+            "columnFilters",
+            options.onColumnFiltersChange as never,
+            getQueryTable,
+          ) as TableOptions<
+            TMDataGridFeatures,
+            TData
+          >["onColumnFiltersChange"],
+          onGlobalFilterChange: withPageReset(
+            "globalFilter",
+            options.onGlobalFilterChange as never,
+            getQueryTable,
+          ) as TableOptions<TMDataGridFeatures, TData>["onGlobalFilterChange"],
+          onSortingChange: withPageReset(
+            "sorting",
+            options.onSortingChange as never,
+            getQueryTable,
+          ) as TableOptions<TMDataGridFeatures, TData>["onSortingChange"],
+        }
+      : {}),
     // The rows as shown - see `shown` above. The consumer's own array passes
     // through untouched while nothing is committed.
     data: shown.rows,
@@ -1447,6 +1512,9 @@ export function useTMDataGrid<TData extends RowData>({
       },
     },
   }, selectSettledState);
+  endControlledStateSync();
+  tableRef.current = table as unknown as TMDataGridTable<TData>;
+  deferControlledStateSyncPublishes(table.store);
 
   // The engine's view of this render - see the engine's creation above.
   editContextRef.current = {
