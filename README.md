@@ -93,11 +93,11 @@ sidebar order.
 | Section              | Pages                                                            |
 | -------------------- | ---------------------------------------------------------------- |
 | Start here           | [Getting started](src/docs/getting-started.md), [Grid anatomy](src/docs/anatomy.md) |
-| Columns              | [Defining columns](src/docs/columns.md), [Sorting](src/docs/sorting.md), [Filtering](src/docs/filtering.md), [Visibility, pinning and size](src/docs/column-layout.md) |
-| Rows                 | [Selection](src/docs/row-selection.md), [Details](src/docs/row-details.md), [Grouping](src/docs/grouping.md), [Summary row](src/docs/summary-row.md), [Pinning and numbering](src/docs/row-pinning.md), [Clicks and context menus](src/docs/row-interaction.md), [Row styling](src/docs/row-styling.md) |
+| Columns              | [Defining columns](src/docs/columns.md), [Sorting](src/docs/sorting.md), [Filtering](src/docs/filtering.md), [Visibility, pinning, ordering and size](src/docs/column-layout.md) |
+| Rows                 | [Selection](src/docs/row-selection.md), [Details](src/docs/row-details.md), [Grouping](src/docs/grouping.md), [Summary row](src/docs/summary-row.md), [Row pinning and numbering](src/docs/row-pinning.md), [Clicks and context menus](src/docs/row-interaction.md), [Row styling](src/docs/row-styling.md) |
 | Cells and editing    | [Cell selection](src/docs/cell-selection.md), [Editing](src/docs/editing.md), [Editors and validation](src/docs/editors.md) |
-| Data                 | [Pagination](src/docs/pagination.md), [Quick search](src/docs/quick-search.md), [Persistence](src/docs/persistence.md), [Server-side](src/docs/server-side.md), [Loading and empty](src/docs/loading-and-empty.md), [Scrolling](src/docs/scrolling.md) |
-| Appearance           | [Size and styling](src/docs/styling.md), [Toolbar](src/docs/toolbar.md), [Localization](src/docs/localization.md) |
+| Data                 | [Pagination](src/docs/pagination.md), [Quick search](src/docs/quick-search.md), [Persistence](src/docs/persistence.md), [Server-side](src/docs/server-side.md), [Loading and empty states](src/docs/loading-and-empty.md), [Scrolling and virtualization](src/docs/scrolling.md) |
+| Appearance           | [Size, styling and theming](src/docs/styling.md), [Toolbar](src/docs/toolbar.md), [Localization](src/docs/localization.md) |
 | Reference            | [useTMDataGrid](src/docs/use-tm-data-grid.md), [Testing](src/docs/testing.md) |
 
 ## Development

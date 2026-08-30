@@ -1,4 +1,4 @@
-# The grid menu
+# Grid menu
 
 `TMDataGrid.Menu` is the burger button at the end of the toolbar and the Mantine `Menu` it opens.
 Its children are the dropdown: Mantine `Menu.Item`s of your own, and the built-in items under `TMDataGrid.Menu.*`.

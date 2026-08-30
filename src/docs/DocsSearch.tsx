@@ -2,7 +2,12 @@ import { Badge, Group, Kbd, Modal, Stack, Text, TextInput } from "@mantine/core"
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import classes from "./DocsSearch.module.css";
-import { searchDocs, type SearchEntry, type SearchKind } from "./searchIndex";
+import {
+  excerpt,
+  searchDocs,
+  type SearchEntry,
+  type SearchKind,
+} from "./searchIndex";
 
 /**
  * The Ctrl+K palette.
@@ -16,12 +21,14 @@ const KIND_LABEL: Record<SearchKind, string> = {
   page: "Page",
   section: "Section",
   symbol: "API",
+  text: "Text",
 };
 
 const KIND_COLOR: Record<SearchKind, string> = {
   page: "blue",
   section: "gray",
   symbol: "grape",
+  text: "gray",
 };
 
 export function DocsSearch({
@@ -113,8 +120,20 @@ export function DocsSearch({
                   <Text size="xs" c="dimmed" truncate>
                     {entry.context}
                   </Text>
+                  {/* A prose hit is unreadable without the line it matched
+                      on - the heading above it says only where it is. */}
+                  {entry.body !== undefined && (
+                    <Text size="xs" c="dimmed" truncate>
+                      {excerpt(entry.body, query)}
+                    </Text>
+                  )}
                 </div>
-                <Badge size="xs" variant="light" color={KIND_COLOR[entry.kind]}>
+                <Badge
+                  size="xs"
+                  variant="light"
+                  color={KIND_COLOR[entry.kind]}
+                  className={classes.kind}
+                >
                   {KIND_LABEL[entry.kind]}
                 </Badge>
               </Group>

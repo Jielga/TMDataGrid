@@ -65,3 +65,56 @@
   white-space: normal;
   overflow-wrap: break-word;
 }
+
+/* Mantine's Typography colours `code` after it colours `a`, at the same
+   specificity, so a link whose whole label is inline code loses the anchor
+   colour. Underlines are on hover only, so that colour is the sole thing
+   marking it as a link - without this the 15 code-labelled links in the docs
+   render as plain black chips. */
+.article a code {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Relative, not Typography's absolute 12px: a chip has to hold its ratio to
+   whatever text carries it, and 12px inside 16px prose reads a size small for
+   pages this dense with identifiers. The tighter horizontal padding is what
+   keeps the comma after a chip from floating away from it. */
+.article code {
+  font-size: 0.875em;
+  padding-inline: 0.25em;
+}
+
+/* The wrapper `markdownComponents.pre` renders in place of the `pre` element.
+   It carries the gap around a code block, which nothing else does: Typography
+   styles `pre`, and the `pre` never reaches the DOM. Adjacent margins collapse,
+   so this is 20px above and below rather than 20px added to the paragraph's
+   own. */
+.fence {
+  margin-block: var(--mantine-spacing-lg);
+}
+
+/* The `code` rule above is for an inline chip, and highlighted code is a `code`
+   too - in a fence and in a demo's source panel alike. Both sit inside the
+   `pre` the component renders, which is what separates them from an inline
+   chip; Mantine's own 13px is what those blocks were measured at, so it is
+   restored rather than left to scale with the prose. */
+.article pre code {
+  font-size: calc(0.8125rem * var(--mantine-scale));
+}
+
+/* A blockquote is a note. Typography renders it as a filled, rounded card at
+   font-size lg, which sets a caveat two points larger than the text it
+   qualifies and makes it the loudest thing on a page whose code blocks are
+   white on white. It also fills with gray-0, the same colour as an inline code
+   chip, so chips inside a note vanish in light mode. A left accent and no fill
+   says "aside" without any of that. */
+.article blockquote {
+  font-size: inherit;
+  background: none;
+  border-radius: 0;
+  border-inline-start: 3px solid var(--mantine-primary-color-filled);
+  padding: 0 0 0 var(--mantine-spacing-md);
+  margin-block: var(--mantine-spacing-lg);
+}

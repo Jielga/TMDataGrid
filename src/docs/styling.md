@@ -56,6 +56,13 @@ from a stylesheet.
 
 ### Colours
 
+Both colour schemes are supported. The grid's own stylesheet resolves its
+colours with `light-dark()`, so it follows Mantine's scheme without a prop or a
+second import. A default of **Themed** below means exactly that: the variable
+resolves to one value under the light scheme and another under the dark one.
+Set such a variable and you take over both schemes, so give it a value that
+reads in each - `light-dark()` works in your own value too.
+
 | Variable | Default | Applies to |
 | --- | --- | --- |
 | `--row-bg` | – | One row's own background. Set this, never `background`. See [Row styling](/docs/row-styling#set-the-row-background). |

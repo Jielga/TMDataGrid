@@ -55,6 +55,16 @@ past 1.0.0 on 2026-08-01.
   fixes the publish timing upstream - the patch and the begin/end calls around
   `useTable` are deleted. The publish test in `controlledState.test.tsx` pins
   the beta.21 internals the patch leans on; it goes with the patch, not before.
+- Docs structure decisions raised by the 2026-08-31 review pass and left for the stakeholder.
+  Five items, each a reorganisation rather than a fix: put the sidebar on one axis (it mixes grid anatomy with concern today, so no rule can be inferred from the tree); split `editing.md`, at 562 lines seven times the median page; give the column menu its own page, since the surface a user touches most has no sidebar entry and lives under "Visibility, pinning, ordering and size"; move whole-grid CSV export out from under Cell selection, where a grid with cell selection off will never look; rewrite the 31 index-card descriptions in the voice of the pages.
+  All five rename pages or move anchors, which ripples into the `sources:` of every skill citing them.
+- Documenting the rest of the public surface - 72 of 201 exports in `index.ts` appear in no docs page, `TMDataGridProps`, `TMDataGridColumnMeta` and `tmDataGridEditMode` among them.
+  Raised 2026-08-31. An API index built from the types rather than from prose tables waits on this: machinery to search for names with nothing to point at only moves the dead end.
+- The prose measure - `.article` is 1280px, roughly 150 characters a line against a normal 45 to 90.
+  The width is what makes the per-page reference tables readable, so narrowing the prose means letting tables and code blocks break out of it. Raised 2026-08-31; a decision, not a defect.
+- Prose spells "colour" on eight pages while the API spells `color`.
+  Raised 2026-08-31; en-US throughout would match the API, en-GB throughout is also consistent. Either, not both.
+
 - The column header menu's own items (sort, filter, group, pin, move, autosize, hide) as `TMDataGrid.Menu.*` components taking a `column` prop, with a `columnMenu` element on `TMDataGrid.Table` in place of the `renderColumnMenuItems` array handback.
   The grid menu (2026-08-29) left the namespace room for them.
   Raised 2026-08-29; held until a consumer asks.
@@ -162,6 +172,15 @@ and the last column's resize divider hung 5px past the last track, so a grid
 whose columns fit still carried a horizontal scrollbar.
 The demo suite now clicks a sortable header on every demo, which is what
 catches the first of those.
+**Docs feedback pass** - **done 2026-08-31**, docs and demo site only.
+Acted on four review files (structure, prose rendering, an outside developer's read, a documentation battletest); nothing under `src/tmdatagrid/` changed, so no changeset.
+Search: prose is indexed, keyed to the heading above each passage, and a result shows the line it matched; the fuzzy leg is gated at ACRONYM, so a query the docs cannot answer reaches an empty state instead of ten scattered-character hits; a title answering the whole query drops the half-matches under it; symbols are identifier-shaped only; `searchAliases.ts` holds the words a reader arrives with (`freeze`, `excel`, `localstorage`, `conditional formatting`, `master detail`), with a test pinning every target to a real page and heading.
+One name per page: the sidebar label, the h1 and the search title agree on all 32 pages, guarded by a test.
+Accuracy: editing had "four modes" against three in two places, `data-draft` was missing from the editing reference, `cellExport`'s default disagreed between two pages, the first-grid snippet declared different columns than the demo beside it, and the front page printed its tagline twice.
+Duplication: `components.md` owns the `TMDataGrid` and `TMDataGrid.Table` prop tables, with the deep links `anatomy.md` had and it lacked folded in; `anatomy.md` keeps the parts map and points at it.
+Content gaps closed in a paragraph each: dark mode is supported and "Themed" says what it means, cell-level styling says what to do instead, paste is not handled, columns are not virtualized, `getSubRows` renders but the grid adds no expander for it.
+Rendering: a link labelled in code keeps the anchor colour, a blockquote is a note rather than a filled pull-quote at 18px, a fence carries its own vertical margin, and inline code scales with the text around it.
+Chrome: per-page tab titles, and the sidebar sections ship open.
 
 **Grid menu** - **done 2026-08-29**, breaking.
 `TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.

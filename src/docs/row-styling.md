@@ -42,6 +42,29 @@ scheme; mixing a mid shade into transparency tints both schemes evenly:
 
 The grid composes `--row-bg` over the theme's body colour, so a translucent value tints the row and stays opaque under the pinned columns and the pinned rows.
 
+## One cell, not the row
+
+There is no `cellStyle` or `cellClassName`. Style a single cell from the
+column's own `cell` renderer, which owns the element you want to colour:
+
+```tsx
+columnHelper.accessor("age", {
+  cell: ({ getValue }) => {
+    const age = getValue();
+    return <span style={{ color: age > 60 ? "var(--mantine-color-red-6)" : undefined }}>{age}</span>;
+  },
+});
+```
+
+From a stylesheet, match the cell's `data-column-id` under a `rowClassName`.
+Body cells carry no `data-dg-part`; the coordinate attributes identify them:
+
+```css
+.overdue [data-column-id="dueDate"] {
+  font-weight: 600;
+}
+```
+
 ## Classes instead
 
 `rowClassName` takes the same shape and adds to the grid's own classes, for

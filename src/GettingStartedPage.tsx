@@ -6,12 +6,14 @@ import gettingStartedDoc from "./docs/getting-started.md?raw";
 import { ProjectStatus } from "./ProjectStatus";
 
 /**
- * The hero renders the page's one h1, so the document's own title is stripped
- * before rendering (`\r?`, because the checkout may be CRLF). The markdown file
- * keeps it, since it is also read as a plain file by the README and the
- * getting-started skill.
+ * The hero renders the page's one h1 and its tagline, so the document's own
+ * title and the paragraph under it are both stripped before rendering (`\r?`,
+ * because the checkout may be CRLF). Without the second strip the same
+ * sentence is the first thing on the site twice, two paragraphs apart. The
+ * markdown file keeps both, since it is also read as a plain file by the
+ * README and the getting-started skill.
  */
-const doc = gettingStartedDoc.replace(/^# .+\r?\n/, "");
+const doc = gettingStartedDoc.replace(/^# .+\r?\n\r?\n(?:.+\r?\n)+/, "");
 
 /**
  * The front page: what the package is, how to install it, and where to go

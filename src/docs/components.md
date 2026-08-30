@@ -63,8 +63,8 @@ It provides the grid to every part through context, and takes every field `useTM
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | – | The grid's parts, in render order. |
-| `size` | `TMDataGridSize` | `"md"` | The [size scale](/docs/styling). |
-| `className` · `style` · `id` | `string` · `CSSProperties` · `string` | – | Set on the root element. Give the grid a bounded height. |
+| `size` | `TMDataGridSize` | `"md"` | The [size scale](/docs/styling#the-size-scale). |
+| `className` · `style` · `id` | `string` · `CSSProperties` · `string` | – | Set on the root element. Give the grid a bounded height - see [Layout](/docs/styling#layout). |
 | `data-testid` | `string` | – | Names the grid for [tests](/docs/testing). Set it when a page holds more than one grid. |
 
 ## TMDataGrid.Table
@@ -79,18 +79,18 @@ Pass the row type so the handlers are typed:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `onRowClick` | `(row) => void` | – | Called when a body row is clicked. Rows show a pointer cursor when set. See [Clicks and context menus](/docs/row-interaction). |
-| `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args: TMDataGridCellEventArgs) => void` | – | Called on cell click, double-click and right-click. Receive `{ cell, row, column, event }`. |
-| `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer` | – | Contents of a row's context menu. Receives `{ table, row, cell, close, internalItems }`. |
+| `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args: TMDataGridCellEventArgs) => void` | – | Called on cell click, double-click and right-click. Receive `{ cell, row, column, event }`. See [Clicks and context menus](/docs/row-interaction). |
+| `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer` | – | Contents of a row's context menu. Receives `{ table, row, cell, close, internalItems }`. See [Context menus](/docs/row-interaction#context-menus). |
 | `rowContextMenuProps` | `Omit<MenuProps, "opened" \| "onChange" \| "children">` | – | Props passed to the Mantine `Menu` behind the context menu. |
-| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [Visibility, pinning and size](/docs/column-layout). |
+| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [The column menu](/docs/column-layout#the-column-menu). |
 | `rowClassName` | `string \| (row) => string` | – | Class for a body row. See [Row styling](/docs/row-styling). |
-| `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. Set `--row-bg` rather than `background`. |
-| `striped` | `boolean` | `false` | If set, every second row takes `--dg-row-striped-bg`. |
-| `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | `() => void` | – | Called once on arriving at that edge, not on mount and not per scroll event. See [Scrolling](/docs/scrolling). |
-| `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Server-side data](/docs/server-side). |
+| `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. Set `--row-bg` rather than `background`. See [Row styling](/docs/row-styling#set-the-row-background). |
+| `striped` | `boolean` | `false` | If set, every second row takes `--dg-row-striped-bg`. See [Striping](/docs/row-styling#striping). |
+| `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | `() => void` | – | Called once on arriving at that edge, not on mount and not per scroll event. See [Edge callbacks](/docs/scrolling#edge-callbacks). |
+| `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Infinite scroll](/docs/server-side#infinite-scroll). |
 | `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
-| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [Cell selection](/docs/cell-selection). |
+| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty states](/docs/loading-and-empty). |
+| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [The CSV](/docs/cell-selection#the-csv). |
 | `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name, announced on entry and matched by `getByRole("grid", { name })`. |
 
 Note that `onReachEnd` and `enablePagination` slice the same scroll: the pager caps the rows, so the end reached is the page's.
@@ -159,7 +159,7 @@ No props.
 
 ## TMDataGrid.LoadingIndicator
 
-A spinner, shown while `meta.loading` is `true`. See [Loading and empty](/docs/loading-and-empty).
+A spinner, shown while `meta.loading` is `true`. See [Loading and empty states](/docs/loading-and-empty).
 
 No props.
 

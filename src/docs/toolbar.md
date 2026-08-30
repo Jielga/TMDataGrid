@@ -1,4 +1,4 @@
-# Toolbar composition
+# Toolbar
 
 The toolbar is a flex row. Your own buttons are children of it, beside the
 built-in ones; there is no slots API and no `actions` prop.
@@ -52,7 +52,7 @@ renders nothing at all.
 A button that acts on the grid reads it from context:
 
 ```tsx
-import { useTMDataGridContext } from "@jielga/tmdatagrid";
+import { exportGridToCsv, useTMDataGridContext } from "@jielga/tmdatagrid";
 
 function ExportButton() {
   const { table } = useTMDataGridContext();
@@ -66,6 +66,11 @@ function ExportButton() {
 
 Anything rendered inside `TMDataGrid` can call it. It returns
 `{ table, ui, features, labels, controlSize, resetSettings }`.
+
+`exportGridToCsv` writes every filtered row, whatever the cell selection is or
+whether cell selection is on at all. Its options - separator, decimal mark,
+headers, file name - are on
+[Copy and export](/docs/cell-selection#copy-and-export).
 
 ### Hide a button when its feature is off
 

@@ -1,4 +1,4 @@
-# A query builder inside a form
+# A query builder form
 
 A search form holds dates, a title filter and a list of extra conditions. The
 conditions are rows, so the condition builder is a grid, wrapped as a form
