@@ -87,6 +87,11 @@ const active = columnFilters.filter((filter) => isFilterActive(filter.value));
 
 Debounce requests. The filter value input updates on every keystroke.
 
+For an endpoint that speaks its own query language rather than taking the
+grid's filter model, see [A server-backed search](/docs/server-query): one
+mapping layer turning filters, sorting and the page index into a request body,
+and the response envelope back into rows.
+
 ## Persistence
 
 `persist` works unchanged. `dataKey` restores filters, sorting and pagination

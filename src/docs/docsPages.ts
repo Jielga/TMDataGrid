@@ -22,6 +22,7 @@ import rowPinningDoc from "./row-pinning.md?raw";
 import rowSelectionDoc from "./row-selection.md?raw";
 import rowStylingDoc from "./row-styling.md?raw";
 import scrollingDoc from "./scrolling.md?raw";
+import serverQueryDoc from "./server-query.md?raw";
 import serverSideDoc from "./server-side.md?raw";
 import sortingDoc from "./sorting.md?raw";
 import stylingDoc from "./styling.md?raw";
@@ -256,6 +257,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "A query builder form",
     description: "The grid as a form field",
     source: queryBuilderDoc,
+  },
+  {
+    id: "server-query",
+    section: "Recipes",
+    label: "A server-backed search",
+    description: "Grid state mapped onto an API's own query",
+    source: serverQueryDoc,
   },
   {
     id: "portfolio-rebalancer",
