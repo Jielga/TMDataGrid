@@ -21,7 +21,6 @@ Do not start planned work without the stakeholder's go - the backlog names what 
 | `npm run dev` | Demo site: docs, examples, playground |
 | `npm run test` | Vitest once (`test:watch` to iterate) |
 | `npm run lint` | oxlint - types are **not** checked here |
-| `npm run check:style` | House style over the markdown |
 | `npm run check:skills` | `intent validate` over `skills/*/SKILL.md` |
 | `npx tsc -b` | The typecheck, run it separately |
 | `npm run build:lib` | The package into `dist/` |
@@ -84,7 +83,7 @@ One topic, one page - the option, prop, column meta, callback, CSS variable and 
 Write them as reference documentation for a library, and nothing looser.
 State what an option does and what its default is; give a reason only where it changes a decision.
 The person using the grid is "the user", the person reading the page is "you", and nobody is "the reader".
-No closing flourishes, no design commentary, no jokes - `check:style` refuses a handful of the phrases outright.
+No closing flourishes, no design commentary, no jokes.
 
 A demo is one file under `src/examples/demos/` holding code and nothing else: no headings, no prose, nothing you would not paste.
 Prose lives in the docs page that shows it.
