@@ -124,9 +124,9 @@ describe("TMDataGrid.Menu", () => {
     await user.click(part("menu-button"));
     await user.click(part("columns-toggle", { columnId: "city" }));
 
-    // Some shown but not all. The item stays checked - it carries the minus
-    // rather than the tick - and the click completes the set.
-    expect(part("columns-toggle-all")).toHaveAttribute("aria-checked", "true");
+    // Some shown but not all: an indeterminate box, and the click completes
+    // the set.
+    expect(part("columns-toggle-all")).toHaveAttribute("aria-checked", "mixed");
 
     await user.click(part("columns-toggle-all"));
 

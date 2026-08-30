@@ -149,7 +149,7 @@ import { Menu } from "@mantine/core";
 ```
 
 `TMDataGrid.Menu.Columns` is the column chooser as menu items: `Menu.Search`,
-one `Menu.CheckboxItem` per hideable column, show/hide all and reset layout;
+one checkbox item per hideable column, show/hide all and reset layout;
 it renders nothing when no column can be hidden. Its pieces
 `TMDataGrid.Menu.ColumnToggles` (`search` narrows the list),
 `.ShowHideAll` and `.ResetLayout` are exported for menus that want only some of

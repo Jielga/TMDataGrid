@@ -51,8 +51,8 @@ The pieces it is made of are exported for menus that want only some of them.
 | Component | Renders |
 | --- | --- |
 | `TMDataGrid.Menu.Columns` | `Menu.Search`, the toggles, a divider, show/hide all and reset layout. `searchable={false}` drops the search box. |
-| `TMDataGrid.Menu.ColumnToggles` | One `Menu.CheckboxItem` per hideable column. `search` narrows the list to the labels containing it. |
-| `TMDataGrid.Menu.ShowHideAll` | One checkbox item over the same list. A minus marks a partial state, and a click then shows all. |
+| `TMDataGrid.Menu.ColumnToggles` | One item per hideable column, with a checkbox that shows both states. `search` narrows the list to the labels containing it. |
+| `TMDataGrid.Menu.ShowHideAll` | One checkbox item over the same list. An indeterminate box marks a partial state, and a click then shows all. |
 | `TMDataGrid.Menu.ResetLayout` | One item calling `resetSettings()`: visibility, order, pinning and widths. |
 
 Each of them needs a Mantine `Menu` around it and reads the grid from context, so they work in any Mantine menu rendered inside `TMDataGrid`, not only in the burger:

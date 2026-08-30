@@ -123,7 +123,7 @@ past 1.0.0 on 2026-08-01.
 
 **Grid menu** - **done 2026-08-29**, breaking.
 `TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.
-The column chooser is menu items now, `TMDataGrid.Menu.Columns` with `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` as its pieces, built on Mantine 9.4's `Menu.Search`, `Menu.CheckboxItem` and `Menu.Sub`, so it goes into any Mantine menu inside the grid; the header menu's "Manage columns" is a submenu of the same items.
+The column chooser is menu items now, `TMDataGrid.Menu.Columns` with `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` as its pieces, built on Mantine 9.4's `Menu.Search` and `Menu.Sub` with `Checkbox.Indicator` toggles, so it goes into any Mantine menu inside the grid; the header menu's "Manage columns" is a submenu of the same items.
 `TMDataGrid.ColumnsButton` and the `columnsPanelOpen` ui state are gone; `TMDataGrid.ColumnsPanel` stays for hosts that are not a menu.
 
 **Drafts as shown** - **done 2026-08-28**.

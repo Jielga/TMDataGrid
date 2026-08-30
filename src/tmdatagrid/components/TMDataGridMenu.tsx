@@ -1,15 +1,34 @@
 import {
   ActionIcon,
+  Checkbox,
   Menu,
   ScrollArea,
   Tooltip,
   type MenuProps,
 } from "@mantine/core";
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useState,
+  type ComponentPropsWithoutRef,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
 import { useHideableColumns } from "./useHideableColumns";
-import { BurgerIcon, MinusIcon, RestoreIcon } from "./icons";
+import { BurgerIcon, RestoreIcon } from "./icons";
+
+/**
+ * The column toggles are `Menu.Item`s with a `Checkbox.Indicator` in front,
+ * not `Menu.CheckboxItem`: that one draws its tick only when checked, so an
+ * unchecked column next to the consumer's own items reads as a plain action.
+ * A box that is visibly empty says "off, click to turn on".
+ *
+ * `Menu.Item` writes `role="menuitem"` after the props it is given, so the
+ * checkbox role goes on through `renderRoot`, the polymorphic escape hatch.
+ */
+const asCheckboxItem = (props: ComponentPropsWithoutRef<"button">) => (
+  <button {...props} role="menuitemcheckbox" />
+);
 
 export type TMDataGridMenuProps = Omit<MenuProps, "children"> & {
   /** The dropdown's content: Mantine `Menu.Item`s and the `TMDataGrid.Menu.*` items. */
@@ -132,7 +151,7 @@ export function TMDataGridMenuColumns({
  * given. Renders nothing when no column can be hidden.
  */
 export function TMDataGridMenuColumnToggles({ search }: { search?: string }) {
-  const { labels } = useTMDataGridContext();
+  const { labels, controlSize } = useTMDataGridContext();
   const { columns, columnVisibility } = useHideableColumns();
 
   if (columns.length === 0) return null;
@@ -149,17 +168,25 @@ export function TMDataGridMenuColumnToggles({ search }: { search?: string }) {
       {listed.length === 0 ? (
         <Menu.Label>{labels.columnsNoMatch(search ?? "")}</Menu.Label>
       ) : (
-        listed.map((column) => (
-          <Menu.CheckboxItem
-            key={column.id}
-            checked={columnVisibility[column.id] !== false}
-            onChange={(checked) => column.toggleVisibility(checked)}
-            data-dg-part="columns-toggle"
-            data-column-id={column.id}
-          >
-            {getColumnLabel(column)}
-          </Menu.CheckboxItem>
-        ))
+        listed.map((column) => {
+          const visible = columnVisibility[column.id] !== false;
+          return (
+            <Menu.Item
+              key={column.id}
+              renderRoot={asCheckboxItem}
+              aria-checked={visible}
+              closeMenuOnClick={false}
+              leftSection={
+                <Checkbox.Indicator checked={visible} size={controlSize} />
+              }
+              onClick={() => column.toggleVisibility(!visible)}
+              data-dg-part="columns-toggle"
+              data-column-id={column.id}
+            >
+              {getColumnLabel(column)}
+            </Menu.Item>
+          );
+        })
       )}
     </ScrollArea.Autosize>
   );
@@ -170,27 +197,33 @@ export function TMDataGridMenuColumnToggles({ search }: { search?: string }) {
  * can be hidden.
  */
 export function TMDataGridMenuShowHideAll() {
-  const { labels } = useTMDataGridContext();
+  const { labels, controlSize } = useTMDataGridContext();
   const { columns, shownCount, setAllVisible } = useHideableColumns();
 
   if (columns.length === 0) return null;
 
   const all = shownCount === columns.length;
-  // Some shown but not all: a minus instead of a tick, and a click shows all -
-  // the same reading as the panel's indeterminate checkbox. The item cannot
-  // also say `aria-checked="mixed"`: `Menu.CheckboxItem` writes that attribute
-  // from `checked` after the props it is given, so an override never lands.
+  // Some shown but not all: an indeterminate box, and a click shows all - the
+  // same reading as the panel's checkbox.
   const some = shownCount > 0 && !all;
 
   return (
-    <Menu.CheckboxItem
-      checked={shownCount > 0}
-      checkIcon={some ? <MinusIcon size={14} stroke={1.6} /> : undefined}
-      onChange={() => setAllVisible(!all)}
+    <Menu.Item
+      renderRoot={asCheckboxItem}
+      aria-checked={some ? "mixed" : all}
+      closeMenuOnClick={false}
+      leftSection={
+        <Checkbox.Indicator
+          checked={all}
+          indeterminate={some}
+          size={controlSize}
+        />
+      }
+      onClick={() => setAllVisible(!all)}
       data-dg-part="columns-toggle-all"
     >
       {labels.columnsShowHideAll}
-    </Menu.CheckboxItem>
+    </Menu.Item>
   );
 }
 
