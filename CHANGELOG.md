@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.11
+
+### Patch Changes
+
+- [`19e21e4`](https://github.com/Jielga/TMDataGrid/commit/19e21e4596c693264af0063870e768f94f06b2c6) Thanks [@Psvensso](https://github.com/Psvensso)! - The column toggles in the grid menu show a checkbox in both states, so an unchecked column no longer reads as a plain action next to your own items. Show/Hide All shows an indeterminate box, and says `aria-checked="mixed"`, when some columns are hidden.
+
 ## 2.0.0-beta.10
 
 ### Minor Changes
