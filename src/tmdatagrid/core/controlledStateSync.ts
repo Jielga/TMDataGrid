@@ -17,25 +17,49 @@ import type { ReadonlyStore, Store } from "@tanstack/store";
  * returns the new value, so a component reads the same state either way; the
  * subscription is only what schedules a re-render for the components the
  * consumer's own render does not reach.
+ *
+ * Scope and assumptions. Only `table.store` is patched: a subscription made
+ * on `table.atoms.*` or `table.baseAtoms.*` keeps the synchronous timing.
+ * The patch leans on three table-core 9.0.0-beta.21 internals - the store is
+ * created once in `constructTable`, `useTable` returns a shallow copy that
+ * shares it, and the sync runs inside `setOptions` during render. The
+ * publish test in controlledState.test.tsx fails loudly if any of them
+ * moves; it is the guard for this module, not a redundant check. The
+ * intended end state - owning the controlled slices through `options.atoms`,
+ * which removes the render-time sync entirely - is in the backlog.
  */
 
 type Observer = ((value: unknown) => void) | { next?: (value: unknown) => void };
 
 type Subscribe = (observer: Observer) => { unsubscribe: () => void };
 
-/** True while `useTable` is syncing controlled state inside a render pass. */
+/**
+ * True while `useTable` is syncing controlled state inside a render pass.
+ * Process-global, so while one grid is inside its `useTable` call a publish
+ * on any patched store is deferred too - harmless, since nothing else runs
+ * during a synchronous render pass.
+ */
 let syncing = false;
 
-/** Called immediately before the `useTable` call that performs the sync. */
+/**
+ * Called immediately before the `useTable` call that performs the sync.
+ *
+ * The microtask is the backstop that bounds the flag to the current task: if
+ * `useTable` throws and an error boundary unmounts the grid, nothing after
+ * the call runs, and without it every patched store would keep deferring its
+ * notifications for the life of the page.
+ */
 export function beginControlledStateSync(): void {
   syncing = true;
+  queueMicrotask(() => {
+    syncing = false;
+  });
 }
 
 /**
- * Called immediately after it. Not in a `finally`: hooks inside `try` opt the
- * whole hook out of the React Compiler. A `useTable` that throws leaves the
- * flag set, which only defers publishes by a microtask until the next render
- * clears it.
+ * Called immediately after it - the prompt clear; correctness rests on the
+ * backstop above. Not a `finally` around the call, because hooks inside
+ * `try` opt the whole hook out of the React Compiler.
  */
 export function endControlledStateSync(): void {
   syncing = false;

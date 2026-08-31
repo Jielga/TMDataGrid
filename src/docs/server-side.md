@@ -107,6 +107,8 @@ const active = activeColumnFilters(columnFilters);
 
 It takes the `columnFilters` array, or the table where the grid owns the slice.
 `isFilterActive(value)` is the single-value test it is built on.
+Only the grid's own `{ operator, value }` shape is read: an entry holding some
+other value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 
@@ -195,5 +197,5 @@ Two constraints apply:
 | `resetPageOnQueryChange` | Option | `boolean` | `true` under `manualPagination` | Back to page 1 when a filter, the quick search or the sort changes. |
 | `onReachEnd` | Table prop | `() => void` | – | Fires as the scroll nears the last row. Latches per row count. |
 | `reachEndThreshold` | Table prop | `number` | `10` | How many rows before the end it fires. |
-| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters that narrow anything, typed. |
+| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether one filter value narrows anything. |

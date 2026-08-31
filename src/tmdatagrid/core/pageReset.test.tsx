@@ -159,6 +159,23 @@ describe("the first-page reset under manualPagination", () => {
     expect(api!.table.store.state.pagination.pageIndex).toBe(3);
   });
 
+  it("resets for a raw filter value it cannot recognise", () => {
+    let api: TMDataGridApi<TestRow> | null = null;
+    render(
+      <ServerGrid queries={[]} onReady={(grid) => (api = grid)} />,
+      { wrapper: MantineWrapper },
+    );
+
+    act(() => api!.table.setPageIndex(3));
+    // Not the grid's own { operator, value } shape - a custom filter control,
+    // or state restored from a URL. The reset cannot see whether such a value
+    // is "still empty", so it has to count as a query change.
+    act(() => api!.table.getColumn("city")!.setFilterValue("Malmö"));
+
+    expect(api!.table.store.state.columnFilters).toHaveLength(1);
+    expect(api!.table.store.state.pagination.pageIndex).toBe(0);
+  });
+
   it("stays where it is when the option is off", () => {
     let api: TMDataGridApi<TestRow> | null = null;
     const queries: Array<Query> = [];

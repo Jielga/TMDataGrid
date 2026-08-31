@@ -73,8 +73,8 @@ describe("example demos", () => {
     const sortable = document.querySelector<HTMLElement>(
       '[data-dg-part="header"][aria-sort]',
     );
-    if (sortable === null) return;
-    await userEvent.setup().click(sortable);
+    // A demo with nothing sortable still asserts its mount stayed clean.
+    if (sortable !== null) await userEvent.setup().click(sortable);
 
     expect(errors).toEqual([]);
   });

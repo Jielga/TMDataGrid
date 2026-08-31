@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import type { TMDataGridFeatures } from "../useTMDataGrid";
 import { sameStateValue } from "./controlledState";
-import { activeColumnFilters } from "./filterOperators";
+import { isFilterActive, isTMDataGridFilterValue } from "./filterOperators";
 
 /**
  * Sends a server-paged grid back to the first page when the query changes.
@@ -41,6 +41,21 @@ export type TMDataGridQueryTable = {
 
 type QueryHandler = (updater: never) => void;
 
+type ColumnFilters = TableState<TMDataGridFeatures>["columnFilters"];
+
+/**
+ * The entries the server could answer differently. Only the grid's own
+ * `{ operator, value }` shape can be recognised as "still empty" - anything
+ * else, a custom filter control's raw value or state restored from a URL,
+ * narrows the grid as far as this module can know, so it always counts.
+ */
+function querySignificantFilters(filters: ColumnFilters): ColumnFilters {
+  return filters.filter(
+    (entry) =>
+      !isTMDataGridFilterValue(entry.value) || isFilterActive(entry.value),
+  );
+}
+
 /**
  * Whether the server would answer the next state differently.
  *
@@ -56,8 +71,8 @@ function changesTheQuery(
 ): boolean {
   if (slice === "columnFilters") {
     return !sameStateValue(
-      activeColumnFilters(previous as TableState<TMDataGridFeatures>["columnFilters"]),
-      activeColumnFilters(next as TableState<TMDataGridFeatures>["columnFilters"]),
+      querySignificantFilters(previous as ColumnFilters),
+      querySignificantFilters(next as ColumnFilters),
     );
   }
   return !sameStateValue(previous, next);
@@ -78,8 +93,14 @@ export function withPageReset(
     const previous = table.store.state[slice];
     // Resolved here rather than read back off the table afterwards: where the
     // consumer owns the slice the write is their `setState`, so the table
-    // still holds the old value when this returns. Updaters are pure
-    // derivations of the previous value, so applying one twice is safe.
+    // still holds the old value when this returns. The updater therefore runs
+    // twice per change - once here, once in the write path - which is safe
+    // for every updater the grid and table-core produce, and a requirement on
+    // the consumer's: an updater has to be a pure derivation of the previous
+    // value. The decision is also best-effort under batching: two writes to
+    // one slice in the same tick both read the same `previous`, so the second
+    // decision is computed from a stale base. A wrong reset decision at
+    // worst, never a wrong write.
     const next = functionalUpdate(updater as Updater<unknown>, previous);
 
     (handler ?? (makeStateUpdater(slice, table as never) as QueryHandler))(

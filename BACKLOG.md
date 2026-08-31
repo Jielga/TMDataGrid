@@ -47,6 +47,14 @@ past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- Controlled state through `options.atoms` - the intended end state for the
+  render-phase publish workaround shipped 2026-08-31: `controlledStateSync.ts`
+  patches `table.store.subscribe` and defers notifications raised during
+  `useTable`'s `options.state` sync. Owning each controlled slice as an atom
+  removes that render-time sync entirely; when it lands - or when table-core
+  fixes the publish timing upstream - the patch and the begin/end calls around
+  `useTable` are deleted. The publish test in `controlledState.test.tsx` pins
+  the beta.21 internals the patch leans on; it goes with the patch, not before.
 - The column header menu's own items (sort, filter, group, pin, move, autosize, hide) as `TMDataGrid.Menu.*` components taking a `column` prop, with a `columnMenu` element on `TMDataGrid.Table` in place of the `renderColumnMenuItems` array handback.
   The grid menu (2026-08-29) left the namespace room for them.
   Raised 2026-08-29; held until a consumer asks.
@@ -107,7 +115,12 @@ past 1.0.0 on 2026-08-01.
 - `SummaryCount` counts group rows in the numerator (`48 / 42` under six
   groups) while the denominator counts records. Flagged by two test
   consumers 2026-08-27; documented as-is for now. Decide: exclude group rows,
-  or keep and leave the docs sentence.
+  or keep and leave the docs sentence. Sibling problem, raised by the
+  2026-08-31 code review: the footer's `Range` and `PageNumber` fall back to
+  `groupedAllRows(getFilteredRowModel().rows.length)` while a grouping
+  suspends paging, and under `manualFiltering` that model is one page
+  presented as "all rows". Hard to reach - grouping is normally off
+  server-side - and pre-existing in `Range`; settle both counts together.
 - A range column type - `meta.type: "dateRange"` (and a numeric sibling).
   The editor is small; the filter operators (overlaps, contains, within) are
   the part nobody wants to write twice, and `meta.type` already couples

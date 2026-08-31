@@ -202,4 +202,32 @@ describe("faceted options where the server owns the rows", () => {
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it("stays warned across re-renders, which hand out a new table object", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { result, rerender } = renderHook(
+      () =>
+        useTMDataGrid<Order>({
+          data: rows,
+          columns,
+          getRowId: (row) => String(row.id),
+          manualPagination: true,
+        }),
+      { wrapper: MantineWrapper },
+    );
+    const api = () =>
+      result.current as unknown as TMDataGridApi<TMDataGridRowData>;
+    const first = api().table;
+
+    resolveColumnOptions({ table: first, column: column(api(), "city") });
+    rerender();
+    // `useTable` rebuilds the returned table every render; only the store
+    // keeps its identity, which is why the store is the guard's key. Keyed on
+    // the table, the filter panel warned once per keystroke.
+    expect(api().table).not.toBe(first);
+    resolveColumnOptions({ table: api().table, column: column(api(), "city") });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
 });

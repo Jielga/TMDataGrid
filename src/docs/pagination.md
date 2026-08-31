@@ -136,6 +136,7 @@ paging is switched on at all. The two differ while a grouping is active.
 | `rowCount` | Table option | `number` | – | The true total, required under `manualPagination`. |
 | `initialState.pagination` | Table option | `{ pageIndex, pageSize }` | `{ 0, 25 }` | Where paging starts. A data slice, so it persists. |
 | `onPaginationChange` | Table option | `OnChangeFn` | – | Controls the pagination state. |
+| `resetPageOnQueryChange` | Option | `boolean` | `true` under `manualPagination` | Back to page 1 when the query changes. See [Server-side data](/docs/server-side#the-page-index). |
 | `TMDataGrid.Footer` | Component | – | – | The footer bar. Renders nothing when paging is off. |
 | `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
 | `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |

@@ -46,8 +46,10 @@ export type TMDataGridOptionsSource =
   | ((args: TMDataGridOptionsArgs) => ReadonlyArray<TMDataGridOption | string>);
 
 /**
- * Columns already warned about, per table - so a warning fires once per grid
- * and a test's grid is not silenced by another test's.
+ * Columns already warned about, per grid - so a warning fires once and a
+ * test's grid is not silenced by another test's. Keyed on `table.store`, not
+ * on the table: `useTable` returns a fresh table object every render, while
+ * the store is created once and shared by every render's copy.
  */
 const warnedFaceted = new WeakMap<object, Set<string>>();
 
@@ -57,6 +59,13 @@ const warnedFaceted = new WeakMap<object, Set<string>>();
  * current page. The dropdown then offers the values that happen to be on the
  * page the user is looking at, and looks correct while being wrong - so it is
  * said out loud, once per column.
+ *
+ * Fires from render, unlike the library's other warnings: the fallback form
+ * of `"faceted"` only exists at resolve time, which is render. The guard
+ * makes it once per grid regardless - a StrictMode double render or a
+ * discarded concurrent render marks the set the same way a committed one
+ * does. H3 in the backlog folds it into the diagnostics mechanism with the
+ * rest.
  */
 function warnFacetedUnderManualMode(
   table: TMDataGridTable<TMDataGridRowData>,
@@ -68,10 +77,11 @@ function warnFacetedUnderManualMode(
   ) {
     return;
   }
-  let warned = warnedFaceted.get(table);
+  const store = table.store as object;
+  let warned = warnedFaceted.get(store);
   if (warned === undefined) {
     warned = new Set();
-    warnedFaceted.set(table, warned);
+    warnedFaceted.set(store, warned);
   }
   if (warned.has(columnId)) return;
   warned.add(columnId);

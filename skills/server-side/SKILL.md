@@ -118,7 +118,9 @@ const active = activeColumnFilters(columnFilters);
 ```
 
 It takes the `columnFilters` array, or the table where the grid owns the slice.
-`isFilterActive(value)` is the single-value test it is built on.
+`isFilterActive(value)` is the single-value test it is built on. Only the
+grid's own `{ operator, value }` shape is read: an entry holding some other
+value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 

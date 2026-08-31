@@ -52,7 +52,7 @@ A filter with an empty value **stays in state** so the panel keeps its row while
 the user types. It matches every row, does not set the header indicator and
 produces no pill. `isFilterActive(value)` tests for that state, and
 `activeColumnFilters(columnFilters | table)` applies it across the slice and
-types what it hands back; presence in
+types what it hands back (entries in any other value shape are dropped); presence in
 `columnFilters` does not.
 
 ## Operators
@@ -416,7 +416,7 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `TMDataGrid.Search` | Component | `placeholder`, `debounce` (`250`), `w` (`220`) | – | The debounced quick-search input. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Opens the panel on a column. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
-| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters that narrow anything, typed. |
+| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
