@@ -231,10 +231,10 @@ export function TMDataGridFilterPanel({
                   size={controlSize}
                   w={stacked ? "100%" : 160}
                   allowDeselect={false}
-                  // Both dropdowns render inside the panel: a portalled one is
-                  // outside it in the DOM, and picking an option would read as
-                  // a click away and close the popup under the user.
-                  comboboxProps={{ withinPortal: false }}
+                  // Both dropdowns portal, like every dropdown in the panel:
+                  // drawn inline they are clipped by the grid frame's
+                  // `overflow: hidden` under the popup, or by the sidebar's
+                  // scroller. The popup's click-away exempts portal nodes.
                   data-dg-part="filter-column"
                   data={columnOptions}
                   value={filter.id}
@@ -250,7 +250,6 @@ export function TMDataGridFilterPanel({
                   size={controlSize}
                   w={stacked ? "100%" : 170}
                   allowDeselect={false}
-                  comboboxProps={{ withinPortal: false }}
                   data-dg-part="filter-operator"
                   data={getOperatorsForType(type).map((operator) => ({
                     value: operator,

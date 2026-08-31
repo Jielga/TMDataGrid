@@ -57,6 +57,34 @@ describe("filters.surface", () => {
     expect(part("filter-value")).toHaveValue(3);
   });
 
+  it("does not treat a press inside a portalled overlay as a click away", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    expect(part("filter-popup")).toBeInTheDocument();
+
+    // The panel's dropdowns render `withinPortal`, outside the popup in the
+    // DOM, so the grid frame cannot clip them - which makes this exemption
+    // load-bearing: without it, picking an option would close the popup.
+    // Mantine stamps `data-portal` on every portal node; under the harness's
+    // `env="test"` portals render inline, so the node is built by hand.
+    const portal = document.createElement("div");
+    portal.setAttribute("data-portal", "true");
+    const option = document.createElement("button");
+    portal.appendChild(option);
+    document.body.appendChild(portal);
+    try {
+      await user.click(option);
+      expect(part("filter-popup")).toBeInTheDocument();
+    } finally {
+      portal.remove();
+    }
+
+    // A press outside any portal still dismisses it.
+    await user.click(header("name"));
+    expect(queryPart("filter-popup")).not.toBeInTheDocument();
+  });
+
   it("puts the panel beside the rows under sidebar, and leaves it open on a click away", async () => {
     const user = userEvent.setup();
     // A sidebar is a layout choice, so it starts open without being asked.

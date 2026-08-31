@@ -34,7 +34,6 @@ export function DgAutocompleteFilter(args: TMDataGridFilterControlArgs) {
     <Autocomplete
       {...filterFieldProps(args, { label: labels.filterValue, width: 180 })}
       size={size}
-      comboboxProps={{ withinPortal: args.layout === "header" }}
       disabled={!needsValue}
       placeholder={
         needsValue && args.layout !== "header" ? labels.filterValuePlaceholder : ""

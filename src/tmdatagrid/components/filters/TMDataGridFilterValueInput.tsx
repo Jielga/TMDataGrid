@@ -31,10 +31,11 @@ export function TMDataGridFilterValueInput(args: TMDataGridFilterControlArgs) {
     type === "number" ? "number" : type === "date" ? "date" : "text";
   const inHeader = layout === "header";
   const fills = layout !== "row";
-  // A header cell clips its overflow, so a dropdown drawn inside it would be
-  // cut off at the cell's edge. In the panel it stays inside, where a portalled
-  // one would read as a click away and close the popup under the user.
-  const comboboxProps = { withinPortal: inHeader };
+  // Portalled everywhere: drawn inline, the dropdown is clipped - by the
+  // header cell, by the grid frame's `overflow: hidden` (its corner radius)
+  // under the popup, or by the sidebar's scroller. The popup's click-away
+  // exempts portal nodes, so picking an option does not read as a click away.
+  const comboboxProps = { withinPortal: true };
   // No placeholder in a header cell: the column name is directly above the
   // field, and "Filter value" only ever fits a wide column anyway.
   const placeholder =
