@@ -60,46 +60,6 @@
   z-index: var(--dg-z-header, 6);
 }
 
-/* The scrolled-under shadow: a soft band under the header, only while body
-   rows are actually beneath it. On the last header row - the header/body
-   boundary - not on every stacked group row. A scroll-driven animation, like
-   the pinned-lane gradients: the shadow tracks the scroll on the compositor
-   with no listener and no render, and an inactive timeline (nothing to
-   scroll) leaves `opacity: 0` standing, so a grid that fits shows nothing.
-   Where unsupported there is simply no shadow - the header's border already
-   draws the boundary. */
-.headerRow[data-dg-header-last]::after {
-  content: "";
-  position: absolute;
-  inset: 100% 0 auto 0;
-  height: 6px;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    var(--dg-header-shadow-color, rgba(0, 0, 0, 0.14)),
-    transparent
-  );
-  opacity: 0;
-}
-
-@supports (animation-timeline: scroll()) {
-  .headerRow[data-dg-header-last]::after {
-    animation: dg-header-shadow linear both;
-    animation-timeline: scroll(nearest block);
-    /* Arrives over the first rows leaving, reads as depth not as a fade. */
-    animation-range: 0px 24px;
-  }
-}
-
-@keyframes dg-header-shadow {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .bodyRow {
   --row-bg: var(--mantine-color-body);
   display: grid;

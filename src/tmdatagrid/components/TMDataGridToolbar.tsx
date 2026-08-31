@@ -78,7 +78,7 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
  * column. The count of active filters tints it.
  *
  * Renders nothing when no column can be filtered (`enableColumnFilters:
- * false`), and nothing under `filters.surface: "manual"`, where there is no
+ * false`), and nothing under `filters.surface: "none"`, where there is no
  * automatic surface for it to toggle. Read `ui.state.filterPanelOpen` and
  * render your own control if a hand-placed panel wants one.
  */
@@ -95,7 +95,7 @@ export function TMDataGridFilterButton() {
   ).length;
 
   if (!getGridCapabilities(table, features).canFilterAny) return null;
-  if (filters.surface === "manual") return null;
+  if (filters.surface === "none") return null;
 
   return (
     <Tooltip label={labels.filters} openDelay={400}>

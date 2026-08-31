@@ -1,13 +1,11 @@
 import { ActionIcon, Menu, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import classes from "./TMDataGridHeaderFilterRow.module.css";
 import sticky from "./sticky.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { resolveColumnOptions } from "../core/columnOptions";
 import {
   getColumnDefaultOperator,
-  getColumnFilterControl,
   getColumnLabel,
   getColumnType,
   isControlColumn,
@@ -18,13 +16,26 @@ import {
   emptyValueForOperator,
   filterValueShape,
   getOperatorsForType,
-  isFilterActive,
   isTMDataGridFilterValue,
 } from "../core/filterOperators";
 import { FilterIcon } from "./icons";
-import { TMDataGridFilterValueInput } from "./filters/TMDataGridFilterValueInput";
+import {
+  filterControlFor,
+  filterOptionsUseFacets,
+} from "./filters/filterControlFor";
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import type { TMDataGridHeader } from "./TMDataGridHeaderCell";
+
+/**
+ * Whether a value says nothing at all - untrimmed, unlike `isFilterActive`,
+ * which is about whether a filter *narrows* anything. A lone space narrows
+ * nothing but is very much something the user typed.
+ */
+function isEmptyValue(value: string | ReadonlyArray<string>): boolean {
+  return Array.isArray(value)
+    ? value.every((entry) => entry === "")
+    : value === "";
+}
 
 /**
  * One column's filter control, as it appears in the header row: the value
@@ -53,14 +64,17 @@ function HeaderFilterControl({ column }: { column: TMDataGridHeader["column"] })
   /**
    * Writes the filter, or drops it entirely once nothing is left to say. A
    * header control is always on screen, so an empty one has no row to keep
-   * alive the way the panel does - and a `columnFilters` entry that means
-   * "nothing" is one a `manualFiltering` grid would send to its server. An
-   * operator the user chose is worth keeping even with an empty value; the
-   * type's own default is not.
+   * alive the way a panel row does, and leaving the entry behind would put a
+   * filter in `columnFilters` that says nothing.
+   *
+   * Emptiness here is the literal one, not `isFilterActive`'s: that one trims,
+   * and dropping the filter on a value of `" "` would take the space back out
+   * of the input the moment it was typed. An operator the user picked is worth
+   * keeping even with an empty value; the type's own default is not.
    */
   function write(next: TMDataGridFilterValue) {
     const worthKeeping =
-      isFilterActive(next) || next.operator !== defaultOperator;
+      !isEmptyValue(next.value) || next.operator !== defaultOperator;
     column.setFilterValue(worthKeeping ? next : undefined);
   }
 
@@ -76,14 +90,20 @@ function HeaderFilterControl({ column }: { column: TMDataGridHeader["column"] })
     });
   }
 
-  const options =
-    column.columnDef.meta?.options !== undefined ||
-    type === "select" ||
-    type === "multiSelect"
-      ? resolveColumnOptions({ table, column, fallback: "faceted" })
-      : [];
-  const ValueControl =
-    getColumnFilterControl(column) ?? TMDataGridFilterValueInput;
+  // Memoized because this row re-renders with the table - on every scroll
+  // frame, for every column - while resolving faceted options walks the
+  // faceted map into a sorted set. TanStack swaps that map's identity whenever
+  // the values behind it change, so it is exactly the right key.
+  const facetKey = filterOptionsUseFacets(column)
+    ? column.getFacetedUniqueValues()
+    : undefined;
+  const { options, ValueControl } = useMemo(
+    () => filterControlFor(table, column),
+    // `facetKey` is a cache key, not something the body reads: the resolution
+    // reaches the faceted map through the column, so nothing here names it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, column, facetKey],
+  );
   const operators = getOperatorsForType(type);
 
   return (
@@ -102,16 +122,14 @@ function HeaderFilterControl({ column }: { column: TMDataGridHeader["column"] })
         />
       </div>
 
-      {operators.length > 1 && (
-        <OperatorMenu
-          columnId={column.id}
-          columnLabel={label}
-          operator={operator}
-          isDefault={operator === defaultOperator}
-          operators={operators}
-          onChange={changeOperator}
-        />
-      )}
+      <OperatorMenu
+        columnId={column.id}
+        columnLabel={label}
+        operator={operator}
+        isDefault={operator === defaultOperator}
+        operators={operators}
+        onChange={changeOperator}
+      />
     </>
   );
 }
@@ -211,7 +229,7 @@ export function TMDataGridHeaderFilterRow({
   ariaRowIndex: number;
 }) {
   const { ui, labels } = useTMDataGridContext();
-  const focusColumnId = useSelector(ui, (state) => state.filterPanelColumnId);
+  const focusColumnId = useSelector(ui, (state) => state.headerFilterColumnId);
   const rowRef = useRef<HTMLDivElement>(null);
 
   // `openColumnFilter` under header filters means "put me in that column's
@@ -228,7 +246,7 @@ export function TMDataGridHeaderFilterRow({
         "input:not([type='hidden']), textarea, select, [tabindex]:not([tabindex='-1'])",
       )
       ?.focus();
-    ui.actions.focusColumnFilter(null);
+    ui.actions.focusHeaderFilter(null);
   }, [focusColumnId, ui]);
 
   return (
@@ -240,11 +258,10 @@ export function TMDataGridHeaderFilterRow({
       // the body scrolls under.
       data-dg-header-row
       data-dg-header-filter-row
-      // The header/body boundary is this row once it exists, so the
-      // scrolled-under shadow moves down to it.
-      data-dg-header-last
       data-dg-part="header-filter-row"
-      className={classes.headerFilterRow}
+      // The header/body boundary is this row once it exists, so it wears the
+      // scrolled-under shadow the last group row wears otherwise.
+      className={`${classes.headerFilterRow} ${sticky.headerBoundary}`}
     >
       {leafHeaders.map((header) => {
         const column = header.column;

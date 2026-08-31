@@ -30,8 +30,9 @@ array only under `isAnyOf` / `isNoneOf` (the set the cell is tested against) and
 `between` (a `[min, max]` pair, an empty string leaving that end open). See
 [Server-side data](/docs/server-side#sending-filters).
 
-A filter with an empty value stays in state, so the panel keeps its row while
-the user types. It matches every row, does not set the header's filter
+A filter with an empty value stays in state, so a panel row survives while the
+user types. (A header filter control has no row to keep alive and drops its
+entry instead - see [Header filters](#header-filters).) It matches every row, does not set the header's filter
 indicator, and produces no pill. `isFilterActive(value)` tests for that
 state.
 
@@ -78,7 +79,7 @@ columnHelper.accessor("salary", {
 });
 ```
 
-## Where the filter controls go
+## Where the filter controls go: popup, sidebar, header
 
 `filters` on `useTMDataGrid` decides which surface the grid renders.
 
@@ -88,11 +89,16 @@ useTMDataGrid({ data, columns, filters: { surface: "sidebar", inHeader: true } }
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `surface` | `"popup" \| "sidebar" \| "manual"` | `"popup"` | The surface `TMDataGrid.Table` renders and `TMDataGrid.FilterButton` toggles. |
-| `sidebarSide` | `"left" \| "right"` | `"right"` | Which side the sidebar sits on. |
-| `sidebarWidth` | `string` | `"280px"` | Width of the sidebar, any CSS length. |
-| `defaultOpen` | `boolean` | `false` | Whether the popup or the sidebar starts open. Read once, at mount. |
+| `surface` | `"popup" \| "sidebar" \| "none"` | `"popup"` | The surface `TMDataGrid.Table` renders and `TMDataGrid.FilterButton` toggles. |
+| `sidebarSide` | `"left" \| "right"` | `"right"` | Which side the sidebar sits on. Ignored by the other surfaces. |
+| `sidebarWidth` | `string` | `"280px"` | Width of the sidebar, any CSS length. Ignored by the other surfaces. |
+| `defaultOpen` | `boolean` | `true` under `"sidebar"`, `false` otherwise | Whether the surface starts open. Read once, at mount. Under `"none"`, the starting value of `ui.state.filterPanelOpen`. |
 | `inHeader` | `boolean` | `false` | A second header row of per-column controls. Independent of `surface`. |
+
+`surface` and `inHeader` are two separate choices, not one list: `inHeader`
+composes with all three surfaces. `{ surface: "none", inHeader: true }` is
+header filters and nothing else; `{ inHeader: true }` keeps the popup as well,
+for the multi-column work a header row has no room for.
 
 The option is read field by field, so a literal is fine - unlike `labels` and
 `persist`, it does not have to be referentially stable.
@@ -110,8 +116,16 @@ Closing only hides the popup; the filters stay.
 
 `surface: "sidebar"` puts the same panel beside the rows, inside the grid
 frame and under the toolbar. It is a column of the frame rather than a layer
-over it, so the rows give up the width instead of being covered, and clicking
-in the table does not dismiss it. Escape still does, and so does emptying it.
+over it, so the rows give up the width instead of being covered, and nothing
+about working in the table dismisses it: not a click on a row, and not
+clearing the filters, which leaves it standing with its **Add filter** button.
+Escape closes it, so a keyboard user inside it has a way back out to the grid.
+
+A sidebar starts open, unlike the popup - it is a layout choice rather than a
+transient one. `defaultOpen: false` overrides that.
+
+Its rows are stacked rather than side by side, because 280px has no room for
+the triple. See `layout` below.
 
 ```demo
 file: columns/FilterSidebar.tsx
@@ -134,13 +148,22 @@ it receives `layout: "header"` and drops its field label for an `aria-label`.
 
 Two pieces of column chrome come off with header filters on: the column menu's
 **Filter** item and the funnel indicator on a filtered header. Both existed
-only to reveal a control that is now always on screen.
+only to reveal a control that is now always on screen. The filtered column's
+tinted title stays, as does everything else about the header.
+
+A header control has no row to keep alive, so clearing it removes the column's
+`columnFilters` entry rather than leaving an empty one behind - unless the user
+also picked a non-default operator, which is kept, being the part of the filter
+an empty control cannot show. Panel rows still keep their empty filters; see
+[How a filter is stored](#how-a-filter-is-stored).
 
 A narrow column clips its control. Give a column that has to hold a date range
 or a multi-select a `minSize` wide enough for it.
 
-Header filters are independent of `surface` - a grid may have both, and the
-two write the same `columnFilters`.
+`FilterButton` still toggles whatever `surface` names, and the panel it opens
+holds the same filters. `openColumnFilter` does not: with `inHeader` on it
+always scrolls the column's header control into view and focuses it, leaving
+the surface closed - the control the user can already see wins.
 
 ```demo
 file: columns/HeaderFilters.tsx
@@ -149,15 +172,31 @@ hint: Department offers its faceted values; the funnel beside an input changes t
 
 ### Placing the panel yourself
 
-`surface: "manual"` leaves the grid with no panel of its own, which makes a
+`surface: "none"` leaves the grid with no panel of its own, which makes a
 hand-placed `TMDataGrid.FilterPanel` the only one on the page. The panel is a
 plain block of controls - column, operator and value rows over an "Add filter"
 / "Clear all" footer - with no title, no close button and no open state, so it
 renders wherever it is mounted: a card, a form, a drawer, a page column.
 
+`layout` decides how one filter row is laid out.
+
+| `layout` | Rows | For |
+| --- | --- | --- |
+| `"row"` (default) | Column, operator and value side by side | A host about 550px wide or more |
+| `"stacked"` | The three one under the other, each filling the width | A drawer, a narrow column - what the sidebar surface uses |
+
+```tsx
+<Drawer opened={open} onClose={close}>
+  <TMDataGrid.FilterPanel layout="stacked" />
+</Drawer>
+```
+
+The value controls follow: `layout` reaches every `meta.filter.control` as its
+own `layout`, so a custom control sizes itself to the same decision.
+
 `TMDataGrid.FilterButton` renders nothing under this surface, having nothing to
 toggle. Read `ui.state.filterPanelOpen` and render your own control if the
-panel belongs behind one.
+panel belongs behind one - `defaultOpen` sets where that state starts.
 
 ```demo
 file: columns/FilterPanelPlaced.tsx
@@ -260,6 +299,24 @@ arrives pre-resolved through `resolveColumnOptions` for a column that declares
 `meta.options` or is select-shaped. `args.table` is available to a control that
 needs more than that.
 
+`args.layout` says how much room the control has and whether it has to name
+itself:
+
+| `layout` | Where | The field |
+| --- | --- | --- |
+| `"row"` | A panel row laid out side by side | Labelled, fixed width |
+| `"stacked"` | A panel row in a narrow host - the sidebar | Labelled, fills the width |
+| `"header"` | One header cell, under `filters.inHeader` | No label; `aria-label` instead, fills the column |
+
+```tsx
+const SalaryFilter: TMDataGridFilterControlComponent = ({ layout, ...rest }) =>
+  layout === "header" ? <NumberInput {...} /> : <RangeSlider {...} />;
+```
+
+A control that ignores `layout` still works - it will simply look the same
+everywhere, which is fine until it has to fit a header cell. Every built-in
+control honours it.
+
 ```demo
 file: columns/CustomFilterControl.tsx
 hint: Open the filter panel - Status offers chips, every other column the built-in control.
@@ -283,25 +340,27 @@ header control - the header cell stays, empty.
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `enableColumnFilters` | Table option | `boolean` | `true` | `false` removes the panel, the button, the header row and the menu item. |
-| `filters.surface` | Table option | `"popup" \| "sidebar" \| "manual"` | `"popup"` | Which surface the table renders. |
+| `filters.surface` | Table option | `"popup" \| "sidebar" \| "none"` | `"popup"` | Which surface the table renders. |
 | `filters.sidebarSide` | Table option | `"left" \| "right"` | `"right"` | Which side the sidebar sits on. |
 | `filters.sidebarWidth` | Table option | `string` | `"280px"` | Width of the sidebar. |
-| `filters.defaultOpen` | Table option | `boolean` | `false` | Whether the popup or sidebar starts open. |
+| `filters.defaultOpen` | Table option | `boolean` | `true` under `"sidebar"` | Whether the surface starts open. |
 | `filters.inHeader` | Table option | `boolean` | `false` | A second header row of per-column controls. |
 | `enableColumnFilter` | Column option | `boolean` | `true` | `false` takes one column out of filtering. |
 | `meta.type` | Column meta | `"string" \| "number" \| "boolean" \| "date" \| "select" \| "multiSelect"` | `"string"` | Selects the operators and the value control. |
 | `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
 | `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. |
 | `filterFn` | Column option | name \| fn | `"tmDataGrid"` | Custom matching for one column. |
-| `TMDataGrid.FilterPanel` | Component | – | – | The panel of filter rows, as a plain block. |
-| `TMDataGrid.FilterButton` | Component | – | – | Toolbar button toggling the surface, with an active count. |
+| `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"` | `"row"` | The panel of filter rows, as a plain block. |
+| `TMDataGrid.FilterButton` | Component | – | – | Toolbar button toggling the surface, with an active count. Opening it seeds an empty filter row on the first filterable column. |
 | `TMDataGrid.FilterPills` | Component | takes `api` | – | Active filters as removable pills, renderable anywhere. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control, seeding an empty filter. |
-| `meta.filter.control` args | – | `layout: "panel" \| "header"` | – | Which surface the control is rendering in. |
+| `TMDataGridFilterControlArgs` | Type | `layout: "row" \| "stacked" \| "header"` | – | What a value control is handed, `layout` saying how much room it has. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
-| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator expects. |
+| `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` · `filterValueShape` | Exports | – | – | What shape of value an operator expects. |
+| `TMDataGridFiltersOptions` · `TMDataGridFiltersSettings` · `TMDataGridFilterSurface` · `TMDataGridFilterSidebarSide` | Types | – | – | The `filters` option, and the resolved form of it on `api.filters`. |
+| `TMDataGridFilterPanelProps` · `TMDataGridFilterPanelLayout` | Types | – | – | For wrapping `TMDataGrid.FilterPanel` in a component of your own. |
 | `DgRangeSliderFilter` · `DgDateRangeFilter` · `DgAutocompleteFilter` · `DgTriStateFilter` | Exports | components | – | The four ready-made controls. |

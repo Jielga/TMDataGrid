@@ -159,9 +159,9 @@ flex column.
 | `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
 | `TMDataGrid.DraftActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
-| `TMDataGrid.FilterButton` | - | Toggles the filter surface. Renders nothing if no column is filterable, or under `filters.surface: "manual"`. |
+| `TMDataGrid.FilterButton` | - | Toggles the filter surface, seeding a filter row on the first filterable column. Renders nothing if no column is filterable, or under `filters.surface: "none"`. |
 | `TMDataGrid.Menu` | `children`, `icon`, `label`, Mantine `MenuProps` | The burger and its dropdown: your own `Menu.Item`s, and `TMDataGrid.Menu.Columns`, the column chooser as menu items (renders nothing if no column is hideable). See the `appearance` skill. |
-| `TMDataGrid.FilterPanel` | `layout` (`"row"` \| `"stacked"`, default `"row"`) | Filter rows over "Add filter" / "Clear all", as a plain block. Rendered by `.Table` inside the popup and the sidebar; place it yourself under `filters.surface: "manual"`. See the `filtering` skill. |
+| `TMDataGrid.FilterPanel` | `layout` (`"row"` \| `"stacked"`, default `"row"`) | Filter rows over "Add filter" / "Clear all", as a plain block. Rendered by `.Table` inside the popup and the sidebar; place it yourself under `filters.surface: "none"`. See the `filtering` skill. |
 | `TMDataGrid.ColumnsPanel` | - | The column chooser as plain controls, for a Popover or a Drawer. |
 | `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
 

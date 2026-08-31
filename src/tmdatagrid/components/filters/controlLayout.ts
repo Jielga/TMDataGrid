@@ -22,7 +22,7 @@ export function filterFieldProps(
   panel: { label: string; width?: number | string },
   qualifier?: string,
 ): { label?: string; "aria-label"?: string; w?: number | string } {
-  if (args.layout === "panel") return { label: panel.label, w: panel.width };
+  if (args.layout === "row") return { label: panel.label, w: panel.width };
   if (args.layout === "stacked") return { label: panel.label, w: "100%" };
   const name = args.labels.filterOn(getColumnLabel(args.column));
   return {

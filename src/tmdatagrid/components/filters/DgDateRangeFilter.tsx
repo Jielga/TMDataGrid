@@ -17,7 +17,7 @@ export function DgDateRangeFilter(args: TMDataGridFilterControlArgs) {
     return <TMDataGridFilterValueInput {...args} />;
   }
 
-  const fills = args.layout !== "panel";
+  const fills = args.layout !== "row";
   const pair: [string, string] = Array.isArray(value)
     ? [String(value[0] ?? ""), String(value[1] ?? "")]
     : ["", ""];

@@ -914,6 +914,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    */
   const hasHeaderFilterRow =
     filters.inHeader && getGridCapabilities(table, features).canFilterAny;
+  /**
+   * How many rows deep the header is. In the measurement's dependencies
+   * because the rows are found once, by query: a `columns` change that adds or
+   * drops a group level changes which elements have to be measured and given
+   * their sticky inset, and nothing else in the list moves when it does.
+   */
+  const headerDepth = table.getCenterHeaderGroups().length;
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
   const [bodyOffsetTop, setBodyOffsetTop] = useState(0);
   const [stickyCoverTop, setStickyCoverTop] = useState(0);
   const [stickyCoverBottom, setStickyCoverBottom] = useState(0);
@@ -943,6 +951,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       if (newRowCount > 0 || pinnedTopRows.length > 0) {
         grid.style.setProperty("--dg-header-height", `${header}px`);
       }
+      // The whole header's height, on the wrapper rather than on the grid,
+      // because the popup is a sibling of the scroll container and never sees
+      // a property set inside it. A second name rather than reusing
+      // `--dg-header-height`: the header cells read that one for their own
+      // `min-height`, so publishing a stacked total there would feed a
+      // two-row header back in as the height of each of its rows.
+      tableWrapperRef.current?.style.setProperty(
+        "--dg-header-stack-height",
+        `${header}px`,
+      );
       let cover = header;
       for (const block of stickyBlocks) cover += block.offsetHeight;
       let offset = cover;
@@ -956,7 +974,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       observer.observe(element);
     }
     return () => observer.disconnect();
-  }, [newRowCount, pinnedTopRows.length, hasHeaderFilterRow]);
+  }, [newRowCount, pinnedTopRows.length, hasHeaderFilterRow, headerDepth]);
 
   /**
    * The entry block's height, published as `--dg-entry-height` so the pinned
@@ -2413,6 +2431,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   return (
     <div
+      ref={tableWrapperRef}
       className={classes.tableWrapper}
       data-dg-filter-sidebar={filters.surface === "sidebar" || undefined}
     >
@@ -2473,13 +2492,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 data-dg-header-row
                 // The scrolled-under shadow belongs to the boundary between
                 // header and body - the last header row, not every stacked
-                // group row above it. See the stylesheet.
-                data-dg-header-last={
-                  (!hasHeaderFilterRow &&
-                    groupIndex === headerGroups.length - 1) ||
-                  undefined
-                }
-                className={classes.headerRow}
+                // group row above it, and not this one at all when the filter
+                // row is below it. See sticky.module.css.
+                className={[
+                  classes.headerRow,
+                  !hasHeaderFilterRow && groupIndex === headerGroups.length - 1
+                    ? sticky.headerBoundary
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {headerGroup.headers.map((header) => (
                   <TMDataGridHeaderCell
@@ -3128,7 +3150,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       {/* The automatic filter surfaces. The popup floats over the first body
           rows, anchored to the wrapper; the sidebar is a second column of it,
           which is why the wrapper turns into a flex row for one. Under
-          `filters.surface: "manual"` neither renders and the consumer's own
+          `filters.surface: "none"` neither renders and the consumer's own
           `TMDataGrid.FilterPanel` is the only panel on the page. */}
       {filters.surface === "popup" && <TMDataGridFilterPopup />}
       {filters.surface === "sidebar" && <TMDataGridFilterSidebar />}

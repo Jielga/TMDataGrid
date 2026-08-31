@@ -4,10 +4,15 @@ import { compactEmployeeColumns } from "../../data/employeeColumns";
 import { EMPLOYEES, type Employee } from "../../data/employees";
 
 /**
- * `filters.surface: "manual"` leaves the grid with no panel of its own, so a
+ * `filters.surface: "none"` leaves the grid with no panel of its own, so a
  * hand-placed `TMDataGrid.FilterPanel` is the only one on the page. It renders
  * whenever it is mounted - there is no open state to drive - so it can go in a
  * card, a form, a drawer, or here, above the toolbar.
+ *
+ * `layout` decides how one filter row is laid out: the default `"row"` puts
+ * column, operator and value side by side and wants about 550px, which this
+ * card has. Anything narrower - a drawer, a page column - wants
+ * `layout="stacked"`.
  *
  * The filter button renders nothing under this surface: it would have nothing
  * to toggle. Read `grid.ui.state.filterPanelOpen` and render your own control
@@ -18,7 +23,7 @@ export function FilterPanelPlaced() {
     data: EMPLOYEES,
     columns: compactEmployeeColumns,
     getRowId: (row) => String(row.id),
-    filters: { surface: "manual" },
+    filters: { surface: "none" },
     initialState: {
       columnFilters: [
         { id: "department", value: { operator: "isAnyOf", value: ["Sales"] } },

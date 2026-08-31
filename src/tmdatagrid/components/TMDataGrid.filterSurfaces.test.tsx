@@ -17,7 +17,7 @@ import {
   openColumnFilter,
   useTMDataGrid,
 } from "../useTMDataGrid";
-import type { TMDataGridFilterOptions } from "../core/filterSurface";
+import type { TMDataGridFiltersOptions } from "../core/filterSurface";
 
 /**
  * Where the filter controls render - the `filters` option. What a filter *is*
@@ -39,11 +39,10 @@ describe("filters.surface", () => {
 
   it("puts the panel beside the rows under sidebar, and leaves it open on a click away", async () => {
     const user = userEvent.setup();
+    // A sidebar is a layout choice, so it starts open without being asked.
     renderGridUi({ filters: { surface: "sidebar" } });
 
-    await user.click(screen.getByRole("button", { name: "Filters" }));
-    const sidebar = part("filter-sidebar");
-    expect(sidebar).toHaveAttribute("data-side", "right");
+    expect(part("filter-sidebar")).toHaveAttribute("data-side", "right");
     expect(queryPart("filter-popup")).not.toBeInTheDocument();
 
     // A click in the table is a click on the rows the sidebar is filtering.
@@ -52,15 +51,62 @@ describe("filters.surface", () => {
 
     await user.click(screen.getByRole("button", { name: "Close filters" }));
     expect(queryPart("filter-sidebar")).not.toBeInTheDocument();
-  });
 
-  it("opens the sidebar at mount under defaultOpen", () => {
-    renderGridUi({ filters: { surface: "sidebar", defaultOpen: true } });
+    await user.click(screen.getByRole("button", { name: "Filters" }));
     expect(part("filter-sidebar")).toBeInTheDocument();
   });
 
-  it("renders no surface and no button under manual", () => {
-    renderGridUi({ filters: { surface: "manual" } });
+  it("starts the sidebar closed when asked, and the popup open", () => {
+    const closed = renderGridUi({
+      filters: { surface: "sidebar", defaultOpen: false },
+    });
+    expect(queryPart("filter-sidebar")).not.toBeInTheDocument();
+    closed.unmount();
+
+    renderGridUi({ filters: { surface: "popup", defaultOpen: true } });
+    expect(part("filter-popup")).toBeInTheDocument();
+  });
+
+  it("places the sidebar on the side and at the width it is given", () => {
+    renderGridUi({
+      filters: { surface: "sidebar", sidebarSide: "left", sidebarWidth: "20rem" },
+    });
+
+    const sidebar = part("filter-sidebar");
+    expect(sidebar).toHaveAttribute("data-side", "left");
+    expect(sidebar).toHaveStyle({ width: "20rem" });
+  });
+
+  it("closes the popup and the sidebar on Escape", async () => {
+    const user = userEvent.setup();
+    const popup = renderGridUi({ filters: { defaultOpen: true } });
+    await user.click(part("filter-add"));
+    await user.keyboard("{Escape}");
+    expect(queryPart("filter-popup")).not.toBeInTheDocument();
+    popup.unmount();
+
+    renderGridUi({ filters: { surface: "sidebar" } });
+    await user.click(part("filter-add"));
+    await user.keyboard("{Escape}");
+    expect(queryPart("filter-sidebar")).not.toBeInTheDocument();
+  });
+
+  it("stacks the panel's fields in the sidebar and lines them up in the popup", async () => {
+    const user = userEvent.setup();
+    const sidebar = renderGridUi({ filters: { surface: "sidebar" } });
+    await user.click(part("filter-add"));
+    expect(part("filter-panel")).toHaveAttribute("data-layout", "stacked");
+    // Stacked still labels its fields, unlike a header cell.
+    expect(screen.getByLabelText("Value")).toBeInTheDocument();
+    sidebar.unmount();
+
+    renderGridUi({ filters: { defaultOpen: true } });
+    await user.click(part("filter-add"));
+    expect(part("filter-panel")).toHaveAttribute("data-layout", "row");
+  });
+
+  it("renders no surface and no button under none", () => {
+    renderGridUi({ filters: { surface: "none" } });
 
     expect(
       screen.queryByRole("button", { name: "Filters" }),
@@ -76,9 +122,9 @@ describe("filters.surface", () => {
     function ManualGrid() {
       const grid = useTMDataGrid({
         data: testRows,
-        columns: manualColumns,
+        columns: twoColumns,
         getRowId: (row) => String(row.id),
-        filters: { surface: "manual" },
+        filters: { surface: "none" },
       });
       return (
         <TMDataGrid {...grid}>
@@ -106,7 +152,7 @@ describe("filters.surface", () => {
   });
 });
 
-const manualColumns = (() => {
+const twoColumns = (() => {
   const helper = createTMDataGridColumnHelper<{
     id: number;
     name: string;
@@ -120,7 +166,7 @@ const manualColumns = (() => {
 })();
 
 describe("filters.inHeader", () => {
-  const renderHeaderFilters = (filters: TMDataGridFilterOptions = {}) =>
+  const renderHeaderFilters = (filters: TMDataGridFiltersOptions = {}) =>
     renderGridUi({ filters: { inHeader: true, ...filters } });
 
   it("filters from a control in the header row", async () => {
@@ -211,13 +257,104 @@ describe("filters.inHeader", () => {
     expect(queryPart("header-filter-row")).not.toBeInTheDocument();
   });
 
+  it("keeps a value the user typed even when it does not narrow anything", async () => {
+    const user = userEvent.setup();
+    renderHeaderFilters();
+
+    const input = part("header-filter-cell", { columnId: "name" }).querySelector(
+      "input",
+    )!;
+    // A lone space narrows nothing, but dropping the filter for it would take
+    // the character straight back out of the input.
+    await user.type(input, " ");
+    expect(input).toHaveValue(" ");
+    expect(gridRowCount()).toBe(testRows.length);
+  });
+
+  it("keeps an operator the user picked even with the value emptied", async () => {
+    const user = userEvent.setup();
+    renderHeaderFilters();
+
+    await user.click(part("header-filter-operator", { columnId: "age" }));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "is greater than" }),
+    );
+    const input = () =>
+      part("header-filter-cell", { columnId: "age" }).querySelector("input")!;
+    await user.type(input(), "40");
+    await user.clear(input());
+    await user.type(input(), "40");
+
+    // The chosen operator is the part of the filter an empty control cannot
+    // show, so it survives the value going away. Had the entry been dropped,
+    // the retyped 40 would have come back on the numeric default, `equals`,
+    // and matched nothing.
+    expect(gridRowCount()).toBe(testRows.filter((row) => row.age > 40).length);
+  });
+
+  it("resets the value across an operator shape boundary, and keeps it within one", async () => {
+    const user = userEvent.setup();
+    renderHeaderFilters();
+
+    const cell = part("header-filter-cell", { columnId: "name" });
+    await user.type(cell.querySelector("input")!, "Anna");
+
+    // contains -> equals is scalar to scalar: the needle survives.
+    await user.click(part("header-filter-operator", { columnId: "name" }));
+    await user.click(await screen.findByRole("menuitem", { name: "equals" }));
+    expect(
+      part("header-filter-cell", { columnId: "name" }).querySelector("input"),
+    ).toHaveValue("Anna");
+
+    // equals -> is empty takes no value at all.
+    await user.click(part("header-filter-operator", { columnId: "name" }));
+    await user.click(await screen.findByRole("menuitem", { name: "is empty" }));
+    expect(
+      part("header-filter-cell", { columnId: "name" }).querySelector("input"),
+    ).toHaveValue("");
+  });
+
+  it("leaves a showing panel alone when openColumnFilter points at the header", async () => {
+    const user = userEvent.setup();
+
+    function BothSurfaces() {
+      const grid = useTMDataGrid({
+        data: testRows,
+        columns: twoColumns,
+        getRowId: (row) => String(row.id),
+        // The combination the docs advertise: header controls with a panel
+        // beside them. Both are on screen, and only one may take the caret.
+        filters: { inHeader: true, surface: "sidebar" },
+      });
+      return (
+        <>
+          <button type="button" onClick={() => openColumnFilter(grid, "name")}>
+            filter name
+          </button>
+          <TMDataGrid {...grid}>
+            <TMDataGrid.Table />
+          </TMDataGrid>
+        </>
+      );
+    }
+    renderWithMantine(<BothSurfaces />);
+    expect(part("filter-sidebar")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "filter name" }));
+
+    // The header control wins: it is the one the user can already see.
+    expect(
+      part("header-filter-cell", { columnId: "name" }).querySelector("input"),
+    ).toHaveFocus();
+  });
+
   it("sends openColumnFilter to the header control instead of a panel", async () => {
     const user = userEvent.setup();
 
     function HeaderGrid() {
       const grid = useTMDataGrid({
         data: testRows,
-        columns: manualColumns,
+        columns: twoColumns,
         getRowId: (row) => String(row.id),
         filters: { inHeader: true },
       });
@@ -269,10 +406,16 @@ describe("the header rows stack", () => {
     ]);
   })();
 
-  function GroupedGrid({ inHeader }: { inHeader: boolean }) {
+  function GroupedGrid({
+    inHeader,
+    flat = false,
+  }: {
+    inHeader: boolean;
+    flat?: boolean;
+  }) {
     const grid = useTMDataGrid({
       data: testRows,
-      columns: groupedColumns,
+      columns: flat ? twoColumns : groupedColumns,
       getRowId: (row) => String(row.id),
       filters: { inHeader },
     });
@@ -296,7 +439,7 @@ describe("the header rows stack", () => {
   it("puts the filter row below the group rows, not on top of them", () => {
     renderWithMantine(<GroupedGrid inHeader />);
 
-    const rows = [...document.querySelectorAll<HTMLElement>("[data-dg-header-row]")];
+    const rows = headerRows();
     expect(rows).toHaveLength(3);
     // jsdom lays nothing out, so every row measures zero and the insets all
     // land on 0. What is testable here is that each row was given one at all -
@@ -304,4 +447,40 @@ describe("the header rows stack", () => {
     expect(rows.every((row) => row.style.top !== "")).toBe(true);
     expect(rows.at(-1)).toHaveAttribute("data-dg-part", "header-filter-row");
   });
+
+  it("re-measures when the columns grow a group level", () => {
+    const { rerender } = renderWithMantine(<GroupedGrid inHeader flat />);
+    expect(headerRows()).toHaveLength(2);
+
+    // The rows are found by query, once, so a header that gets deeper has to
+    // put the effect round again - otherwise the new row keeps the
+    // stylesheet's `top: 0` and pins on top of the row above it.
+    rerender(<GroupedGrid inHeader />);
+    const rows = headerRows();
+    expect(rows).toHaveLength(3);
+    expect(rows.every((row) => row.style.top !== "")).toBe(true);
+  });
+
+  it("moves the scrolled-under shadow onto the filter row", () => {
+    const withFilters = renderWithMantine(<GroupedGrid inHeader />);
+    // Exactly one header row carries the boundary, and it is the last one -
+    // the filter row here, the last group row without it.
+    const shadowed = headerRows().filter((row) =>
+      row.className.includes("headerBoundary"),
+    );
+    expect(shadowed).toHaveLength(1);
+    expect(shadowed[0]).toHaveAttribute("data-dg-part", "header-filter-row");
+    withFilters.unmount();
+
+    renderWithMantine(<GroupedGrid inHeader={false} />);
+    const plain = headerRows().filter((row) =>
+      row.className.includes("headerBoundary"),
+    );
+    expect(plain).toHaveLength(1);
+    expect(plain[0]).toBe(headerRows().at(-1));
+  });
 });
+
+const headerRows = () => [
+  ...document.querySelectorAll<HTMLElement>("[data-dg-header-row]"),
+];

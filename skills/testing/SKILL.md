@@ -76,7 +76,8 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 `discard-new-row`.
 
 **Keyed by `data-column-id`**: `header`, `header-sort`, `header-menu`,
-`header-filter`, `header-filter-cell`, `header-filter-operator`, `filter-row`,
+`header-filter` (absent under `filters.inHeader`), `header-filter-cell`,
+`header-filter-operator`, `filter-row`,
 `filter-pill`, `columns-toggle`.
 
 **Keyed by both**: `editor`.

@@ -3,10 +3,8 @@ import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { resolveColumnOptions } from "../core/columnOptions";
 import {
   getColumnDefaultOperator,
-  getColumnFilterControl,
   getColumnLabel,
   getColumnType,
 } from "../core/columnUtils";
@@ -20,7 +18,9 @@ import {
   isTMDataGridFilterValue,
   operatorNeedsValue,
 } from "../core/filterOperators";
+import type { TMDataGridFilterPanelLayout } from "../core/filterControls";
 import { CloseIcon } from "./icons";
+import { filterControlFor } from "./filters/filterControlFor";
 import { TMDataGridFilterValueInput } from "./filters/TMDataGridFilterValueInput";
 
 const FALLBACK_FILTER: TMDataGridFilterValue = { operator: "contains", value: "" };
@@ -30,15 +30,18 @@ function asFilterValue(value: unknown): TMDataGridFilterValue {
 }
 
 export type TMDataGridFilterPanelProps = {
-  /**
-   * How one filter row is laid out.
-   *
-   * `"row"` - the default - puts column, operator and value side by side,
-   * which wants about 550px. `"stacked"` puts them one under the other, each
-   * filling the width, for a host too narrow for that: the sidebar surface
-   * uses it, and so should a panel you place in a drawer or a narrow column.
-   */
-  layout?: "row" | "stacked";
+   /**
+    * How one filter row is laid out.
+    *
+    * `"row"` - the default - puts column, operator and value side by side,
+    * which wants about 550px. `"stacked"` puts them one under the other, each
+    * filling the width, for a host too narrow for that: the sidebar surface
+    * uses it, and so should a panel you place in a drawer or a narrow column.
+    *
+    * Passed through to every value control as its `layout`, so a
+    * `meta.filter.control` can size itself to the same decision.
+    */
+  layout?: TMDataGridFilterPanelLayout;
 };
 
 /**
@@ -81,7 +84,7 @@ export function TMDataGridFilterPanel({
         "input:not([type='hidden']), textarea, select, [tabindex]:not([tabindex='-1'])",
       )
       ?.focus();
-    ui.actions.focusColumnFilter(null);
+    ui.actions.focusPanelFilter(null);
   }, [focusColumnId, ui]);
 
   const filterableColumns = table
@@ -128,7 +131,7 @@ export function TMDataGridFilterPanel({
     );
     // The row now names a different column; put the caret back in its value
     // slot rather than leaving it on a dropdown whose meaning just changed.
-    ui.actions.focusColumnFilter(toColumnId);
+    ui.actions.focusPanelFilter(toColumnId);
   }
 
   function patchFilter(columnId: string, patch: Partial<TMDataGridFilterValue>) {
@@ -170,7 +173,7 @@ export function TMDataGridFilterPanel({
         } satisfies TMDataGridFilterValue,
       },
     ]);
-    ui.actions.focusColumnFilter(nextColumn.id);
+    ui.actions.focusPanelFilter(nextColumn.id);
   }
 
   const canAddFilter = filterableColumns.some(
@@ -193,21 +196,11 @@ export function TMDataGridFilterPanel({
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
           const scalarValue = typeof value.value === "string" ? value.value : "";
-          // Pre-resolved only where options mean something out of the box -
-          // a declared set, or a select-shaped column's faceted values. A
-          // custom control wanting faceted values elsewhere resolves them
-          // itself; resolving here would build the faceted index for every
-          // filtered column.
-          const options =
-            column &&
-            (column.columnDef.meta?.options !== undefined ||
-              type === "select" ||
-              type === "multiSelect")
-              ? resolveColumnOptions({ table, column, fallback: "faceted" })
-              : [];
-          const ValueControl =
-            (column === undefined ? undefined : getColumnFilterControl(column)) ??
-            TMDataGridFilterValueInput;
+          // The same options-and-control decision the header cells make.
+          const { options, ValueControl } =
+            column === undefined
+              ? { options: [], ValueControl: TMDataGridFilterValueInput }
+              : filterControlFor(table, column);
 
           return (
             <div
@@ -286,7 +279,7 @@ export function TMDataGridFilterPanel({
                     options={options}
                     size={controlSize}
                     labels={labels}
-                    layout={stacked ? "stacked" : "panel"}
+                    layout={layout}
                   />
                 ) : (
                   // The column is gone from the definition; the row survives

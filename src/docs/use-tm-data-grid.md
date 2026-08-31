@@ -54,7 +54,7 @@ rather than forwarded to TanStack.
 | `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange`. See [Controlled state](#controlled-state). |
 | `atoms` | `Partial<Record<slice, Atom>>` | – | External atoms owning state slices. No callback required. Takes precedence over `state`. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
-| `filters` | `TMDataGridFilterOptions` | `{ surface: "popup" }` | Where the filter controls go - a popup, a sidebar, the column headers, or nowhere. See [Filtering](/docs/filtering#where-the-filter-controls-go). |
+| `filters` | `TMDataGridFiltersOptions` | `{ surface: "popup" }` | Where the filter controls go - a popup, a sidebar, the column headers, or nowhere. See [Filtering](/docs/filtering#where-the-filter-controls-go-popup-sidebar-header). |
 | `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
 
@@ -244,7 +244,7 @@ identifier if several users can share a browser profile.
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
-| `filters` | `TMDataGridFilterSettings` | The `filters` option with its defaults filled in. See [Filtering](/docs/filtering#where-the-filter-controls-go). |
+| `filters` | `TMDataGridFiltersSettings` | The `filters` option with its defaults filled in. See [Filtering](/docs/filtering#where-the-filter-controls-go-popup-sidebar-header). |
 | `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See [Editing](/docs/editing). |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
@@ -299,7 +299,8 @@ read does not subscribe the component to the store.
 | --- | --- |
 | `openFilterPanel` | `(columnId?: string \| null) => void` |
 | `closeFilterPanel` | `() => void` |
-| `focusColumnFilter` | `(columnId: string \| null) => void` |
+| `focusPanelFilter` | `(columnId: string \| null) => void` |
+| `focusHeaderFilter` | `(columnId: string \| null) => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
 | `setHighlightedRow` | `(rowId: string \| null) => void` |
@@ -319,8 +320,11 @@ since `dataTransfer` is unreadable until the drop.
 `openColumnFilter(grid, columnId)` combines two steps used by the column menu:
 it adds an empty filter row for the column if none exists, then sends the user
 to that column's control. Which control that is follows the `filters` option -
-the panel row, or, under `filters.inHeader`, the column's header control, which
-`focusColumnFilter` points at on its own.
+the panel row, or, under `filters.inHeader`, the column's header control.
+
+The two focus actions are the halves of that, and they write separate state
+(`filterPanelColumnId` and `headerFilterColumnId`) so a grid showing both a
+panel and header controls never has the two racing for the caret.
 
 ## What each switch removes
 

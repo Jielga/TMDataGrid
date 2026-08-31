@@ -30,7 +30,7 @@ export function TMDataGridFilterValueInput(args: TMDataGridFilterControlArgs) {
   const inputType =
     type === "number" ? "number" : type === "date" ? "date" : "text";
   const inHeader = layout === "header";
-  const fills = layout !== "panel";
+  const fills = layout !== "row";
   // A header cell clips its overflow, so a dropdown drawn inside it would be
   // cut off at the cell's edge. In the panel it stays inside, where a portalled
   // one would read as a click away and close the popup under the user.

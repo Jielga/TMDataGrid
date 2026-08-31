@@ -119,7 +119,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `data-dg-part` | What it is |
 | --- | --- |
 | `header` | A column header |
-| `header-sort`, `header-menu`, `header-filter` | Its three action buttons |
+| `header-sort`, `header-menu`, `header-filter` | Its three action buttons. `header-filter` is absent under `filters.inHeader`, where the control below is the indicator |
 | `header-filter-cell`, `header-filter-operator` | One column's header filter control and its operator button |
 | `filter-row` | One row of the filter panel |
 | `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
@@ -154,9 +154,11 @@ The grid is always virtualized: only the rows in the viewport plus overscan are
 in the DOM. A row at index 500 has no element, and Playwright cannot scroll to
 what it cannot find.
 
-**Count rows off the grid, not off the DOM.** `aria-rowcount` includes the
-header and summary rows. `data-dg-row-count` counts the body rows alone: the
-current page under pagination, or everything the filters left otherwise.
+**Count rows off the grid, not off the DOM.** `aria-rowcount` includes every
+header row - stacked column groups and the `filters.inHeader` row among them -
+and the summary row, so how many it adds is a function of the grid's
+configuration. `data-dg-row-count` counts the body rows alone: the current page
+under pagination, or everything the filters left otherwise. Assert on that one.
 
 ```ts
 const grid = orders.getByRole("table");

@@ -211,13 +211,19 @@ export function isTMDataGridFilterValue(
 }
 
 /**
- * The three value shapes an operator can take. A typed value survives an
- * operator or column change only within its shape - a set is not a range,
- * even though both are arrays.
+ * The three value shapes an operator can take. A set is not a range, even
+ * though both are arrays.
+ */
+export type TMDataGridFilterValueShape = "scalar" | "set" | "range";
+
+/**
+ * Which shape an operator's value takes. A typed value survives an operator or
+ * column change only within its shape, which is the rule both the panel and
+ * the header controls use when the operator changes.
  */
 export function filterValueShape(
   operator: TMDataGridFilterOperator,
-): "scalar" | "set" | "range" {
+): TMDataGridFilterValueShape {
   if (operatorTakesArrayValue(operator)) return "set";
   if (operatorTakesRangeValue(operator)) return "range";
   return "scalar";

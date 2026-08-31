@@ -11,13 +11,18 @@ import { EMPLOYEES, type Employee } from "../../data/employees";
  * The column menu loses its "Filter" item here, and a filtered header loses
  * its funnel indicator: both only existed to reveal a control that is now
  * always on screen.
+ *
+ * `inHeader` composes with any `surface`; pairing it with `"none"` is what
+ * gives header filters and nothing else, which is what this grid wants. Leave
+ * `surface` alone and the funnel button and its popup stay, for the
+ * multi-column work a header row has no room for.
  */
 export function HeaderFilters() {
   const grid = useTMDataGrid({
     data: EMPLOYEES,
     columns: employeeColumns,
     getRowId: (row) => String(row.id),
-    filters: { inHeader: true, surface: "manual" },
+    filters: { inHeader: true, surface: "none" },
   });
 
   return (

@@ -71,8 +71,8 @@ import { getColumnDefaultOperator, isControlColumn } from "./core/columnUtils";
 import type { TMDataGridColumnFilterOptions } from "./core/filterControls";
 import {
   resolveFilterOptions,
-  type TMDataGridFilterOptions,
-  type TMDataGridFilterSettings,
+  type TMDataGridFiltersOptions,
+  type TMDataGridFiltersSettings,
 } from "./core/filterSurface";
 import {
   createFuzzyRankedSortedRowModel,
@@ -311,11 +311,19 @@ const EMPTY_IDS: ReadonlyArray<string> = [];
 export type TMDataGridUiState = {
   filterPanelOpen: boolean;
   /**
-   * Column whose filter control should take the focus - the panel row for that
-   * column, or, under header filters, its header control. Cleared once the
-   * control has taken it, so pointing at the same column twice focuses twice.
+   * Column whose *panel* row should take the focus. Cleared once the row has
+   * taken it, so pointing at the same column twice focuses twice.
    */
   filterPanelColumnId: string | null;
+  /**
+   * Column whose *header filter* control should take the focus, under
+   * `filters.inHeader`. Cleared once taken, like the one above.
+   *
+   * Its own slot rather than a second reader of `filterPanelColumnId`: a grid
+   * can have header filters and a panel at once, and two controls racing to
+   * answer one id means whichever mounted last wins the caret.
+   */
+  headerFilterColumnId: string | null;
   /**
    * Column being dragged by its header, if any. Held here rather than read from
    * `dataTransfer`, which browsers keep unreadable until the drop.
@@ -360,11 +368,17 @@ export type TMDataGridUiActions = {
   openFilterPanel: (columnId?: string | null) => void;
   closeFilterPanel: () => void;
   /**
-   * Points at a column's filter control without opening a panel - what
-   * `openColumnFilter` does under header filters. Sets `filterPanelColumnId`
-   * and nothing else.
+   * Points at a column's row in the filter panel without opening anything.
+   * `openFilterPanel` does this as well as opening; this is the half a panel
+   * that is already showing needs.
    */
-  focusColumnFilter: (columnId: string | null) => void;
+  focusPanelFilter: (columnId: string | null) => void;
+  /**
+   * Points at a column's header filter control - what `openColumnFilter` does
+   * under `filters.inHeader`, where there is no panel to open. The header row
+   * scrolls the column into view and focuses it.
+   */
+  focusHeaderFilter: (columnId: string | null) => void;
   startColumnDrag: (columnId: string) => void;
   endColumnDrag: () => void;
   /**
@@ -422,7 +436,7 @@ export type TMDataGridApi<TData extends RowData> = {
    * pills, the column menu and `openColumnFilter` all have to agree with the
    * table about which surface is on.
    */
-  filters: TMDataGridFilterSettings;
+  filters: TMDataGridFiltersSettings;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
   labels: TMDataGridLabels;
   /** The detail renderer, when row details are on. See `renderDetails`. */
@@ -728,12 +742,12 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    * ```
    *
    * Defaults to `{ surface: "popup" }` - the floating panel the grid has
-   * always shown. See {@link TMDataGridFilterOptions}.
+   * always shown. See {@link TMDataGridFiltersOptions}.
    *
    * Read field by field, so a literal is fine here - unlike `labels` or
    * `persist`, this one does not have to be referentially stable.
    */
-  filters?: TMDataGridFilterOptions;
+  filters?: TMDataGridFiltersOptions;
   /**
    * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` - the
    * default - forgives typos and skipped characters, and while it is the
@@ -1621,8 +1635,9 @@ export function useTMDataGrid<TData extends RowData>({
     {
       // `useCreateStore` builds the store once per mount, so `defaultOpen` is
       // read the way `initialState` is - a starting point, not a controller.
-      filterPanelOpen: filtersDefaultOpen ?? false,
+      filterPanelOpen: filters.defaultOpen,
       filterPanelColumnId: null,
+      headerFilterColumnId: null,
       draggedColumnId: null,
       // `useCreateStore` builds the store once per mount, so this is a genuine
       // default rather than a value that would fight later clicks.
@@ -1644,8 +1659,10 @@ export function useTMDataGrid<TData extends RowData>({
           filterPanelOpen: false,
           filterPanelColumnId: null,
         })),
-      focusColumnFilter: (columnId) =>
+      focusPanelFilter: (columnId) =>
         setState((prev) => ({ ...prev, filterPanelColumnId: columnId })),
+      focusHeaderFilter: (columnId) =>
+        setState((prev) => ({ ...prev, headerFilterColumnId: columnId })),
       startColumnDrag: (columnId) =>
         setState((prev) => ({ ...prev, draggedColumnId: columnId })),
       endColumnDrag: () =>
@@ -1816,9 +1833,10 @@ export function openColumnFilter<TData extends RowData>(
   seedColumnFilter(api, columnId);
   if (api.filters.inHeader) {
     // The header control is always visible, so there is nothing to open -
-    // only a column to point at. The header cell watching this focuses it and
-    // scrolls it into view.
-    api.ui.actions.focusColumnFilter(columnId);
+    // only a column to point at. The header row watching this focuses it and
+    // scrolls it into view. The panel, if one is also showing, is left alone:
+    // it reads the other slot.
+    api.ui.actions.focusHeaderFilter(columnId);
     return;
   }
   api.ui.actions.openFilterPanel(columnId);
