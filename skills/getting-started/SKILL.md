@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/getting-started.md'
   - 'Jielga/TMDataGrid:src/docs/anatomy.md'
@@ -151,7 +151,7 @@ flex column.
 | Component | Props | Notes |
 | --- | --- | --- |
 | `TMDataGrid` | `table`, `ui`, `features`, `size`, `className`, `style` | Root. Provides context. `style` also takes CSS variables: `--dg-row-selected-bg`, `--dg-row-height`, `--dg-header-height`, `--dg-font-size`, `--dg-padding`. |
-| `TMDataGrid.Table` | `onRowClick(row)`, `renderRowContextMenu`, `renderColumnMenuItems`, `rowContextMenuProps` | Header, virtualized body, filter panel. `onRowClick` runs in addition to selection under `selectionMode: "row"`. |
+| `TMDataGrid.Table` | `onRowClick(row)`, `renderRowContextMenu`, `renderColumnMenuItems`, `rowContextMenuProps` | Header, virtualized body, and whichever filter surface the `filters` option asks for. `onRowClick` runs in addition to selection under `selectionMode: "row"`. |
 | `TMDataGrid.Footer` | `pageSizeOptions` (default `[10, 25, 50, 100]`), `pagination` render prop | Pagination controls. Renders nothing unless pagination is enabled. |
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | - | Pushes later toolbar items right. |
@@ -159,9 +159,9 @@ flex column.
 | `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
 | `TMDataGrid.DraftActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
-| `TMDataGrid.FilterButton` | - | Toggles filter panel. Renders nothing if no column is filterable. |
+| `TMDataGrid.FilterButton` | - | Toggles the filter surface, seeding a filter row on the first filterable column. Renders nothing if no column is filterable, or under `filters.surface: "none"`. |
 | `TMDataGrid.Menu` | `children`, `icon`, `label`, Mantine `MenuProps` | The burger and its dropdown: your own `Menu.Item`s, and `TMDataGrid.Menu.Columns`, the column chooser as menu items (renders nothing if no column is hideable). See the `appearance` skill. |
-| `TMDataGrid.FilterPanel` | - | Rendered by `.Table`; exported for custom layouts. Header close button, Escape, click-away, "Add filter" and "Clear all". |
+| `TMDataGrid.FilterPanel` | `layout` (`"row"` \| `"stacked"`, default `"row"`) | Filter rows over "Add filter" / "Clear all", as a plain block. Rendered by `.Table` inside the popup and the sidebar; place it yourself under `filters.surface: "none"`. See the `filtering` skill. |
 | `TMDataGrid.ColumnsPanel` | - | The column chooser as plain controls, for a Popover or a Drawer. |
 | `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
 

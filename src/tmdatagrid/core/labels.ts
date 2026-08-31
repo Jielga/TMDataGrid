@@ -62,6 +62,8 @@ export type TMDataGridLabels = {
   clearAllFilters: string;
   closeFilters: string;
   removeFilter: string;
+  /** Names the operator button in a column's header filter control. */
+  filterOperatorFor: (column: string) => string;
 
   // Filter pills
   activeFilters: string;
@@ -89,6 +91,8 @@ export type TMDataGridLabels = {
   // Footer / pager
   rowsPerPage: string;
   pageRange: (args: { from: number; to: number; total: number }) => string;
+  /** `pageCount` is `-1` when a manual grid declares an unknown total. */
+  pageNumber: (args: { page: number; pageCount: number }) => string;
   groupedAllRows: (total: number) => string;
   pagingSuspendedHint: string;
   previousPage: string;
@@ -211,6 +215,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   clearAllFilters: "Clear all",
   closeFilters: "Close filters",
   removeFilter: "Remove filter",
+  filterOperatorFor: (column) => `${column} filter operator`,
 
   activeFilters: "Active filters",
   clearFilter: (column) => `Clear ${column} filter`,
@@ -235,6 +240,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
 
   rowsPerPage: "Rows per page:",
   pageRange: ({ from, to, total }) => `${from}–${to} of ${total}`,
+  pageNumber: ({ page, pageCount }) =>
+    pageCount < 0 ? `Page ${page}` : `Page ${page} of ${pageCount}`,
   groupedAllRows: (total) => `Grouped · all ${total} rows`,
   pagingSuspendedHint:
     "Paging is off while the rows are grouped: the whole tree is rendered and virtualized. Ungroup to page again.",

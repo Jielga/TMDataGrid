@@ -5,6 +5,7 @@ import {
   operatorTakesArrayValue,
   operatorTakesRangeValue,
 } from "../../core/filterOperators";
+import { filterFieldProps } from "./controlLayout";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
@@ -21,7 +22,10 @@ export function DgTriStateFilter(args: TMDataGridFilterControlArgs) {
   const scalar = typeof value === "string" ? value : "";
 
   return (
-    <Input.Wrapper label={labels.filterValue} size={size}>
+    <Input.Wrapper
+      {...filterFieldProps(args, { label: labels.filterValue })}
+      size={size}
+    >
       <SegmentedControl
         size={size}
         disabled={!needsValue}

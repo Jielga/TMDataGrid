@@ -4,13 +4,14 @@ description: >
   Drive TMDataGrid from a server with TanStack manual modes - manualPagination,
   manualSorting, manualFiltering, rowCount, controlled state and onXChange
   callbacks. Covers the loading and totalRowCount meta fields, forwarding the
-  plain-JSON columnFilters model to an API with isFilterActive, persistence
-  interaction, and row selection across pages. Load when the grid is backed by a
-  paginated API rather than a local array.
+  plain-JSON columnFilters model to an API with activeColumnFilters, the
+  first-page reset on a query change, persistence interaction, and row
+  selection across pages. Load when the grid is backed by a paginated API
+  rather than a local array.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/server-side.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
@@ -68,11 +69,31 @@ const grid = useTMDataGrid({
 | --- | --- | --- |
 | Rendered rows | The current page, sliced locally | The rows returned by the server |
 | Footer total | Pre-paginated row count | `options.rowCount` |
-| `SummaryCount` total | Pre-filtered row count | `meta.totalRowCount` |
+| `SummaryCount` total | Pre-filtered row count | `meta.totalRowCount`; the count alone without it |
 | Loading state | Not applicable | `meta.loading` |
 
 Column menus, the filter panel and the column manager behave identically in both
 modes.
+
+## The page index
+
+Under `manualPagination` the grid resets `pageIndex` to 0 whenever the query
+changes - a column filter, the quick search or the sort - so the next request
+never asks for page 8 of a result set that now has three. The reset lands in
+the same event as the change, so one request goes out. Pass the plain setters
+as the change callbacks; do not pair them with a page reset of your own.
+
+`resetPageOnQueryChange: false` switches it off. TanStack's
+`autoResetPageIndex` is a different rule: it defaults to `!manualPagination`
+and fires on a change to `data`, which server-side is the response landing.
+
+## Column options
+
+`meta.options: "faceted"` reads the distinct values in `data`, which
+server-side is one page of them - the dropdown then offers whatever was on the
+page the user is looking at. Declare the set as a list or a function instead.
+The grid warns once per column when a faceted column resolves under
+`manualFiltering` or `manualPagination`.
 
 ## Sending filters
 
@@ -85,14 +106,21 @@ Filter values are plain JSON, so `columnFilters` forwards without transformation
 ]
 ```
 
-Translate at the API boundary, and skip entries whose value is still empty -
-those match all rows:
+Translate at the API boundary. `activeColumnFilters` hands back the entries
+that narrow anything, typed - `ColumnFiltersState` types `value` as `unknown`,
+and an entry whose value is still empty matches all rows:
 
 ```ts
-import { isFilterActive } from "@jielga/tmdatagrid";
+import { activeColumnFilters } from "@jielga/tmdatagrid";
 
-const active = columnFilters.filter((filter) => isFilterActive(filter.value));
+const active = activeColumnFilters(columnFilters);
+// [{ id: "lastName", value: { operator: "contains", value: "holm" } }]
 ```
+
+It takes the `columnFilters` array, or the table where the grid owns the slice.
+`isFilterActive(value)` is the single-value test it is built on. Only the
+grid's own `{ operator, value }` shape is read: an entry holding some other
+value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 
@@ -126,18 +154,19 @@ Without `rowCount` the table derives the total from the rows it was handed -
 one page - so `getPageCount()` returns 1. The footer shows "1–25 of 25" and the
 next-page button is disabled, with no error. Pass the server total.
 
-### Filters sent without isFilterActive
+### Filters sent without activeColumnFilters
 
 An empty filter value stays in `columnFilters` while the user is still typing.
 Forwarded verbatim it becomes `operator: "contains", value: ""` at the API,
-which most backends translate into a real predicate. Filter with
-`isFilterActive` first.
+which most backends translate into a real predicate. Map over
+`activeColumnFilters(columnFilters)` instead of over the slice.
 
 ### SummaryCount without meta.totalRowCount
 
-`SummaryCount` falls back to the pre-filtered row count, which under manual
-filtering is just the current page. It reads "25 of 25" regardless of how many
-rows the server holds. Pass the unfiltered total as `meta.totalRowCount`.
+Without it there is no denominator to show: the pre-filtered row count is the
+current page, so the grid renders the matched count alone rather than a
+plausible-looking wrong total. Pass the unfiltered total as
+`meta.totalRowCount` to get the "42 / 5000" form back.
 
 ### Unstable getRowId across pages
 

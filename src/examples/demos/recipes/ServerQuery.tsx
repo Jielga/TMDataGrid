@@ -6,8 +6,8 @@ import type {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import {
+  activeColumnFilters,
   createTMDataGridColumnHelper,
-  isFilterActive,
   TMDataGrid,
   useTMDataGrid,
   type TMDataGridFilterOperator,
@@ -168,11 +168,12 @@ function toSearchRequest(state: {
 }): OrderSearchRequest {
   return {
     filter: {
-      and: state.columnFilters
-        // A filter still being typed matches every row, so it is not a
-        // predicate yet. Sending it would narrow the result set to nothing.
-        .filter((entry) => isFilterActive(entry.value))
-        .map((entry) => toPredicate(entry.id, entry.value as TMDataGridFilterValue))
+      // `activeColumnFilters` hands back the filters that are actually
+      // narrowing the grid, typed. A filter still being typed matches every
+      // row, so it is not a predicate yet - sending it would narrow the
+      // result set to nothing.
+      and: activeColumnFilters(state.columnFilters)
+        .map((filter) => toPredicate(filter.id, filter.value))
         .filter((predicate): predicate is Predicate => predicate !== undefined),
     },
     orderBy: state.sorting.flatMap((sort) => {
@@ -306,12 +307,6 @@ export function ServerQuery() {
     };
   }, [request]);
 
-  /** A narrower result set makes the page the user is on meaningless. */
-  const backToFirstPage = () =>
-    setPagination((previous) =>
-      previous.pageIndex === 0 ? previous : { ...previous, pageIndex: 0 },
-    );
-
   const meta = useMemo(
     () => ({ loading, totalRowCount: TOTAL_RECORDS }),
     [loading],
@@ -331,15 +326,12 @@ export function ServerQuery() {
     // the matched count, not the count on screen.
     rowCount: page?.totalItems ?? 0,
 
+    // A narrower result set makes the page the user is on meaningless, so a
+    // filter or a sort takes the grid back to page 1 - which under
+    // `manualPagination` the grid does itself. See `resetPageOnQueryChange`.
     state: { columnFilters, sorting, pagination },
-    onColumnFiltersChange: (updater) => {
-      setColumnFilters(updater);
-      backToFirstPage();
-    },
-    onSortingChange: (updater) => {
-      setSorting(updater);
-      backToFirstPage();
-    },
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     onPaginationChange: setPagination,
 
     meta,
@@ -363,12 +355,10 @@ export function ServerQuery() {
         {/* The API counts pages; so does the pager. Showing its own number
             keeps the two visibly in step. */}
         <TMDataGrid.Footer
-          renderPagination={({ state, Controls }) => (
+          renderPagination={({ Controls }) => (
             <>
               <Controls.PageSize />
-              <Text size="sm" c="dimmed">
-                Page {state.pageIndex + 1} of {state.pageCount}
-              </Text>
+              <Controls.PageNumber />
               <Controls.Pager />
             </>
           )}

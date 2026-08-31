@@ -62,6 +62,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   clearAllFilters: "Rensa alla",
   closeFilters: "Stäng filter",
   removeFilter: "Ta bort filter",
+  filterOperatorFor: (column) => `Filteroperator för ${column}`,
 
   activeFilters: "Aktiva filter",
   clearFilter: (column) => `Rensa filtret för ${column}`,
@@ -86,6 +87,8 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
 
   rowsPerPage: "Rader per sida:",
   pageRange: ({ from, to, total }) => `${from}–${to} av ${total}`,
+  pageNumber: ({ page, pageCount }) =>
+    pageCount < 0 ? `Sida ${page}` : `Sida ${page} av ${pageCount}`,
   groupedAllRows: (total) => `Grupperad · alla ${total} rader`,
   pagingSuspendedHint:
     "Sidindelningen är avstängd medan raderna är grupperade: hela trädet renderas och virtualiseras. Avgruppera för att bläddra igen.",

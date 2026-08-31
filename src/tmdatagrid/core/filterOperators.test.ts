@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TMDATAGRID_LABELS_SV } from "./labelsSv";
 import {
+  activeColumnFilters,
   emptyValueForOperator,
   formatFilterLabel,
   getDefaultOperator,
@@ -379,5 +380,36 @@ describe("operator sets", () => {
     ] as const) {
       expect(getOperatorsForType(type)).toContain(getDefaultOperator(type));
     }
+  });
+});
+
+describe("activeColumnFilters", () => {
+  const columnFilters = [
+    { id: "name", value: { operator: "contains", value: "holm" } },
+    // Seeded by the filter panel and not typed into yet: matches every row.
+    { id: "city", value: { operator: "contains", value: "" } },
+    { id: "status", value: { operator: "isAnyOf", value: ["Paid"] } },
+    // Not the grid's own shape - a consumer's raw filterFn value.
+    { id: "age", value: 30 },
+  ];
+
+  it("keeps the filters that narrow anything, and types their values", () => {
+    const active = activeColumnFilters(columnFilters as never);
+
+    expect(active).toEqual([
+      { id: "name", value: { operator: "contains", value: "holm" } },
+      { id: "status", value: { operator: "isAnyOf", value: ["Paid"] } },
+    ]);
+    // The point of the helper: no cast at the call site.
+    expect(active[0]?.value.operator).toBe("contains");
+  });
+
+  it("reads the slice off a table too", () => {
+    const table = { store: { state: { columnFilters } } };
+
+    expect(activeColumnFilters(table as never).map((f) => f.id)).toEqual([
+      "name",
+      "status",
+    ]);
   });
 });

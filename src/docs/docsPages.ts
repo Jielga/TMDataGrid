@@ -96,7 +96,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     id: "filtering",
     section: "Columns",
     label: "Filtering",
-    description: "Operators, the panel and custom controls",
+    description: "Operators, filter surfaces and custom controls",
     source: filteringDoc,
   },
   {

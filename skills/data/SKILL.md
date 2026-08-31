@@ -15,7 +15,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/pagination.md'
   - 'Jielga/TMDataGrid:src/docs/scrolling.md'
@@ -77,7 +77,10 @@ pieces, already wired.
 `Controls.PageSize`, `Controls.Range` and `Controls.Pager` are what the default
 footer renders, in that order, so a custom layout can keep the parts it wants
 instead of rebuilding them. They behave exactly as before, including greying out
-under a suspended pager.
+under a suspended pager. `Controls.PageNumber` - the "Page 3 of 200" label a
+server-paged grid usually shows in place of a row range - is a fourth control,
+not in the default footer; put it in through the slot rather than writing it by
+hand.
 
 `state` carries `pageIndex`, `pageSize`, `pageCount`, `rowCount`,
 `canPreviousPage`, `canNextPage`, `from`, `to` and `isPagingActive`. `actions`

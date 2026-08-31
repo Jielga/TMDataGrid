@@ -7,7 +7,7 @@ import { getGridCapabilities } from "../core/capabilities";
 import { useSettledTableState } from "../core/useSettledTableState";
 import { isFilterActive } from "../core/filterOperators";
 import { FilterIcon } from "./icons";
-import { openColumnFilter } from "../useTMDataGrid";
+import { seedColumnFilter } from "../useTMDataGrid";
 
 /** Row above the grid. Compose it from the pieces below, or anything else. */
 export function TMDataGridToolbar({ children }: { children?: ReactNode }) {
@@ -49,15 +49,21 @@ export function TMDataGridLoadingIndicator() {
 /**
  * Visible rows over total rows. On a server-driven grid, set
  * `meta.totalRowCount` for the denominator - the client never sees every row.
+ * Without it the count is rendered alone, since the fallback denominator would
+ * be the rows the server sent for the current page: a plausible-looking wrong
+ * total, and on an unfiltered first page the same number twice.
  */
 export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
   const { table, controlSize } = useTMDataGridContext();
   useSettledTableState(table.store);
 
+  const serverDriven =
+    table.options.manualFiltering === true ||
+    table.options.manualPagination === true;
   const shown = table.getRowCount();
   const total =
     table.options.meta?.totalRowCount ??
-    table.getPreFilteredRowModel().rows.length;
+    (serverDriven ? undefined : table.getPreFilteredRowModel().rows.length);
 
   return (
     <Text
@@ -67,18 +73,28 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
       className={classes.summaryCount}
       data-dg-part="summary-count"
     >
-      {children !== undefined ? children : `${shown} / ${total}`}
+      {children !== undefined
+        ? children
+        : total === undefined
+          ? `${shown}`
+          : `${shown} / ${total}`}
     </Text>
   );
 }
 
 /**
- * Toggles the filter panel, seeding a filter row on the first filterable column.
- * Renders nothing when no column can be filtered (`enableColumnFilters: false`).
+ * Toggles the grid's filter surface - the popup or the sidebar, whichever
+ * `filters.surface` names - seeding a filter row on the first filterable
+ * column. The count of active filters tints it.
+ *
+ * Renders nothing when no column can be filtered (`enableColumnFilters:
+ * false`), and nothing under `filters.surface: "none"`, where there is no
+ * automatic surface for it to toggle. Read `ui.state.filterPanelOpen` and
+ * render your own control if a hand-placed panel wants one.
  */
 export function TMDataGridFilterButton() {
   const api = useTMDataGridContext();
-  const { table, ui, features, labels, controlSize } = api;
+  const { table, ui, features, filters, labels, controlSize } = api;
   const opened = useSelector(ui, (state) => state.filterPanelOpen);
   const columnFilters = useSelector(
     table.store,
@@ -89,6 +105,7 @@ export function TMDataGridFilterButton() {
   ).length;
 
   if (!getGridCapabilities(table, features).canFilterAny) return null;
+  if (filters.surface === "none") return null;
 
   return (
     <Tooltip label={labels.filters} openDelay={400}>
@@ -105,11 +122,20 @@ export function TMDataGridFilterButton() {
             ui.actions.closeFilterPanel();
             return;
           }
-          const firstFilterable = table
-            .getAllLeafColumns()
-            .find((column) => column.getCanFilter());
-          if (firstFilterable) openColumnFilter(api, firstFilterable.id);
-          else ui.actions.openFilterPanel();
+          // Not `openColumnFilter`: that one honours header filters and
+          // focuses the header control instead of opening anything. This
+          // button's whole job is to open the surface it belongs to, which a
+          // grid may well have alongside header filters.
+          //
+          // Seeded only when the panel would otherwise be empty: with filters
+          // already in state it has rows to show, and seeding would stack a
+          // blank row on the first filterable column on top of them.
+          const seedColumn =
+            columnFilters.length === 0
+              ? table.getAllLeafColumns().find((column) => column.getCanFilter())
+              : undefined;
+          if (seedColumn) seedColumnFilter(api, seedColumn.id);
+          ui.actions.openFilterPanel(seedColumn?.id ?? null);
         }}
       >
         <FilterIcon size={16} stroke={1.6} />

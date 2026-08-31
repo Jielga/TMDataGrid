@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/testing.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
@@ -62,7 +62,8 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 
 **Whole-grid** (unique, no coordinate needed): `toolbar`, `summary-count`,
 `loading`, `search`, `search-clear`, `filter-button`, `filter-panel`,
-`filter-panel-close`, `filter-add`, `filter-clear-all`, `filter-pills`,
+`filter-popup`, `filter-sidebar`, `filter-panel-close`, `filter-add`,
+`filter-clear-all`, `filter-pills`, `header-filter-row`,
 `menu-button`, `columns-panel`, `columns-search`, `columns-toggle-all`,
 `columns-reset`, `footer`, `page-size`, `page-range`, `page-prev`, `page-next`,
 `summary-row`, `pinned-top`, `pinned-bottom`, `select-all`,
@@ -75,7 +76,9 @@ Body cells carry no `data-dg-part` - the coordinate pair already names them.
 `discard-new-row`.
 
 **Keyed by `data-column-id`**: `header`, `header-sort`, `header-menu`,
-`header-filter`, `filter-row`, `filter-pill`, `columns-toggle`.
+`header-filter` (absent under `filters.inHeader`), `header-filter-cell`,
+`header-filter-operator`, `filter-row`,
+`filter-pill`, `columns-toggle`.
 
 **Keyed by both**: `editor`.
 

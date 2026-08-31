@@ -14,7 +14,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/use-tm-data-grid.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
@@ -208,6 +208,8 @@ const filterPanelOpen = useSelector(grid.ui, (state) => state.filterPanelOpen);
 | --- | --- |
 | `openFilterPanel` | `(columnId?: string \| null) => void` |
 | `closeFilterPanel` | `() => void` |
+| `focusPanelFilter` | `(columnId: string \| null) => void` |
+| `focusHeaderFilter` | `(columnId: string \| null) => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
 | `setHighlightedRow` | `(rowId: string \| null) => void` |

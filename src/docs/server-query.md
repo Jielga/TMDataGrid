@@ -99,12 +99,11 @@ An empty end of a `between` pair leaves that side of the interval open, so it be
 
 A filter whose value is still empty stays in the grid's state so the panel keeps its row while the user types.
 It matches every row, so sending it as a predicate would narrow the result set to nothing.
-`isFilterActive` is the test:
+`activeColumnFilters` is the test, applied across the slice: it hands back the entries that narrow the grid, with their values typed as `TMDataGridFilterValue` rather than as `unknown`.
 
 ```ts
-state.columnFilters
-  .filter((entry) => isFilterActive(entry.value))
-  .map((entry) => toPredicate(entry.id, entry.value as TMDataGridFilterValue))
+activeColumnFilters(state.columnFilters)
+  .map((filter) => toPredicate(filter.id, filter.value))
   .filter((predicate): predicate is Predicate => predicate !== undefined);
 ```
 
@@ -168,35 +167,29 @@ The footer shows the page number through the `renderPagination` slot, keeping th
 
 ```tsx
 <TMDataGrid.Footer
-  renderPagination={({ state, Controls }) => (
+  renderPagination={({ Controls }) => (
     <>
       <Controls.PageSize />
-      <Text size="sm" c="dimmed">
-        Page {state.pageIndex + 1} of {state.pageCount}
-      </Text>
+      <Controls.PageNumber />
       <Controls.Pager />
     </>
   )}
 />
 ```
 
-A filter or a sort changes what page 3 means, so both handlers reset the page index:
-
-```tsx
-onColumnFiltersChange: (updater) => {
-  setColumnFilters(updater);
-  backToFirstPage();
-},
-```
+A filter or a sort changes what page 3 means, and under `manualPagination` the grid takes itself back to page 1 when it does - see [the page index](/docs/server-side#the-page-index).
+The change callbacks are therefore the plain setters.
 
 `meta.totalRowCount` is the unfiltered total, which no filtered response carries.
 Take it from a separate count call, or from the one the page was opened with.
+Without it, `SummaryCount` shows the matched count alone rather than comparing it against the rows of one page.
 
 ## What the client no longer knows
 
 Holding one page costs the grid the two things it derives from holding all of them.
 
 **Faceted options.** `meta.options: "faceted"` reads the distinct values present in `data`, which is now one page of them.
+The grid warns once per column about it.
 A select column declares its own set instead:
 
 ```tsx
@@ -215,6 +208,6 @@ The pieces this recipe composes:
 | Piece | Documented on |
 | --- | --- |
 | `manualFiltering`, `manualSorting`, `manualPagination`, `rowCount`, `meta.loading`, `meta.totalRowCount` | [Server-side data](/docs/server-side) |
-| `TMDataGridFilterValue`, `TMDataGridFilterOperator`, `isFilterActive`, `meta.filter.defaultOperator` | [Filtering](/docs/filtering) |
+| `TMDataGridFilterValue`, `TMDataGridFilterOperator`, `activeColumnFilters`, `meta.filter.defaultOperator` | [Filtering](/docs/filtering) |
 | `meta.options` | [Defining columns](/docs/columns) |
-| `Footer` `renderPagination`, `Controls.PageSize`, `Controls.Pager` | [Pagination](/docs/pagination) |
+| `Footer` `renderPagination`, `Controls.PageSize`, `Controls.PageNumber`, `Controls.Pager` | [Pagination](/docs/pagination) |

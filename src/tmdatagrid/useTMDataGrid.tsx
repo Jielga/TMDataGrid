@@ -70,6 +70,11 @@ import {
 import { getColumnDefaultOperator, isControlColumn } from "./core/columnUtils";
 import type { TMDataGridColumnFilterOptions } from "./core/filterControls";
 import {
+  resolveFilterOptions,
+  type TMDataGridFiltersOptions,
+  type TMDataGridFiltersSettings,
+} from "./core/filterSurface";
+import {
   createFuzzyRankedSortedRowModel,
   fuzzyGlobalFilterFn,
   type TMDataGridQuickSearchMode,
@@ -101,6 +106,15 @@ import {
   stabilizeControlledState,
   withoutUndefinedSlices,
 } from "./core/controlledState";
+import {
+  beginControlledStateSync,
+  deferControlledStateSyncPublishes,
+  endControlledStateSync,
+} from "./core/controlledStateSync";
+import {
+  withPageReset,
+  type TMDataGridQueryTable,
+} from "./core/pageReset";
 import type { TMDataGridCellRange } from "./core/cellRange";
 import {
   createSelectColumn,
@@ -305,8 +319,20 @@ const EMPTY_IDS: ReadonlyArray<string> = [];
  */
 export type TMDataGridUiState = {
   filterPanelOpen: boolean;
-  /** Column whose filter row should be focused when the panel opens. */
+  /**
+   * Column whose *panel* row should take the focus. Cleared once the row has
+   * taken it, so pointing at the same column twice focuses twice.
+   */
   filterPanelColumnId: string | null;
+  /**
+   * Column whose *header filter* control should take the focus, under
+   * `filters.inHeader`. Cleared once taken, like the one above.
+   *
+   * Its own slot rather than a second reader of `filterPanelColumnId`: a grid
+   * can have header filters and a panel at once, and two controls racing to
+   * answer one id means whichever mounted last wins the caret.
+   */
+  headerFilterColumnId: string | null;
   /**
    * Column being dragged by its header, if any. Held here rather than read from
    * `dataTransfer`, which browsers keep unreadable until the drop.
@@ -350,6 +376,18 @@ export type TMDataGridUiState = {
 export type TMDataGridUiActions = {
   openFilterPanel: (columnId?: string | null) => void;
   closeFilterPanel: () => void;
+  /**
+   * Points at a column's row in the filter panel without opening anything.
+   * `openFilterPanel` does this as well as opening; this is the half a panel
+   * that is already showing needs.
+   */
+  focusPanelFilter: (columnId: string | null) => void;
+  /**
+   * Points at a column's header filter control - what `openColumnFilter` does
+   * under `filters.inHeader`, where there is no panel to open. The header row
+   * scrolls the column into view and focuses it.
+   */
+  focusHeaderFilter: (columnId: string | null) => void;
   startColumnDrag: (columnId: string) => void;
   endColumnDrag: () => void;
   /**
@@ -401,6 +439,13 @@ export type TMDataGridApi<TData extends RowData> = {
   edit: TMDataGridEditApi<TData>;
   /** Table-level feature switches, re-read from options on every render. */
   features: TMDataGridFeatureFlags;
+  /**
+   * Where the filter controls live, the `filters` option with its defaults
+   * filled in. On the api rather than in a component's props because the
+   * pills, the column menu and `openColumnFilter` all have to agree with the
+   * table about which surface is on.
+   */
+  filters: TMDataGridFiltersSettings;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
   labels: TMDataGridLabels;
   /** The detail renderer, when row details are on. See `renderDetails`. */
@@ -691,11 +736,39 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   enablePagination?: boolean;
   /**
+   * Sends the grid back to the first page whenever the query changes - a
+   * column filter, the quick search or the sort. Defaults to `true` under
+   * `manualPagination` and `false` otherwise, where TanStack's own
+   * `autoResetPageIndex` already does it.
+   *
+   * Server-side, `pageIndex` is a position in a result set the grid does not
+   * own: narrowing the query leaves it pointing past the last page, and the
+   * next request comes back empty. The reset is applied in the same event as
+   * the change, so one request goes out, for the first page of the new query.
+   */
+  resetPageOnQueryChange?: boolean;
+  /**
    * The row-number gutter: a generated lane, outermost left, numbering the
    * rows of the current view - sorted, filtered, continuing across pages,
    * with group rows unnumbered. Off by default.
    */
   enableRowNumbers?: boolean;
+  /**
+   * Where the grid puts its filter controls - a popup over the rows, a sidebar
+   * beside them, controls in the header row, or nowhere at all so you place
+   * `TMDataGrid.FilterPanel` yourself.
+   *
+   * ```tsx
+   * useTMDataGrid({ data, columns, filters: { surface: "sidebar", inHeader: true } });
+   * ```
+   *
+   * Defaults to `{ surface: "popup" }` - the floating panel the grid has
+   * always shown. See {@link TMDataGridFiltersOptions}.
+   *
+   * Read field by field, so a literal is fine here - unlike `labels` or
+   * `persist`, this one does not have to be referentially stable.
+   */
+  filters?: TMDataGridFiltersOptions;
   /**
    * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` - the
    * default - forgives typos and skipped characters, and while it is the
@@ -959,6 +1032,7 @@ export function useTMDataGrid<TData extends RowData>({
   labels: labelsOverride,
   enableColumnOrdering,
   enablePagination,
+  resetPageOnQueryChange,
   enableRowNumbers,
   selectionMode,
   showSelectedBackground,
@@ -966,6 +1040,7 @@ export function useTMDataGrid<TData extends RowData>({
   onHighlightedRowChange,
   cellSelection,
   onFocusedCellChange,
+  filters: filterOptions,
   editing,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
@@ -997,6 +1072,33 @@ export function useTMDataGrid<TData extends RowData>({
   // Resolved on the override's identity, so a module-scope dictionary costs one
   // merge for the lifetime of the grid.
   const labels = useMemo(() => mergeLabels(labelsOverride), [labelsOverride]);
+  // Unpacked before the memo, so the api is keyed on the five fields rather
+  // than on the object's identity - which is what lets `filters` be written as
+  // a literal, the way it reads best, without republishing every render.
+  const {
+    surface: filterSurface,
+    sidebarSide: filterSidebarSide,
+    sidebarWidth: filterSidebarWidth,
+    defaultOpen: filtersDefaultOpen,
+    inHeader: filtersInHeader,
+  } = filterOptions ?? {};
+  const filters = useMemo(
+    () =>
+      resolveFilterOptions({
+        surface: filterSurface,
+        sidebarSide: filterSidebarSide,
+        sidebarWidth: filterSidebarWidth,
+        defaultOpen: filtersDefaultOpen,
+        inHeader: filtersInHeader,
+      }),
+    [
+      filterSurface,
+      filterSidebarSide,
+      filterSidebarWidth,
+      filtersDefaultOpen,
+      filtersInHeader,
+    ],
+  );
 
   const pinningEnabled = options.enableColumnPinning !== false;
   const selectColumnEnabled = features.selectColumn;
@@ -1266,6 +1368,23 @@ export function useTMDataGrid<TData extends RowData>({
     [],
   );
 
+  // Filled immediately after the call below. The query-change wrappers close
+  // over it rather than over `table`, since they are built as part of the
+  // options the table is constructed from.
+  const tableRef = useRef<TMDataGridTable<TData>>(null as never);
+  // Server-side, a narrower query invalidates the page the grid is on - see
+  // pageReset.ts. On by default only where the grid does not own the result
+  // set; TanStack's `autoResetPageIndex` covers the client-side case.
+  const resetPage = resetPageOnQueryChange ?? options.manualPagination === true;
+  const getQueryTable = useCallback(
+    () => tableRef.current as unknown as TMDataGridQueryTable,
+    [],
+  );
+
+  // The sync of `state` into the table's atoms happens inside this call, in
+  // the render body, and publishing from there makes React warn about the
+  // consumer's component - see controlledStateSync.ts.
+  beginControlledStateSync();
   const table = useTable({
     // The grid paints a running drag itself, one style write per frame - see
     // the resize preview in TMDataGridTable - and takes the width into state
@@ -1288,6 +1407,32 @@ export function useTMDataGrid<TData extends RowData>({
     // `"reorder"` to keep the column and have it moved to the front instead.
     groupedColumnMode: "remove",
     ...options,
+    // The query slices, wrapped so a change also takes the grid back to the
+    // first page - see pageReset.ts. Spread conditionally: the keys carry a
+    // `makeStateUpdater` default, and an explicit `undefined` would overwrite
+    // it and leave the slice unwritable.
+    ...(resetPage
+      ? {
+          onColumnFiltersChange: withPageReset(
+            "columnFilters",
+            options.onColumnFiltersChange as never,
+            getQueryTable,
+          ) as TableOptions<
+            TMDataGridFeatures,
+            TData
+          >["onColumnFiltersChange"],
+          onGlobalFilterChange: withPageReset(
+            "globalFilter",
+            options.onGlobalFilterChange as never,
+            getQueryTable,
+          ) as TableOptions<TMDataGridFeatures, TData>["onGlobalFilterChange"],
+          onSortingChange: withPageReset(
+            "sorting",
+            options.onSortingChange as never,
+            getQueryTable,
+          ) as TableOptions<TMDataGridFeatures, TData>["onSortingChange"],
+        }
+      : {}),
     // The rows as shown - see `shown` above. The consumer's own array passes
     // through untouched while nothing is committed.
     data: shown.rows,
@@ -1367,6 +1512,9 @@ export function useTMDataGrid<TData extends RowData>({
       },
     },
   }, selectSettledState);
+  endControlledStateSync();
+  tableRef.current = table as unknown as TMDataGridTable<TData>;
+  deferControlledStateSyncPublishes(table.store);
 
   // The engine's view of this render - see the engine's creation above.
   editContextRef.current = {
@@ -1553,8 +1701,11 @@ export function useTMDataGrid<TData extends RowData>({
 
   const ui = useCreateStore<TMDataGridUiState, TMDataGridUiActions>(
     {
-      filterPanelOpen: false,
+      // `useCreateStore` builds the store once per mount, so `defaultOpen` is
+      // read the way `initialState` is - a starting point, not a controller.
+      filterPanelOpen: filters.defaultOpen,
       filterPanelColumnId: null,
+      headerFilterColumnId: null,
       draggedColumnId: null,
       // `useCreateStore` builds the store once per mount, so this is a genuine
       // default rather than a value that would fight later clicks.
@@ -1576,6 +1727,10 @@ export function useTMDataGrid<TData extends RowData>({
           filterPanelOpen: false,
           filterPanelColumnId: null,
         })),
+      focusPanelFilter: (columnId) =>
+        setState((prev) => ({ ...prev, filterPanelColumnId: columnId })),
+      focusHeaderFilter: (columnId) =>
+        setState((prev) => ({ ...prev, headerFilterColumnId: columnId })),
       startColumnDrag: (columnId) =>
         setState((prev) => ({ ...prev, draggedColumnId: columnId })),
       endColumnDrag: () =>
@@ -1701,6 +1856,7 @@ export function useTMDataGrid<TData extends RowData>({
     ui,
     edit,
     features,
+    filters,
     labels,
     renderDetails,
     renderDetailsEstHeight,
@@ -1712,20 +1868,44 @@ export function useTMDataGrid<TData extends RowData>({
 }
 
 /**
- * Opens the filter panel for a column, seeding an empty filter row when the
- * column has none yet - mirrors "Filter" in the column header menu.
+ * Gives a column an empty filter of its default operator, unless it already
+ * has one - which is what makes a surface open on a row rather than on
+ * nothing.
+ *
+ * @internal Shared by `openColumnFilter` and the toolbar's filter button.
+ */
+export function seedColumnFilter<TData extends RowData>(
+  api: TMDataGridApi<TData>,
+  columnId: string,
+): void {
+  const column = api.table.getColumn(columnId);
+  if (column === undefined || column.getFilterValue() !== undefined) return;
+  const operator = getColumnDefaultOperator(column);
+  column.setFilterValue({ operator, value: emptyValueForOperator(operator) });
+}
+
+/**
+ * Sends the user to a column's filter control, seeding an empty filter when
+ * the column has none yet - what "Filter" in the column menu and a click on a
+ * filter pill both do.
+ *
+ * Which control that is follows the grid's `filters` option. Under
+ * `inHeader` it is the column's header control, which is already on screen, so
+ * the call focuses it and leaves the popup or sidebar closed. Otherwise it is
+ * the panel's row for that column, and the call opens the surface on it.
  */
 export function openColumnFilter<TData extends RowData>(
   api: TMDataGridApi<TData>,
   columnId: string,
 ): void {
-  const column = api.table.getColumn(columnId);
-  if (column && column.getFilterValue() === undefined) {
-    const operator = getColumnDefaultOperator(column);
-    column.setFilterValue({
-      operator,
-      value: emptyValueForOperator(operator),
-    });
+  seedColumnFilter(api, columnId);
+  if (api.filters.inHeader) {
+    // The header control is always visible, so there is nothing to open -
+    // only a column to point at. The header row watching this focuses it and
+    // scrolls it into view. The panel, if one is also showing, is left alone:
+    // it reads the other slot.
+    api.ui.actions.focusHeaderFilter(columnId);
+    return;
   }
   api.ui.actions.openFilterPanel(columnId);
 }

@@ -4,7 +4,7 @@ A holdings book where one column is a decision and the rest are consequences.
 The user edits **Target**; the grid recomputes drift and the trade to place, totals each sector, and refuses an edit that would allocate more than the whole book.
 
 ```demo
-file: recipes/portfolio-rebalancer-recipe.tsx
+file: recipes/PortfolioRebalancer.tsx
 hint: Type 40 into a Target cell - the commit is refused with the total it would have produced.
 height: 620
 ```

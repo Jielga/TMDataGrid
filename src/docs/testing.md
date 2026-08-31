@@ -76,14 +76,17 @@ so a part that repeats is addressed by adding the coordinate.
 | `loading` | The toolbar spinner |
 | `search`, `search-clear` | Quick search input and its ✕ |
 | `filter-button` | The funnel toggle |
-| `filter-panel`, `filter-panel-close` | The filter panel and its ✕ |
+| `filter-panel` | The panel of filter rows, wherever it is rendered |
+| `filter-popup`, `filter-sidebar` | The surface holding it, under `filters.surface` |
+| `filter-panel-close` | The surface's ✕; absent on a hand-placed panel |
 | `filter-add`, `filter-clear-all` | The panel's footer buttons |
+| `header-filter-row` | The header filter row, under `filters.inHeader` |
 | `filter-pills` | The active-filter pill group |
 | `menu-button` | The burger, `TMDataGrid.Menu` |
 | `columns-panel`, `columns-search` | The column chooser panel, and the search box in the panel or in `TMDataGrid.Menu.Columns` |
 | `columns-toggle-all`, `columns-reset` | Show/hide all and Reset layout, in the panel or in the menu |
 | `footer` | The pager row |
-| `page-size`, `page-range`, `page-prev`, `page-next` | The pager |
+| `page-size`, `page-range`, `page-number`, `page-prev`, `page-next` | The pager |
 | `summary-row` | The footer summary row |
 | `pinned-top`, `pinned-bottom` | The pinned-row edge blocks |
 | `select-all` | The header select-all checkbox |
@@ -116,7 +119,8 @@ so a part that repeats is addressed by adding the coordinate.
 | `data-dg-part` | What it is |
 | --- | --- |
 | `header` | A column header |
-| `header-sort`, `header-menu`, `header-filter` | Its three action buttons |
+| `header-sort`, `header-menu`, `header-filter` | Its three action buttons. `header-filter` is absent under `filters.inHeader`, where the control below is the indicator |
+| `header-filter-cell`, `header-filter-operator` | One column's header filter control and its operator button |
 | `filter-row` | One row of the filter panel |
 | `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
 | `columns-toggle` | The checkbox of one column, in the panel or in the menu |
@@ -150,9 +154,11 @@ The grid is always virtualized: only the rows in the viewport plus overscan are
 in the DOM. A row at index 500 has no element, and Playwright cannot scroll to
 what it cannot find.
 
-**Count rows off the grid, not off the DOM.** `aria-rowcount` includes the
-header and summary rows. `data-dg-row-count` counts the body rows alone: the
-current page under pagination, or everything the filters left otherwise.
+**Count rows off the grid, not off the DOM.** `aria-rowcount` includes every
+header row - stacked column groups and the `filters.inHeader` row among them -
+and the summary row, so how many it adds is a function of the grid's
+configuration. `data-dg-row-count` counts the body rows alone: the current page
+under pagination, or everything the filters left otherwise. Assert on that one.
 
 ```ts
 const grid = orders.getByRole("table");

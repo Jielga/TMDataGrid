@@ -1,4 +1,5 @@
 import { cleanup, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { findDemoFences } from "../docs/demoFence";
 import { extractHeadings } from "../docs/headings";
@@ -58,6 +59,23 @@ describe("example demos", () => {
 
     // Every demo renders a grid, and every grid renders its column headers.
     expect(screen.getAllByRole("columnheader").length).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+  });
+
+  it.each(demoFiles)("%s survives a sort", async (file) => {
+    const { Component } = loadDemo(file);
+    renderWithMantine(<Component />);
+
+    // Mounting is half a smoke test. What only a state change produces - a
+    // store publish landing mid-render, a callback that throws the second
+    // time it is called - needs one interaction, and a sort is the
+    // interaction every grid has. `aria-sort` is on sortable headers only.
+    const sortable = document.querySelector<HTMLElement>(
+      '[data-dg-part="header"][aria-sort]',
+    );
+    // A demo with nothing sortable still asserts its mount stayed clean.
+    if (sortable !== null) await userEvent.setup().click(sortable);
+
     expect(errors).toEqual([]);
   });
 });

@@ -56,11 +56,29 @@ extraSources: data/orders.ts
 | --- | --- | --- |
 | Rendered rows | The current page, sliced locally | The rows returned by the server |
 | Footer total | Pre-paginated row count | `options.rowCount` |
-| `SummaryCount` total | Pre-filtered row count | `meta.totalRowCount` |
+| `SummaryCount` total | Pre-filtered row count | `meta.totalRowCount`; without it, the count renders alone |
 | Loading state | Not applicable | `meta.loading` |
 
 No additional configuration is required. Column menus, the filter panel and the
 column manager behave identically in both modes.
+
+## The page index
+
+A column filter, the quick search or a sort changes what page 3 means.
+The result set is a different one, and it may not have a page 3 at all - so the grid resets `pageIndex` to 0 whenever the query changes under `manualPagination`.
+The reset is applied in the same event as the change, so one request goes out, for the first page of the new query.
+
+`resetPageOnQueryChange: false` switches it off.
+
+TanStack's `autoResetPageIndex` is a different rule and does not cover this.
+It defaults to `!manualPagination`, so it is off exactly here, and it fires on a change to `data` - which server-side is the response landing, after the request was sent.
+
+## Column options
+
+`meta.options: "faceted"` reads the distinct values present in `data`, which server-side is one page of them.
+The dropdown then offers whatever happened to be on the page the user is looking at, and looks correct while being wrong.
+Declare the set instead, as a list or a function.
+The grid warns once per column when a faceted column resolves under `manualFiltering` or `manualPagination`.
 
 ## Sending filters
 
@@ -75,15 +93,22 @@ Filter values are plain JSON:
 ]
 ```
 
-Forward `columnFilters` unchanged and translate it at the API boundary. Use
-`isFilterActive` to skip entries whose value is still empty, since those match
-all rows:
+Forward `columnFilters` unchanged and translate it at the API boundary.
+`activeColumnFilters` hands back the entries that are narrowing the grid, typed:
+`ColumnFiltersState` types `value` as `unknown`, and an entry whose value is
+still empty matches every row.
 
 ```ts
-import { isFilterActive } from "./tmdatagrid";
+import { activeColumnFilters } from "./tmdatagrid";
 
-const active = columnFilters.filter((filter) => isFilterActive(filter.value));
+const active = activeColumnFilters(columnFilters);
+// [{ id: "lastName", value: { operator: "contains", value: "holm" } }]
 ```
+
+It takes the `columnFilters` array, or the table where the grid owns the slice.
+`isFilterActive(value)` is the single-value test it is built on.
+Only the grid's own `{ operator, value }` shape is read: an entry holding some
+other value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 
@@ -169,6 +194,8 @@ Two constraints apply:
 | `rowCount` | Table option | `number` | – | The true total. `pageCount: -1` when it is unknown. |
 | `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. See [Loading and empty](/docs/loading-and-empty). |
 | `meta.totalRowCount` | Option | `number` | – | The unfiltered total, for `SummaryCount`. |
+| `resetPageOnQueryChange` | Option | `boolean` | `true` under `manualPagination` | Back to page 1 when a filter, the quick search or the sort changes. |
 | `onReachEnd` | Table prop | `() => void` | – | Fires as the scroll nears the last row. Latches per row count. |
 | `reachEndThreshold` | Table prop | `number` | `10` | How many rows before the end it fires. |
-| `isFilterActive` | Export | `(value) => boolean` | – | Skip filter entries whose value is still empty. |
+| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
+| `isFilterActive` | Export | `(value) => boolean` | – | Whether one filter value narrows anything. |

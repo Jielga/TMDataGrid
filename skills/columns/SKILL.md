@@ -16,7 +16,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.10'
+  library_version: '2.0.0-beta.11'
 sources:
   - 'Jielga/TMDataGrid:src/docs/columns.md'
   - 'Jielga/TMDataGrid:src/docs/column-layout.md'
@@ -249,7 +249,7 @@ Standard TanStack column options. Each also removes the corresponding interface.
 | Option | Effect when `false` |
 | --- | --- |
 | `enableSorting` | No sort indicator, no sort menu items, no click-to-sort. |
-| `enableColumnFilter` | No filter menu item. Excluded from the filter panel's column list. |
+| `enableColumnFilter` | No filter menu item. Excluded from the filter panel's column list, and its header filter cell is empty. |
 | `enableHiding` | No hide menu item. Checkbox disabled in the column manager. |
 | `enablePinning` | No pin menu items. |
 | `enableResizing` | The divider is displayed but cannot be dragged. |

@@ -1,6 +1,7 @@
 import { Input, RangeSlider } from "@mantine/core";
 import type { TMDataGridFilterControlArgs } from "../../core/filterControls";
 import { operatorTakesRangeValue } from "../../core/filterOperators";
+import { filterFieldProps } from "./controlLayout";
 import { TMDataGridFilterValueInput } from "./TMDataGridFilterValueInput";
 
 /**
@@ -30,7 +31,10 @@ export function DgRangeSliderFilter(args: TMDataGridFilterControlArgs) {
   const upper = pair[1] === undefined || pair[1] === "" ? max : Number(pair[1]);
 
   return (
-    <Input.Wrapper label={labels.filterValue} size={size} w={180}>
+    <Input.Wrapper
+      {...filterFieldProps(args, { label: labels.filterValue, width: 180 })}
+      size={size}
+    >
       <RangeSlider
         size={size}
         mt={6}
