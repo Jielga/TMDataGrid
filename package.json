@@ -1,6 +1,6 @@
 {
   "name": "@jielga/tmdatagrid",
-  "version": "2.0.0-beta.11",
+  "version": "2.0.0-beta.12",
   "description": "A React data grid built on TanStack Table v9 and Mantine - always virtualized, with resizable, reorderable, sortable, filterable, hideable and pinnable columns.",
   "license": "MIT",
   "type": "module",

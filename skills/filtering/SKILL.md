@@ -4,20 +4,20 @@ description: >
   Narrow the rows a TMDataGrid shows. Covers the shared tmDataGrid filter
   function and its {operator, value} model, the eighteen operators and which
   meta.type offers each, meta.filter.defaultOperator, isFilterActive and the
-  half-typed filter, the filters option and its surfaces (popup, sidebar,
-  none, plus inHeader for header filters), TMDataGrid.FilterPanel and its
-  layout prop, TMDataGrid.FilterButton,
-  TMDataGrid.FilterPills with its api prop, openColumnFilter, replacing a value
-  control with DgRangeSliderFilter / DgDateRangeFilter / DgAutocompleteFilter /
-  DgTriStateFilter or a meta.filter.control component, per-column filterFn, and
-  the quick search: TMDataGrid.Search, quickSearchMode fuzzy or contains,
-  fuzzyGlobalFilterFn, enableMatchHighlighting and enableGlobalFilter. Load when
-  adding filters, choosing operators, building a filter control, showing active
-  filters outside the grid, or wiring a search box.
+  half-typed filter, the filters option and its surfaces (popup, sidebar, none,
+  plus inHeader for header filters), TMDataGrid.FilterPanel and its layout prop,
+  TMDataGrid.FilterButton, TMDataGrid.FilterPills with its api prop,
+  openColumnFilter, replacing a value control with DgRangeSliderFilter /
+  DgDateRangeFilter / DgAutocompleteFilter / DgTriStateFilter or a
+  meta.filter.control component, per-column filterFn, and the quick search:
+  TMDataGrid.Search, quickSearchMode fuzzy or contains, fuzzyGlobalFilterFn,
+  enableMatchHighlighting and enableGlobalFilter. Load when adding filters,
+  choosing operators, building a filter control, showing active filters outside
+  the grid, or wiring a search box.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.11'
+  library_version: '2.0.0-beta.12'
 sources:
   - 'Jielga/TMDataGrid:src/docs/filtering.md'
   - 'Jielga/TMDataGrid:src/docs/quick-search.md'

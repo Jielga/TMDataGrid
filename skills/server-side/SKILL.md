@@ -5,13 +5,13 @@ description: >
   manualSorting, manualFiltering, rowCount, controlled state and onXChange
   callbacks. Covers the loading and totalRowCount meta fields, forwarding the
   plain-JSON columnFilters model to an API with activeColumnFilters, the
-  first-page reset on a query change, persistence interaction, and row
-  selection across pages. Load when the grid is backed by a paginated API
-  rather than a local array.
+  first-page reset on a query change, persistence interaction, and row selection
+  across pages. Load when the grid is backed by a paginated API rather than a
+  local array.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.11'
+  library_version: '2.0.0-beta.12'
 sources:
   - 'Jielga/TMDataGrid:src/docs/server-side.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
