@@ -1,6 +1,7 @@
 # Components and hooks
 
-Every hook and component the package exports, with its props.
+Every hook and component the package exports.
+A part whose props belong to one topic is documented on that topic's page, and listed here with a link; everything else - the root, the Table, and the parts whose props scatter across every topic - is written up in full below.
 The options `useTMDataGrid` takes are on [useTMDataGrid](/docs/use-tm-data-grid).
 
 ```tsx
@@ -121,23 +122,17 @@ It renders nothing when no column is searchable. See [Quick search](/docs/quick-
 | `debounce` | `number` | `250` | Milliseconds between the last keystroke and the filter being written. |
 | `w` | `number \| string` | `220` | Width of the input. |
 
-## TMDataGrid.FilterButton
+## The filter parts
 
-Toggles the filter surface, tinted with the count of active filters.
-It renders nothing when no column can be filtered, and nothing under `filters.surface: "none"`.
-See [TMDataGrid.FilterButton](/docs/filtering#tmdatagridfilterbutton).
+Filtering owns these three, so their props are on that page rather than repeated here.
 
-No props.
+| Component | What it is | Props |
+| --- | --- | --- |
+| `TMDataGrid.FilterButton` | Toggles the filter surface, tinted with the count of active filters. Renders nothing when no column can be filtered, and nothing under `filters.surface: "none"`. | None. [Filtering](/docs/filtering#tmdatagridfilterbutton) |
+| `TMDataGrid.FilterPanel` | The filter rows, as a plain block with no title, no close button and no open state - the popup and sidebar [surfaces](/docs/filtering#the-filters-option) wrap it. | `layout`. [Filtering](/docs/filtering#tmdatagridfilterpanel) |
+| `TMDataGrid.FilterPills` · `TMDataGridFilterPills` | One pill per active filter. Takes the grid as an `api` prop rather than from context, so it renders anywhere on the page. | `api`, `size`, `showClearAll`, `onPillClick`, `className`. [Filtering](/docs/filtering#tmdatagridfilterpills) |
 
-## TMDataGrid.FilterPanel
-
-The filter rows: a column, an operator and a value control for each active filter.
-It is a plain block with no title, no close button and no open state - the popup and sidebar [surfaces](/docs/filtering#the-filters-option) are wrappers around it - so render it yourself to place it anywhere else.
-See [TMDataGrid.FilterPanel](/docs/filtering#tmdatagridfilterpanel).
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `layout` | `TMDataGridFilterPanelLayout` | `"row"` | `"row"` puts column, operator and value side by side and wants about 550px; `"stacked"` puts them one under the other for a drawer or a narrow column. Passed to every value control as its `layout`. |
+`openColumnFilter(api, columnId)` sends the user to a column's filter control; it is documented with them, on [Filtering](/docs/filtering#opencolumnfilter).
 
 ## TMDataGrid.Menu
 
@@ -227,26 +222,6 @@ The slot argument holds the paging state, its operations and the built-in contro
 `pageCount` is `-1` when a manual grid declares an unknown total, and `isPagingActive` is `false` while a grouping suspends paging.
 `getTMDataGridPaginationApi(table, isPaging?)` returns the same `state` and `actions` for a pager built outside the grid.
 
-## TMDataGridFilterPills
-
-The active filters as removable pills, with a clear-all button.
-It takes the grid as a prop rather than from context, so it can be rendered outside `TMDataGrid`.
-It renders nothing when no filter is active. See [Filtering](/docs/filtering).
-
-```tsx
-<TMDataGridFilterPills api={grid} />
-```
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `api` | `TMDataGridApi<TData>` | – | Required. The object returned by `useTMDataGrid`. |
-| `size` | `TMDataGridSize` | `"sm"` | Size of the pills. |
-| `showClearAll` | `boolean` | `true` | If set, a clear-all button follows the pills once more than one filter is active. |
-| `onPillClick` | `(columnId: string) => void` | – | Called when a pill is clicked. If not set, [`openColumnFilter`](/docs/filtering#opencolumnfilter) sends the user to that column's control. |
-| `className` | `string` | – | Set on the wrapper element. |
-
-Also available as `TMDataGrid.FilterPills`.
-
 ## Editors
 
 The control a cell opens for editing.
@@ -309,12 +284,12 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.Table` | Component | – | – | Header, virtualized body and filter panel. |
 | `TMDataGrid.Toolbar` · `.Spacer` | Components | – | – | The toolbar row, and the gap that pushes items right. |
 | `TMDataGrid.Search` | Component | – | – | Quick search input. Also `TMDataGridSearch`. |
-| `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. |
+| `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. Props on [Filtering](/docs/filtering). |
 | `TMDataGrid.Menu` · `.ColumnsPanel` | Components | – | – | The burger menu, and the column chooser as plain controls. |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Components | – | – | Fetch spinner, and the row count. |
 | `TMDataGrid.DraftActions` | Component | – | – | Save and Discard. Also `TMDataGridDraftActions`. |
 | `TMDataGrid.Footer` | Component | – | – | The pager bar. |
-| `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. |
+| `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. Props on [Filtering](/docs/filtering). |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control. See [Filtering](/docs/filtering#opencolumnfilter). |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |
 | `DEFAULT_CELL_EXPORT_OPTIONS` | Constant | `TMDataGridCellExportOptions` | – | The CSV defaults `cellExport` merges over. |
