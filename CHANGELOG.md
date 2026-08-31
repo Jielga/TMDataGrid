@@ -1,5 +1,67 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.12
+
+### Major Changes
+
+- [#61](https://github.com/Jielga/TMDataGrid/pull/61) [`9425688`](https://github.com/Jielga/TMDataGrid/commit/9425688b76a34cdf3cca78715062a3e79630876d) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** The filter panel is no longer welded to `TMDataGrid.Table`. A new
+  `filters` option picks the surface:
+
+  - `surface: "popup"` (the default) floats the panel over the rows, as before.
+  - `surface: "sidebar"` puts it beside them, inside the grid frame. Starts open,
+    and takes `sidebarSide` and `sidebarWidth`.
+  - `surface: "none"` renders no panel and no `FilterButton`, leaving a
+    hand-placed `TMDataGrid.FilterPanel` as the only one on the page.
+  - `inHeader: true` adds a header row of per-column value controls, each with a
+    funnel button for its operator. Independent of `surface`. The column menu's
+    Filter item and the filtered-header funnel come off with it.
+
+  `TMDataGrid.FilterPanel` is now a plain block of controls with no title, no
+  close button and no open state - the popup and the sidebar own that chrome. It
+  takes `layout="row" | "stacked"`, and passes that through to every value
+  control.
+
+  What breaks:
+
+  - `TMDataGrid.FilterPanel` renders whenever it is mounted. It used to hide
+    itself unless `ui.state.filterPanelOpen`, so a hand-placed one now shows
+    permanently, and shows _alongside_ the popup unless you also set
+    `surface: "none"`.
+  - `filter-panel-close` moved out of `filter-panel`; it is now a child of
+    `filter-popup` / `filter-sidebar`. A test scoping the close button inside the
+    panel has to be re-pointed.
+  - `TMDataGridLabels` gained a required `filterOperatorFor`. A complete
+    translation typed as `TMDataGridLabels` no longer compiles until it is added;
+    `TMDataGridLabelsOverride` is unaffected.
+  - `TMDataGridApi` gained a required `filters`, and `TMDataGridFilterControlArgs`
+    a required `layout` - both break code that builds one of these by hand rather
+    than spreading, which in practice means test doubles.
+  - `ui.state.filterPanelColumnId` is now the panel's alone; the header row reads
+    the new `headerFilterColumnId`. The actions are `focusPanelFilter` and
+    `focusHeaderFilter`.
+
+  New exports: `TMDataGridFiltersOptions`, `TMDataGridFiltersSettings`,
+  `TMDataGridFilterSurface`, `TMDataGridFilterSidebarSide`,
+  `TMDataGridFilterControlLayout`, `TMDataGridFilterPanelLayout`,
+  `TMDataGridFilterPanelProps`, `TMDataGridFilterValueShape` and
+  `filterValueShape`.
+
+  Also fixed: a header group now spans the columns under it instead of sitting in
+  one track, and stacked header rows no longer pin to the same edge and paint
+  over each other.
+
+### Minor Changes
+
+- [#59](https://github.com/Jielga/TMDataGrid/pull/59) [`1b375bb`](https://github.com/Jielga/TMDataGrid/commit/1b375bb782b97c32f9d31ab4f666f4cb33e1343c) Thanks [@Psvensso](https://github.com/Psvensso)! - Server-side ergonomics, from building the server-backed search recipe.
+
+  - Under `manualPagination` the grid takes itself back to the first page when the query changes - a column filter, the quick search or the sort - in the same event as the change, so one request goes out. A filter row with an empty value is not a query change. `resetPageOnQueryChange: false` switches it off.
+  - `activeColumnFilters(columnFilters | table)` returns the filters that narrow anything, with `value` typed as `TMDataGridFilterValue` instead of `unknown`.
+  - `Controls.PageNumber` renders "Page 3 of 200" for a `renderPagination` layout, with a `pageNumber` label. Not in the default footer.
+  - `SummaryCount` renders the matched count alone under `manualFiltering` or `manualPagination` without `meta.totalRowCount`. The fallback denominator was the current page, so a server-side grid read "25 / 25".
+  - The controlled-state sync no longer publishes the table store during the consumer's render, which React reported as "Cannot update a component (…) while rendering a different component (…)" on the first sort or filter of any grid owning a state slice. Subscribers to `table.store` are now notified in a microtask after that render pass - the same retiming applies to the grid's own grouping, persistence and resize-preview subscriptions.
+  - The last column's resize divider no longer hangs 5px past the last track, which put a permanent horizontal scrollbar under a grid whose columns fit.
+  - A column resolving `meta.options: "faceted"` under `manualFiltering` or `manualPagination` warns once: the distinct values of one page are not the distinct values of the result set.
+
 ## 2.0.0-beta.11
 
 ### Patch Changes

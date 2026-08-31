@@ -15,7 +15,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.11'
+  library_version: '2.0.0-beta.12'
 sources:
   - 'Jielga/TMDataGrid:src/docs/pagination.md'
   - 'Jielga/TMDataGrid:src/docs/scrolling.md'
