@@ -82,6 +82,11 @@ export function TMDataGridFilterPopup() {
       // The toolbar button toggles the popup itself. Closing from here first
       // would leave its click reopening what the user meant to close.
       if (target.closest('[data-dg-part="filter-button"]')) return;
+      // A portalled overlay - a header filter's dropdown, a custom control's
+      // portalled picker - is outside the popup in the DOM but not in meaning:
+      // a press in one is a press in a control, not a click away. Mantine
+      // stamps `data-portal` on every portal node it creates.
+      if (target.closest("[data-portal]")) return;
       ui.actions.closeFilterPanel();
     };
 

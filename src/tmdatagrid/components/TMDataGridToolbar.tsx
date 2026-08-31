@@ -116,11 +116,16 @@ export function TMDataGridFilterButton() {
           // focuses the header control instead of opening anything. This
           // button's whole job is to open the surface it belongs to, which a
           // grid may well have alongside header filters.
-          const firstFilterable = table
-            .getAllLeafColumns()
-            .find((column) => column.getCanFilter());
-          if (firstFilterable) seedColumnFilter(api, firstFilterable.id);
-          ui.actions.openFilterPanel(firstFilterable?.id ?? null);
+          //
+          // Seeded only when the panel would otherwise be empty: with filters
+          // already in state it has rows to show, and seeding would stack a
+          // blank row on the first filterable column on top of them.
+          const seedColumn =
+            columnFilters.length === 0
+              ? table.getAllLeafColumns().find((column) => column.getCanFilter())
+              : undefined;
+          if (seedColumn) seedColumnFilter(api, seedColumn.id);
+          ui.actions.openFilterPanel(seedColumn?.id ?? null);
         }}
       >
         <FilterIcon size={16} stroke={1.6} />

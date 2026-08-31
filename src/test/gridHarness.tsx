@@ -214,14 +214,16 @@ export const bodyRows = () => parts("row");
  * selection is on, which `editing` switches on by itself.
  *
  * The header rows are counted rather than assumed to be one: header groups
- * stack, and `filters.inHeader` adds a filter row below them.
+ * stack, and `filters.inHeader` adds a filter row below them. Counted on the
+ * grid element itself, so a second grid in the document cannot skew it.
  */
-export const gridRowCount = () =>
-  Number(
-    (screen.queryByRole("table") ?? screen.getByRole("grid")).getAttribute(
-      "aria-rowcount",
-    ),
-  ) - document.querySelectorAll("[data-dg-header-row]").length;
+export const gridRowCount = () => {
+  const grid = screen.queryByRole("table") ?? screen.getByRole("grid");
+  return (
+    Number(grid.getAttribute("aria-rowcount")) -
+    grid.querySelectorAll("[data-dg-header-row]").length
+  );
+};
 
 /** Row ids in the order they are rendered. */
 export const renderedRowIds = () =>

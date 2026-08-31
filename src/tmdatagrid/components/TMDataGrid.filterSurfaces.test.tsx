@@ -5,6 +5,7 @@ import {
   gridRowCount,
   header,
   part,
+  parts,
   queryPart,
   renderGridUi,
   renderWithMantine,
@@ -35,6 +36,25 @@ describe("filters.surface", () => {
 
     await user.click(header("name"));
     expect(queryPart("filter-popup")).not.toBeInTheDocument();
+  });
+
+  it("seeds a blank row only when the panel is empty", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    // An empty panel opens with one seeded row to type into.
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    expect(parts("filter-row")).toHaveLength(1);
+    await user.type(part("filter-value"), "3");
+
+    // Toggled shut and open again over that filter, it shows the filter and
+    // nothing else - no second blank row stacked on the first filterable
+    // column.
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    expect(queryPart("filter-popup")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    expect(parts("filter-row")).toHaveLength(1);
+    expect(part("filter-value")).toHaveValue(3);
   });
 
   it("puts the panel beside the rows under sidebar, and leaves it open on a click away", async () => {

@@ -226,40 +226,42 @@ export function TMDataGridFilterPanel({
               </ActionIcon>
 
               <div className={classes.filterColumnSlot}>
-              <Select
-                label={labels.filterColumn}
-                size={controlSize}
-                w={stacked ? "100%" : 160}
-                allowDeselect={false}
-                // Both dropdowns render inside the panel: a portalled one is
-                // outside it in the DOM, and picking an option would read as a
-                // click away and close the popup under the user.
-                comboboxProps={{ withinPortal: false }}
-                data-dg-part="filter-column"
-                data={columnOptions}
-                value={filter.id}
-                onChange={(next) => next && changeFilterColumn(filter.id, next)}
-              />
+                <Select
+                  label={labels.filterColumn}
+                  size={controlSize}
+                  w={stacked ? "100%" : 160}
+                  allowDeselect={false}
+                  // Both dropdowns render inside the panel: a portalled one is
+                  // outside it in the DOM, and picking an option would read as
+                  // a click away and close the popup under the user.
+                  comboboxProps={{ withinPortal: false }}
+                  data-dg-part="filter-column"
+                  data={columnOptions}
+                  value={filter.id}
+                  onChange={(next) =>
+                    next && changeFilterColumn(filter.id, next)
+                  }
+                />
               </div>
 
               <div className={classes.filterOperatorSlot}>
-              <Select
-                label={labels.filterOperator}
-                size={controlSize}
-                w={stacked ? "100%" : 170}
-                allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
-                data-dg-part="filter-operator"
-                data={getOperatorsForType(type).map((operator) => ({
-                  value: operator,
-                  label: labels.operators[operator],
-                }))}
-                value={value.operator}
-                onChange={(next) =>
-                  next &&
-                  changeOperator(filter.id, next as TMDataGridFilterOperator)
-                }
-              />
+                <Select
+                  label={labels.filterOperator}
+                  size={controlSize}
+                  w={stacked ? "100%" : 170}
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: false }}
+                  data-dg-part="filter-operator"
+                  data={getOperatorsForType(type).map((operator) => ({
+                    value: operator,
+                    label: labels.operators[operator],
+                  }))}
+                  value={value.operator}
+                  onChange={(next) =>
+                    next &&
+                    changeOperator(filter.id, next as TMDataGridFilterOperator)
+                  }
+                />
               </div>
 
               {/* What the focus effect above aims at. A `meta.filter.control`
