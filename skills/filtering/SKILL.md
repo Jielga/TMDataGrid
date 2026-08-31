@@ -82,7 +82,7 @@ columnHelper.accessor("salary", {
 });
 ```
 
-## Where the controls go
+## The filters option
 
 `filters` on `useTMDataGrid` picks the surface. It is read field by field, so a
 literal is fine.
@@ -132,17 +132,36 @@ surface closed.
 hand-placed `TMDataGrid.FilterPanel` is the only one. Read
 `ui.state.filterPanelOpen` if it belongs behind a control of your own.
 
-## The panel and the pills
+## TMDataGrid.FilterPanel
 
-`TMDataGrid.FilterPanel` is a plain block of column / operator / value rows over
-"Add filter" and "Clear all" - no title, no close button, no open state. It
-renders wherever it is mounted. `layout="stacked"` puts the three fields one
-under the other for a narrow host; `"row"`, the default, needs about 550px.
-Closing a surface only hides it; the filters stay. **Clear all** drops every
-filter, half-typed ones included.
+The panel of filter rows - one column / operator / value triple per filter, over "Add filter" and "Clear all".
+A plain block with no title, no close button and no open state: it renders wherever it is mounted, and the popup and sidebar surfaces are wrappers around it.
+It must be inside `<TMDataGrid>` (it reads the grid from context) and it only reads and writes `columnFilters`, so a `manualFiltering` grid gets it for free.
+Closing a surface only hides it; the filters stay.
+**Clear all** drops every filter, half-typed ones included.
 
-`TMDataGrid.FilterPills` takes the grid as an `api` prop instead of reading
-context, so active filters can live in a page header or anywhere else:
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `"row" \| "stacked"` | `"row"` | `"row"` is side by side and wants about 550px; `"stacked"` fills a narrow host. Passed to every value control as its `layout`. |
+
+```tsx
+<Drawer opened={open} onClose={close}>
+  <TMDataGrid.FilterPanel layout="stacked" />
+</Drawer>
+```
+
+## TMDataGrid.FilterButton
+
+The toolbar button that toggles the filter surface, tinted with the count of active filters.
+Opening an empty panel seeds a filter row on the first filterable column; with filters already in state it opens on those.
+Renders nothing when no column can be filtered, and nothing under `surface: "none"`.
+No props.
+
+## TMDataGrid.FilterPills
+
+One pill per **active** filter, `First name: Sofia ✕`, where the ✕ clears it and a click on the label calls `openColumnFilter`.
+The label spells the operator out unless it is the type's default: `Age is greater than 30`, but `First name: Sofia`.
+It takes the grid as an `api` prop instead of reading context, so it renders anywhere on the page.
 
 ```tsx
 import { TMDataGridFilterPills } from "@jielga/tmdatagrid";
@@ -150,13 +169,18 @@ import { TMDataGridFilterPills } from "@jielga/tmdatagrid";
 <TMDataGridFilterPills api={grid} onPillClick={(columnId) => focus(columnId)} />;
 ```
 
-One pill per **active** filter, `First name: Sofia ✕`, where ✕ clears it and a
-click on the label sends the user to that column's control. The label spells
-the operator out unless it is the type's default: `Age is greater than 30`, but
-`First name: Sofia`. `openColumnFilter(api, columnId)` does the same from
-anywhere: it seeds an empty filter if the column has none, then opens the panel
-on it - or, under `inHeader`, scrolls the column's header control into view and
-focuses it.
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `api` | `TMDataGridApi<TData>` | - | The object returned by `useTMDataGrid`. |
+| `size` | `MantineSize` | `"sm"` | Pill size. |
+| `showClearAll` | `boolean` | `true` | "Clear all", shown once two filters are active. |
+| `onPillClick` | `(columnId: string) => void` | - | Replaces the default click behaviour. |
+| `className` | `string` | - | Added to the wrapper class. |
+
+## openColumnFilter
+
+`openColumnFilter(api, columnId)` seeds an empty filter if the column has none, then opens the surface on that column's panel row - or, under `inHeader`, scrolls the column's header control into view and focuses it, leaving the surface closed.
+It is what a pill's label and the column menu's Filter item both call.
 
 ## Replacing the value control
 

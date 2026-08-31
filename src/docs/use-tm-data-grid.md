@@ -54,7 +54,7 @@ rather than forwarded to TanStack.
 | `state` | `Partial<TableState>` | – | Controlled state. Each slice requires its `onXChange`. See [Controlled state](#controlled-state). |
 | `atoms` | `Partial<Record<slice, Atom>>` | – | External atoms owning state slices. No callback required. Takes precedence over `state`. |
 | `meta` | `TMDataGridTableMeta` | `{}` | Grid configuration. See [meta](#meta). |
-| `filters` | `TMDataGridFiltersOptions` | `{ surface: "popup" }` | Where the filter controls go - a popup, a sidebar, the column headers, or nowhere. See [Filtering](/docs/filtering#where-the-filter-controls-go-popup-sidebar-header). |
+| `filters` | `TMDataGridFiltersOptions` | `{ surface: "popup" }` | Where the filter controls go - a popup, a sidebar, the column headers, or nowhere. See [Filtering](/docs/filtering#the-filters-option). |
 | `persist` | `TMDataGridPersistence` | – | State persistence. See [persist](#persist). |
 | `labels` | `TMDataGridLabelsOverride` | English | Overrides for the grid's strings, see [Localization](#localization). |
 
@@ -244,7 +244,7 @@ identifier if several users can share a browser profile.
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
 | `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
-| `filters` | `TMDataGridFiltersSettings` | The `filters` option with its defaults filled in. See [Filtering](/docs/filtering#where-the-filter-controls-go-popup-sidebar-header). |
+| `filters` | `TMDataGridFiltersSettings` | The `filters` option with its defaults filled in. See [Filtering](/docs/filtering#the-filters-option). |
 | `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See [Editing](/docs/editing). |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read from options on each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. See [Localization](/docs/localization). |
