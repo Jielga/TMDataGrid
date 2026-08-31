@@ -633,7 +633,7 @@ describe("edit engine", () => {
     expect(edit.state.active).toEqual({ rowId: tempId, columnId: "name" });
   });
 
-  it("deleteRow reports immediately outside draft, toggles the mark under it", () => {
+  it("deleteRow reports immediately outside draft, marks idempotently under it", () => {
     const onRowDelete = vi.fn();
     const immediate = renderEditGrid({ onRowDelete });
     immediate.current.edit.deleteRow("1");
@@ -643,8 +643,24 @@ describe("edit engine", () => {
     const draft = renderEditGrid({ mode: "row", draft: true, onRowDelete: vi.fn() });
     draft.current.edit.deleteRow("1");
     expect(draft.current.edit.state.deletedRowIds).toEqual(["1"]);
+    // Trash means trash - a second delete leaves the mark standing.
     draft.current.edit.deleteRow("1");
-    expect(draft.current.edit.state.deletedRowIds).toEqual([]);
+    expect(draft.current.edit.state.deletedRowIds).toEqual(["1"]);
+  });
+
+  it("restoreRow removes the mark, and only the mark", () => {
+    const grid = renderEditGrid({ mode: "row", draft: true, onRowDelete: vi.fn() });
+    const { edit } = grid.current;
+    edit.deleteRow("1");
+    edit.deleteRow("2");
+
+    edit.restoreRow("1");
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
+
+    // Restoring an unmarked row, or an unknown id, changes nothing.
+    edit.restoreRow("1");
+    edit.restoreRow("no-such-row");
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
   });
 
   it("deleteRow on an uncommitted entry row just discards the entry", () => {
@@ -2110,5 +2126,174 @@ describe("editing.tableValidators", () => {
       field: "name",
       message: "Duplicate name",
     });
+  });
+});
+
+describe("bulk deletes over the draft store", () => {
+  const manyPeople: Array<Person> = Array.from({ length: 10 }, (_, index) => ({
+    id: index + 1,
+    name: `Person ${index + 1}`,
+    age: 20 + index,
+    address: { city: "Stockholm" },
+  }));
+
+  function renderBulkGrid() {
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: manyPeople,
+          columns,
+          getRowId: (row) => String(row.id),
+          editing: {
+            mode: "row",
+            draft: true,
+            onSaveDrafts: vi.fn(),
+            newRowDefaults: () => ({
+              id: 0,
+              name: "",
+              age: 0,
+              address: { city: "" },
+            }),
+          },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    return result;
+  }
+
+  /** What the Save button counts - `useDraftCount` in TMDataGridDraftActions. */
+  const draftCount = (state: TMDataGridEditState): number =>
+    state.committedRowIds.length +
+    state.newRows.filter((newRow) => newRow.committed).length +
+    state.deletedRowIds.length;
+
+  /** Three entry rows, filled and committed - the reported setup. */
+  async function commitThreeEntryRows(
+    edit: TMDataGridApi<Person>["edit"],
+  ): Promise<Array<string>> {
+    const tempIds = [
+      edit.addRow({ name: "Ny 1", age: 30 }),
+      edit.addRow({ name: "Ny 2", age: 31 }),
+      edit.addRow({ name: "Ny 3", age: 32 }),
+    ];
+    for (const tempId of tempIds) {
+      await edit.commit(tempId);
+    }
+    return tempIds;
+  }
+
+  it("keeps the count right through the reported flow with disjoint ids", async () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+    const tempIds = await commitThreeEntryRows(edit);
+    expect(draftCount(edit.state)).toBe(3); // "Save 3 rows"
+
+    // The trash press on one data row.
+    edit.deleteRow("1");
+    expect(draftCount(edit.state)).toBe(4);
+
+    // The multi delete: two committed entry rows, two data rows - none of
+    // them marked already.
+    for (const rowId of [tempIds[0]!, tempIds[1]!, "2", "3"]) {
+      edit.deleteRow(rowId);
+    }
+
+    expect(edit.state.newRows).toEqual([
+      { tempId: tempIds[2], committed: true },
+    ]);
+    expect(edit.state.deletedRowIds).toEqual(["1", "2", "3"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(draftCount(edit.state)).toBe(4);
+  });
+
+  it("a bulk delete that includes the already-marked row keeps its mark", async () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+    await commitThreeEntryRows(edit);
+
+    edit.deleteRow("1"); // the trash press
+    // The multi delete's selection happens to include row 1 as well.
+    for (const rowId of ["1", "2", "3"]) {
+      edit.deleteRow(rowId);
+    }
+
+    // Deleting a row twice is still deleting it - a bulk delete must not
+    // resurrect the row the user trashed by hand.
+    expect(edit.state.deletedRowIds).toEqual(
+      expect.arrayContaining(["1", "2", "3"]),
+    );
+    expect(draftCount(edit.state)).toBe(6);
+  });
+
+  it("deleteRows takes the selection as it stands - entry rows, marked rows, stale ids", async () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+    const tempIds = await commitThreeEntryRows(edit);
+    edit.deleteRow("1"); // the trash press
+
+    // The whole selection in one call: two committed entry rows, the row
+    // already marked, two data rows, a duplicate and an id nobody knows.
+    edit.deleteRows([
+      tempIds[0]!,
+      tempIds[1]!,
+      "1",
+      "2",
+      "3",
+      "3",
+      "no-such-row",
+    ]);
+
+    expect(edit.state.newRows).toEqual([
+      { tempId: tempIds[2], committed: true },
+    ]);
+    expect(edit.state.deletedRowIds).toEqual(["1", "2", "3"]);
+    expect(draftCount(edit.state)).toBe(4); // "Save 4 rows", stably
+  });
+
+  it("ignores an id the grid does not know", () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+
+    edit.deleteRow("no-such-row");
+
+    expect(edit.state.deletedRowIds).toEqual([]);
+    expect(draftCount(edit.state)).toBe(0);
+  });
+
+  it("deleteRow twice on a committed entry row discards it once, marking nothing", async () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+    const [tempId] = await commitThreeEntryRows(edit);
+
+    // A stale selection or a double-fired handler names the entry row again
+    // after the first call has already discarded it.
+    edit.deleteRow(tempId!);
+    edit.deleteRow(tempId!);
+
+    // The discarded entry is gone; its temp id must not live on as a
+    // deletion mark the save would then report.
+    expect(
+      edit.state.newRows.map((newRow) => newRow.tempId),
+    ).not.toContain(tempId);
+    expect(edit.state.deletedRowIds).toEqual([]);
+    expect(draftCount(edit.state)).toBe(2);
+  });
+
+  it("cancel during a pending commit leaves no ghost committed row", async () => {
+    const grid = renderBulkGrid();
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Ändrad");
+    const pending = edit.commit("1");
+    // The row is dropped while the commit's async validation is in flight.
+    edit.cancel("1");
+    await pending;
+
+    // The form is gone, so nothing may claim the row is parked - a ghost id
+    // here inflates the Save count and can never be saved or cleared.
+    expect(edit.getForm("1")).toBe(undefined);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(draftCount(edit.state)).toBe(0);
   });
 });

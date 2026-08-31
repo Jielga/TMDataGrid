@@ -446,13 +446,20 @@ height: 460
 ```
 
 `edit.deleteRow(rowId)` calls `onRowDelete({ rowId, row })` immediately; put
-any confirmation in that callback. Under `draft: true` it toggles a mark
+any confirmation in that callback. Under `draft: true` it marks the row
 instead: the row renders struck through and inert
 (`data-deleted`), the lane shows Restore, and `saveDrafts` reports the ids in
 `deleted`. A deletion mark is a decision the moment it is made, so it goes
-straight into the draft store - there is nothing to type. The trash can shows
-when the deletion has somewhere to report to: `onRowDelete` is set, or under
-`draft: true`, `onSaveDrafts` is.
+straight into the draft store - there is nothing to type. The mark is
+idempotent - deleting a marked row again leaves it marked - and
+`edit.restoreRow(rowId)` is the undo, which is what the lane's Restore calls.
+On an entry row, committed or not, `deleteRow` just discards the entry, and an
+id the grid does not know is a no-op. `edit.deleteRows(rowIds)` is the same
+over a list in one call, for a bulk action: because each id marks
+idempotently, discards an entry row or does nothing, the list may be passed
+exactly as a selection stands - duplicates, already-marked rows and stale ids
+included. The trash can shows when the deletion has somewhere to report to:
+`onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is.
 
 The grid still never mutates `data`: you apply adds and deletes, and the new
 rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not
@@ -475,7 +482,9 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.clearCell(rowId, columnId)` | Writes the type's empty value and commits it - what Delete does |
 | `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
 | `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits each as it lands |
-| `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true` |
+| `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true`. Idempotent; discards an entry row; ignores an unknown id |
+| `edit.deleteRows(rowIds)` | `deleteRow` over a list in one call - safe to feed a selection as it stands |
+| `edit.restoreRow(rowId)` | Removes a row's deletion mark - what the lane's Restore calls |
 | `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
 | `edit.getForm(rowId)` | The row's live `FormApi` |
 | `edit.getRowValues(rowId)` | The row as shown: its draft where one is held, else the `data` value. `undefined` for an unknown row |

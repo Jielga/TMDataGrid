@@ -239,7 +239,7 @@ function EditLaneCell<TData extends RowData>({
             data-row-id={rowId}
             onClick={(event) => {
               event.stopPropagation();
-              edit.deleteRow(rowId);
+              edit.restoreRow(rowId);
             }}
           >
             <RestoreIcon size={16} stroke={1.6} />

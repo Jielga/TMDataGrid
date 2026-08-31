@@ -707,11 +707,26 @@ export type TMDataGridEditApi<
   ) => Promise<TMDataGridAddRowsResult>;
   /**
    * Deletes a row: `onRowDelete` straight away, or under `editing.draft` a
-   * toggle of the id in `deletedRowIds` - the row renders struck through
-   * until `saveDrafts` reports it. On an uncommitted entry row it just
-   * discards the entry.
+   * mark in `deletedRowIds` - the row renders struck through until
+   * `saveDrafts` reports it. Idempotent: deleting a marked row again leaves
+   * it marked, and {@link restoreRow} is the undo. On an entry row,
+   * committed or not, it just discards the entry; an id the grid does not
+   * know is a no-op.
    */
   deleteRow: (rowId: string) => void;
+  /**
+   * {@link deleteRow} for several rows in one call - one notification for
+   * the batch, for a bulk action over a selection. Because `deleteRow` is
+   * idempotent and ignores unknown ids, the list may be passed exactly as
+   * the selection stands - already-marked rows stay marked, duplicates and
+   * stale ids do nothing.
+   */
+  deleteRows: (rowIds: ReadonlyArray<string>) => void;
+  /**
+   * Removes a row's deletion mark - the lane's Restore. A no-op on a row
+   * that is not marked, and outside `editing.draft`, where no marks exist.
+   */
+  restoreRow: (rowId: string) => void;
   /** Whether delete chrome makes sense - the lane's trash gate. */
   canDeleteRows: () => boolean;
 };
@@ -875,6 +890,7 @@ export function createEditEngine(
   };
   const forms = new Map<string, FormEntry>();
   let newRowCounter = 0;
+  const NEW_ROW_ID_PREFIX = "__new__";
   /** Lets `commit` tell a `saveDrafts` flush apart from a lone commit. */
   let savingDrafts = false;
 
@@ -1428,6 +1444,11 @@ export function createEditEngine(
       } finally {
         entry.pendingCommit = null;
       }
+      // Dropped while the submit was in flight - cancel or deleteRow won the
+      // race. The form is gone, so there is nothing to park or drop; marking
+      // the row committed now would plant an id in `committedRowIds` that no
+      // save or discard could ever clear.
+      if (forms.get(rowId) !== entry) return true;
       if (!entry.lastSubmitOk) {
         // Snapshot before the caller closes the editor: the field errors go
         // with it, and the row is about to be left carrying them.
@@ -1532,7 +1553,7 @@ export function createEditEngine(
 
   const addRow = (values?: TMDataGridRowData): string => {
     newRowCounter += 1;
-    const tempId = `__new__${newRowCounter}`;
+    const tempId = `${NEW_ROW_ID_PREFIX}${newRowCounter}`;
     createForm(tempId, seedNewRow(values), true);
     store.setState((prev) => ({
       ...prev,
@@ -1564,7 +1585,7 @@ export function createEditEngine(
     batch(() => {
       for (const values of rows) {
         newRowCounter += 1;
-        const tempId = `__new__${newRowCounter}`;
+        const tempId = `${NEW_ROW_ID_PREFIX}${newRowCounter}`;
         createForm(tempId, seedNewRow(values), true);
         tempIds.push(tempId);
       }
@@ -1599,19 +1620,52 @@ export function createEditEngine(
     }
     const context = getContext();
     if (context.draft) {
-      // A toggle: the second press unmarks - the mark is a draft too.
-      store.setState((prev) => ({
-        ...prev,
-        deletedRowIds: prev.deletedRowIds.includes(rowId)
-          ? prev.deletedRowIds.filter((id) => id !== rowId)
-          : [...prev.deletedRowIds, rowId],
-      }));
+      // Idempotent: a marked row stays marked - `restoreRow` is the undo.
+      store.setState((prev) => {
+        if (prev.deletedRowIds.includes(rowId)) return prev;
+        // Only a consumer row can be marked. A deletion mark is what
+        // `saveDrafts` reports to the server, so an id it cannot act on -
+        // an engine temp id, a record gone from `data`, an id the grid
+        // never knew - must not live on as a mark inflating the draft
+        // count. Entry rows are dropped above, never marked; the prefix
+        // check also catches one already dropped that a stale selection or
+        // a double-fired handler names again, while the table's data still
+        // shows it for one render. The core model, so a filtered-out row
+        // still takes its mark.
+        if (
+          rowId.startsWith(NEW_ROW_ID_PREFIX) ||
+          !(rowId in context.table.getCoreRowModel().rowsById)
+        ) {
+          return prev;
+        }
+        return { ...prev, deletedRowIds: [...prev.deletedRowIds, rowId] };
+      });
       return;
     }
     const row = getRow(rowId);
     if (row === undefined) return;
     // Confirmation is the consumer's business, in their onRowDelete.
     void context.onRowDelete?.({ rowId, row });
+  };
+
+  const deleteRows = (rowIds: ReadonlyArray<string>) => {
+    // One notification for the batch - each id still goes through
+    // `deleteRow`, so entry rows drop and everything else marks or no-ops
+    // by the same rules.
+    batch(() => {
+      for (const rowId of rowIds) deleteRow(rowId);
+    });
+  };
+
+  const restoreRow = (rowId: string) => {
+    store.setState((prev) =>
+      prev.deletedRowIds.includes(rowId)
+        ? {
+            ...prev,
+            deletedRowIds: prev.deletedRowIds.filter((id) => id !== rowId),
+          }
+        : prev,
+    );
   };
 
   const canDeleteRows = (): boolean => {
@@ -1903,6 +1957,8 @@ export function createEditEngine(
     addRow,
     addRows,
     deleteRow,
+    deleteRows,
+    restoreRow,
     canDeleteRows,
   };
 }
