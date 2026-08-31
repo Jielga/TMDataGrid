@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MantineWrapper } from "../../test/gridHarness";
 import {
   createTMDataGridColumnHelper,
@@ -60,13 +60,14 @@ const rows: Array<Order> = [
   { id: 3, status: "Paid", city: "Stockholm", tags: [] },
 ];
 
-function renderOrderGrid() {
+function renderOrderGrid(options: { manualPagination?: boolean } = {}) {
   const { result } = renderHook(
     () =>
       useTMDataGrid<Order>({
         data: rows,
         columns,
         getRowId: (row) => String(row.id),
+        ...options,
       }),
     { wrapper: MantineWrapper },
   );
@@ -164,5 +165,69 @@ describe("optionsToComboboxData", () => {
       },
       { group: "Early", items: [{ value: "z", label: "z" }] },
     ]);
+  });
+});
+
+describe("faceted options where the server owns the rows", () => {
+  it("warns once per column, and still resolves", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const api = renderOrderGrid({ manualPagination: true });
+
+    const options = resolveColumnOptions({
+      table: api.table,
+      column: column(api, "city"),
+    });
+    // The facets of one page are still what the panel has to show; the
+    // warning says they are not the facets of the result set.
+    expect(options).toEqual([{ value: "Malmö" }, { value: "Stockholm" }]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('column "city" resolves faceted options'),
+    );
+
+    resolveColumnOptions({ table: api.table, column: column(api, "city") });
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    resolveColumnOptions({ table: api.table, column: column(api, "tags") });
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it("is quiet on a client-side grid", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const api = renderOrderGrid();
+
+    resolveColumnOptions({ table: api.table, column: column(api, "city") });
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("stays warned across re-renders, which hand out a new table object", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { result, rerender } = renderHook(
+      () =>
+        useTMDataGrid<Order>({
+          data: rows,
+          columns,
+          getRowId: (row) => String(row.id),
+          manualPagination: true,
+        }),
+      { wrapper: MantineWrapper },
+    );
+    const api = () =>
+      result.current as unknown as TMDataGridApi<TMDataGridRowData>;
+    const first = api().table;
+
+    resolveColumnOptions({ table: first, column: column(api(), "city") });
+    rerender();
+    // `useTable` rebuilds the returned table every render; only the store
+    // keeps its identity, which is why the store is the guard's key. Keyed on
+    // the table, the filter panel warned once per keystroke.
+    expect(api().table).not.toBe(first);
+    resolveColumnOptions({ table: api().table, column: column(api(), "city") });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });

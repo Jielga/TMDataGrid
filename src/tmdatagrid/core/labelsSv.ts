@@ -87,6 +87,8 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
 
   rowsPerPage: "Rader per sida:",
   pageRange: ({ from, to, total }) => `${from}–${to} av ${total}`,
+  pageNumber: ({ page, pageCount }) =>
+    pageCount < 0 ? `Sida ${page}` : `Sida ${page} av ${pageCount}`,
   groupedAllRows: (total) => `Grupperad · alla ${total} rader`,
   pagingSuspendedHint:
     "Sidindelningen är avstängd medan raderna är grupperade: hela trädet renderas och virtualiseras. Avgruppera för att bläddra igen.",

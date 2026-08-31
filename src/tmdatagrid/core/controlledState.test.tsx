@@ -1,4 +1,5 @@
-import { act, render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { useCreateAtom } from "@tanstack/react-store";
 import { describe, expect, it, vi } from "vitest";
@@ -7,6 +8,7 @@ import type {
   ColumnOrderState,
   ColumnVisibilityState,
   GroupingState,
+  SortingState,
 } from "@tanstack/react-table";
 import {
   MantineWrapper,
@@ -490,5 +492,54 @@ describe("controlled state on the grid", () => {
 
     expect(renderedHeaderIds()).toContain("__select__");
     warn.mockRestore();
+  });
+});
+
+/**
+ * The shape every server-side grid has: state the consumer owns, chrome that
+ * subscribes to the table store, and `manualSorting` so a header click is a
+ * round trip through the consumer's setState.
+ */
+function ServerSideGrid() {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const grid = useTMDataGrid<TestRow>({
+    data: testRows,
+    columns: testColumns,
+    getRowId: (row: TestRow) => String(row.id),
+    manualSorting: true,
+    state: { sorting },
+    onSortingChange: setSorting,
+  } as never);
+
+  return (
+    <TMDataGrid {...grid}>
+      <TMDataGrid.Toolbar>
+        <TMDataGrid.SummaryCount />
+      </TMDataGrid.Toolbar>
+      <TMDataGrid.Table<TestRow> />
+      <TMDataGrid.Footer />
+    </TMDataGrid>
+  );
+}
+
+describe("the controlled-state sync's publish", () => {
+  it("does not reach subscribers while the consumer is rendering", async () => {
+    const errors: Array<string> = [];
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation((...args: Array<unknown>) => {
+        errors.push(String(args[0]));
+      });
+    const user = userEvent.setup();
+
+    render(<ServerSideGrid />, { wrapper: MantineWrapper });
+    // The sort lands in the consumer's state, comes back as `options.state`
+    // and is synced into the atoms from `useTable`'s render body. Publishing
+    // from there made React report "Cannot update a component (…) while
+    // rendering a different component (…)" against the consumer's component.
+    await user.click(screen.getByRole("columnheader", { name: /Name/ }));
+
+    expect(errors).toEqual([]);
+    error.mockRestore();
   });
 });

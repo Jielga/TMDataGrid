@@ -149,6 +149,16 @@
   z-index: 1;
 }
 
+/* The last column's divider straddles inward instead. Half of a 10px box
+   hanging past the last track is 5px of scrollable overflow, which is a
+   permanent horizontal scrollbar under a grid whose columns fit exactly. The
+   grab area keeps its width, wholly inside the cell, and flex-end keeps the
+   visible line on the column edge where every other divider draws it. */
+.headerCell:last-child .columnSeparator {
+  transform: none;
+  justify-content: flex-end;
+}
+
 .columnSeparatorResizable {
   cursor: col-resize;
   touch-action: none;

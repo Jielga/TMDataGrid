@@ -45,6 +45,51 @@ export type TMDataGridOptionsSource =
   | "faceted"
   | ((args: TMDataGridOptionsArgs) => ReadonlyArray<TMDataGridOption | string>);
 
+/**
+ * Columns already warned about, per grid - so a warning fires once and a
+ * test's grid is not silenced by another test's. Keyed on `table.store`, not
+ * on the table: `useTable` returns a fresh table object every render, while
+ * the store is created once and shared by every render's copy.
+ */
+const warnedFaceted = new WeakMap<object, Set<string>>();
+
+/**
+ * Faceted options read the distinct values in `data`, which under
+ * `manualFiltering` or `manualPagination` is whatever the server sent for the
+ * current page. The dropdown then offers the values that happen to be on the
+ * page the user is looking at, and looks correct while being wrong - so it is
+ * said out loud, once per column.
+ *
+ * Fires from render, unlike the library's other warnings: the fallback form
+ * of `"faceted"` only exists at resolve time, which is render. The guard
+ * makes it once per grid regardless - a StrictMode double render or a
+ * discarded concurrent render marks the set the same way a committed one
+ * does. H3 in the backlog folds it into the diagnostics mechanism with the
+ * rest.
+ */
+function warnFacetedUnderManualMode(
+  table: TMDataGridTable<TMDataGridRowData>,
+  columnId: string,
+): void {
+  if (
+    table.options.manualFiltering !== true &&
+    table.options.manualPagination !== true
+  ) {
+    return;
+  }
+  const store = table.store as object;
+  let warned = warnedFaceted.get(store);
+  if (warned === undefined) {
+    warned = new Set();
+    warnedFaceted.set(store, warned);
+  }
+  if (warned.has(columnId)) return;
+  warned.add(columnId);
+  console.warn(
+    `TMDataGrid: column "${columnId}" resolves faceted options while the server owns the rows - the distinct values of one page are not the distinct values of the result set. Pass meta.options as a list or a function instead.`,
+  );
+}
+
 function addFacetValue(target: Set<string>, value: unknown): void {
   if (value === null || value === undefined || value === "") return;
   target.add(String(value));
@@ -68,6 +113,7 @@ export function resolveColumnOptions({
   if (!source) return [];
 
   if (source === "faceted") {
+    warnFacetedUnderManualMode(table, column.id);
     const values = new Set<string>();
     for (const key of column.getFacetedUniqueValues().keys()) {
       if (Array.isArray(key)) {

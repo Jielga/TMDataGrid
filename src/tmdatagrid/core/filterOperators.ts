@@ -1,4 +1,10 @@
-import type { Row, RowData, TableFeatures } from "@tanstack/react-table";
+import type {
+  ColumnFiltersState,
+  Row,
+  RowData,
+  TableFeatures,
+} from "@tanstack/react-table";
+import type { TMDataGridTable } from "../useTMDataGrid";
 
 /**
  * The value shape stored in `columnFilters` for every TMDataGrid column.
@@ -242,6 +248,44 @@ export function isFilterActive(value: unknown): boolean {
   return Array.isArray(value.value)
     ? value.value.some((entry) => String(entry).trim() !== "")
     : typeof value.value === "string" && value.value.trim() !== "";
+}
+
+/** One column's filter, typed - what `columnFilters` holds per entry. */
+export type TMDataGridColumnFilter = {
+  id: string;
+  value: TMDataGridFilterValue;
+};
+
+/**
+ * The column filters that are actually narrowing the grid, typed.
+ *
+ * `ColumnFiltersState` types `value` as `unknown`, so the first line of a
+ * server-side mapping layer is otherwise a cast back to the shape the grid
+ * itself wrote, wrapped in the same "drop the half-typed ones" filter every
+ * consumer writes:
+ *
+ * ```ts
+ * const predicates = activeColumnFilters(table).map((filter) =>
+ *   toPredicate(filter.id, filter.value),
+ * );
+ * ```
+ *
+ * Takes the table, or a `columnFilters` array where the consumer owns the
+ * slice. Reading it from the table reads the current value and does not
+ * subscribe; inside a component, subscribe to `columnFilters` the way the
+ * grid's own chrome does.
+ */
+export function activeColumnFilters<TData extends RowData>(
+  source: TMDataGridTable<TData> | ColumnFiltersState,
+): Array<TMDataGridColumnFilter> {
+  const columnFilters = Array.isArray(source)
+    ? source
+    : source.store.state.columnFilters;
+  return columnFilters.flatMap((entry) =>
+    isTMDataGridFilterValue(entry.value) && isFilterActive(entry.value)
+      ? [{ id: entry.id, value: entry.value }]
+      : [],
+  );
 }
 
 /**

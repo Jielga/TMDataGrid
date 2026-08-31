@@ -45,10 +45,12 @@ export type {
   TMDataGridMenuProps,
 } from "./components/TMDataGridMenu";
 export {
+  type TMDataGridColumnFilter,
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
   type TMDataGridFilterValueShape,
+  activeColumnFilters,
   emptyValueForOperator,
   FILTER_OPERATOR_LABELS,
   filterValueShape,

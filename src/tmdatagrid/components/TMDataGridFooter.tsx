@@ -63,6 +63,12 @@ export type TMDataGridPaginationControls = {
   PageSize: () => ReactNode;
   /** The "1–25 of 300" range label. */
   Range: () => ReactNode;
+  /**
+   * The "Page 3 of 200" label - what a server-paged grid usually shows in
+   * place of a row range. Not in the default footer; put it in a
+   * `renderPagination` layout.
+   */
+  PageNumber: () => ReactNode;
   /** The previous/next buttons. */
   Pager: () => ReactNode;
 };
@@ -182,6 +188,26 @@ function PaginationRange() {
   );
 }
 
+function PaginationPageNumber() {
+  const { table, features, labels, controlSize } = useTMDataGridContext();
+  useSettledTableState(table.store);
+  const paging = isPagingActive(table, features);
+  const { pageIndex } = table.store.state.pagination;
+
+  return (
+    <Text span size={controlSize} c="dimmed" data-dg-part="page-number">
+      {paging
+        ? labels.pageNumber({
+            page: pageIndex + 1,
+            pageCount: table.getPageCount(),
+          })
+        : // Same reasoning as the range label: nothing is being sliced, so a
+          // page number would be a lie.
+          labels.groupedAllRows(table.getFilteredRowModel().rows.length)}
+    </Text>
+  );
+}
+
 function PaginationPager() {
   const { table, features, labels } = useTMDataGridContext();
   useSettledTableState(table.store);
@@ -223,7 +249,7 @@ export type TMDataGridFooterProps = {
    *   renderPagination={({ state, actions, Controls }) => (
    *     <Group>
    *       <Controls.PageSize />
-   *       <MyJumpToPage page={state.pageIndex} onJump={actions.setPageIndex} />
+   *       <Controls.PageNumber />
    *       <Controls.Pager />
    *     </Group>
    *   )}
@@ -258,6 +284,7 @@ export function TMDataGridFooter({
     () => ({
       PageSize: () => <PaginationPageSize pageSizeOptions={pageSizeOptions} />,
       Range: PaginationRange,
+      PageNumber: PaginationPageNumber,
       Pager: PaginationPager,
     }),
     [pageSizeOptions],

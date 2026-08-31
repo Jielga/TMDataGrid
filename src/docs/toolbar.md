@@ -37,7 +37,7 @@ toolbar with only `Search` has only a search box.
 | `TMDataGrid.Search` | The [quick search](/docs/quick-search) input |
 | `TMDataGrid.FilterButton` | Opens the [filter panel](/docs/filtering), with the active count |
 | `TMDataGrid.Menu` | The burger: a [menu](/docs/menu) you fill; `TMDataGrid.Menu.Columns` is the column chooser as items |
-| `TMDataGrid.SummaryCount` | Visible rows out of total |
+| `TMDataGrid.SummaryCount` | Visible rows out of total, or the count alone where there is no total to compare it against |
 | `TMDataGrid.LoadingIndicator` | A spinner while `meta.loading` |
 | `TMDataGrid.Spacer` | Pushes what follows to the right |
 | `TMDataGridDraftActions` | Save and Discard for the [draft store](/docs/editing#the-draft-store) |

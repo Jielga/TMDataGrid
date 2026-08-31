@@ -49,15 +49,21 @@ export function TMDataGridLoadingIndicator() {
 /**
  * Visible rows over total rows. On a server-driven grid, set
  * `meta.totalRowCount` for the denominator - the client never sees every row.
+ * Without it the count is rendered alone, since the fallback denominator would
+ * be the rows the server sent for the current page: a plausible-looking wrong
+ * total, and on an unfiltered first page the same number twice.
  */
 export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
   const { table, controlSize } = useTMDataGridContext();
   useSettledTableState(table.store);
 
+  const serverDriven =
+    table.options.manualFiltering === true ||
+    table.options.manualPagination === true;
   const shown = table.getRowCount();
   const total =
     table.options.meta?.totalRowCount ??
-    table.getPreFilteredRowModel().rows.length;
+    (serverDriven ? undefined : table.getPreFilteredRowModel().rows.length);
 
   return (
     <Text
@@ -67,7 +73,11 @@ export function TMDataGridSummaryCount({ children }: { children?: ReactNode }) {
       className={classes.summaryCount}
       data-dg-part="summary-count"
     >
-      {children !== undefined ? children : `${shown} / ${total}`}
+      {children !== undefined
+        ? children
+        : total === undefined
+          ? `${shown}`
+          : `${shown} / ${total}`}
     </Text>
   );
 }

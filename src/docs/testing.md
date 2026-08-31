@@ -86,7 +86,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `columns-panel`, `columns-search` | The column chooser panel, and the search box in the panel or in `TMDataGrid.Menu.Columns` |
 | `columns-toggle-all`, `columns-reset` | Show/hide all and Reset layout, in the panel or in the menu |
 | `footer` | The pager row |
-| `page-size`, `page-range`, `page-prev`, `page-next` | The pager |
+| `page-size`, `page-range`, `page-number`, `page-prev`, `page-next` | The pager |
 | `summary-row` | The footer summary row |
 | `pinned-top`, `pinned-bottom` | The pinned-row edge blocks |
 | `select-all` | The header select-all checkbox |
