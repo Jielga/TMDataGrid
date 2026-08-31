@@ -34,7 +34,35 @@ export type TMDataGridFilterControlArgs = {
   options: ReadonlyArray<TMDataGridOption>;
   size: TMDataGridSize;
   labels: TMDataGridLabels;
+  /**
+   * How much room the control has, and whether it names itself. The same
+   * vocabulary as `TMDataGrid.FilterPanel`'s own `layout` prop, plus the one
+   * value only a header cell can be in.
+   *
+   * | Layout | Where | Field |
+   * | --- | --- | --- |
+   * | `"row"` | A filter row laid out side by side | Labelled, fixed width |
+   * | `"stacked"` | A filter row in a narrow host - the sidebar | Labelled, full width |
+   * | `"header"` | One header cell, under `filters.inHeader` | `aria-label`, full width |
+   *
+   * Every built-in control honours it. A custom control that ignores it still
+   * works - it will simply look the same everywhere.
+   */
+  layout: TMDataGridFilterControlLayout;
 };
+
+/** How much room a filter control has. See `layout`. */
+export type TMDataGridFilterControlLayout = "row" | "stacked" | "header";
+
+/**
+ * The two a filter *panel* can be in - {@link TMDataGridFilterControlLayout}
+ * without the header cell, which is not a panel. `TMDataGrid.FilterPanel`'s
+ * `layout` prop.
+ */
+export type TMDataGridFilterPanelLayout = Exclude<
+  TMDataGridFilterControlLayout,
+  "header"
+>;
 
 /**
  * `meta.filter.control` - replaces the built-in value control for this column.

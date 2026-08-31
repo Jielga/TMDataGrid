@@ -24,7 +24,12 @@ import {
 import classes from "./TMDataGridTable.module.css";
 import sticky from "./sticky.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
-import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
+import {
+  TMDataGridFilterPopup,
+  TMDataGridFilterSidebar,
+} from "./TMDataGridFilterSurface";
+import { TMDataGridHeaderFilterRow } from "./TMDataGridHeaderFilterRow";
+import { getGridCapabilities } from "../core/capabilities";
 import {
   TMDataGridHeaderCell,
   type TMDataGridColumnMenuItemsRenderer,
@@ -737,6 +742,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     ui,
     edit,
     features,
+    filters,
     labels,
     rowHeight,
     controlSize,
@@ -900,6 +906,22 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    * virtualizer needs its height from the first paint.
    */
   const gridElementRef = useRef<HTMLDivElement>(null);
+  /**
+   * Header filters only render where something can be filtered - the row would
+   * otherwise be a band of empty cells on a grid with `enableColumnFilters:
+   * false`. Derived up here because the header measurement below depends on
+   * whether the row is in the DOM.
+   */
+  const hasHeaderFilterRow =
+    filters.inHeader && getGridCapabilities(table, features).canFilterAny;
+  /**
+   * How many rows deep the header is. In the measurement's dependencies
+   * because the rows are found once, by query: a `columns` change that adds or
+   * drops a group level changes which elements have to be measured and given
+   * their sticky inset, and nothing else in the list moves when it does.
+   */
+  const headerDepth = table.getCenterHeaderGroups().length;
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
   const [bodyOffsetTop, setBodyOffsetTop] = useState(0);
   const [stickyCoverTop, setStickyCoverTop] = useState(0);
   const [stickyCoverBottom, setStickyCoverBottom] = useState(0);
@@ -917,10 +939,28 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     );
     const measure = () => {
       let header = 0;
-      for (const headerRow of headerRows) header += headerRow.offsetHeight;
+      for (const headerRow of headerRows) {
+        // Every header row is sticky, so each one needs the height of the rows
+        // above it as its own inset - otherwise a stacked group and the filter
+        // row all pin to the top edge and paint over each other. Written on the
+        // element because only JS knows where the row before it ended; the
+        // stylesheet's `top` is the pre-measurement fallback.
+        headerRow.style.top = `${header}px`;
+        header += headerRow.offsetHeight;
+      }
       if (newRowCount > 0 || pinnedTopRows.length > 0) {
         grid.style.setProperty("--dg-header-height", `${header}px`);
       }
+      // The whole header's height, on the wrapper rather than on the grid,
+      // because the popup is a sibling of the scroll container and never sees
+      // a property set inside it. A second name rather than reusing
+      // `--dg-header-height`: the header cells read that one for their own
+      // `min-height`, so publishing a stacked total there would feed a
+      // two-row header back in as the height of each of its rows.
+      tableWrapperRef.current?.style.setProperty(
+        "--dg-header-stack-height",
+        `${header}px`,
+      );
       let cover = header;
       for (const block of stickyBlocks) cover += block.offsetHeight;
       let offset = cover;
@@ -934,7 +974,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       observer.observe(element);
     }
     return () => observer.disconnect();
-  }, [newRowCount, pinnedTopRows.length]);
+  }, [newRowCount, pinnedTopRows.length, hasHeaderFilterRow, headerDepth]);
 
   /**
    * The entry block's height, published as `--dg-entry-height` so the pinned
@@ -1282,6 +1322,12 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const hasSummaryRow = orderedColumns.some(
     (column) => column.columnDef.footer !== undefined,
   );
+  /**
+   * Rows above the first body row, which is what every `aria-rowindex` in the
+   * body counts from and what `aria-rowcount` adds up. The header groups plus
+   * the filter row, when there is one.
+   */
+  const headerRowCount = headerGroups.length + (hasHeaderFilterRow ? 1 : 0);
 
   /**
    * The summary row's height, published as `--dg-summary-height`, which two
@@ -2384,7 +2430,11 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       : undefined;
 
   return (
-    <div className={classes.tableWrapper}>
+    <div
+      ref={tableWrapperRef}
+      className={classes.tableWrapper}
+      data-dg-filter-sidebar={filters.surface === "sidebar" || undefined}
+    >
       <div
         ref={scrollContainerRef}
         className={classes.scrollContainer}
@@ -2422,7 +2472,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           aria-rowcount={
             rows.length +
             pinnedRowCount +
-            headerGroups.length +
+            headerRowCount +
             (hasSummaryRow ? 1 : 0)
           }
           aria-colcount={orderedColumns.length}
@@ -2442,11 +2492,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 data-dg-header-row
                 // The scrolled-under shadow belongs to the boundary between
                 // header and body - the last header row, not every stacked
-                // group row above it. See the stylesheet.
-                data-dg-header-last={
-                  groupIndex === headerGroups.length - 1 || undefined
-                }
-                className={classes.headerRow}
+                // group row above it, and not this one at all when the filter
+                // row is below it. See sticky.module.css.
+                className={[
+                  classes.headerRow,
+                  !hasHeaderFilterRow && groupIndex === headerGroups.length - 1
+                    ? sticky.headerBoundary
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {headerGroup.headers.map((header) => (
                   <TMDataGridHeaderCell
@@ -2458,6 +2513,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                 ))}
               </div>
             ))}
+
+            {hasHeaderFilterRow && (
+              <TMDataGridHeaderFilterRow
+                leafHeaders={leafHeaders}
+                layoutFor={layoutFor}
+                ariaRowIndex={headerRowCount}
+              />
+            )}
           </div>
 
           {/* The leading tab guard, below the header controls and above the
@@ -2914,7 +2977,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                         renderBodyRow(
                           row,
                           -1,
-                          headerGroups.length + index + 1,
+                          headerRowCount + index + 1,
                           "top",
                         ),
                       )}
@@ -2935,7 +2998,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                       row,
                       virtualItem.index,
                       virtualItem.index +
-                        headerGroups.length +
+                        headerRowCount +
                         pinnedTopRows.length +
                         1,
                     );
@@ -2958,7 +3021,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                         renderBodyRow(
                           row,
                           -1,
-                          headerGroups.length +
+                          headerRowCount +
                             pinnedTopRows.length +
                             rows.length +
                             index +
@@ -3014,7 +3077,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
             <div
               role="row"
               aria-rowindex={
-                rows.length + pinnedRowCount + headerGroups.length + 1
+                rows.length + pinnedRowCount + headerRowCount + 1
               }
               // Also what the height measurement above looks for. One
               // attribute serves both now that the part name *is* the
@@ -3084,7 +3147,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
         </div>
       </div>
 
-      <TMDataGridFilterPanel />
+      {/* The automatic filter surfaces. The popup floats over the first body
+          rows, anchored to the wrapper; the sidebar is a second column of it,
+          which is why the wrapper turns into a flex row for one. Under
+          `filters.surface: "none"` neither renders and the consumer's own
+          `TMDataGrid.FilterPanel` is the only panel on the page. */}
+      {filters.surface === "popup" && <TMDataGridFilterPopup />}
+      {filters.surface === "sidebar" && <TMDataGridFilterSidebar />}
     </div>
   );
 }

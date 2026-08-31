@@ -104,3 +104,47 @@
     opacity: 0;
   }
 }
+
+/* The scrolled-under shadow: a soft band under the header, only while body
+   rows are actually beneath it. Worn by the last header row - the header/body
+   boundary - which is the filter row under `filters.inHeader` and the last
+   group row otherwise. Lives here rather than in either row's own module
+   because the two are in different modules and the boundary moves between
+   them.
+
+   A scroll-driven animation, like the pinned-lane gradients: the shadow tracks
+   the scroll on the compositor with no listener and no render, and an inactive
+   timeline (nothing to scroll) leaves `opacity: 0` standing, so a grid that
+   fits shows nothing. Where unsupported there is simply no shadow - the
+   header's border already draws the boundary. */
+.headerBoundary::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto 0;
+  height: 6px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--dg-header-shadow-color, rgba(0, 0, 0, 0.14)),
+    transparent
+  );
+  opacity: 0;
+}
+
+@supports (animation-timeline: scroll()) {
+  .headerBoundary::after {
+    animation: dgHeaderShadow linear both;
+    animation-timeline: scroll(nearest block);
+    /* Arrives over the first rows leaving, reads as depth not as a fade. */
+    animation-range: 0px 24px;
+  }
+}
+
+@keyframes dgHeaderShadow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

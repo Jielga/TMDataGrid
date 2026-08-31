@@ -48,8 +48,10 @@ export {
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
+  type TMDataGridFilterValueShape,
   emptyValueForOperator,
   FILTER_OPERATOR_LABELS,
+  filterValueShape,
   formatFilterLabel,
   getDefaultOperator,
   getOperatorsForType,
@@ -112,7 +114,16 @@ export type {
   TMDataGridColumnFilterOptions,
   TMDataGridFilterControlArgs,
   TMDataGridFilterControlComponent,
+  TMDataGridFilterControlLayout,
+  TMDataGridFilterPanelLayout,
 } from "./core/filterControls";
+export type {
+  TMDataGridFiltersOptions,
+  TMDataGridFiltersSettings,
+  TMDataGridFilterSidebarSide,
+  TMDataGridFilterSurface,
+} from "./core/filterSurface";
+export type { TMDataGridFilterPanelProps } from "./components/TMDataGridFilterPanel";
 export { TMDataGridFilterValueInput } from "./components/filters/TMDataGridFilterValueInput";
 export { DgRangeSliderFilter } from "./components/filters/DgRangeSliderFilter";
 export { DgDateRangeFilter } from "./components/filters/DgDateRangeFilter";

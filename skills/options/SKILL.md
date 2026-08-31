@@ -208,6 +208,8 @@ const filterPanelOpen = useSelector(grid.ui, (state) => state.filterPanelOpen);
 | --- | --- |
 | `openFilterPanel` | `(columnId?: string \| null) => void` |
 | `closeFilterPanel` | `() => void` |
+| `focusPanelFilter` | `(columnId: string \| null) => void` |
+| `focusHeaderFilter` | `(columnId: string \| null) => void` |
 | `startColumnDrag` | `(columnId: string) => void` |
 | `endColumnDrag` | `() => void` |
 | `setHighlightedRow` | `(rowId: string \| null) => void` |

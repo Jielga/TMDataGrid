@@ -211,6 +211,25 @@ export function isTMDataGridFilterValue(
 }
 
 /**
+ * The three value shapes an operator can take. A set is not a range, even
+ * though both are arrays.
+ */
+export type TMDataGridFilterValueShape = "scalar" | "set" | "range";
+
+/**
+ * Which shape an operator's value takes. A typed value survives an operator or
+ * column change only within its shape, which is the rule both the panel and
+ * the header controls use when the operator changes.
+ */
+export function filterValueShape(
+  operator: TMDataGridFilterOperator,
+): TMDataGridFilterValueShape {
+  if (operatorTakesArrayValue(operator)) return "set";
+  if (operatorTakesRangeValue(operator)) return "range";
+  return "scalar";
+}
+
+/**
  * A filter only narrows the row set once it has something to compare against.
  * Half-typed filters stay in state (so the panel keeps rendering their row) but
  * are treated as inactive for the funnel indicator and for row matching.

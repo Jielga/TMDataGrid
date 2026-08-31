@@ -1,19 +1,10 @@
-import {
-  ActionIcon,
-  Button,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { ActionIcon, Button, Select, Stack, TextInput } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { resolveColumnOptions } from "../core/columnOptions";
 import {
   getColumnDefaultOperator,
-  getColumnFilterControl,
   getColumnLabel,
   getColumnType,
 } from "../core/columnUtils";
@@ -21,14 +12,15 @@ import {
   type TMDataGridFilterOperator,
   type TMDataGridFilterValue,
   emptyValueForOperator,
+  filterValueShape,
   getDefaultOperator,
   getOperatorsForType,
   isTMDataGridFilterValue,
   operatorNeedsValue,
-  operatorTakesArrayValue,
-  operatorTakesRangeValue,
 } from "../core/filterOperators";
+import type { TMDataGridFilterPanelLayout } from "../core/filterControls";
 import { CloseIcon } from "./icons";
+import { filterControlFor } from "./filters/filterControlFor";
 import { TMDataGridFilterValueInput } from "./filters/TMDataGridFilterValueInput";
 
 const FALLBACK_FILTER: TMDataGridFilterValue = { operator: "contains", value: "" };
@@ -37,55 +29,63 @@ function asFilterValue(value: unknown): TMDataGridFilterValue {
   return isTMDataGridFilterValue(value) ? value : FALLBACK_FILTER;
 }
 
-/**
- * The three value shapes an operator can take. A typed value survives an
- * operator or column change only within its shape - a set is not a range,
- * even though both are arrays.
- */
-function valueShape(
-  operator: TMDataGridFilterOperator,
-): "scalar" | "set" | "range" {
-  if (operatorTakesArrayValue(operator)) return "set";
-  if (operatorTakesRangeValue(operator)) return "range";
-  return "scalar";
-}
+export type TMDataGridFilterPanelProps = {
+   /**
+    * How one filter row is laid out.
+    *
+    * `"row"` - the default - puts column, operator and value side by side,
+    * which wants about 550px. `"stacked"` puts them one under the other, each
+    * filling the width, for a host too narrow for that: the sidebar surface
+    * uses it, and so should a panel you place in a drawer or a narrow column.
+    *
+    * Passed through to every value control as its `layout`, so a
+    * `meta.filter.control` can size itself to the same decision.
+    */
+  layout?: TMDataGridFilterPanelLayout;
+};
 
 /**
  * The MUI-style filter surface: one row per active column filter, each row a
- * column / operator / value triple. It only ever reads and writes the table's
- * `columnFilters` state, so a `manualFiltering` grid gets the same panel for
- * free - the state is forwarded to the server instead of a row model.
+ * column / operator / value triple, over an "Add filter" / "Clear all" footer.
+ *
+ * A plain block of controls, the way `TMDataGrid.ColumnsPanel` is - it renders
+ * whenever it is mounted and knows nothing about floating. The chrome that
+ * makes a floating surface (a title, a close button, click-away, Escape)
+ * belongs to the popup and the sidebar, so this can equally be dropped into a
+ * drawer, a page column or a form. See the `filters.surface` option.
+ *
+ * It only ever reads and writes the table's `columnFilters` state, so a
+ * `manualFiltering` grid gets the same panel for free - the state is forwarded
+ * to the server instead of a row model.
  */
-export function TMDataGridFilterPanel() {
+export function TMDataGridFilterPanel({
+  layout = "row",
+}: TMDataGridFilterPanelProps = {}) {
   const { table, ui, labels, controlSize } = useTMDataGridContext();
-  const opened = useSelector(ui, (state) => state.filterPanelOpen);
   const columnFilters = useSelector(
     table.store,
     (state) => state.columnFilters,
   );
+  const focusColumnId = useSelector(ui, (state) => state.filterPanelColumnId);
   const panelRef = useRef<HTMLDivElement>(null);
+  const stacked = layout === "stacked";
 
-  // Clicking away hides the panel, the way any floating surface behaves. On
-  // pointerdown rather than click, so a press that starts outside dismisses it
-  // even when the pointer is released somewhere else.
+  // Whoever pointed at a column - the column menu, a pill, the toolbar button -
+  // meant "let me type here", so the value slot takes the focus. Cleared once
+  // taken, which is what lets the same column be pointed at twice.
   useEffect(() => {
-    if (!opened) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (panelRef.current?.contains(target)) return;
-      // The toolbar button toggles the panel itself. Closing from here first
-      // would leave its click reopening what the user meant to close.
-      if (target.closest('[data-dg-part="filter-button"]')) return;
-      ui.actions.closeFilterPanel();
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [opened, ui]);
-
-  if (!opened) return null;
+    if (focusColumnId === null) return;
+    const row = panelRef.current?.querySelector<HTMLElement>(
+      `[data-dg-part="filter-row"][data-column-id="${CSS.escape(focusColumnId)}"]`,
+    );
+    const slot = row?.querySelector<HTMLElement>("[data-dg-filter-value-slot]");
+    slot
+      ?.querySelector<HTMLElement>(
+        "input:not([type='hidden']), textarea, select, [tabindex]:not([tabindex='-1'])",
+      )
+      ?.focus();
+    ui.actions.focusPanelFilter(null);
+  }, [focusColumnId, ui]);
 
   const filterableColumns = table
     .getAllLeafColumns()
@@ -97,9 +97,9 @@ export function TMDataGridFilterPanel() {
   }));
 
   function removeFilter(columnId: string) {
-    const remaining = columnFilters.filter((filter) => filter.id !== columnId);
-    table.setColumnFilters(remaining);
-    if (remaining.length === 0) ui.actions.closeFilterPanel();
+    table.setColumnFilters(
+      columnFilters.filter((filter) => filter.id !== columnId),
+    );
   }
 
   function changeFilterColumn(fromColumnId: string, toColumnId: string) {
@@ -114,7 +114,7 @@ export function TMDataGridFilterPanel() {
     // operator - a text needle has no meaning to an `isAnyOf` set, or a set
     // to a text input.
     const value =
-      valueShape(operator) === valueShape(current.operator)
+      filterValueShape(operator) === filterValueShape(current.operator)
         ? current.value
         : emptyValueForOperator(operator);
     table.setColumnFilters(
@@ -129,7 +129,9 @@ export function TMDataGridFilterPanel() {
             : filter,
         ),
     );
-    ui.actions.openFilterPanel(toColumnId);
+    // The row now names a different column; put the caret back in its value
+    // slot rather than leaving it on a dropdown whose meaning just changed.
+    ui.actions.focusPanelFilter(toColumnId);
   }
 
   function patchFilter(columnId: string, patch: Partial<TMDataGridFilterValue>) {
@@ -149,18 +151,10 @@ export function TMDataGridFilterPanel() {
     // Same arity rule as changing the column: keep the value across operators
     // of the same shape, reset it across any shape boundary.
     const value =
-      valueShape(operator) === valueShape(current.operator)
+      filterValueShape(operator) === filterValueShape(current.operator)
         ? current.value
         : emptyValueForOperator(operator);
     patchFilter(columnId, { operator, value });
-  }
-
-  /** Clears every filter, including half-typed ones the pills never showed. */
-  function clearAllFilters() {
-    table.setColumnFilters([]);
-    // Same exit as removing the last filter row by hand: an empty panel has
-    // nothing to show but its own buttons.
-    ui.actions.closeFilterPanel();
   }
 
   function addFilter() {
@@ -179,6 +173,7 @@ export function TMDataGridFilterPanel() {
         } satisfies TMDataGridFilterValue,
       },
     ]);
+    ui.actions.focusPanelFilter(nextColumn.id);
   }
 
   const canAddFilter = filterableColumns.some(
@@ -191,31 +186,9 @@ export function TMDataGridFilterPanel() {
       role="group"
       aria-label={labels.filters}
       data-dg-part="filter-panel"
+      data-layout={layout}
       className={classes.filterPanel}
-      // Escape is what closes a floating surface, and every control that can
-      // hold focus in here sits inside this element.
-      onKeyDown={(event) => {
-        if (event.key !== "Escape") return;
-        event.stopPropagation();
-        ui.actions.closeFilterPanel();
-      }}
     >
-      <div className={classes.filterPanelHeader}>
-        <Text span size={controlSize} fw={600}>
-          {labels.filters}
-        </Text>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          size="sm"
-          aria-label={labels.closeFilters}
-          data-dg-part="filter-panel-close"
-          onClick={ui.actions.closeFilterPanel}
-        >
-          <CloseIcon size={16} stroke={1.6} />
-        </ActionIcon>
-      </div>
-
       <Stack gap="xs">
         {columnFilters.map((filter) => {
           const column = table.getColumn(filter.id);
@@ -223,21 +196,11 @@ export function TMDataGridFilterPanel() {
           const type = column ? getColumnType(column) : "string";
           const needsValue = operatorNeedsValue(value.operator);
           const scalarValue = typeof value.value === "string" ? value.value : "";
-          // Pre-resolved only where options mean something out of the box -
-          // a declared set, or a select-shaped column's faceted values. A
-          // custom control wanting faceted values elsewhere resolves them
-          // itself; resolving here would build the faceted index for every
-          // filtered column.
-          const options =
-            column &&
-            (column.columnDef.meta?.options !== undefined ||
-              type === "select" ||
-              type === "multiSelect")
-              ? resolveColumnOptions({ table, column, fallback: "faceted" })
-              : [];
-          const ValueControl =
-            (column === undefined ? undefined : getColumnFilterControl(column)) ??
-            TMDataGridFilterValueInput;
+          // The same options-and-control decision the header cells make.
+          const { options, ValueControl } =
+            column === undefined
+              ? { options: [], ValueControl: TMDataGridFilterValueInput }
+              : filterControlFor(table, column);
 
           return (
             <div
@@ -247,12 +210,14 @@ export function TMDataGridFilterPanel() {
               // count on is which row it is in.
               data-dg-part="filter-row"
               data-column-id={filter.id}
+              data-layout={layout}
               className={classes.filterRow}
             >
               <ActionIcon
                 variant="subtle"
                 color="gray"
                 size="lg"
+                className={classes.filterRemove}
                 aria-label={labels.removeFilter}
                 data-dg-part="filter-remove"
                 onClick={() => removeFilter(filter.id)}
@@ -260,69 +225,82 @@ export function TMDataGridFilterPanel() {
                 <CloseIcon size={18} stroke={1.6} />
               </ActionIcon>
 
-              <Select
-                label={labels.filterColumn}
-                size={controlSize}
-                w={160}
-                allowDeselect={false}
-                // Both dropdowns render inside the panel: a portalled one is
-                // outside it in the DOM, and picking an option would read as a
-                // click away and close the panel under the user.
-                comboboxProps={{ withinPortal: false }}
-                data-dg-part="filter-column"
-                data={columnOptions}
-                value={filter.id}
-                onChange={(next) => next && changeFilterColumn(filter.id, next)}
-              />
-
-              <Select
-                label={labels.filterOperator}
-                size={controlSize}
-                w={170}
-                allowDeselect={false}
-                comboboxProps={{ withinPortal: false }}
-                data-dg-part="filter-operator"
-                data={getOperatorsForType(type).map((operator) => ({
-                  value: operator,
-                  label: labels.operators[operator],
-                }))}
-                value={value.operator}
-                onChange={(next) =>
-                  next &&
-                  changeOperator(filter.id, next as TMDataGridFilterOperator)
-                }
-              />
-
-              {column ? (
-                // The value slot: `meta.filter.control` if the column declares
-                // one, the built-in shape-by-operator input otherwise - both
-                // through the same value-only contract.
-                <ValueControl
-                  column={column}
-                  table={table}
-                  operator={value.operator}
-                  value={value.value}
-                  onChange={(next) => patchFilter(filter.id, { value: next })}
-                  options={options}
+              <div className={classes.filterColumnSlot}>
+                <Select
+                  label={labels.filterColumn}
                   size={controlSize}
-                  labels={labels}
-                />
-              ) : (
-                // The column is gone from the definition; the row survives
-                // only to be re-pointed or removed.
-                <TextInput
-                  label={labels.filterValue}
-                  size={controlSize}
-                  w={180}
-                  data-dg-part="filter-value"
-                  disabled={!needsValue}
-                  placeholder={needsValue ? labels.filterValuePlaceholder : ""}
-                  value={needsValue ? scalarValue : ""}
-                  onChange={(event) =>
-                    patchFilter(filter.id, { value: event.currentTarget.value })
+                  w={stacked ? "100%" : 160}
+                  allowDeselect={false}
+                  // Both dropdowns portal, like every dropdown in the panel:
+                  // drawn inline they are clipped by the grid frame's
+                  // `overflow: hidden` under the popup, or by the sidebar's
+                  // scroller. The popup's click-away exempts portal nodes.
+                  data-dg-part="filter-column"
+                  data={columnOptions}
+                  value={filter.id}
+                  onChange={(next) =>
+                    next && changeFilterColumn(filter.id, next)
                   }
                 />
-              )}
+              </div>
+
+              <div className={classes.filterOperatorSlot}>
+                <Select
+                  label={labels.filterOperator}
+                  size={controlSize}
+                  w={stacked ? "100%" : 170}
+                  allowDeselect={false}
+                  data-dg-part="filter-operator"
+                  data={getOperatorsForType(type).map((operator) => ({
+                    value: operator,
+                    label: labels.operators[operator],
+                  }))}
+                  value={value.operator}
+                  onChange={(next) =>
+                    next &&
+                    changeOperator(filter.id, next as TMDataGridFilterOperator)
+                  }
+                />
+              </div>
+
+              {/* What the focus effect above aims at. A `meta.filter.control`
+                  may render anything, so the slot is the only landmark the
+                  panel can count on. */}
+              <div className={classes.filterValueSlot} data-dg-filter-value-slot>
+                {column ? (
+                  // `meta.filter.control` if the column declares one, the
+                  // built-in shape-by-operator input otherwise - both through
+                  // the same value-only contract.
+                  <ValueControl
+                    column={column}
+                    table={table}
+                    operator={value.operator}
+                    value={value.value}
+                    onChange={(next) => patchFilter(filter.id, { value: next })}
+                    options={options}
+                    size={controlSize}
+                    labels={labels}
+                    layout={layout}
+                  />
+                ) : (
+                  // The column is gone from the definition; the row survives
+                  // only to be re-pointed or removed.
+                  <TextInput
+                    label={labels.filterValue}
+                    size={controlSize}
+                    w={stacked ? "100%" : 180}
+                    data-dg-part="filter-value"
+                    disabled={!needsValue}
+                    placeholder={needsValue ? labels.filterValuePlaceholder : ""}
+                    value={needsValue ? scalarValue : ""}
+                    onChange={(event) =>
+                      patchFilter(filter.id, {
+                        value: event.currentTarget.value,
+                      })
+                    }
+                  />
+                )}
+              </div>
             </div>
           );
         })}
@@ -343,7 +321,7 @@ export function TMDataGridFilterPanel() {
             size="compact-sm"
             disabled={columnFilters.length === 0}
             data-dg-part="filter-clear-all"
-            onClick={clearAllFilters}
+            onClick={() => table.setColumnFilters([])}
           >
             {labels.clearAllFilters}
           </Button>

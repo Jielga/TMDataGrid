@@ -121,6 +121,13 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Filter surfaces** - **done 2026-08-31**.
+The filter panel's place is a `filters` option: `surface: "popup"` (the default, the floating panel), `"sidebar"` (beside the rows, inside the grid frame, open by default, with `sidebarSide` / `sidebarWidth`), or `"none"` (no panel and no `FilterButton`, so a hand-placed `TMDataGrid.FilterPanel` is the only one) - plus `inHeader`, a header row of per-column value controls that composes with all three.
+`TMDataGrid.FilterPanel` became a plain block of controls with a `layout: "row" | "stacked"` prop; click-away, Escape and close-on-empty moved to the popup, and the title with its close button to the popup and the sidebar.
+`openColumnFilter` focuses the header control under `inHeader` rather than opening a panel; the panel and the header row watch separate ui slots (`filterPanelColumnId`, `headerFilterColumnId`) so the two never race for the caret, and `meta.filter.control` receives `layout`.
+Reviewed by three fresh-eyes agents before merge - docs, API surface and code - which is where the `"none"` naming, the sidebar's open-by-default, and the popup-over-header-filters overlap came from.
+Two pre-existing header bugs came out with it: a group header did not span the columns under it, and stacked header rows all pinned to the top edge.
+
 **Grid menu** - **done 2026-08-29**, breaking.
 `TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.
 The column chooser is menu items now, `TMDataGrid.Menu.Columns` with `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` as its pieces, built on Mantine 9.4's `Menu.Search` and `Menu.Sub` with `Checkbox.Indicator` toggles, so it goes into any Mantine menu inside the grid; the header menu's "Manage columns" is a submenu of the same items.
