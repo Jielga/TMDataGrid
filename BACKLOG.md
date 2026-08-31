@@ -55,6 +55,11 @@ past 1.0.0 on 2026-08-01.
   fixes the publish timing upstream - the patch and the begin/end calls around
   `useTable` are deleted. The publish test in `controlledState.test.tsx` pins
   the beta.21 internals the patch leans on; it goes with the patch, not before.
+- Which page owns a component's props - the topic page or `components.md`.
+  Unsettled, and it is the root of the drift the review pass found: `anatomy.md` and `components.md` had carried two copies of the `TMDataGrid.Table` table until they disagreed on three rows.
+  The rule is now pulling two ways. CLAUDE.md says the prop sits on the page for the thing it belongs to, and the filter surfaces (2026-08-31) wrote `TMDataGrid.FilterButton`, `.FilterPanel` and `.FilterPills` up in full on `filtering.md` in the house component layout; `components.md` still promises "every hook and component the package exports, with its props".
+  So the same three components are written up twice again, and within one pull request the second copy had already gone stale: "No props." for a component that had gained `layout`, and a `TMDataGrid.Table` renders it line the surfaces had made untrue.
+  Both were corrected 2026-08-31 rather than resolved - two copies stay two copies. Deciding the rule is what stops this recurring: either the topic page owns it and `components.md` becomes an index of exports, or `components.md` owns it and topic pages demo and explain without a prop table.
 - Docs structure decisions raised by the 2026-08-31 review pass and left for the stakeholder.
   Five items, each a reorganisation rather than a fix: put the sidebar on one axis (it mixes grid anatomy with concern today, so no rule can be inferred from the tree); split `editing.md`, at 562 lines seven times the median page; give the column menu its own page, since the surface a user touches most has no sidebar entry and lives under "Visibility, pinning, ordering and size"; move whole-grid CSV export out from under Cell selection, where a grid with cell selection off will never look; rewrite the 31 index-card descriptions in the voice of the pages.
   All five rename pages or move anchors, which ripples into the `sources:` of every skill citing them.
@@ -181,6 +186,8 @@ Duplication: `components.md` owns the `TMDataGrid` and `TMDataGrid.Table` prop t
 Content gaps closed in a paragraph each: dark mode is supported and "Themed" says what it means, cell-level styling says what to do instead, paste is not handled, columns are not virtualized, `getSubRows` renders but the grid adds no expander for it.
 Rendering: a link labelled in code keeps the anchor colour, a blockquote is a note rather than a filled pull-quote at 18px, a fence carries its own vertical margin, and inline code scales with the text around it.
 Chrome: per-page tab titles, and the sidebar sections ship open.
+Rebased onto the filter surfaces and server-side work and passed over again: the three filter components had drifted between `filtering.md` and `components.md` within their own pull request, `openColumnFilter` shipped in no reference table, and `size` on the pills was documented as `MantineSize` against the source's `TMDataGridSize`.
+Aliases for the vocabulary the surfaces added - `floating filter`, `filter row`, `header filter`, `filter sidebar` - and `quick filter` pointed at Quick search, which is what the phrase means to someone arriving from another grid.
 
 **Grid menu** - **done 2026-08-29**, breaking.
 `TMDataGrid.Menu` is the toolbar burger: a Mantine `Menu` whose children are the dropdown, so an app's own items sit beside the built-in ones.

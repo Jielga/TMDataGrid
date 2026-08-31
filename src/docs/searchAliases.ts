@@ -32,6 +32,9 @@ export const SEARCH_ALIASES: ReadonlyArray<SearchAlias> = [
   { terms: ["fill down", "fill handle", "paste"], pageId: "cell-selection", hash: "keys-and-keyboard-shortcuts" },
   { terms: ["autosize", "auto fit", "best fit"], pageId: "column-layout", hash: "autosizing" },
   { terms: ["column chooser", "column picker"], pageId: "menu" },
+  { terms: ["floating filter", "filter row", "header filter"], pageId: "filtering", hash: "inheader" },
+  { terms: ["quick filter", "global filter", "search box"], pageId: "quick-search" },
+  { terms: ["filter sidebar", "filter drawer", "filter panel placement"], pageId: "filtering", hash: "the-filters-option" },
 
   // Words for a feature the docs name with a different one.
   { terms: ["excel", "xlsx", "spreadsheet"], pageId: "cell-selection", hash: "the-csv" },

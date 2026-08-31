@@ -201,7 +201,7 @@ file: columns/FilterPills.tsx
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `api` | `TMDataGridApi<TData>` | - | The object returned by `useTMDataGrid`. |
-| `size` | `MantineSize` | `"sm"` | Pill size. |
+| `size` | `TMDataGridSize` | `"sm"` | Pill size. |
 | `showClearAll` | `boolean` | `true` | "Clear all", shown once two filters are active. |
 | `onPillClick` | `(columnId: string) => void` | - | Replaces the default click behaviour. |
 | `className` | `string` | - | Added to the wrapper class. |
