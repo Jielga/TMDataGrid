@@ -100,6 +100,51 @@ const UNPINNED_LAYOUT: TMDataGridColumnLayout = {
 };
 
 /**
+ * How many viewports' worth of rows the window may span before the grid stops
+ * believing it, and the floor under that - see {@link maxMountedRows}.
+ *
+ * Three is past any real viewport: the scroll container is one window tall at
+ * most, and the extra two cover a layout mid-transition and a browser reporting
+ * a stale rect. The floor keeps a small window - a headless browser's, jsdom's,
+ * a phone's - from clamping a container that is merely tall, so the cap only
+ * ever engages around a hundred rows in, well past what a screen can show and
+ * well short of what freezes a tab.
+ */
+const MAX_MOUNTED_VIEWPORTS = 3;
+const MIN_MOUNTED_ROWS = 100;
+
+/** What the window is measured against when there is no window to ask. */
+const ASSUMED_VIEWPORT_HEIGHT = 1080;
+
+/**
+ * The ceiling on rows mounted at once, whatever the virtualizer asks for.
+ *
+ * The bottom spacer stands in for every row that is not mounted, so it is as
+ * tall as the whole dataset. A scroll container that is never given a height -
+ * a grid whose flex parent forgot `min-height: 0`, one dropped into a plain
+ * block - grows to fit that spacer instead of scrolling it: the observer then
+ * reports a viewport of hundreds of thousands of pixels, the virtualizer
+ * concludes that every row is in view, and the grid mounts the whole dataset.
+ * It is the one way an always-virtualized grid renders everything it has, and
+ * a few thousand rows of it takes the tab down.
+ *
+ * The cap turns that into a bounded, visibly wrong grid: the rows past it are
+ * left to the spacer, so the bottom of the container goes blank, and the
+ * warning below names the cause. It is a backstop, not a layout - a grid given
+ * a height never reaches it.
+ */
+function maxMountedRows(rowHeight: number, overscan: number): number {
+  const viewport =
+    typeof window === "undefined" || !window.innerHeight
+      ? ASSUMED_VIEWPORT_HEIGHT
+      : window.innerHeight;
+  return Math.max(
+    MIN_MOUNTED_ROWS,
+    Math.ceil((viewport * MAX_MOUNTED_VIEWPORTS) / rowHeight) + overscan * 2,
+  );
+}
+
+/**
  * The mounted element for a cell position, or `null` when its row is scrolled
  * out - the normal case for a move that has to scroll before it can focus.
  */
@@ -1075,7 +1120,17 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // `scrollMargin` is included in every item's `start` and `end` and excluded
   // from `getTotalSize()`, and taking it back off here is what keeps a spacer
   // the height of the rows it replaces.
-  const virtualItems = virtualizer.getVirtualItems();
+  const requestedItems = virtualizer.getVirtualItems();
+  // The head of the window, not the tail: the window starts at the scroll
+  // offset, so when it is too big to trust, the rows nearest what the user is
+  // looking at are the first of it. Every reader below takes the capped list,
+  // and the spacers are measured from it, so the scroll range still describes
+  // the whole dataset.
+  const rowCeiling = maxMountedRows(rowHeight, overscan);
+  const virtualItems =
+    requestedItems.length > rowCeiling
+      ? requestedItems.slice(0, rowCeiling)
+      : requestedItems;
   const paddingTop = (virtualItems[0]?.start ?? bodyOffsetTop) - bodyOffsetTop;
   const paddingBottom =
     virtualizer.getTotalSize() -
@@ -1119,6 +1174,25 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    *
    * Effect (not render): `onReachEnd` sets consumer state.
    */
+  /**
+   * Said once per grid: the cap engaging means the layout is wrong, and it
+   * stays wrong until someone changes the CSS. Effect, not render - the first
+   * capped render has already been committed by the time it runs, and the
+   * numbers in it are that render's.
+   */
+  const warnedRowCeilingRef = useRef(false);
+  useEffect(() => {
+    if (requestedItems.length <= rowCeiling || warnedRowCeilingRef.current) {
+      return;
+    }
+    warnedRowCeilingRef.current = true;
+    console.warn(
+      `TMDataGrid: the scroll container measures ${Math.round(
+        virtualizer.scrollRect?.height ?? 0,
+      )}px tall, so the virtualizer asked for ${requestedItems.length} rows at once; ${rowCeiling} were mounted and the rest are blank. The grid scrolls its own container, so a height that size means the container is growing with its rows instead of bounding them: give it a height, or a flex parent it can fill with min-height: 0.`,
+    );
+  });
+
   const reachEndFiredForCountRef = useRef<number | null>(null);
   const warnedReachEndPaginationRef = useRef(false);
   const lastMountedIndex = virtualItems.at(-1)?.index ?? -1;
