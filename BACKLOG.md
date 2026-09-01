@@ -47,6 +47,18 @@ past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- `edit.addRows(rows, { commit: true })` at import size. Measured 2026-09-01
+  while load-testing the query builder's CSV import: one commit is three grid
+  renders, and the commits run in sequence, so a batch costs O(batch x mounted
+  rows) renders - about 0.6 s per row for a batch of 10 under jsdom, and 195 s
+  for a batch of 100. The docs offer it as the import path
+  ([editing.md](src/docs/editing.md), "Importing rows"), and the demo behind
+  that section imports four rows, so the shape has never been felt. Worth a
+  batched commit - one pass over the entry rows, one publish, one render -
+  before the docs recommend it for a file. Until then the query builder recipe
+  imports by writing the parsed rows to its own state in one go, and
+  [query-builder.md](src/docs/query-builder.md) says why.
+
 - Controlled state through `options.atoms` - the intended end state for the
   render-phase publish workaround shipped 2026-08-31: `controlledStateSync.ts`
   patches `table.store.subscribe` and defers notifications raised during

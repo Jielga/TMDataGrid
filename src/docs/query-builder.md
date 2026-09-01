@@ -7,8 +7,9 @@ field: rows come in through `value`, and approved changes go back out through
 
 ```demo
 file: recipes/QueryBuilderForm.tsx
-hint: Add a condition and pick Status - the value editor becomes a select. Delete every condition, or repeat one, and Search says why it will not.
+hint: Add a condition and pick Status - the value editor becomes a select. Delete every condition, or repeat one, and Search says why it will not. Sample file imports five rows, one of which the file's own rules reject.
 height: 560
+extraSources: data/conditionCsv.ts
 ```
 
 The form holds the array; the grid holds the row being edited. The grid never
@@ -33,7 +34,10 @@ function ConditionsGrid({ value, onChange }: {
       onCommit: ({ rowId, value: row }) =>
         onChange(value.map((c) => (String(c.id) === rowId ? row : c))),
       onRowAdd: ({ value: row }) =>
-        onChange([...value, { ...row, id: Math.min(0, ...value.map((c) => c.id)) - 1 }]),
+        onChange([
+          ...value,
+          { ...row, id: value.reduce((low, c) => Math.min(low, c.id), 0) - 1 },
+        ]),
       onRowDelete: ({ rowId }) =>
         onChange(value.filter((c) => String(c.id) !== rowId)),
       newRowDefaults: () => ({ id: 0, field: "title", operator: "contains", value: "" }),
@@ -72,10 +76,62 @@ a diff.
 - **`data` identity stays stable.** `field.state.value` changes identity only
   when a row is written, which is what `data` requires.
   See [useTMDataGrid](/docs/use-tm-data-grid).
-- **New rows count down from `-1`.** `Math.min(0, ...ids) - 1`, so an emptied
-  grid starts at `-1` rather than `-Infinity` and existing negative ids keep
-  descending. The grid's `tempId` never leaves the grid: the id you assign in
-  `editing.onRowAdd` is the one the form sees.
+- **New rows count down from `-1`.** `ids.reduce(Math.min, 0) - 1`, so an
+  emptied grid starts at `-1` rather than `-Infinity` and existing negative ids
+  keep descending. A fold rather than `Math.min(0, ...ids)`, which spreads
+  every id onto the call stack and throws `RangeError` past about 100 000 of
+  them - reachable in one import. The grid's `tempId` never leaves the grid:
+  the id you assign in `editing.onRowAdd` is the one the form sees.
+
+## Importing a file
+
+The import is a form write, not a grid action. The file is parsed, every
+record is checked against the same vocabulary the editors offer, and the rows
+that pass are appended in **one** `onChange`:
+
+```tsx
+const importCsv = (text: string) => {
+  const result = readCsv(text, value);
+  if (result.added.length > 0) onChange([...value, ...result.added]);
+  setReport(importReport(result));
+};
+```
+
+`editing` has a bulk entry point of its own -
+`edit.addRows(rows, { commit: true })`, on [Editing](/docs/editing) - and it is
+the right one when the grid owns the rows: each row is seeded, validated and
+committed, and a row that fails stays open in the entry block carrying its
+error. It is the wrong one here. Every commit calls `editing.onRowAdd`, and in
+this recipe that is one array copy, one run of the `conditions` field's
+validators and one row model - per line. A file's worth of them is quadratic
+work, and each `onRowAdd` closes over the `value` that was current when the
+grid rendered, so the adds after the first would write over each other.
+
+Two consequences of importing this way:
+
+- **The file is validated by your reader, not by the row validators.**
+  A row that never opens an editor never runs `editing.rowValidators`, so the
+  reader checks the field, the operator and the value itself and reports the
+  lines it rejected. The grid's rules still hold for everything typed.
+- **Ids are assigned in the same pass.** The reader counts down from the
+  form's lowest id, so an import and the Add condition button mint ids from
+  the same sequence.
+
+Reading the file is the cheap half - a 20 000-row, 0.6 MB file parses in about
+30 ms. What costs is what the array reaches: the field validators run over
+every condition, so a collection rule written with a scan per row
+(`pairs.indexOf(pair)` inside a loop) is what makes a large import stall.
+Keyed through a `Set`, the same rule over 20 000 conditions costs about 15 ms
+against about 4 seconds.
+
+One design consequence shows up only at that size. The availability columns are
+joined into the rows so that `hours` is a real accessor - it sorts and filters
+like any other column - and the join rebuilds the array, so one condition's
+result re-materializes every row and hands the table a new `data` identity. At
+two conditions that is free; at 20 000 each calculation costs a row model. Keep
+the joined shape while the column has to sort, and move the value out to a
+store the cell subscribes to (the way the date range already is) when it does
+not.
 
 ## Where validation belongs
 
@@ -87,7 +143,7 @@ the other rows, or the collection as a whole, belongs to the form.
 | "The condition needs a value" | Grid | `editing.rowValidators.onSubmit` |
 | "A date, for a date field" | Grid | `meta.edit.editor` per column |
 | "At least one condition" | Form | the `conditions` field's `onChange` validator |
-| "No two conditions repeat a field and operator" | Form | the same place |
+| "No two conditions are identical" | Form | the same place |
 
 A row's form is seeded with that row's values only, so it cannot see the array,
 and the grid's `edit.store` publishes field names but not values, so the form
@@ -170,6 +226,6 @@ The pieces this recipe composes:
 
 | Piece | Documented on |
 | --- | --- |
-| `data`, `getRowId`, `editing.mode`, `editing.onCommit`, `editing.onRowAdd`, `editing.onRowDelete`, `editing.newRowDefaults`, `edit.store` | [Editing](/docs/editing) |
+| `data`, `getRowId`, `editing.mode`, `editing.onCommit`, `editing.onRowAdd`, `editing.onRowDelete`, `editing.newRowDefaults`, `edit.addRows`, `edit.store` | [Editing](/docs/editing) |
 | `editing.rowValidators`, `meta.edit.editor`, the editor contract | [Editors and validation](/docs/editors) |
 | `useForm`, `form.Field`, field validators | TanStack Form's own docs |
