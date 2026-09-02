@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { erased, renderGrid, type TestRow } from "../../test/gridHarness";
 import { createTMDataGridColumnHelper } from "../useTMDataGrid";
-import { getColumnDefaultOperator, isColumnReorderable } from "./columnUtils";
+import { getOperatorsForType } from "./filterOperators";
+import {
+  getColumnDefaultOperator,
+  getColumnOperators,
+  isColumnReorderable,
+} from "./columnUtils";
 
 /**
  * The trivial meta readers (`getColumnLabel`, `getColumnType`,
@@ -71,5 +76,48 @@ describe("getColumnDefaultOperator", () => {
 
     const column = api.table.getColumn("name");
     expect(column && getColumnDefaultOperator(column)).toBe("startsWith");
+  });
+});
+
+describe("getColumnOperators", () => {
+  function columnWith(filter: Record<string, unknown>) {
+    const columns = helper.columns([
+      helper.accessor("age", { header: "Age", meta: { type: "number", filter } }),
+    ]);
+    const api = erased(renderGrid({ columns } as never).result.current);
+    return api.table.getColumn("age")!;
+  }
+
+  it("offers the type's full list without an allowlist", () => {
+    expect(getColumnOperators(columnOf("age"))).toEqual(
+      getOperatorsForType("number"),
+    );
+  });
+
+  it("narrows to meta.filter.operators in the type's order", () => {
+    const column = columnWith({ operators: ["greaterThan", "equals", "isEmpty"] });
+    expect(getColumnOperators(column)).toEqual(["equals", "greaterThan", "isEmpty"]);
+  });
+
+  it("drops operators the type does not offer, and falls back when nothing is left", () => {
+    expect(getColumnOperators(columnWith({ operators: ["contains", "equals"] })))
+      .toEqual(["equals"]);
+    expect(getColumnOperators(columnWith({ operators: ["contains"] }))).toEqual(
+      getOperatorsForType("number"),
+    );
+  });
+
+  it("moves the default operator to the first offered one when the type's default is excluded", () => {
+    expect(
+      getColumnDefaultOperator(columnWith({ operators: ["greaterThan", "lessThan"] })),
+    ).toBe("greaterThan");
+    expect(
+      getColumnDefaultOperator(columnWith({ operators: ["greaterThan", "equals"] })),
+    ).toBe("equals");
+    expect(
+      getColumnDefaultOperator(
+        columnWith({ operators: ["greaterThan", "lessThan"], defaultOperator: "lessThan" }),
+      ),
+    ).toBe("lessThan");
   });
 });

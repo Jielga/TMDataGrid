@@ -147,6 +147,7 @@ export { TMDATAGRID_LABELS_SV } from "./core/labelsSv";
 export {
   getColumnDefaultOperator,
   getColumnFilterControl,
+  getColumnOperators,
   getColumnLabel,
   getColumnType,
   isColumnEditableForRow,

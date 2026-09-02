@@ -87,9 +87,18 @@ export type TMDataGridFilterControlComponent =
  */
 export type TMDataGridColumnFilterOptions = {
   /**
+   * The operators this column offers, a subset of the type's own. For a
+   * column backed by an endpoint that answers only some of them - `contains`
+   * and `equals`, say - so the panel and the header funnel never offer an
+   * operator the query cannot express. Kept in the type's order; one the type
+   * does not offer is ignored, and a list that leaves nothing falls back to
+   * the type's full set.
+   */
+  operators?: readonly TMDataGridFilterOperator[];
+  /**
    * The operator a fresh filter on this column starts with, instead of the
    * type's default - a salary column can open on `"between"`. Must be one of
-   * the type's own operators.
+   * the operators the column offers.
    */
   defaultOperator?: TMDataGridFilterOperator;
   /**

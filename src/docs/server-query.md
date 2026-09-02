@@ -81,6 +81,39 @@ const PREDICATE_OPS: Record<TMDataGridFilterOperator, PredicateOp> = {
 Several grid operators collapse onto one API operator.
 A date `before` and a number `lessThan` are both `lt` once the value has been cast.
 
+## Offering only what the endpoint answers
+
+The demo's endpoint answers every operator the grid has, which is the exception.
+An endpoint that has `like` and `eq` but no prefix match should not offer `startsWith` in the panel, because the only honest thing to do with it there is drop it, and a filter that silently does nothing looks like a bug.
+`meta.filter.operators` narrows a column to the operators the query can express, and the mapping table is then declared over exactly that list:
+
+```ts
+const TEXT_OPERATORS = [
+  "contains",
+  "equals",
+  "isEmpty",
+  "isNotEmpty",
+] as const satisfies readonly TMDataGridFilterOperator[];
+
+const TEXT_OPS: Record<(typeof TEXT_OPERATORS)[number], PredicateOp> = {
+  contains: "like",
+  equals: "eq",
+  isEmpty: "isNull",
+  isNotEmpty: "isNotNull",
+};
+
+columnHelper.accessor("customer", {
+  header: "Customer",
+  meta: { filter: { operators: TEXT_OPERATORS } },
+});
+```
+
+One list feeds both the column and the type of the table, so an operator cannot be offered without a mapping, or mapped without being offered.
+A fresh filter on the column opens on `meta.filter.defaultOperator` when that is set, else on the type's default when the list holds it - `contains` here - else on the list's first entry.
+
+The lookup at the boundary still returns `undefined` for an operator it has no entry for.
+A filter restored by `persist` from before the list was narrowed can carry one, and dropping it is the same rule as dropping a column the API cannot query.
+
 ## The three value shapes
 
 `TMDataGridFilterValue` is `{ operator, value }`, and the operator decides what `value` holds.
@@ -208,6 +241,6 @@ The pieces this recipe composes:
 | Piece | Documented on |
 | --- | --- |
 | `manualFiltering`, `manualSorting`, `manualPagination`, `rowCount`, `meta.loading`, `meta.totalRowCount` | [Server-side data](/docs/server-side) |
-| `TMDataGridFilterValue`, `TMDataGridFilterOperator`, `activeColumnFilters`, `meta.filter.defaultOperator` | [Filtering](/docs/filtering) |
+| `TMDataGridFilterValue`, `TMDataGridFilterOperator`, `activeColumnFilters`, `meta.filter.operators`, `meta.filter.defaultOperator` | [Filtering](/docs/filtering) |
 | `meta.options` | [Defining columns](/docs/columns) |
 | `Footer` `renderPagination`, `Controls.PageSize`, `Controls.PageNumber`, `Controls.Pager` | [Pagination](/docs/pagination) |

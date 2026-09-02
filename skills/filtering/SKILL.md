@@ -3,8 +3,9 @@ name: filtering
 description: >
   Narrow the rows a TMDataGrid shows. Covers the shared tmDataGrid filter
   function and its {operator, value} model, the eighteen operators and which
-  meta.type offers each, meta.filter.defaultOperator, isFilterActive and the
-  half-typed filter, the filters option and its surfaces (popup, sidebar, none,
+  meta.type offers each, meta.filter.operators to offer a column only a subset
+  of them, meta.filter.defaultOperator, isFilterActive and the half-typed
+  filter, the filters option and its surfaces (popup, sidebar, none,
   plus inHeader for header filters), TMDataGrid.FilterPanel and its layout prop,
   TMDataGrid.FilterButton, TMDataGrid.FilterPills with its api prop,
   openColumnFilter, replacing a value control with DgRangeSliderFilter /
@@ -83,6 +84,25 @@ columnHelper.accessor("salary", {
   meta: { type: "number", filter: { defaultOperator: "between" } },
 });
 ```
+
+`meta.filter.operators` narrows the list a column offers to a subset of its
+type's - for a column whose backend answers only some operators, so the user is
+never offered one the query cannot express. The panel dropdown and the header
+funnel show only those, in the type's order. An operator the type does not
+offer is ignored; a list that leaves nothing falls back to the type's full set.
+Without `defaultOperator`, a fresh filter opens on the type's default when it is
+offered, else on the first offered operator.
+
+```tsx
+columnHelper.accessor("customer", {
+  header: "Customer",
+  meta: { filter: { operators: ["contains", "equals", "isEmpty", "isNotEmpty"] } },
+});
+```
+
+`getColumnOperators(column)` returns the resolved list and
+`getColumnDefaultOperator(column)` the operator a fresh filter opens on. The
+`server-side` skill shows the list typed together with the API mapping table.
 
 ## The filters option
 
@@ -400,7 +420,8 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `enableColumnFilters` | Table option | `boolean` | `true` | `false` removes the panel, the button and the menu item. |
 | `enableColumnFilter` | Column option | `boolean` | `true` | `false` takes one column out of filtering. |
 | `meta.type` | Column meta | `TMDataGridColumnType` | `"string"` | Selects the operators and the value control. |
-| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
+| `meta.filter.operators` | Column meta | `readonly TMDataGridFilterOperator[]` | The type's list | The operators this column offers, a subset of its type's. |
+| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default, else the first offered | The operator a fresh filter opens on. |
 | `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. Module scope. |
 | `filterFn` | Column option | name or fn | `"tmDataGrid"` | Custom matching for one column. |
 | `quickSearchMode` | Option | `"fuzzy" \| "contains"` | `"fuzzy"` | How the quick search matches. |
@@ -418,6 +439,7 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
+| `getColumnOperators` · `getColumnDefaultOperator` | Exports | `(column) => operators` · `(column) => operator` | – | One column's list after `meta.filter.operators`, and the operator a fresh filter on it opens on. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
 | `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` | Exports | – | – | What shape of value an operator expects. |

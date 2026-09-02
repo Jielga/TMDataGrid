@@ -10,6 +10,7 @@ import {
   renderGridUi,
   renderWithMantine,
   testRows,
+  type TestRow,
 } from "../../test/gridHarness";
 import { TMDataGrid } from "./TMDataGrid";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
@@ -214,8 +215,22 @@ const twoColumns = (() => {
 })();
 
 describe("filters.inHeader", () => {
-  const renderHeaderFilters = (filters: TMDataGridFiltersOptions = {}) =>
-    renderGridUi({ filters: { inHeader: true, ...filters } });
+  const renderHeaderFilters = (
+    filters: TMDataGridFiltersOptions = {},
+    options: Parameters<typeof renderGridUi>[0] = {},
+  ) => renderGridUi({ filters: { inHeader: true, ...filters }, ...options });
+
+  // Module scope: `useTMDataGrid` memoizes on the columns reference.
+  const narrowedColumns = (() => {
+    const helper = createTMDataGridColumnHelper<TestRow>();
+    return helper.columns([
+      helper.accessor("id", { header: "ID", meta: { type: "number" } }),
+      helper.accessor("age", {
+        header: "Age",
+        meta: { type: "number", filter: { operators: ["greaterThan", "lessThan"] } },
+      }),
+    ]);
+  })();
 
   it("filters from a control in the header row", async () => {
     const user = userEvent.setup();
@@ -243,6 +258,27 @@ describe("filters.inHeader", () => {
     await user.clear(input);
     expect(gridRowCount()).toBe(testRows.length);
     expect(queryPart("filter-pill", { columnId: "id" })).not.toBeInTheDocument();
+  });
+
+  it("offers only meta.filter.operators from the funnel, and opens on the first of them", async () => {
+    const user = userEvent.setup();
+    renderHeaderFilters({}, { columns: narrowedColumns });
+
+    await user.click(part("header-filter-operator", { columnId: "age" }));
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "is greater than",
+      "is less than",
+    ]);
+    await user.keyboard("{Escape}");
+
+    // `equals`, the type's default, is not offered - so a typed value filters
+    // on the first operator the column does offer.
+    await user.type(
+      part("header-filter-cell", { columnId: "age" }).querySelector("input")!,
+      "40",
+    );
+    expect(gridRowCount()).toBe(testRows.filter((row) => row.age > 40).length);
   });
 
   it("changes one column's operator from its funnel button", async () => {
