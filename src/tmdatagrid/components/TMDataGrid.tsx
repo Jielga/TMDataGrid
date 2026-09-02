@@ -55,26 +55,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
   "data-testid"?: string;
 };
 
-/**
- * Root of the grid. Takes the object returned by `useTMDataGrid` - spread it -
- * and publishes it to the compound components below it:
- *
- * ```tsx
- * const grid = useTMDataGrid({ data, columns });
- *
- * <TMDataGrid {...grid}>
- *   <TMDataGrid.Toolbar>
- *     <TMDataGrid.SummaryCount />
- *     <TMDataGrid.Spacer />
- *     <TMDataGrid.Menu>
- *       <TMDataGrid.Menu.Columns />
- *     </TMDataGrid.Menu>
- *   </TMDataGrid.Toolbar>
- *   <TMDataGrid.Table />
- *   <TMDataGrid.Footer />
- * </TMDataGrid>
- * ```
- */
+// Documented on the `TMDataGrid` export below.
 function TMDataGridRoot<TData extends RowData>({
   table,
   ui,
@@ -150,6 +131,26 @@ function TMDataGridRoot<TData extends RowData>({
   );
 }
 
+/**
+ * Root of the grid. Takes the object returned by `useTMDataGrid` - spread it -
+ * and publishes it to the compound components below it:
+ *
+ * ```tsx
+ * const grid = useTMDataGrid({ data, columns });
+ *
+ * <TMDataGrid {...grid}>
+ *   <TMDataGrid.Toolbar>
+ *     <TMDataGrid.SummaryCount />
+ *     <TMDataGrid.Spacer />
+ *     <TMDataGrid.Menu>
+ *       <TMDataGrid.Menu.Columns />
+ *     </TMDataGrid.Menu>
+ *   </TMDataGrid.Toolbar>
+ *   <TMDataGrid.Table />
+ *   <TMDataGrid.Footer />
+ * </TMDataGrid>
+ * ```
+ */
 export const TMDataGrid = Object.assign(TMDataGridRoot, {
   Toolbar: TMDataGridToolbar,
   Spacer: TMDataGridToolbarSpacer,

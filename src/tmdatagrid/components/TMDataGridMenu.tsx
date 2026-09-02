@@ -44,16 +44,7 @@ export type TMDataGridMenuColumnsProps = {
   searchable?: boolean;
 };
 
-/**
- * Burger menu in the grid's top-right corner, holding whatever the consumer
- * puts in it. Every Mantine `Menu` prop is accepted and wins over the defaults
- * below.
- *
- * It always renders. It cannot know whether its children render anything, so
- * a menu holding only `TMDataGrid.Menu.Columns` on a grid where nothing can be
- * hidden still shows its button over an empty dropdown - leave the menu out of
- * the toolbar in that case.
- */
+// Documented on the `TMDataGridMenu` export below.
 function TMDataGridMenuRoot({
   children,
   icon,
@@ -247,6 +238,16 @@ export function TMDataGridMenuResetLayout() {
   );
 }
 
+/**
+ * Burger menu in the grid's top-right corner, holding whatever the consumer
+ * puts in it. Every Mantine `Menu` prop is accepted and wins over the defaults
+ * below.
+ *
+ * It always renders. It cannot know whether its children render anything, so
+ * a menu holding only `TMDataGrid.Menu.Columns` on a grid where nothing can be
+ * hidden still shows its button over an empty dropdown - leave the menu out of
+ * the toolbar in that case.
+ */
 export const TMDataGridMenu = Object.assign(TMDataGridMenuRoot, {
   Columns: TMDataGridMenuColumns,
   ColumnToggles: TMDataGridMenuColumnToggles,
