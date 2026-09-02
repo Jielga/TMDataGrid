@@ -80,6 +80,12 @@ They stay plain markdown: `intent.docs` publishes them and the `SKILL.md` files 
 
 One topic, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
 
+That rule decides who owns a component's prop table.
+A part whose props belong to one topic is written up on that topic's page, in the `## TMDataGrid.X` layout, and [components.md](src/docs/components.md) lists it with a link instead of repeating it.
+`components.md` carries the full entry only for what belongs to no single page: the root, the Table, the hooks, and the parts whose props scatter across every topic.
+The `## TMDataGrid.X` heading is what marks ownership, so it may appear on one page only - `demos.test.tsx` fails the build otherwise.
+Two copies of a prop table drift within one release; that is how `TMDataGrid.FilterPanel` came to read "No props." on one page and list `layout` on another.
+
 Write them as reference documentation for a library, and nothing looser.
 State what an option does and what its default is; give a reason only where it changes a decision.
 The person using the grid is "the user", the person reading the page is "you", and nobody is "the reader".

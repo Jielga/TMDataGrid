@@ -111,6 +111,35 @@ describe("docs pages", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  /**
+   * One page owns a component's props, and the `## TMDataGrid.X` heading is
+   * what says which - so the same heading may not appear twice.
+   *
+   * Two copies drift inside one release. `TMDataGrid.FilterPanel` was written
+   * up on both Filtering and Components and Components read "No props." for a
+   * component that had gained `layout`. Nothing failed, because nothing was
+   * checking.
+   */
+  it("no component is written up on two pages", () => {
+    const owners = new Map<string, Array<string>>();
+    for (const page of DOCS_PAGES) {
+      for (const [, heading] of page.source.matchAll(
+        /^## (TMDataGrid[\w.]*)\s*$/gm,
+      )) {
+        // `TMDataGrid.FilterPills` and `TMDataGridFilterPills` are one
+        // component under two exported names, so they are one owner.
+        const key = heading.replace(".", "");
+        owners.set(key, [...(owners.get(key) ?? []), page.id]);
+      }
+    }
+
+    const doubled = [...owners]
+      .filter(([, pages]) => pages.length > 1)
+      .map(([name, pages]) => `${name} on ${pages.join(" and ")}`);
+
+    expect(doubled).toEqual([]);
+  });
+
   it("every /docs link points at a page that exists", () => {
     const ids = new Set(DOCS_PAGES.map((page) => page.id));
     const broken = DOCS_PAGES.flatMap((page) =>

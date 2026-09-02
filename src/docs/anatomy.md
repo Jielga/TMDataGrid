@@ -24,18 +24,6 @@ const grid = useTMDataGrid({ data, columns });
 </TMDataGrid>
 ```
 
-## `TMDataGrid` props
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `table` | `TMDataGridTable<TData>` | – | From `useTMDataGrid`. |
-| `ui` | `TMDataGridUiStore` | – | From `useTMDataGrid`. |
-| `features` | `TMDataGridFeatureFlags` | – | From `useTMDataGrid`. |
-| `size` | `MantineSize` | `"md"` | The [size scale](/docs/styling#the-size-scale). |
-| `children` | `ReactNode` | – | The grid's parts, in render order. |
-| `className` · `style` · `id` | – | – | On the root element. Set a bounded height - see [Layout](/docs/styling#layout). |
-| `data-testid` | `string` | – | Names the grid for [tests](/docs/testing). Set it when a page holds more than one grid. |
-
 ## The parts
 
 Every component below reads the grid from context and must be rendered inside
@@ -48,46 +36,36 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.Footer`                             | The pager bar below it                                                       | [Pagination](/docs/pagination)                        |
 | `TMDataGrid.Search`                             | Quick search input                                                           | [Quick search](/docs/quick-search)                    |
 | `TMDataGrid.FilterButton` · `.FilterPanel`      | The filter UI                                                                | [Filtering](/docs/filtering)                          |
-| `TMDataGrid.FilterPills`                        | Active filters as pills                                                      | [Filtering](/docs/filtering#tmdatagridfilterpills) |
+| `TMDataGrid.FilterPills`                        | Active filters as pills. Also exported as `TMDataGridFilterPills`            | [Filtering](/docs/filtering#tmdatagridfilterpills)    |
 | `TMDataGrid.Menu` · `.ColumnsPanel`             | The burger menu, and the column chooser                                      | [Grid menu](/docs/menu)                               |
 | `TMDataGrid.Spacer`                             | Pushes following toolbar items right                                         | [Toolbar](/docs/toolbar)                              |
-| `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty](/docs/loading-and-empty)          |
+| `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty states](/docs/loading-and-empty)   |
 | `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/editing#the-draft-store)                |
 
 `FilterPills` is the exception: it takes the grid as an `api` prop and can be
 rendered outside `TMDataGrid`, since an active-filter strip often sits above
 the grid it describes.
 
+The parts that can be rendered outside the grid are exported under both
+spellings - `TMDataGrid.FilterPills` and `TMDataGridFilterPills` are the same
+component, and so are the `Search` and `DraftActions` pairs. Every other part
+is reached only through the `TMDataGrid` object.
+
 ## `TMDataGrid.Table`
 
-The scrollable surface.
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `onRowClick` | `(row) => void` | – | Called when a body row is clicked. See [Row interaction](/docs/row-interaction). |
-| `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args) => void` | – | Cell click, double-click and right-click. Receive `{ cell, row, column, event }`. See [Row interaction](/docs/row-interaction). |
-| `renderRowContextMenu` | `({ table, row, cell, close, internalItems }) => ReactNode` | – | Contents of the row's context menu. See [Context menus](/docs/row-interaction#context-menus). |
-| `rowContextMenuProps` | `MenuProps` | – | Passed to the Mantine `Menu` behind the context menu. |
-| `renderColumnMenuItems` | `({ column, table, internalItems }) => ReactNode[]` | – | Contents of a column's menu. See [Column layout](/docs/column-layout#the-column-menu). |
-| `rowClassName` | `string \| (row) => string` | – | Class for a body row. See [Row styling](/docs/row-styling). |
-| `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. See [Row styling](/docs/row-styling). |
-| `striped` | `boolean` | `false` | Every second row takes `--dg-row-striped-bg`. See [Row styling](/docs/row-styling#striping). |
-| `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | `() => void` | – | Fire once on arriving at that edge. See [Scrolling](/docs/scrolling#edge-callbacks). |
-| `onReachEnd` | `() => void` | – | Fires as the scroll nears the last row. See [Infinite scroll](/docs/server-side#infinite-scroll). |
-| `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
-| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both empty messages. See [Loading and empty](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | Nordic Excel | Separator, decimal mark, headers, file name. See [Cell selection](/docs/cell-selection#the-csv). |
-| `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name; see below. |
-
+The scrollable surface: the header, the virtualized body and the filter panel.
 Pass the row type so the handlers are typed:
 
 ```tsx
 <TMDataGrid.Table<Employee> onRowClick={(row) => open(row.original.id)} />
 ```
 
-`aria-label` is the accessible name: what a screen reader announces on entry,
-and what `getByRole("grid", { name })` matches. Set it on any page holding more
-than one grid.
+Its props, and those of `TMDataGrid` itself, are listed once, on
+[Components and hooks](/docs/components#tmdatagridtable). This page says what
+each part is and which page documents it; that page says what every prop does.
+
+Set `aria-label` on any page holding more than one grid: it is what a screen
+reader announces on entry, and what `getByRole("grid", { name })` matches.
 
 ### Which rows it renders
 
@@ -99,16 +77,11 @@ returned.
 
 ## What the hook returns
 
-| Field                                                   | What it is                                                                                      |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `table`                                                 | The TanStack table instance. State lives in `table.store`.                                      |
-| `ui`                                                    | The grid's own UI store - panels, drag state, focused cell, cell range.                         |
-| `edit`                                                  | The [editing engine](/docs/editing#the-engine-edit). Inert until `editing` is set.              |
-| `features`                                              | Feature flags, re-derived each render. See [Toolbar](/docs/toolbar#reading-options-reactively). |
-| `labels`                                                | The resolved [dictionary](/docs/localization).                                                  |
-| `resetSettings`                                         | [Clears the layout](/docs/column-layout#reset-the-layout).                                      |
-| `scrollToRow`                                           | [Scrolling](/docs/scrolling#scrolling-to-a-row).                                                |
-| `renderDetails` · `renderDetailsEstHeight` · `overscan` | Passed through to the Table.                                                                    |
+`useTMDataGrid` returns the table instance, the UI store, the edit engine, the
+resolved labels and the feature flags, along with `resetSettings`,
+`scrollToRow` and the details options it passes through to the Table. The
+[complete list, with types](/docs/components#usetmdatagrid), is on Components
+and hooks; the [options it takes](/docs/use-tm-data-grid) are their own page.
 
 Read state through TanStack Store's
 [`useSelector(table.store, …)`](https://tanstack.com/store/latest/docs/framework/react/reference)

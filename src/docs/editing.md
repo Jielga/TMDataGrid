@@ -511,7 +511,7 @@ const surviving = grid.edit.getRows().filter((row) => !row.deleted);
 ```
 
 For the inverse, a `@tanstack/react-form` form _around_ the grid holding the row
-array, see [A query builder inside a form](/docs/query-builder).
+array, see [A query builder form](/docs/query-builder).
 
 ### Bulk actions
 
@@ -567,5 +567,6 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of a committed new row, in the body or the entry block.                               |
 | `data-deleted`                | Data attribute | –                                                | –                 | On a row marked for deletion under `draft: true`.                                                |
 | `data-dirty`                  | Data attribute | –                                                | –                 | On a body row holding a dirty draft.                                                             |
+| `data-draft`                  | Data attribute | –                                                | –                 | On a body row or entry row committed into the draft store, waiting for a save.                   |
 | `data-new`                    | Data attribute | –                                                | –                 | On a body row that is a committed new row, and on an entry row.                                  |
 | `data-committed`              | Data attribute | –                                                | –                 | On an entry row once it is committed, awaiting the save. Seen only under `newRowsSticky`.        |

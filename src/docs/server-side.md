@@ -197,7 +197,7 @@ Two constraints apply:
 | `manualFiltering` | Table option | `boolean` | `false` | The server filters, column filters and quick search alike. |
 | `manualGrouping` | Table option | `boolean` | `false` | The rows arrive grouped. See [Grouping](/docs/grouping#server-side-grids). |
 | `rowCount` | Table option | `number` | – | The true total. `pageCount: -1` when it is unknown. |
-| `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. See [Loading and empty](/docs/loading-and-empty). |
+| `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. See [Loading and empty states](/docs/loading-and-empty). |
 | `meta.totalRowCount` | Option | `number` | – | The unfiltered total, for `SummaryCount`. |
 | `resetPageOnQueryChange` | Option | `boolean` | `true` under `manualPagination` | Back to page 1 when a filter, the quick search or the sort changes. |
 | `onReachEnd` | Table prop | `() => void` | – | Fires as the scroll nears the last row. Latches per row count. |

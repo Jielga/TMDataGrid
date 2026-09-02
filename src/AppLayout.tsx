@@ -1,9 +1,15 @@
 import { Burger, Flex, NavLink, Text, Tooltip } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useEffect, useState } from "react";
 import { AppHeader } from "./AppHeader";
-import { DOCS_NAV_TOP, docsNavSections, docsPageHref } from "./docs/docsPages";
+import {
+  DOCS_NAV_TOP,
+  docsNavSections,
+  docsPageHref,
+  findDocsPage,
+} from "./docs/docsPages";
 import { DocsSearch } from "./docs/DocsSearch";
 import { useDocsSearch } from "./docs/useDocsSearch";
 
@@ -38,21 +44,18 @@ const EXACT = { exact: true } as const;
  * line stops being context and starts being noise, and the index page at
  * `/docs` is where each page gets its sentence.
  */
-function DocsNav({ pathname }: { pathname: string }) {
+function DocsNav() {
   return (
     <>
       {docsNavSections().map(({ section, pages }) => {
-        const hasActiveChild = pages.some(
-          (page) => pathname === `/docs/${page.id}`,
-        );
-
         return (
           <NavLink
             key={section}
             label={section}
-            // Opens itself when the page you are on lives inside it, so a
-            // reload or a deep link never lands with the tree shut.
-            defaultOpened={hasActiveChild}
+            // Open, so a newcomer landing on the front page can scan the page
+            // names rather than seven closed group names. Closing one is a
+            // click, and finding a page in a shut tree is a search.
+            defaultOpened
             childrenOffset={12}
             style={NAV_LINK_STYLE}
           >
@@ -71,6 +74,18 @@ function DocsNav({ pathname }: { pathname: string }) {
       })}
     </>
   );
+}
+
+/**
+ * The tab title. Every page shipped as "tmtable", the repo's own name, so a
+ * reader with several docs tabs open could not tell them apart.
+ */
+function titleFor(pathname: string): string {
+  if (pathname === "/") return "TMDataGrid";
+  if (pathname === "/docs") return "Documentation · TMDataGrid";
+  if (pathname === "/playground") return "Playground · TMDataGrid";
+  const page = findDocsPage(pathname.replace("/docs/", ""));
+  return page ? `${page.label} · TMDataGrid` : "TMDataGrid";
 }
 
 /** Wide enough for the nav to sit open without crowding the page beside it. */
@@ -108,6 +123,8 @@ export function AppLayout() {
   const open = navOpen ?? wide;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useDocsSearch();
+
+  useDocumentTitle(titleFor(pathname));
 
   return (
     <Flex direction="column" h="100vh" style={{ overflow: "hidden" }}>
@@ -172,7 +189,7 @@ export function AppLayout() {
                 label="Overview"
                 style={NAV_LINK_STYLE}
               />
-              <DocsNav pathname={pathname} />
+              <DocsNav />
             </>
           )}
 

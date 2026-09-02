@@ -102,7 +102,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "column-layout",
     section: "Columns",
-    label: "Visibility, pinning and size",
+    label: "Visibility, pinning, ordering and size",
     description: "Arranging the columns",
     source: columnLayoutDoc,
   },
@@ -138,7 +138,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "row-pinning",
     section: "Rows",
-    label: "Pinning and numbering",
+    label: "Row pinning and numbering",
     description: "Sticky rows, and a gutter that counts",
     source: rowPinningDoc,
   },
@@ -160,15 +160,15 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "cell-selection",
     section: "Cells and editing",
-    label: "Cell selection",
-    description: "A cursor, ranges, copy and export",
+    label: "Cell selection, copy and export",
+    description: "A cell cursor, and rectangles of them",
     source: cellSelectionDoc,
   },
   {
     id: "editing",
     section: "Cells and editing",
     label: "Editing",
-    description: "Four modes, and which cells edit",
+    description: "Three modes, and which cells edit",
     source: editingDoc,
   },
   {
@@ -210,22 +210,22 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "loading-and-empty",
     section: "Data",
-    label: "Loading and empty",
+    label: "Loading and empty states",
     description: "The four ways to have nothing to show",
     source: loadingAndEmptyDoc,
   },
   {
     id: "scrolling",
     section: "Data",
-    label: "Scrolling",
-    description: "Virtualization, overscan and edges",
+    label: "Scrolling and virtualization",
+    description: "Overscan, row height and the edges",
     source: scrollingDoc,
   },
 
   {
     id: "styling",
     section: "Appearance",
-    label: "Size and styling",
+    label: "Size, styling and theming",
     description: "The scale, and every CSS variable",
     source: stylingDoc,
   },

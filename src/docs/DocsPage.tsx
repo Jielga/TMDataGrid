@@ -59,9 +59,15 @@ const markdownComponents: Components = {
       />
     );
   },
-  // react-markdown wraps a fence in <pre><code>; the block brings
-  // its own, so this one would nest a scroller inside a scroller.
-  pre: ({ children }: ComponentPropsWithoutRef<"pre">) => <>{children}</>,
+  // react-markdown wraps a fence in <pre><code>; the block brings its own, so
+  // rendering this one would nest a scroller inside a scroller. It becomes a
+  // plain div instead of a fragment because something has to carry the block's
+  // vertical margin: Mantine's `CodeHighlight` zeroes its own, and Typography
+  // styles `pre`, which never reaches the DOM here. Without it the block takes
+  // its gap above from the paragraph's margin-bottom and has none below.
+  pre: ({ children }: ComponentPropsWithoutRef<"pre">) => (
+    <div className={classes.fence}>{children}</div>
+  ),
   h2: heading(2),
   h3: heading(3),
   h4: heading(4),

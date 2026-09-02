@@ -28,9 +28,15 @@
   background: var(--mantine-color-default-hover);
 }
 
-/* Lets the title and context truncate instead of pushing the badge out. */
+/* Lets the title, context and excerpt truncate instead of pushing the badge
+   out. The badge holds its own width: a long excerpt line was squeezing it to
+   "TE…", which names nothing. */
 .text {
   min-width: 0;
+}
+
+.kind {
+  flex-shrink: 0;
 }
 
 .footer {

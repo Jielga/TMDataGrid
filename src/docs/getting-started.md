@@ -48,15 +48,22 @@ import {
   useTMDataGrid,
 } from "@jielga/tmdatagrid";
 
-type Employee = { id: number; firstName: string; age: number };
+type Employee = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  department: string;
+  salary: number;
+};
 
 const columnHelper = createTMDataGridColumnHelper<Employee>();
 
 const columns = columnHelper.columns([
-  columnHelper.accessor("id", { header: "ID", meta: { type: "number" } }),
   columnHelper.accessor("firstName", { header: "First name" }),
-  columnHelper.accessor("age", {
-    header: "Age",
+  columnHelper.accessor("lastName", { header: "Last name" }),
+  columnHelper.accessor("department", { header: "Department" }),
+  columnHelper.accessor("salary", {
+    header: "Salary",
     meta: { type: "number", align: "right" },
   }),
 ]);
@@ -111,6 +118,6 @@ file: getting-started/ToolbarAndFooter.tsx
   type configures.
 - **[Grid anatomy](/docs/anatomy)** - the hook's return value, and every
   component you can render.
-- **[Editing](/docs/editing)** - four modes, from single cells to a whole grid.
+- **[Editing](/docs/editing)** - three modes, from single cells to a whole row.
 - **[Server-side data](/docs/server-side)** - when the server does the work.
 - **[The playground](/playground)** - every feature at once, behind switches.

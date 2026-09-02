@@ -8,6 +8,11 @@ count.
 const grid = useTMDataGrid({ data, columns }); // 200 rows or 200 000
 ```
 
+Rows only. Columns are not virtualized: every column that is visible is in the
+DOM, header and body alike, however far off-screen it sits. A grid with a few
+dozen columns is fine; hide the ones a user does not need rather than relying
+on the viewport to do it.
+
 ## Overscan
 
 How many rows stay mounted on each side of the viewport. Defaults to `6`.

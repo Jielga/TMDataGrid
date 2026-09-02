@@ -229,7 +229,7 @@ height: 380
 ```
 
 A grid inside an outer form can put collection rules in the form's own field
-validator instead. See [A query builder inside a form](/docs/query-builder).
+validator instead. See [A query builder form](/docs/query-builder).
 
 ## Reference
 

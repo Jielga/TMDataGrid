@@ -1,6 +1,7 @@
 # Components and hooks
 
-Every hook and component the package exports, with its props.
+Every hook and component the package exports.
+A part whose props belong to one topic is documented on that topic's page, and listed here with a link; everything else - the root, the Table, and the parts whose props scatter across every topic - is written up in full below.
 The options `useTMDataGrid` takes are on [useTMDataGrid](/docs/use-tm-data-grid).
 
 ```tsx
@@ -63,8 +64,8 @@ It provides the grid to every part through context, and takes every field `useTM
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | – | The grid's parts, in render order. |
-| `size` | `TMDataGridSize` | `"md"` | The [size scale](/docs/styling). |
-| `className` · `style` · `id` | `string` · `CSSProperties` · `string` | – | Set on the root element. Give the grid a bounded height. |
+| `size` | `TMDataGridSize` | `"md"` | The [size scale](/docs/styling#the-size-scale). |
+| `className` · `style` · `id` | `string` · `CSSProperties` · `string` | – | Set on the root element. Give the grid a bounded height - see [Layout](/docs/styling#layout). |
 | `data-testid` | `string` | – | Names the grid for [tests](/docs/testing). Set it when a page holds more than one grid. |
 
 ## TMDataGrid.Table
@@ -79,18 +80,18 @@ Pass the row type so the handlers are typed:
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `onRowClick` | `(row) => void` | – | Called when a body row is clicked. Rows show a pointer cursor when set. See [Clicks and context menus](/docs/row-interaction). |
-| `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args: TMDataGridCellEventArgs) => void` | – | Called on cell click, double-click and right-click. Receive `{ cell, row, column, event }`. |
-| `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer` | – | Contents of a row's context menu. Receives `{ table, row, cell, close, internalItems }`. |
+| `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args: TMDataGridCellEventArgs) => void` | – | Called on cell click, double-click and right-click. Receive `{ cell, row, column, event }`. See [Clicks and context menus](/docs/row-interaction). |
+| `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer` | – | Contents of a row's context menu. Receives `{ table, row, cell, close, internalItems }`. See [Context menus](/docs/row-interaction#context-menus). |
 | `rowContextMenuProps` | `Omit<MenuProps, "opened" \| "onChange" \| "children">` | – | Props passed to the Mantine `Menu` behind the context menu. |
-| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [Visibility, pinning and size](/docs/column-layout). |
+| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [The column menu](/docs/column-layout#the-column-menu). |
 | `rowClassName` | `string \| (row) => string` | – | Class for a body row. See [Row styling](/docs/row-styling). |
-| `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. Set `--row-bg` rather than `background`. |
-| `striped` | `boolean` | `false` | If set, every second row takes `--dg-row-striped-bg`. |
-| `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | `() => void` | – | Called once on arriving at that edge, not on mount and not per scroll event. See [Scrolling](/docs/scrolling). |
-| `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Server-side data](/docs/server-side). |
+| `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. Set `--row-bg` rather than `background`. See [Row styling](/docs/row-styling#set-the-row-background). |
+| `striped` | `boolean` | `false` | If set, every second row takes `--dg-row-striped-bg`. See [Striping](/docs/row-styling#striping). |
+| `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | `() => void` | – | Called once on arriving at that edge, not on mount and not per scroll event. See [Edge callbacks](/docs/scrolling#edge-callbacks). |
+| `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Infinite scroll](/docs/server-side#infinite-scroll). |
 | `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
-| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [Cell selection](/docs/cell-selection). |
+| `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty states](/docs/loading-and-empty). |
+| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [The CSV](/docs/cell-selection#the-csv). |
 | `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name, announced on entry and matched by `getByRole("grid", { name })`. |
 
 Note that `onReachEnd` and `enablePagination` slice the same scroll: the pager caps the rows, so the end reached is the page's.
@@ -121,19 +122,17 @@ It renders nothing when no column is searchable. See [Quick search](/docs/quick-
 | `debounce` | `number` | `250` | Milliseconds between the last keystroke and the filter being written. |
 | `w` | `number \| string` | `220` | Width of the input. |
 
-## TMDataGrid.FilterButton
+## The filter parts
 
-Opens the filter panel on the first filterable column, and closes it again.
-It renders nothing when no column can be filtered. See [Filtering](/docs/filtering).
+Filtering owns these three, so their props are on that page rather than repeated here.
 
-No props.
+| Component | What it is | Props |
+| --- | --- | --- |
+| `TMDataGrid.FilterButton` | Toggles the filter surface, tinted with the count of active filters. Renders nothing when no column can be filtered, and nothing under `filters.surface: "none"`. | None. [Filtering](/docs/filtering#tmdatagridfilterbutton) |
+| `TMDataGrid.FilterPanel` | The filter rows, as a plain block with no title, no close button and no open state - the popup and sidebar [surfaces](/docs/filtering#the-filters-option) wrap it. | `layout`. [Filtering](/docs/filtering#tmdatagridfilterpanel) |
+| `TMDataGrid.FilterPills` · `TMDataGridFilterPills` | One pill per active filter. Takes the grid as an `api` prop rather than from context, so it renders anywhere on the page. | `api`, `size`, `showClearAll`, `onPillClick`, `className`. [Filtering](/docs/filtering#tmdatagridfilterpills) |
 
-## TMDataGrid.FilterPanel
-
-The filter rows: a column, an operator and a value control for each active filter.
-`TMDataGrid.Table` renders it; render it yourself only for a custom layout.
-
-No props.
+`openColumnFilter(api, columnId)` sends the user to a column's filter control; it is documented with them, on [Filtering](/docs/filtering#opencolumnfilter).
 
 ## TMDataGrid.Menu
 
@@ -159,7 +158,7 @@ No props.
 
 ## TMDataGrid.LoadingIndicator
 
-A spinner, shown while `meta.loading` is `true`. See [Loading and empty](/docs/loading-and-empty).
+A spinner, shown while `meta.loading` is `true`. See [Loading and empty states](/docs/loading-and-empty).
 
 No props.
 
@@ -223,26 +222,6 @@ The slot argument holds the paging state, its operations and the built-in contro
 `pageCount` is `-1` when a manual grid declares an unknown total, and `isPagingActive` is `false` while a grouping suspends paging.
 `getTMDataGridPaginationApi(table, isPaging?)` returns the same `state` and `actions` for a pager built outside the grid.
 
-## TMDataGridFilterPills
-
-The active filters as removable pills, with a clear-all button.
-It takes the grid as a prop rather than from context, so it can be rendered outside `TMDataGrid`.
-It renders nothing when no filter is active. See [Filtering](/docs/filtering).
-
-```tsx
-<TMDataGridFilterPills api={grid} />
-```
-
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `api` | `TMDataGridApi<TData>` | – | Required. The object returned by `useTMDataGrid`. |
-| `size` | `TMDataGridSize` | `"sm"` | Size of the pills. |
-| `showClearAll` | `boolean` | `true` | If set, a clear-all button follows the pills once more than one filter is active. |
-| `onPillClick` | `(columnId: string) => void` | – | Called when a pill is clicked. If not set, the filter panel opens on that column. |
-| `className` | `string` | – | Set on the wrapper element. |
-
-Also available as `TMDataGrid.FilterPills`.
-
 ## Editors
 
 The control a cell opens for editing.
@@ -305,11 +284,12 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.Table` | Component | – | – | Header, virtualized body and filter panel. |
 | `TMDataGrid.Toolbar` · `.Spacer` | Components | – | – | The toolbar row, and the gap that pushes items right. |
 | `TMDataGrid.Search` | Component | – | – | Quick search input. Also `TMDataGridSearch`. |
-| `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. |
+| `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. Props on [Filtering](/docs/filtering). |
 | `TMDataGrid.Menu` · `.ColumnsPanel` | Components | – | – | The burger menu, and the column chooser as plain controls. |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Components | – | – | Fetch spinner, and the row count. |
 | `TMDataGrid.DraftActions` | Component | – | – | Save and Discard. Also `TMDataGridDraftActions`. |
 | `TMDataGrid.Footer` | Component | – | – | The pager bar. |
-| `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. |
+| `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. Props on [Filtering](/docs/filtering). |
+| `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control. See [Filtering](/docs/filtering#opencolumnfilter). |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |
 | `DEFAULT_CELL_EXPORT_OPTIONS` | Constant | `TMDataGridCellExportOptions` | – | The CSV defaults `cellExport` merges over. |

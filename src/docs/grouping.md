@@ -25,6 +25,20 @@ file: rows/Grouping.tsx
 hint: “Group by …” lives in every column menu. Group by Location as well and the tree nests.
 ```
 
+## Grouping is not hierarchical data
+
+The tree here is built from column values. It is not the same thing as data
+that is already a tree, which in TanStack is `getSubRows`.
+
+`getSubRows` is TanStack's own option and the grid passes it through: the
+nested rows reach the row model, render with `data-depth`, and count in the
+[summary row](/docs/summary-row) alongside their parents. What the grid does
+not add is any UI for them. There is no expander control on a parent row, and
+`expanded` is the state [row details](/docs/row-details) uses, so a grid with
+`renderDetails` set opens a panel where you would want children. Drive the
+expansion from your own control and your own `expanded` state, or flatten the
+data before it reaches the grid.
+
 ## What grouping does to the grid
 
 Grouping a column **removes it**, since its values have moved into the tree
