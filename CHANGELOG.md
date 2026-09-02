@@ -1,5 +1,15 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.14
+
+### Minor Changes
+
+- [#65](https://github.com/Jielga/TMDataGrid/pull/65) [`8f69bef`](https://github.com/Jielga/TMDataGrid/commit/8f69befdb06b3c1c09be9b2150a471d84e00e06e) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.filter.operators` narrows the operators a column offers to a subset of
+  its type's, for columns backed by an endpoint that answers only some of them.
+  The panel dropdown and the header funnel show only those; a fresh filter opens
+  on the type's default when it is offered, else on the first offered operator.
+  New export `getColumnOperators(column)`.
+
 ## 2.0.0-beta.13
 
 ### Minor Changes

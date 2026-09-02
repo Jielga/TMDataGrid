@@ -5,8 +5,8 @@ description: >
   function and its {operator, value} model, the eighteen operators and which
   meta.type offers each, meta.filter.operators to offer a column only a subset
   of them, meta.filter.defaultOperator, isFilterActive and the half-typed
-  filter, the filters option and its surfaces (popup, sidebar, none,
-  plus inHeader for header filters), TMDataGrid.FilterPanel and its layout prop,
+  filter, the filters option and its surfaces (popup, sidebar, none, plus
+  inHeader for header filters), TMDataGrid.FilterPanel and its layout prop,
   TMDataGrid.FilterButton, TMDataGrid.FilterPills with its api prop,
   openColumnFilter, replacing a value control with DgRangeSliderFilter /
   DgDateRangeFilter / DgAutocompleteFilter / DgTriStateFilter or a
@@ -18,7 +18,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.13'
+  library_version: '2.0.0-beta.14'
 sources:
   - 'Jielga/TMDataGrid:src/docs/filtering.md'
   - 'Jielga/TMDataGrid:src/docs/quick-search.md'

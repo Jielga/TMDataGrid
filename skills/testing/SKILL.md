@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.13'
+  library_version: '2.0.0-beta.14'
 sources:
   - 'Jielga/TMDataGrid:src/docs/testing.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
