@@ -9,13 +9,13 @@ description: >
   (field table, operator table, the three value shapes, meta.filter.operators
   for an endpoint that answers only some operators, keying the fetch on the
   request, paging against a page envelope), the first-page reset on a query
-  change, persistence interaction, and row selection across pages. Load when
-  the grid is backed by a paginated API rather than a local array, or when
+  change, persistence interaction, and row selection across pages. Load when the
+  grid is backed by a paginated API rather than a local array, or when
   translating grid filters into server-side queries.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.13'
+  library_version: '2.0.0-beta.14'
 sources:
   - 'Jielga/TMDataGrid:src/docs/server-side.md'
   - 'Jielga/TMDataGrid:src/docs/server-query.md'
