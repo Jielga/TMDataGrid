@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   bodyRows,
   clickMenuItem,
@@ -140,6 +140,55 @@ describe("rendering", () => {
 
     // The entry row is the content now; "no rows" beside it would contradict.
     expect(screen.queryByText("No rows to show")).not.toBeInTheDocument();
+  });
+});
+
+describe("the mounted-row ceiling", () => {
+  /**
+   * A scroll container that was never given a height grows to the bottom
+   * spacer, which is as tall as the whole dataset - so the observer reports a
+   * viewport of a million pixels and the virtualizer asks for every row. jsdom
+   * lays nothing out, so the runaway is staged by measuring the container the
+   * way a browser would in that layout.
+   */
+  const unboundedScrollContainer = () => {
+    // `offsetHeight` is what the virtualizer measures the scroll element by,
+    // and what `vitest.setup.ts` fakes a 600px viewport with.
+    Object.defineProperty(window.HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.hasAttribute("data-dg-scroll-container") ? 1_000_000 : 0;
+      },
+    });
+  };
+
+  it("mounts a bounded window when the container reports the whole dataset", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    unboundedScrollContainer();
+
+    renderGridUi({ data: makeRows(5000) });
+
+    // Capped, not uncapped and not empty: the ceiling is 100 rows under
+    // jsdom's window, and every row past it is left to the spacer.
+    expect(bodyRows().length).toBe(100);
+    // The grid still says how many rows it has - the cap bounds the DOM, not
+    // the scroll range.
+    expect(gridRowCount()).toBe(5000);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toMatch(
+      /scroll container measures 1000000px tall.*min-height: 0/s,
+    );
+  });
+
+  it("leaves a grid with a measured viewport alone", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    renderGridUi({ data: makeRows(5000) });
+
+    // The 600px viewport the setup fakes: a dozen rows and their overscan,
+    // nowhere near the ceiling, so nothing is capped and nothing is said.
+    expect(bodyRows().length).toBeLessThan(100);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

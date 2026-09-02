@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Button,
+  FileButton,
   Group,
   Select,
   Text,
@@ -16,6 +17,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { z } from "zod";
@@ -27,6 +29,7 @@ import {
   type TMDataGridEditorComponent,
   type TMDataGridRowValidators,
 } from "../../../tmdatagrid";
+import { parseCsv, type CsvRow } from "../../data/conditionCsv";
 
 const FIELDS = ["title", "status", "hired"] as const;
 type QueryField = (typeof FIELDS)[number];
@@ -66,6 +69,103 @@ const INITIAL_CONDITIONS: Array<QueryCondition> = [
   { id: 1, field: "title", operator: "contains", value: "engineer" },
   { id: 2, field: "status", operator: "equals", value: "Active" },
 ];
+
+/** The columns an imported file holds, in order. */
+const CSV_COLUMNS = ["field", "operator", "value"] as const;
+
+/** Stands in for a file on disk, so the demo can be tried without one. */
+const SAMPLE_CSV = `field,operator,value
+title,contains,architect
+title,starts with,Senior
+status,does not equal,Terminated
+hired,after,2024-01-01
+grade,equals,7`;
+
+/** A first row naming the columns is optional - a headerless export is valid. */
+const isHeaderRow = (cells: ReadonlyArray<string>) =>
+  cells.length === CSV_COLUMNS.length &&
+  cells.every(
+    (cell, index) => cell.trim().toLowerCase() === CSV_COLUMNS[index],
+  );
+
+/**
+ * One record into a condition, or the reason it is not one. The file is
+ * checked against the same vocabulary the editors offer, because an imported
+ * condition reaches the form without an editor ever opening on it.
+ */
+function readCondition(
+  row: CsvRow,
+): { condition: Omit<QueryCondition, "id"> } | { reason: string } {
+  const [field = "", operator = "", value = ""] = row.cells.map((cell) =>
+    cell.trim(),
+  );
+  if (!(FIELDS as ReadonlyArray<string>).includes(field)) {
+    return { reason: `Line ${row.line}: "${field}" is not a field` };
+  }
+  const known = field as QueryField;
+  if (!OPERATORS[known].includes(operator)) {
+    return { reason: `Line ${row.line}: ${known} has no operator "${operator}"` };
+  }
+  if (value === "") {
+    return { reason: `Line ${row.line}: no value` };
+  }
+  return { condition: { field: known, operator, value } };
+}
+
+/** How many rows an import may name in its report before it stops listing. */
+const REPORTED_REJECTIONS = 3;
+
+type ImportResult = {
+  /** The conditions to append, ids already assigned. */
+  added: Array<QueryCondition>;
+  rejected: Array<string>;
+  rejectedCount: number;
+};
+
+/**
+ * The whole file in one pass: parsed, checked, and turned into the conditions
+ * to append. Nothing here touches the grid or the form - the caller makes one
+ * write out of the result, which is what keeps a large file affordable.
+ */
+function readCsv(
+  text: string,
+  existing: ReadonlyArray<QueryCondition>,
+): ImportResult {
+  const rows = parseCsv(text);
+  const records =
+    rows.length > 0 && isHeaderRow(rows[0].cells) ? rows.slice(1) : rows;
+
+  // Ids keep counting down from the form's lowest, the way `onRowAdd` does.
+  // A fold rather than `Math.min(0, ...ids)`: the spread puts every id on the
+  // call stack, which throws RangeError somewhere past 100 000 arguments -
+  // one import beyond a grid this size away.
+  let nextId = existing.reduce((lowest, c) => Math.min(lowest, c.id), 0);
+
+  const added: Array<QueryCondition> = [];
+  const rejected: Array<string> = [];
+  let rejectedCount = 0;
+
+  for (const row of records) {
+    const read = readCondition(row);
+    if ("reason" in read) {
+      rejectedCount += 1;
+      if (rejected.length < REPORTED_REJECTIONS) rejected.push(read.reason);
+      continue;
+    }
+    nextId -= 1;
+    added.push({ id: nextId, ...read.condition });
+  }
+
+  return { added, rejected, rejectedCount };
+}
+
+const importReport = ({ added, rejected, rejectedCount }: ImportResult) => {
+  const listed = rejected.join("; ");
+  const more = rejectedCount > rejected.length ? "; …" : "";
+  return rejectedCount === 0
+    ? `${added.length} imported`
+    : `${added.length} imported, ${rejectedCount} skipped (${listed}${more})`;
+};
 
 /** Stands in for the server: one condition plus the page's date range in. */
 const fetchAvailabilityHours = (input: {
@@ -313,6 +413,23 @@ function ConditionsGrid({
   onCalculate: (rowId: string) => void;
 }) {
   const columns = useMemo(() => createColumns(onCalculate), [onCalculate]);
+  const [report, setReport] = useState<string | null>(null);
+  // Picking the same file twice fires no change event unless the input is
+  // cleared, and re-importing a file the user just edited is the common case.
+  const resetFile = useRef<() => void>(null);
+
+  /**
+   * The file lands as one write. Every row could be added through
+   * `grid.edit.addRows(rows, { commit: true })` instead - which is what an
+   * import wants when the grid owns the rows - but here the form owns them,
+   * and that path calls `onRowAdd` once per row: N array copies, N runs of the
+   * field's validators and N row models, against one of each for the append.
+   */
+  const importCsv = (text: string) => {
+    const result = readCsv(text, value);
+    if (result.added.length > 0) onChange([...value, ...result.added]);
+    setReport(importReport(result));
+  };
 
   // What the grid shows is the form's value joined with the results. The hours
   // belong to the server, so they stay out of the value the form submits.
@@ -351,13 +468,15 @@ function ConditionsGrid({
               : condition,
           ),
         ),
-      // New rows count down from -1; the server mints real ids on save.
-      // Math.min(0, ...) so an emptied grid starts at -1, not -Infinity.
+      // New rows count down from -1; the server mints real ids on save. The
+      // fold seeds at 0, so an emptied grid starts at -1 rather than
+      // -Infinity, and unlike `Math.min(0, ...ids)` it does not put every id
+      // on the call stack, which caps that form at ~100 000 conditions.
       onRowAdd: ({ value: row }) =>
         onChange([
           ...value,
           {
-            id: Math.min(0, ...value.map((c) => c.id)) - 1,
+            id: value.reduce((lowest, c) => Math.min(lowest, c.id), 0) - 1,
             field: row.field,
             operator: row.operator,
             value: row.value,
@@ -391,7 +510,36 @@ function ConditionsGrid({
     <TMDataGrid {...grid} size="sm" style={{ flex: 1, minHeight: 0 }}>
       <TMDataGrid.Toolbar>
         <TMDataGrid.SummaryCount />
+        {report !== null && (
+          <Text size="xs" c="dimmed">
+            {report}
+          </Text>
+        )}
         <TMDataGrid.Spacer />
+        <FileButton
+          accept="text/csv,.csv"
+          resetRef={resetFile}
+          onChange={(file) => {
+            if (file === null) return;
+            void file.text().then((text) => {
+              importCsv(text);
+              resetFile.current?.();
+            });
+          }}
+        >
+          {(props) => (
+            <Button {...props} size="compact-xs" variant="light">
+              Import CSV
+            </Button>
+          )}
+        </FileButton>
+        <Button
+          size="compact-xs"
+          variant="subtle"
+          onClick={() => importCsv(SAMPLE_CSV)}
+        >
+          Sample file
+        </Button>
         <Button
           size="compact-xs"
           variant="light"
@@ -517,10 +665,16 @@ export function QueryBuilderForm() {
             // single row can see. Runs per approved row, never per keystroke.
             onChange: ({ value }) => {
               if (value.length === 0) return "Add at least one condition";
-              const pairs = value.map((c) => `${c.field}:${c.operator}`);
-              return pairs.some((pair, i) => pairs.indexOf(pair) !== i)
-                ? "Two conditions repeat the same field and operator"
-                : undefined;
+              // A Set rather than `indexOf` per row: this runs over whatever
+              // an import appended, and a scan inside a loop is quadratic -
+              // the one shape that turns a 20 000-row file into a freeze.
+              const seen = new Set<string>();
+              for (const c of value) {
+                const key = `${c.field}\u0000${c.operator}\u0000${c.value}`;
+                if (seen.has(key)) return "Two conditions are identical";
+                seen.add(key);
+              }
+              return undefined;
             },
           }}
         >

@@ -8,6 +8,36 @@ count.
 const grid = useTMDataGrid({ data, columns }); // 200 rows or 200 000
 ```
 
+## The grid needs a bounded height
+
+The grid scrolls its own container, and the space below the mounted rows is
+held open by a spacer as tall as every row that is not mounted. So the
+container has to be told how tall it is - by a height, or by a flex parent it
+can fill:
+
+```tsx
+<div style={{ display: "flex", flexDirection: "column", minHeight: 0, height: "70vh" }}>
+  <TMDataGrid {...grid}>
+    <TMDataGrid.Table />
+  </TMDataGrid>
+</div>
+```
+
+`min-height: 0` is the half that is easy to miss: a flex child defaults to
+`min-height: auto`, which refuses to shrink below its content, and the content
+here is the spacer.
+
+Left unbounded, the container grows to the spacer instead of scrolling it. The
+virtualizer then measures a viewport as tall as the whole dataset, concludes
+that every row is in view, and asks for all of them.
+
+The grid caps what it mounts rather than following it there: at most three
+windows' worth of rows, and never fewer than 100. Past that the rows are left
+to the spacer - the bottom of the grid is blank, and a `console.warn` names the
+container's measured height and how many rows it asked for. A grid with a
+bounded height never reaches the cap; a grid that does has a layout to fix, not
+a row count to lower.
+
 ## Overscan
 
 How many rows stay mounted on each side of the viewport. Defaults to `6`.
