@@ -83,6 +83,21 @@ columnHelper.accessor("salary", {
 });
 ```
 
+`meta.filter.operators` narrows the list a column offers to a subset of its type's.
+The panel's operator dropdown and the header row's funnel menu then show only those, in the type's order.
+An operator the type does not offer is ignored, and a list that leaves nothing falls back to the type's full set.
+Without `defaultOperator`, a fresh filter opens on the type's default when it is offered and on the first offered operator otherwise.
+Declare it on a column whose backend answers only some operators, so the user is never offered one the query cannot express - see [A server-backed search](/docs/server-query#offering-only-what-the-endpoint-answers).
+
+```tsx
+columnHelper.accessor("customer", {
+  header: "Customer",
+  meta: { filter: { operators: ["contains", "equals", "isEmpty", "isNotEmpty"] } },
+});
+```
+
+`getColumnOperators(column)` returns the resolved list, and `getColumnDefaultOperator(column)` the operator a fresh filter on it opens on.
+
 ## The filters option
 
 `filters` on `useTMDataGrid` decides where the filter controls render.
@@ -320,7 +335,8 @@ header control - the header cell stays, empty.
 | `filters.inHeader` | Table option | `boolean` | `false` | A second header row of per-column controls. |
 | `enableColumnFilter` | Column option | `boolean` | `true` | `false` takes one column out of filtering. |
 | `meta.type` | Column meta | `"string" \| "number" \| "boolean" \| "date" \| "select" \| "multiSelect"` | `"string"` | Selects the operators and the value control. |
-| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter opens on. |
+| `meta.filter.operators` | Column meta | `readonly TMDataGridFilterOperator[]` | The type's list | The operators this column offers, a subset of its type's. |
+| `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default, else the first offered | The operator a fresh filter opens on. |
 | `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. |
 | `filterFn` | Column option | name \| fn | `"tmDataGrid"` | Custom matching for one column. |
 | `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"` | `"row"` | The panel of filter rows, as a plain block. |
@@ -331,6 +347,7 @@ header control - the header cell stays, empty.
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
+| `getColumnOperators` · `getColumnDefaultOperator` | Exports | `(column) => operators` · `(column) => operator` | – | The list one column offers after `meta.filter.operators`, and the operator a fresh filter on it opens on. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |

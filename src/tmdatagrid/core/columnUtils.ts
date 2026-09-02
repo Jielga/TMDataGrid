@@ -1,6 +1,7 @@
 import type { Row } from "@tanstack/react-table";
 import {
   getDefaultOperator,
+  getOperatorsForType,
   type TMDataGridColumnType,
   type TMDataGridFilterOperator,
 } from "./filterOperators";
@@ -38,16 +39,35 @@ export function getColumnType(column: ColumnLike): TMDataGridColumnType {
 }
 
 /**
+ * The operators this column offers: the type's list, narrowed to
+ * `meta.filter.operators` when the column declares one. The type's order is
+ * kept so the menu reads the same on every column; an operator the type does
+ * not offer is dropped, and an allowlist that leaves nothing falls back to the
+ * type's full list rather than an empty menu.
+ */
+export function getColumnOperators(
+  column: ColumnLike,
+): readonly TMDataGridFilterOperator[] {
+  const offered = getOperatorsForType(getColumnType(column));
+  const allowed = column.columnDef.meta?.filter?.operators;
+  if (!allowed) return offered;
+  const narrowed = offered.filter((operator) => allowed.includes(operator));
+  return narrowed.length > 0 ? narrowed : offered;
+}
+
+/**
  * The operator a fresh filter on this column starts with -
- * `meta.filter.defaultOperator`, else the type's default.
+ * `meta.filter.defaultOperator`, else the type's default where the column
+ * offers it, else the first operator it does offer.
  */
 export function getColumnDefaultOperator(
   column: ColumnLike,
 ): TMDataGridFilterOperator {
-  return (
-    column.columnDef.meta?.filter?.defaultOperator ??
-    getDefaultOperator(getColumnType(column))
-  );
+  const declared = column.columnDef.meta?.filter?.defaultOperator;
+  if (declared) return declared;
+  const offered = getColumnOperators(column);
+  const typeDefault = getDefaultOperator(getColumnType(column));
+  return offered.includes(typeDefault) ? typeDefault : offered[0];
 }
 
 /**

@@ -4,7 +4,8 @@ description: >
   Define and arrange TMDataGrid columns. Covers createTMDataGridColumnHelper,
   every column meta field (label, type, options, flex, align, autoSize,
   enableOrdering, and the meta.filter and meta.edit namespaces holding
-  defaultOperator, control, enabled, field, editor, validate and mapValue), the
+  operators, defaultOperator, control, enabled, field, editor, validate and
+  mapValue), the
   six column types, fluid minmax sizing versus fixed width with minSize /
   maxSize / size, autosizing and autosizeColumn, hiding through enableHiding and
   the columns panel, pinning and why a pinned column becomes fixed-width,
@@ -97,7 +98,8 @@ which is why they are in neither.
 
 | Field | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `defaultOperator` | `TMDataGridFilterOperator` | The type's default | The operator a fresh filter on this column starts with. |
+| `operators` | `readonly TMDataGridFilterOperator[]` | The type's list | The operators this column offers, a subset of its type's. For a backend that answers only some. |
+| `defaultOperator` | `TMDataGridFilterOperator` | The type's default, else the first offered | The operator a fresh filter on this column starts with. |
 | `control` | `TMDataGridFilterControlComponent` | By `meta.type` | Replaces the value control in this column's filter row. Module scope. |
 
 `meta.edit`:

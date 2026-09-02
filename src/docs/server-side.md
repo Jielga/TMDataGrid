@@ -112,6 +112,11 @@ other value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 
+An endpoint that answers only some operators - `contains` and `equals` but no
+`startsWith` - should not have the rest offered. `meta.filter.operators` on the
+column narrows the panel and the header funnel to the operators the query can
+express; see [Operators](/docs/filtering#operators).
+
 For an endpoint that speaks its own query language rather than taking the
 grid's filter model, see [A server-backed search](/docs/server-query): one
 mapping layer turning filters, sorting and the page index into a request body,

@@ -7,7 +7,7 @@ import { useTMDataGridContext } from "../TMDataGridContext";
 import {
   getColumnDefaultOperator,
   getColumnLabel,
-  getColumnType,
+  getColumnOperators,
   isControlColumn,
 } from "../core/columnUtils";
 import {
@@ -15,7 +15,6 @@ import {
   type TMDataGridFilterValue,
   emptyValueForOperator,
   filterValueShape,
-  getOperatorsForType,
   isTMDataGridFilterValue,
 } from "../core/filterOperators";
 import { FilterIcon } from "./icons";
@@ -54,7 +53,6 @@ function HeaderFilterControl({ column }: { column: TMDataGridHeader["column"] })
     (state) => state.columnFilters.find((filter) => filter.id === column.id)?.value,
   );
 
-  const type = getColumnType(column);
   const defaultOperator = getColumnDefaultOperator(column);
   const current = isTMDataGridFilterValue(filterValue) ? filterValue : undefined;
   const operator = current?.operator ?? defaultOperator;
@@ -104,7 +102,7 @@ function HeaderFilterControl({ column }: { column: TMDataGridHeader["column"] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [table, column, facetKey],
   );
-  const operators = getOperatorsForType(type);
+  const operators = getColumnOperators(column);
 
   return (
     <>

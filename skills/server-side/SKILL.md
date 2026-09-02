@@ -4,16 +4,21 @@ description: >
   Drive TMDataGrid from a server with TanStack manual modes - manualPagination,
   manualSorting, manualFiltering, rowCount, controlled state and onXChange
   callbacks. Covers the loading and totalRowCount meta fields, forwarding the
-  plain-JSON columnFilters model to an API with activeColumnFilters, the
-  first-page reset on a query change, persistence interaction, and row selection
-  across pages. Load when the grid is backed by a paginated API rather than a
-  local array.
+  plain-JSON columnFilters model to an API with activeColumnFilters, mapping
+  filters, sorting and the page index onto an endpoint's own query language
+  (field table, operator table, the three value shapes, meta.filter.operators
+  for an endpoint that answers only some operators, keying the fetch on the
+  request, paging against a page envelope), the first-page reset on a query
+  change, persistence interaction, and row selection across pages. Load when
+  the grid is backed by a paginated API rather than a local array, or when
+  translating grid filters into server-side queries.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.13'
 sources:
   - 'Jielga/TMDataGrid:src/docs/server-side.md'
+  - 'Jielga/TMDataGrid:src/docs/server-query.md'
   - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
 ---
 
@@ -124,6 +129,118 @@ value - a custom filter control writing raw values - is dropped.
 
 Debounce requests. The filter value input updates on every keystroke.
 
+## Mapping onto the endpoint's query language
+
+An API takes a request body of its own: its own field names, its own operator
+set, its own status codes, and pages counted from 1. The layer between the
+grid's state and that body is one function over two lookup tables, plus one
+function on the way back:
+
+- **A field table** keyed by column id, giving the API field and the cast from
+  the string every filter control writes to the type the field holds
+  (`Number`, an enum code). A column missing from the table is one the API
+  cannot query: the mapping drops the filter rather than sending a field the
+  endpoint would reject.
+- **An operator table** from `TMDataGridFilterOperator` to the API's operators.
+  Several grid operators collapse onto one - a date `before` and a number
+  `lessThan` are both `lt` once the value is cast. Declare it as a `Record`, not
+  a `Partial`, so an operator added by a later grid version fails the build
+  here rather than reaching the server unmapped.
+- **`toRow`** from the API's record to the grid's row type.
+
+```ts
+const QUERY_FIELDS: Record<string, { field: string; cast: (raw: string) => string | number }> = {
+  id: { field: "orderRef", cast: Number },
+  amount: { field: "totalAmount", cast: Number },
+  status: { field: "status", cast: (raw) => STATUS_CODES[raw] ?? raw },
+};
+
+const PREDICATE_OPS: Record<TMDataGridFilterOperator, PredicateOp> = {
+  contains: "like",
+  between: "range",
+  before: "lt",
+  lessThan: "lt",
+  isAnyOf: "in",
+  isEmpty: "isNull",
+  // ...one line for every remaining operator.
+};
+```
+
+### The three value shapes
+
+`TMDataGridFilterValue` is `{ operator, value }`, and the operator decides what
+`value` holds. Branch on all four cases, in this order:
+
+| Operator | `value` | Sent as |
+| --- | --- | --- |
+| `isEmpty`, `isNotEmpty` | Not used | `{ field, op }` |
+| `isAnyOf`, `isNoneOf` | `ReadonlyArray<string>` | `{ field, op, values }` |
+| `between` | `[min, max]`, either end possibly `""` | `{ field, op, from?, to? }` |
+| Everything else | `string` | `{ field, op, value }` |
+
+An empty end of a `between` pair leaves that side open: an absent bound, not an
+empty string. Run `activeColumnFilters` over the slice first so a half-typed
+filter is not sent as a predicate that narrows the result to nothing.
+
+### An endpoint that answers only some operators
+
+Most endpoints do not have every operator the grid has - `like` and `eq` but no
+prefix match is common. Do not offer what you would have to drop.
+`meta.filter.operators` narrows the column to the operators the query can
+express, and the mapping table is declared over exactly that list, so one
+cannot be offered without a mapping or mapped without being offered:
+
+```ts
+const TEXT_OPERATORS = [
+  "contains",
+  "equals",
+  "isEmpty",
+  "isNotEmpty",
+] as const satisfies readonly TMDataGridFilterOperator[];
+
+const TEXT_OPS: Record<(typeof TEXT_OPERATORS)[number], PredicateOp> = {
+  contains: "like",
+  equals: "eq",
+  isEmpty: "isNull",
+  isNotEmpty: "isNotNull",
+};
+
+columnHelper.accessor("customer", {
+  header: "Customer",
+  meta: { filter: { operators: TEXT_OPERATORS } },
+});
+```
+
+A fresh filter opens on `meta.filter.defaultOperator` when set, else on the
+type's default when the list holds it, else on the first entry. The lookup at
+the boundary still returns `undefined` for an unmapped operator: a filter
+restored by `persist` from before the list was narrowed can carry one.
+
+### Keying the fetch on the request
+
+Serialize the request with `JSON.stringify` inside `useMemo` over
+`columnFilters`, `sorting` and `pagination`, and key the fetch effect (or the
+TanStack Query `queryKey`) on that string. Opening the panel and adding an
+empty row moves `columnFilters` but leaves the request unchanged, so nothing is
+sent. The effect owes the server a debounce (the value input updates on every
+keystroke) and a cancel (a `cancelled` flag in the cleanup, or an
+`AbortController` on a real `fetch`).
+
+### Paging against a page envelope
+
+| The API's | The grid's | Written as |
+| --- | --- | --- |
+| `page.number`, counted from 1 | `pagination.pageIndex`, counted from 0 | `number: pageIndex + 1` |
+| `page.totalItems`, the matched count | `rowCount` | `rowCount: page?.totalItems ?? 0` |
+| `page.totalPages` | `state.pageCount`, derived from `rowCount / pageSize` | Nothing; the grid computes it |
+
+Forward `totalPages` only when the server pages by something other than the
+size the grid asked for. `pageCount: -1` when the total is unknown. Show the
+page number through the Footer's `renderPagination` slot with
+`<Controls.PageSize /><Controls.PageNumber /><Controls.Pager />`.
+`meta.totalRowCount` is the unfiltered total, which no filtered response
+carries: take it from a separate count call.
+
 ## Persistence
 
 `persist` works unchanged. `dataKey` restores filters, sorting and pagination
@@ -167,6 +284,13 @@ Without it there is no denominator to show: the pre-filtered row count is the
 current page, so the grid renders the matched count alone rather than a
 plausible-looking wrong total. Pass the unfiltered total as
 `meta.totalRowCount` to get the "42 / 5000" form back.
+
+### Offering operators the endpoint cannot answer
+
+The panel offers every operator of the column's type, and a mapping that drops
+`startsWith` leaves the user with a filter that silently does nothing. Declare
+`meta.filter.operators` on the column with the operators the endpoint answers,
+and type the operator table over that same list.
 
 ### Unstable getRowId across pages
 

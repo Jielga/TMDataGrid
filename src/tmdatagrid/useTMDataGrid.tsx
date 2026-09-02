@@ -186,8 +186,8 @@ export type TMDataGridColumnMeta = {
    */
   enableOrdering?: boolean;
   /**
-   * How this column filters: the operator a fresh filter starts with, and the
-   * value control the filter panel renders for it.
+   * How this column filters: which operators it offers, the operator a fresh
+   * filter starts with, and the value control the filter panel renders for it.
    *
    * ```tsx
    * meta: {

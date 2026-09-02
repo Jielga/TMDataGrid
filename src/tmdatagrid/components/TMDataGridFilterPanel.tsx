@@ -5,6 +5,7 @@ import classes from "./TMDataGridFilterPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import {
   getColumnDefaultOperator,
+  getColumnOperators,
   getColumnLabel,
   getColumnType,
 } from "../core/columnUtils";
@@ -251,7 +252,10 @@ export function TMDataGridFilterPanel({
                   w={stacked ? "100%" : 170}
                   allowDeselect={false}
                   data-dg-part="filter-operator"
-                  data={getOperatorsForType(type).map((operator) => ({
+                  data={(column
+                    ? getColumnOperators(column)
+                    : getOperatorsForType(type)
+                  ).map((operator) => ({
                     value: operator,
                     label: labels.operators[operator],
                   }))}
