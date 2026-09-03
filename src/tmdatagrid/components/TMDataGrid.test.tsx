@@ -28,6 +28,7 @@ import { SIZE_ROW_HEIGHT, type TMDataGridSize } from "../core/sizes";
 import { TMDATAGRID_LABELS_SV } from "../core/labelsSv";
 import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
+import type { TMDataGridToolbarProps } from "./TMDataGridToolbar";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { TMDataGrid } from "./TMDataGrid";
 import {
@@ -567,6 +568,59 @@ describe("labels", () => {
     expect(
       result.current.table.getColumn(SELECT_COLUMN_ID)?.columnDef.meta?.label,
     ).toBe("Kryssrutemarkering");
+  });
+});
+
+describe("Toolbar", () => {
+  function StyledToolbarGrid({
+    toolbarProps,
+  }: {
+    toolbarProps?: TMDataGridToolbarProps;
+  }) {
+    const grid = useTMDataGrid<TestRow>({
+      data: testRows,
+      columns: testColumns,
+      getRowId: (row) => String(row.id),
+      enablePagination: true,
+    });
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar {...toolbarProps}>
+          <TMDataGrid.SummaryCount />
+          <TMDataGrid.Spacer hiddenFrom="md" />
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<TestRow> />
+        <TMDataGrid.Footer mt="lg" className="footer-of-mine" />
+      </TMDataGrid>
+    );
+  }
+
+  it("draws no bottom border unless asked", () => {
+    renderWithMantine(<StyledToolbarGrid />);
+    expect(part("toolbar")).not.toHaveAttribute("data-with-bottom-border");
+  });
+
+  it("marks itself for the bottom border under withBottomBorder", () => {
+    renderWithMantine(<StyledToolbarGrid toolbarProps={{ withBottomBorder: true }} />);
+    expect(part("toolbar")).toHaveAttribute("data-with-bottom-border", "true");
+  });
+
+  it("sets Mantine style props on the wrappers and keeps the part classes", () => {
+    renderWithMantine(
+      <StyledToolbarGrid
+        toolbarProps={{ mb: "sm", className: "toolbar-of-mine", mod: { tone: "quiet" } }}
+      />,
+    );
+    const toolbar = part("toolbar");
+    expect(toolbar.style.marginBottom).toBe("var(--mantine-spacing-sm)");
+    expect(toolbar).toHaveClass("toolbar-of-mine");
+    // A consumer `mod` rides alongside the border modifier.
+    expect(toolbar).toHaveAttribute("data-tone", "quiet");
+    expect(toolbar.className).toMatch(/toolbar/);
+
+    const footer = part("footer");
+    expect(footer.style.marginTop).toBe("var(--mantine-spacing-lg)");
+    expect(footer).toHaveClass("footer-of-mine");
   });
 });
 

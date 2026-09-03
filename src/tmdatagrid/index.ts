@@ -126,6 +126,8 @@ export type {
   TMDataGridFilterSurface,
 } from "./core/filterSurface";
 export type { TMDataGridFilterPanelProps } from "./components/TMDataGridFilterPanel";
+export type { TMDataGridColumnsPanelProps } from "./components/TMDataGridColumnsPanel";
+export type { TMDataGridToolbarProps } from "./components/TMDataGridToolbar";
 export { TMDataGridFilterValueInput } from "./components/filters/TMDataGridFilterValueInput";
 export { DgRangeSliderFilter } from "./components/filters/DgRangeSliderFilter";
 export { DgDateRangeFilter } from "./components/filters/DgDateRangeFilter";

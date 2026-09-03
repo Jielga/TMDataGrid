@@ -1,4 +1,4 @@
-import { Button, Pill, UnstyledButton } from "@mantine/core";
+import { Box, type BoxProps, Button, Pill, UnstyledButton } from "@mantine/core";
 import type { RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGridFilterPills.module.css";
@@ -11,7 +11,8 @@ import {
 import type { TMDataGridSize } from "../core/sizes";
 import { openColumnFilter, type TMDataGridApi } from "../useTMDataGrid";
 
-export type TMDataGridFilterPillsProps<TData extends RowData> = {
+/** Mantine's style props (`mb="sm"`, `hiddenFrom="sm"`) are set on the wrapper. */
+export type TMDataGridFilterPillsProps<TData extends RowData> = BoxProps & {
   /** The object returned by `useTMDataGrid`. */
   api: TMDataGridApi<TData>;
   /** Mantine size of the pills. Defaults to `"sm"`. */
@@ -23,7 +24,6 @@ export type TMDataGridFilterPillsProps<TData extends RowData> = {
    * filter panel on that column.
    */
   onPillClick?: (columnId: string) => void;
-  className?: string;
 };
 
 /**
@@ -52,6 +52,7 @@ export function TMDataGridFilterPills<TData extends RowData>({
   showClearAll = true,
   onPillClick,
   className,
+  ...others
 }: TMDataGridFilterPillsProps<TData>) {
   const { table, labels } = api;
   const columnFilters = useSelector(
@@ -65,11 +66,12 @@ export function TMDataGridFilterPills<TData extends RowData>({
   if (activeFilters.length === 0) return null;
 
   return (
-    <div
+    <Box
       role="group"
       aria-label={labels.activeFilters}
       data-dg-part="filter-pills"
       className={[classes.filterPills, className].filter(Boolean).join(" ")}
+      {...others}
     >
       <Pill.Group size={size}>
         {activeFilters.map((filter) => {
@@ -137,6 +139,6 @@ export function TMDataGridFilterPills<TData extends RowData>({
           {labels.clearAllFilters}
         </Button>
       )}
-    </div>
+    </Box>
   );
 }

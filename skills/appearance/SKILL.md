@@ -5,7 +5,8 @@ description: >
   xl) and what it drives, every --dg-* CSS variable for metrics, colours and the
   stacking ladder, the two stylesheets styles.css and styles.layer.css and why
   only one may be imported, the bounded-height layout rule with minHeight 0,
-  toolbar composition through children and TMDataGrid.Spacer, writing a toolbar
+  toolbar composition through children and TMDataGrid.Spacer, Mantine BoxProps
+  (mb, px, hiddenFrom) and withBottomBorder on the toolbar, writing a toolbar
   button with useTMDataGridContext, hiding it the way the built-ins do with
   getGridCapabilities and getColumnCapabilities, why capabilities take a
   features argument under the React Compiler, and localization through the
@@ -129,6 +130,21 @@ element, and `TMDataGrid.Spacer` pushes what follows to the right.
 Each built-in renders nothing when its feature is off, so a read-only grid needs
 no conditionals: `FilterButton` under `enableColumnFilters: false` renders
 nothing at all.
+
+`TMDataGrid.Toolbar` and `TMDataGrid.Spacer` take Mantine's `BoxProps` - the
+style props (`mb`, `px`, `h`, `hiddenFrom`), `className`, `style` and `mod` -
+set on the element itself. `withBottomBorder` on the toolbar draws a 1px line in
+the theme's default border colour under it, the same line the header draws;
+default `false`. `TMDataGrid.Footer`, `FilterPanel`, `FilterPills` and
+`ColumnsPanel` take the same `BoxProps` on top of their own props.
+
+```tsx
+<TMDataGrid.Toolbar withBottomBorder px="sm" mb="xs">
+  <TMDataGrid.SummaryCount />
+  <TMDataGrid.Spacer hiddenFrom="sm" />
+  <TMDataGrid.FilterButton />
+</TMDataGrid.Toolbar>
+```
 
 ### The grid menu
 
@@ -343,7 +359,7 @@ Source: `src/docs/toolbar.md` (The built-in parts).
 | `SIZE_ROW_HEIGHT` | Export | `Record<MantineSize, number>` | – | The row heights the scale table lists. |
 | `SIZE_CONTROL_SIZE` | Export | `Record<MantineSize, MantineSize>` | – | Which control size each grid size uses. |
 | `DEFAULT_TMDATAGRID_SIZE` | Export | `"md"` | – | The default size. |
-| `TMDataGrid.Toolbar` · `Spacer` | Components | `children` | – | The flex row, and the push-right. |
+| `TMDataGrid.Toolbar` · `Spacer` | Components | `children`, `withBottomBorder`, Mantine `BoxProps` | `withBottomBorder: false` | The flex row, and the push-right. Style props set on the element. |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | `{ table, ui, features, labels, controlSize, resetSettings }`. |
 | `getGridCapabilities` | Export | `(table, features) => TMDataGridCapabilities` | – | What this grid can do, reactively. |
 | `getColumnCapabilities` | Export | `(column, features) => TMDataGridColumnCapabilities` | – | The same for one column. |

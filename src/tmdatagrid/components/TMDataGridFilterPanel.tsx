@@ -1,4 +1,12 @@
-import { ActionIcon, Button, Select, Stack, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  type BoxProps,
+  Button,
+  Select,
+  Stack,
+  TextInput,
+} from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterPanel.module.css";
@@ -30,7 +38,8 @@ function asFilterValue(value: unknown): TMDataGridFilterValue {
   return isTMDataGridFilterValue(value) ? value : FALLBACK_FILTER;
 }
 
-export type TMDataGridFilterPanelProps = {
+/** Mantine's style props (`p="md"`, `w={320}`) are set on the panel block. */
+export type TMDataGridFilterPanelProps = BoxProps & {
    /**
     * How one filter row is laid out.
     *
@@ -61,6 +70,8 @@ export type TMDataGridFilterPanelProps = {
  */
 export function TMDataGridFilterPanel({
   layout = "row",
+  className,
+  ...others
 }: TMDataGridFilterPanelProps = {}) {
   const { table, ui, labels, controlSize } = useTMDataGridContext();
   const columnFilters = useSelector(
@@ -182,13 +193,14 @@ export function TMDataGridFilterPanel({
   );
 
   return (
-    <div
+    <Box
       ref={panelRef}
       role="group"
       aria-label={labels.filters}
       data-dg-part="filter-panel"
       data-layout={layout}
-      className={classes.filterPanel}
+      className={[classes.filterPanel, className].filter(Boolean).join(" ")}
+      {...others}
     >
       <Stack gap="xs">
         {columnFilters.map((filter) => {
@@ -331,6 +343,6 @@ export function TMDataGridFilterPanel({
           </Button>
         </div>
       </Stack>
-    </div>
+    </Box>
   );
 }

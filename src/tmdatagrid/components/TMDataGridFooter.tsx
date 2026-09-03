@@ -1,4 +1,12 @@
-import { ActionIcon, Group, Select, Text, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  type BoxProps,
+  Group,
+  Select,
+  Text,
+  Tooltip,
+} from "@mantine/core";
 import type { RowData } from "@tanstack/react-table";
 import { useMemo, type ReactNode } from "react";
 import classes from "./TMDataGridFooter.module.css";
@@ -239,7 +247,8 @@ function PaginationPager() {
   );
 }
 
-export type TMDataGridFooterProps = {
+/** Mantine's style props (`mt="sm"`, `px="md"`) are set on the footer bar. */
+export type TMDataGridFooterProps = BoxProps & {
   pageSizeOptions?: ReadonlyArray<number>;
   /**
    * Replaces the built-in pager, and is handed the pieces of it.
@@ -274,7 +283,10 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 export function TMDataGridFooter({
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   renderPagination,
+  className,
+  ...others
 }: TMDataGridFooterProps) {
+  const footerClassName = [classes.footer, className].filter(Boolean).join(" ");
   const { table, features, labels } = useTMDataGridContext();
   useSettledTableState(table.store);
 
@@ -300,9 +312,9 @@ export function TMDataGridFooter({
   if (renderPagination) {
     const { state, actions } = getTMDataGridPaginationApi(table, paging);
     return (
-      <div data-dg-part="footer" className={classes.footer}>
+      <Box data-dg-part="footer" className={footerClassName} {...others}>
         {renderPagination({ state, actions, Controls })}
-      </div>
+      </Box>
     );
   }
 
@@ -315,17 +327,18 @@ export function TMDataGridFooter({
       w={260}
       position="top"
     >
-      <div
+      <Box
         data-dg-part="footer"
-        className={classes.footer}
+        className={footerClassName}
         data-paging-suspended={!paging}
+        {...others}
       >
         {/* The default render is the controls in order - which is what makes
             `renderPagination` a rearrangement rather than a rebuild. */}
         <Controls.PageSize />
         <Controls.Range />
         <Controls.Pager />
-      </div>
+      </Box>
     </Tooltip>
   );
 }

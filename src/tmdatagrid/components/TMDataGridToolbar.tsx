@@ -1,4 +1,11 @@
-import { ActionIcon, Loader, Text, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  type BoxProps,
+  Loader,
+  Text,
+  Tooltip,
+} from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import classes from "./TMDataGridToolbar.module.css";
@@ -9,18 +16,47 @@ import { isFilterActive } from "../core/filterOperators";
 import { FilterIcon } from "./icons";
 import { seedColumnFilter } from "../useTMDataGrid";
 
-/** Row above the grid. Compose it from the pieces below, or anything else. */
-export function TMDataGridToolbar({ children }: { children?: ReactNode }) {
+export type TMDataGridToolbarProps = BoxProps & {
+  children?: ReactNode;
+  /**
+   * Draws a 1px line under the toolbar in the theme's default border colour -
+   * the same line the header draws under itself. Defaults to `false`.
+   */
+  withBottomBorder?: boolean;
+};
+
+/**
+ * Row above the grid. Compose it from the pieces below, or anything else.
+ * Takes Mantine's style props (`mb="sm"`, `px="md"`, `hiddenFrom="sm"`) and
+ * sets them on the row.
+ */
+export function TMDataGridToolbar({
+  children,
+  withBottomBorder = false,
+  className,
+  mod,
+  ...others
+}: TMDataGridToolbarProps) {
   return (
-    <div data-dg-part="toolbar" className={classes.toolbar}>
+    <Box
+      data-dg-part="toolbar"
+      className={[classes.toolbar, className].filter(Boolean).join(" ")}
+      mod={[{ "with-bottom-border": withBottomBorder }, mod]}
+      {...others}
+    >
       {children}
-    </div>
+    </Box>
   );
 }
 
-/** Pushes the following toolbar items to the right. */
-export function TMDataGridToolbarSpacer() {
-  return <div className={classes.toolbarSpacer} />;
+/** Pushes the following toolbar items to the right. Takes Mantine's style props. */
+export function TMDataGridToolbarSpacer({ className, ...others }: BoxProps) {
+  return (
+    <Box
+      className={[classes.toolbarSpacer, className].filter(Boolean).join(" ")}
+      {...others}
+    />
+  );
 }
 
 /**
