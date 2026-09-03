@@ -29,7 +29,9 @@ export function ToolbarComposition() {
 
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
-      <TMDataGrid.Toolbar>
+      {/* Mantine style props land on the row; `withBottomBorder` draws the
+          header's line under it. */}
+      <TMDataGrid.Toolbar withBottomBorder px="sm">
         {/* Row count after filtering. Pass children to say it your own way. */}
         <TMDataGrid.SummaryCount />
 

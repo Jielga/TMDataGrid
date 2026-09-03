@@ -286,7 +286,7 @@ Source: `src/docs/pagination.md` (Grouping suspends it).
 | `rowCount` | Table option | `number` | – | The true total, required under `manualPagination`. |
 | `initialState.pagination` | Table option | `{ pageIndex, pageSize }` | `{ 0, 25 }` | Where paging starts. A `data` slice, so it persists. |
 | `onPaginationChange` | Table option | `OnChangeFn` | – | Controls the pagination state. |
-| `TMDataGrid.Footer` | Component | `pageSizeOptions`, `pagination` | `[10, 25, 50, 100]` | The footer bar. Renders nothing when paging is off. |
+| `TMDataGrid.Footer` | Component | `pageSizeOptions`, `renderPagination`, Mantine `BoxProps` | `[10, 25, 50, 100]` | The footer bar. Renders nothing when paging is off. Style props set on the bar. |
 | `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
 | `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |
 | `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three parts of the slot argument. |

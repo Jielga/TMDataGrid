@@ -1,4 +1,6 @@
 import {
+  Box,
+  type BoxProps,
   Button,
   Checkbox,
   ScrollArea,
@@ -18,7 +20,13 @@ import { SearchIcon } from "./icons";
  * menu - a Popover, a Drawer, an inline layout. `TMDataGrid.Menu.Columns` is
  * the same chooser as menu items.
  */
-export function TMDataGridColumnsPanel() {
+/** Mantine's style props (`w={320}`, `p="sm"`) are set on the panel block. */
+export type TMDataGridColumnsPanelProps = BoxProps;
+
+export function TMDataGridColumnsPanel({
+  className,
+  ...others
+}: TMDataGridColumnsPanelProps = {}) {
   const { labels, controlSize, resetSettings } = useTMDataGridContext();
   const [search, setSearch] = useState("");
 
@@ -33,7 +41,11 @@ export function TMDataGridColumnsPanel() {
     : columns;
 
   return (
-    <div data-dg-part="columns-panel" className={classes.columnsPanel}>
+    <Box
+      data-dg-part="columns-panel"
+      className={[classes.columnsPanel, className].filter(Boolean).join(" ")}
+      {...others}
+    >
       <div className={classes.columnsPanelSearch}>
         <TextInput
           value={search}
@@ -93,6 +105,6 @@ export function TMDataGridColumnsPanel() {
           </Button>
         </Tooltip>
       </div>
-    </div>
+    </Box>
   );
 }

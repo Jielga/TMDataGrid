@@ -488,7 +488,7 @@ Source: `src/docs/columns.md` (Columns derived from the other rows).
 | `measureColumnContentWidth` | Export | `(args) => number` | – | The measurement behind it. |
 | `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | ids | – | The generated lanes. |
-| `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | – | – | The column chooser, as menu items and as plain controls. |
+| `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | `searchable` · Mantine `BoxProps` | – | The column chooser, as menu items and as plain controls. Style props set on the panel. |
 
 See also: the `filtering` skill for operators and filter controls, the `editing`
 skill for the editing meta fields, and the `grouping` skill for what grouping

@@ -41,6 +41,7 @@ and the stylesheet mirrors them. To use a height outside the scale, set
 
 `style` accepts custom properties, and `className` reaches the same element
 from a stylesheet.
+The wrapper components - `Toolbar`, `Spacer`, `Footer`, `FilterPanel`, `FilterPills` and `ColumnsPanel` - take Mantine's `BoxProps` on top of their own props, so `mb="sm"` or `hiddenFrom="sm"` on any of them sets the element itself; see [Toolbar](/docs/toolbar#style-props).
 
 ### Metrics
 

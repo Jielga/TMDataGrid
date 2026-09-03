@@ -104,12 +104,16 @@ A flex row above the grid. See [Toolbar](/docs/toolbar).
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | – | The toolbar's contents, in render order. |
+| `withBottomBorder` | `boolean` | `false` | A 1px bottom border in the theme's default border colour, the line the header draws under itself. |
+| Mantine `BoxProps` | | – | Style props (`mb`, `px`, `hiddenFrom`, …), `className`, `style` and `mod`, set on the row. |
 
 ## TMDataGrid.Spacer
 
 Pushes the toolbar items after it to the right.
 
-No props.
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| Mantine `BoxProps` | | – | Style props, `className` and `style`, set on the spacer. |
 
 ## TMDataGrid.Search
 
@@ -129,7 +133,7 @@ Filtering owns these three, so their props are on that page rather than repeated
 | Component | What it is | Props |
 | --- | --- | --- |
 | `TMDataGrid.FilterButton` | Toggles the filter surface, tinted with the count of active filters. Renders nothing when no column can be filtered, and nothing under `filters.surface: "none"`. | None. [Filtering](/docs/filtering#tmdatagridfilterbutton) |
-| `TMDataGrid.FilterPanel` | The filter rows, as a plain block with no title, no close button and no open state - the popup and sidebar [surfaces](/docs/filtering#the-filters-option) wrap it. | `layout`. [Filtering](/docs/filtering#tmdatagridfilterpanel) |
+| `TMDataGrid.FilterPanel` | The filter rows, as a plain block with no title, no close button and no open state - the popup and sidebar [surfaces](/docs/filtering#the-filters-option) wrap it. | `layout`, Mantine `BoxProps`. [Filtering](/docs/filtering#tmdatagridfilterpanel) |
 | `TMDataGrid.FilterPills` · `TMDataGridFilterPills` | One pill per active filter. Takes the grid as an `api` prop rather than from context, so it renders anywhere on the page. | `api`, `size`, `showClearAll`, `onPillClick`, `className`. [Filtering](/docs/filtering#tmdatagridfilterpills) |
 
 `openColumnFilter(api, columnId)` sends the user to a column's filter control; it is documented with them, on [Filtering](/docs/filtering#opencolumnfilter).
@@ -154,7 +158,9 @@ Its children are the dropdown. See [Grid menu](/docs/menu).
 The column chooser as plain controls: a searchable checkbox list of the hideable columns, with a show-all toggle and a reset button.
 For a Popover, a Drawer or an inline layout; `TMDataGrid.Menu.Columns` is the same thing as menu items.
 
-No props.
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| Mantine `BoxProps` | | – | Style props (`w`, `p`, …), `className` and `style`, set on the panel block. |
 
 ## TMDataGrid.LoadingIndicator
 
@@ -210,6 +216,7 @@ It renders nothing when pagination is off. See [Pagination](/docs/pagination).
 | --- | --- | --- | --- |
 | `pageSizeOptions` | `ReadonlyArray<number>` | `[10, 25, 50, 100]` | The choices in the rows-per-page select. |
 | `renderPagination` | `(args: TMDataGridPaginationSlotArgs) => ReactNode` | – | Replaces the pager. Receives `{ state, actions, Controls }`. |
+| Mantine `BoxProps` | | – | Style props (`mt`, `px`, …), `className` and `style`, set on the footer bar. |
 
 The slot argument holds the paging state, its operations and the built-in controls:
 

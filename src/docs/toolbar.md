@@ -30,6 +30,22 @@ extraSources: data/employeeColumns.tsx
 Only the parts you render exist. A grid with no `Toolbar` has no toolbar; a
 toolbar with only `Search` has only a search box.
 
+## Style props
+
+`TMDataGrid.Toolbar` and `TMDataGrid.Spacer` take Mantine's `BoxProps`: the style props (`mb`, `px`, `h`, `hiddenFrom`, …), `className`, `style` and `mod`, set on the element itself.
+`withBottomBorder` draws a 1px line under the toolbar in the theme's default border colour, the same line the header draws under itself.
+It defaults to `false`.
+
+```tsx
+<TMDataGrid.Toolbar withBottomBorder px="sm">
+  <TMDataGrid.SummaryCount />
+  <TMDataGrid.Spacer hiddenFrom="sm" />
+  <TMDataGrid.FilterButton />
+</TMDataGrid.Toolbar>
+```
+
+`TMDataGrid.Footer`, `TMDataGrid.FilterPanel`, `TMDataGrid.FilterPills` and `TMDataGrid.ColumnsPanel` take the same `BoxProps`; see [Components](/docs/components).
+
 ## The built-in parts
 
 | Component | Shows |
@@ -122,8 +138,8 @@ object.
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `TMDataGrid.Toolbar` | Component | `children` | – | The flex row above the grid. |
-| `TMDataGrid.Spacer` | Component | – | – | Pushes what follows to the right. |
+| `TMDataGrid.Toolbar` | Component | `children`, `withBottomBorder`, Mantine `BoxProps` | `withBottomBorder: false` | The flex row above the grid. Style props set on the row. |
+| `TMDataGrid.Spacer` | Component | Mantine `BoxProps` | – | Pushes what follows to the right. |
 | `TMDataGrid.FilterButton` | Component | – | – | Opens the filter panel, with an active count. |
 | `TMDataGrid.Menu` | Component | `children` | – | The burger and its dropdown. See [Grid menu](/docs/menu). |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | `{ table, ui, features, labels, controlSize, resetSettings }`. |

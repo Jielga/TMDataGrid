@@ -193,6 +193,7 @@ file: columns/FilterPanelPlaced.tsx
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `layout` | `"row" \| "stacked"` | `"row"` | `"row"` lays the three fields side by side and wants about 550px. `"stacked"` puts them one under the other, each filling the width, for a drawer or a narrow column. Passed to every value control as its `layout`, so a `meta.filter.control` sizes itself to the same decision. |
+| Mantine `BoxProps` | | – | Style props (`p`, `w`, …), `className` and `style`, set on the panel block. |
 
 ```tsx
 <Drawer opened={open} onClose={close}>
@@ -219,7 +220,7 @@ file: columns/FilterPills.tsx
 | `size` | `TMDataGridSize` | `"sm"` | Pill size. |
 | `showClearAll` | `boolean` | `true` | "Clear all", shown once two filters are active. |
 | `onPillClick` | `(columnId: string) => void` | - | Replaces the default click behaviour. |
-| `className` | `string` | - | Added to the wrapper class. |
+| Mantine `BoxProps` | | - | Style props (`mb`, `hiddenFrom`, …), `className` and `style`, set on the wrapper. |
 
 ## openColumnFilter
 

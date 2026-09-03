@@ -428,12 +428,12 @@ Source: `src/docs/quick-search.md` (Fuzzy by default).
 | `enableMatchHighlighting` | Option | `boolean` | `false` | Mark matched text in default-rendered cells. |
 | `enableGlobalFilter` | Table option | `boolean` | `true` | Also a column option. Removes the input, or one column's participation. |
 | `globalFilterFn` | Table option | filter fn | fuzzy | Overrides the matching, and the ranking with it. |
-| `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"` | `"row"` | The panel of filter rows, as a plain block. |
+| `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"`, Mantine `BoxProps` | `"row"` | The panel of filter rows, as a plain block. Style props set on it. |
 | `filters` | Table option | `TMDataGridFiltersOptions` | `{ surface: "popup" }` | Which surface holds the filter controls. |
 | `TMDataGridFilterControlArgs.layout` | Type | `"row" \| "stacked" \| "header"` | – | How much room a value control has, and whether it names itself. |
 | `filterValueShape` | Export | `(operator) => "scalar" \| "set" \| "range"` | – | Which shape an operator's value takes. |
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button opening the panel, with an active count. |
-| `TMDataGrid.FilterPills` | Component | `api`, `size`, `showClearAll`, `onPillClick`, `className` | – | Active filters as removable pills, renderable anywhere. |
+| `TMDataGrid.FilterPills` | Component | `api`, `size`, `showClearAll`, `onPillClick`, Mantine `BoxProps` | – | Active filters as removable pills, renderable anywhere. Style props set on the wrapper. |
 | `TMDataGrid.Search` | Component | `placeholder`, `debounce` (`250`), `w` (`220`) | – | The debounced quick-search input. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Opens the panel on a column. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
