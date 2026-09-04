@@ -6,7 +6,10 @@
     // Mirrors the alias in vite.alias.ts: the library by package name,
     // resolved to its source.
     "paths": {
-      "@jielga/tmdatagrid": ["../../packages/tmdatagrid/src/index.ts"]
+      "@jielga/tmdatagrid": ["../../packages/tmdatagrid/src/index.ts"],
+      "@jielga/tmdatagrid-xlsx": [
+        "../../packages/tmdatagrid-xlsx/src/index.ts"
+      ]
     }
   },
   "include": ["src"]

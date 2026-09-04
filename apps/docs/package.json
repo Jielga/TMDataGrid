@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@jielga/tmdatagrid": "workspace:*",
+    "@jielga/tmdatagrid-xlsx": "workspace:*",
     "@mantine/code-highlight": "catalog:",
     "@mantine/core": "catalog:",
     "@mantine/hooks": "catalog:",

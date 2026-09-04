@@ -33,6 +33,10 @@ export {
   type UseTMDataGridOptions,
 } from "./useTMDataGrid";
 export {
+  useTMDataGridExport,
+  type TMDataGridExportApi,
+} from "./useTMDataGridExport";
+export {
   TMDataGridFilterPills,
   type TMDataGridFilterPillsProps,
 } from "./components/TMDataGridFilterPills";
@@ -42,6 +46,7 @@ export {
 } from "./components/TMDataGridSearch";
 export type {
   TMDataGridMenuColumnsProps,
+  TMDataGridMenuExportProps,
   TMDataGridMenuProps,
 } from "./components/TMDataGridMenu";
 export {
@@ -180,19 +185,46 @@ export {
   type TMDataGridRangeBounds,
 } from "./core/cellRange";
 export {
+  buildExportData,
+  countSelectedExportRows,
+  csvExcelFormat,
+  csvFormat,
+  DEFAULT_EXPORT_OPTIONS,
+  downloadFile,
+  exportGrid,
+  formatExportValue,
+  guardFormula,
+  jsonFormat,
+  resolveExportOptions,
+  toClipboardText,
+  tsvFormat,
+  writeClipboardText,
+  writeExportFile,
+  type BuildExportDataArgs,
+  type ExportGridArgs,
+  type TMDataGridClipboardTextOptions,
+  type TMDataGridCsvFormatOptions,
+  type TMDataGridExportData,
+  type TMDataGridExportFormat,
+  type TMDataGridExportOptions,
+  type TMDataGridExportRows,
+  type TMDataGridExportSettings,
+  type TMDataGridExportValueGetter,
+  type TMDataGridExportWriteOptions,
+  type TMDataGridJsonFormatOptions,
+  type TMDataGridTsvFormatOptions,
+  // Deprecated, gone in the next beta.
   buildCellMatrix,
   buildGridCellMatrix,
   DEFAULT_CELL_EXPORT_OPTIONS,
   downloadTextFile,
   exportGridToCsv,
-  formatExportValue,
-  toClipboardText,
+  fromCellExportOptions,
   toExcelCsv,
-  writeClipboardText,
   type BuildCellMatrixArgs,
   type TMDataGridCellExportOptions,
   type TMDataGridCellMatrix,
-} from "./core/cellExport";
+} from "./core/export";
 export {
   areAllRowsExpanded,
   resolveExpandAll,

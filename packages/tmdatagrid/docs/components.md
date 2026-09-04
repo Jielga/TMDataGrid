@@ -91,7 +91,7 @@ Pass the row type so the handlers are typed:
 | `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Infinite scroll](/docs/server-side#infinite-scroll). |
 | `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
 | `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty states](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [The CSV](/docs/cell-selection#the-csv). |
+| `cellExport` | `TMDataGridCellExportOptions` | – | Deprecated. Set `exportOptions` on `useTMDataGrid` instead; until it goes, it is merged over that for the cell-range menu only. See [Export](/docs/export). |
 | `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name, announced on entry and matched by `getByRole("grid", { name })`. |
 
 Note that `onReachEnd` and `enablePagination` slice the same scroll: the pager caps the rows, so the end reached is the page's.
@@ -299,4 +299,4 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. Props on [Filtering](/docs/filtering). |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control. See [Filtering](/docs/filtering#opencolumnfilter). |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |
-| `DEFAULT_CELL_EXPORT_OPTIONS` | Constant | `TMDataGridCellExportOptions` | – | The CSV defaults `cellExport` merges over. |
+| `DEFAULT_EXPORT_OPTIONS` | Constant | `TMDataGridExportSettings` | – | The export defaults `exportOptions` merges over. See [Export](/docs/export). |

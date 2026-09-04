@@ -68,25 +68,38 @@ renders nothing at all.
 A button that acts on the grid reads it from context:
 
 ```tsx
-import { exportGridToCsv, useTMDataGridContext } from "@jielga/tmdatagrid";
+import { useTMDataGridContext } from "@jielga/tmdatagrid";
 
-function ExportButton() {
+function ClearFiltersButton() {
   const { table } = useTMDataGridContext();
   return (
-    <Button size="xs" onClick={() => exportGridToCsv({ table })}>
-      Export
+    <Button size="xs" onClick={() => table.resetColumnFilters()}>
+      Clear filters
     </Button>
   );
 }
 ```
 
 Anything rendered inside `TMDataGrid` can call it. It returns
-`{ table, ui, features, labels, controlSize, resetSettings }`.
+`{ table, ui, features, filters, exportOptions, labels, controlSize, resetSettings }`.
 
-`exportGridToCsv` writes every filtered row, whatever the cell selection is or
-whether cell selection is on at all. Its options - separator, decimal mark,
-headers, file name - are on
-[Copy and export](/docs/cell-selection#copy-and-export).
+An export button uses `useTMDataGridExport`, which hands back the export as click handlers:
+
+```tsx
+import { useTMDataGridExport } from "@jielga/tmdatagrid";
+
+function ExportButton() {
+  const { exportAll } = useTMDataGridExport();
+  return (
+    <Button size="xs" onClick={() => void exportAll()}>
+      Export
+    </Button>
+  );
+}
+```
+
+It writes every filtered row, whatever the cell selection is or whether cell selection is on at all.
+The format, the file name and the selected-rows variant are on [Export](/docs/export).
 
 ### Hide a button when its feature is off
 

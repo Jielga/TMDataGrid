@@ -1,8 +1,7 @@
 import { Badge, Menu, Switch } from "@mantine/core";
-import { IconDownload } from "@tabler/icons-react";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
-import { exportGridToCsv, TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
+import { TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
 import { employeeColumns } from "../../data/employeeColumns";
 import { EMPLOYEES, type Employee } from "../../data/employees";
 
@@ -20,6 +19,7 @@ export function ToolbarComposition() {
     getRowId: (row) => String(row.id),
     meta: { loading: false },
     selectionMode: "checkbox",
+    exportOptions: { fileName: "employees" },
   });
 
   const selectedCount = useSelector(
@@ -60,17 +60,8 @@ export function ToolbarComposition() {
 
         {/* One menu: the app's own actions and the grid's column chooser. */}
         <TMDataGrid.Menu>
-          <Menu.Item
-            leftSection={<IconDownload size={16} stroke={1.6} />}
-            onClick={() =>
-              exportGridToCsv({
-                table: grid.table,
-                options: { fileName: "employees" },
-              })
-            }
-          >
-            Export CSV
-          </Menu.Item>
+          <TMDataGrid.Menu.Export />
+          <TMDataGrid.Menu.ExportSelected />
           <Menu.Divider />
           <Menu.Label>Columns</Menu.Label>
           <TMDataGrid.Menu.Columns />

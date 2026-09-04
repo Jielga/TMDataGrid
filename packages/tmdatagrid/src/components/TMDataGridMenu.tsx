@@ -14,8 +14,10 @@ import {
 } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
+import type { TMDataGridExportOptions } from "../core/export";
+import { useTMDataGridExport } from "../useTMDataGridExport";
 import { useHideableColumns } from "./useHideableColumns";
-import { BurgerIcon, RestoreIcon } from "./icons";
+import { BurgerIcon, DownloadIcon, RestoreIcon } from "./icons";
 
 /**
  * The column toggles are `Menu.Item`s with a `Checkbox.Indicator` in front,
@@ -238,6 +240,66 @@ export function TMDataGridMenuResetLayout() {
   );
 }
 
+/** Per-item overrides of the grid's `exportOptions`, and the item's text. */
+export type TMDataGridMenuExportProps = TMDataGridExportOptions & {
+  /**
+   * The item's text. Defaults to `labels.exportAll`, or for the selected-rows
+   * item `labels.exportSelected(count)`. Two items offering two formats need
+   * two texts, which is what this is for.
+   */
+  label?: ReactNode;
+};
+
+/**
+ * Downloads every filtered and sorted row, all pages, in the grid's export
+ * format. Props override `exportOptions` for this item alone, which is how one
+ * menu offers two formats.
+ */
+export function TMDataGridMenuExport({
+  label,
+  ...options
+}: TMDataGridMenuExportProps) {
+  const { labels } = useTMDataGridContext();
+  const { exportAll } = useTMDataGridExport(options);
+
+  return (
+    <Menu.Item
+      leftSection={<DownloadIcon size={16} stroke={1.6} />}
+      onClick={() => void exportAll()}
+      data-dg-part="menu-export"
+    >
+      {label ?? labels.exportAll}
+    </Menu.Item>
+  );
+}
+
+/**
+ * Downloads the selected rows, in grid order. Disabled while nothing is
+ * selected; renders nothing when row selection is off, since then there is
+ * never anything for it to do.
+ */
+export function TMDataGridMenuExportSelected({
+  label,
+  ...options
+}: TMDataGridMenuExportProps) {
+  const { labels } = useTMDataGridContext();
+  const { exportSelected, selectedCount, canExportSelected } =
+    useTMDataGridExport(options);
+
+  if (!canExportSelected) return null;
+
+  return (
+    <Menu.Item
+      leftSection={<DownloadIcon size={16} stroke={1.6} />}
+      disabled={selectedCount === 0}
+      onClick={() => void exportSelected()}
+      data-dg-part="menu-export-selected"
+    >
+      {label ?? labels.exportSelected(selectedCount)}
+    </Menu.Item>
+  );
+}
+
 /**
  * Burger menu in the grid's top-right corner, holding whatever the consumer
  * puts in it. Every Mantine `Menu` prop is accepted and wins over the defaults
@@ -253,4 +315,6 @@ export const TMDataGridMenu = Object.assign(TMDataGridMenuRoot, {
   ColumnToggles: TMDataGridMenuColumnToggles,
   ShowHideAll: TMDataGridMenuShowHideAll,
   ResetLayout: TMDataGridMenuResetLayout,
+  Export: TMDataGridMenuExport,
+  ExportSelected: TMDataGridMenuExportSelected,
 });

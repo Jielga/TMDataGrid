@@ -651,7 +651,7 @@ describe("cell selection - ranges", () => {
       await screen.findByRole("menuitem", { name: "Copy" }),
     ).toBeDisabled();
     expect(
-      screen.getByRole("menuitem", { name: "Export as CSV for Excel" }),
+      screen.getByRole("menuitem", { name: "Export cells" }),
     ).toBeDisabled();
   });
 
@@ -668,7 +668,7 @@ describe("cell selection - ranges", () => {
 
     expect(await screen.findByText("6 cells")).toBeInTheDocument();
     expect(
-      screen.getByRole("menuitem", { name: "Export as CSV for Excel" }),
+      screen.getByRole("menuitem", { name: "Export cells" }),
     ).toBeInTheDocument();
     // The block is the one that was dragged: a right-click inside it is about
     // it, not about the cell under the pointer.

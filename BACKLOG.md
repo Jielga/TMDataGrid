@@ -56,8 +56,9 @@ past 1.0.0 on 2026-08-01.
   `useTable` are deleted. The publish test in `controlledState.test.tsx` pins
   the beta.21 internals the patch leans on; it goes with the patch, not before.
 - Docs structure decisions raised by the 2026-08-31 review pass and left for the stakeholder.
-  Five items, each a reorganisation rather than a fix: put the sidebar on one axis (it mixes grid anatomy with concern today, so no rule can be inferred from the tree); split `editing.md`, at 562 lines seven times the median page; give the column menu its own page, since the surface a user touches most has no sidebar entry and lives under "Visibility, pinning, ordering and size"; move whole-grid CSV export out from under Cell selection, where a grid with cell selection off will never look; rewrite the 31 index-card descriptions in the voice of the pages.
-  All five rename pages or move anchors, which ripples into the `sources:` of every skill citing them.
+  Four items left, each a reorganisation rather than a fix: put the sidebar on one axis (it mixes grid anatomy with concern today, so no rule can be inferred from the tree); split `editing.md`, at 562 lines seven times the median page; give the column menu its own page, since the surface a user touches most has no sidebar entry and lives under "Visibility, pinning, ordering and size"; rewrite the 31 index-card descriptions in the voice of the pages.
+  The fifth, moving whole-grid export out from under Cell selection, shipped with the Export page on 2026-09-04.
+  All four rename pages or move anchors, which ripples into the `sources:` of every skill citing them.
 - Documenting the rest of the public surface - 72 of 201 exports in `index.ts` appear in no docs page, `TMDataGridProps`, `TMDataGridColumnMeta` and `tmDataGridEditMode` among them.
   Raised 2026-08-31. An API index built from the types rather than from prose tables waits on this: machinery to search for names with nothing to point at only moves the dead end.
 - The prose measure - `.article` is 1280px, roughly 150 characters a line against a normal 45 to 90.
@@ -144,6 +145,13 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Export** - **done 2026-09-04.**
+`TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected` as the built-in entry points, `useTMDataGridExport` for a control of your own, `exportGrid` from outside a component.
+Formats behind a `TMDataGridExportFormat` contract: `csvExcelFormat` (the Nordic default, as before), `csvFormat`, `tsvFormat`, `jsonFormat`, with a formula-injection guard on by default; `exportOptions` on the hook, `meta.exportValue` and `meta.enableExport` per column.
+The old `cellExport` / `exportGridToCsv` surface stays as deprecated aliases for one beta.
+`@jielga/tmdatagrid-xlsx` is the first addon package: `xlsxFormat()` on exceljs, in the fixed group with the grid.
+Open: its first version is published by hand and the trusted-publishing config added on npmjs.com before the release workflow can take it over.
 
 **Monorepo** - **done 2026-09-04.**
 bun workspaces: `packages/tmdatagrid` holds the library with its docs markdown and skills, `apps/docs` the site, which imports the grid as `@jielga/tmdatagrid` and resolves it to source through an alias.

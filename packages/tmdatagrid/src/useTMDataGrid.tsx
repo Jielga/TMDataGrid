@@ -117,6 +117,12 @@ import {
 } from "./core/pageReset";
 import type { TMDataGridCellRange } from "./core/cellRange";
 import {
+  resolveExportOptions,
+  type TMDataGridExportOptions,
+  type TMDataGridExportSettings,
+  type TMDataGridExportValueGetter,
+} from "./core/export";
+import {
   createSelectColumn,
   SELECT_COLUMN_ID,
 } from "./components/TMDataGridSelectColumn";
@@ -214,6 +220,25 @@ export type TMDataGridColumnMeta = {
    * See {@link TMDataGridColumnEditOptions}.
    */
   edit?: TMDataGridColumnEditOptions;
+  /**
+   * `false` leaves the column out of every export and out of Ctrl+C - for a
+   * column of buttons, or one whose value means nothing outside the grid.
+   * Defaults to `true`.
+   */
+  enableExport?: boolean;
+  /**
+   * The value an export writes for this column, in place of
+   * `row.getValue(column.id)`. The export otherwise writes the value, never
+   * what the cell renders, so this is where a status code becomes its label
+   * or a nested object becomes one field.
+   *
+   * ```tsx
+   * meta: {
+   *   exportValue: ({ value }) => STATUS_LABELS[value as Status],
+   * }
+   * ```
+   */
+  exportValue?: TMDataGridExportValueGetter;
 };
 
 /** Grid-wide configuration passed through `options.meta`. */
@@ -446,6 +471,12 @@ export type TMDataGridApi<TData extends RowData> = {
    * table about which surface is on.
    */
   filters: TMDataGridFiltersSettings;
+  /**
+   * How the grid exports, the `exportOptions` option with its defaults filled
+   * in. Read by `useTMDataGridExport`, the `TMDataGrid.Menu.Export*` items and
+   * the cell-range menu, so every export of the grid agrees on the format.
+   */
+  exportOptions: TMDataGridExportSettings;
   /** Every string the chrome renders, `labels` merged over the English defaults. */
   labels: TMDataGridLabels;
   /** The detail renderer, when row details are on. See `renderDetails`. */
@@ -770,6 +801,20 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   filters?: TMDataGridFiltersOptions;
   /**
+   * How the grid exports: the file format, the file name and whether the
+   * column labels go in as the first row. Defaults to `csvExcelFormat()`,
+   * `"export"` and `true`. See {@link TMDataGridExportOptions}.
+   *
+   * ```tsx
+   * useTMDataGrid({ data, columns, exportOptions: { format: csvFormat(), fileName: "employees" } });
+   * ```
+   *
+   * Read field by field like `filters`, so a literal is fine. A `format`
+   * built inline is rebuilt every render, which costs nothing but a small
+   * object; keep it at module scope when that bothers you.
+   */
+  exportOptions?: TMDataGridExportOptions;
+  /**
    * How the quick search (`TMDataGrid.Search`) matches. `"fuzzy"` - the
    * default - forgives typos and skipped characters, and while it is the
    * only thing narrowing the grid (no sort, no grouping) the rows order by
@@ -1041,6 +1086,7 @@ export function useTMDataGrid<TData extends RowData>({
   cellSelection,
   onFocusedCellChange,
   filters: filterOptions,
+  exportOptions: exportOptionsOverride,
   editing,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
@@ -1072,6 +1118,21 @@ export function useTMDataGrid<TData extends RowData>({
   // Resolved on the override's identity, so a module-scope dictionary costs one
   // merge for the lifetime of the grid.
   const labels = useMemo(() => mergeLabels(labelsOverride), [labelsOverride]);
+  // Field by field for the same reason as `filters` below.
+  const {
+    format: exportFormat,
+    fileName: exportFileName,
+    includeHeaders: exportIncludeHeaders,
+  } = exportOptionsOverride ?? {};
+  const exportOptions = useMemo(
+    () =>
+      resolveExportOptions({
+        format: exportFormat,
+        fileName: exportFileName,
+        includeHeaders: exportIncludeHeaders,
+      }),
+    [exportFormat, exportFileName, exportIncludeHeaders],
+  );
   // Unpacked before the memo, so the api is keyed on the five fields rather
   // than on the object's identity - which is what lets `filters` be written as
   // a literal, the way it reads best, without republishing every render.
@@ -1857,6 +1918,7 @@ export function useTMDataGrid<TData extends RowData>({
     edit,
     features,
     filters,
+    exportOptions,
     labels,
     renderDetails,
     renderDetailsEstHeight,

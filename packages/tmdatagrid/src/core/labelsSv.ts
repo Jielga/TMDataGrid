@@ -121,8 +121,12 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",
-  exportCsv: "Exportera som CSV för Excel",
+  exportCells: "Exportera celler",
   includeHeaders: "Inkludera rubriker",
+
+  exportAll: "Exportera alla rader",
+  exportSelected: (count) =>
+    count === 1 ? "Exportera 1 vald rad" : `Exportera ${count} valda rader`,
 
   selectColumnLabel: "Kryssrutemarkering",
   selectAllRows: "Markera alla rader",

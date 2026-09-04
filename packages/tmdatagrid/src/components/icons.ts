@@ -16,6 +16,7 @@ export {
   IconChevronRight as ChevronRightIcon,
   IconColumns3 as ColumnsIcon,
   IconDotsVertical as DotsVerticalIcon,
+  IconDownload as DownloadIcon,
   IconEyeOff as EyeOffIcon,
   IconFilter as FilterIcon,
   IconFoldDown as ExpandAllIcon,

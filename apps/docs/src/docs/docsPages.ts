@@ -5,6 +5,7 @@ import componentsDoc from "@jielga/tmdatagrid/docs/components.md?raw";
 import columnsDoc from "@jielga/tmdatagrid/docs/columns.md?raw";
 import editingDoc from "@jielga/tmdatagrid/docs/editing.md?raw";
 import editorsDoc from "@jielga/tmdatagrid/docs/editors.md?raw";
+import exportDoc from "@jielga/tmdatagrid/docs/export.md?raw";
 import filteringDoc from "@jielga/tmdatagrid/docs/filtering.md?raw";
 import gettingStartedDoc from "@jielga/tmdatagrid/docs/getting-started.md?raw";
 import groupingDoc from "@jielga/tmdatagrid/docs/grouping.md?raw";
@@ -30,6 +31,7 @@ import summaryRowDoc from "@jielga/tmdatagrid/docs/summary-row.md?raw";
 import testingDoc from "@jielga/tmdatagrid/docs/testing.md?raw";
 import toolbarDoc from "@jielga/tmdatagrid/docs/toolbar.md?raw";
 import useTMDataGridDoc from "@jielga/tmdatagrid/docs/use-tm-data-grid.md?raw";
+import xlsxDoc from "@jielga/tmdatagrid-xlsx/docs/xlsx.md?raw";
 
 /**
  * One page per topic: the prose, the demos that show it, and the reference
@@ -160,7 +162,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   {
     id: "cell-selection",
     section: "Cells and editing",
-    label: "Cell selection, copy and export",
+    label: "Cell selection and copy",
     description: "A cell cursor, and rectangles of them",
     source: cellSelectionDoc,
   },
@@ -192,6 +194,20 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Quick search",
     description: "One box, fuzzy, with highlighting",
     source: quickSearchDoc,
+  },
+  {
+    id: "export",
+    section: "Data",
+    label: "Export",
+    description: "Menu items, a hook, and the file formats",
+    source: exportDoc,
+  },
+  {
+    id: "xlsx",
+    section: "Data",
+    label: "Excel export (xlsx)",
+    description: "The @jielga/tmdatagrid-xlsx addon",
+    source: xlsxDoc,
   },
   {
     id: "persistence",
