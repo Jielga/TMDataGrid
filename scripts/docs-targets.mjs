@@ -34,17 +34,27 @@ function readJson(path) {
   }
 }
 
-/** package.json's version at a ref, or in the working tree when ref is empty. */
-function versionAt(ref) {
-  if (!ref) return readJson("package.json")?.version ?? null;
+// The site documents the grid, so its version is the grid package's. Refs from
+// before the workspace layout carried it in the root manifest instead.
+const MANIFESTS = ["packages/tmdatagrid/package.json", "package.json"];
+
+function showJson(ref, path) {
   try {
-    const shown = execFileSync("git", ["show", `${ref}:package.json`], {
-      encoding: "utf8",
-    });
-    return JSON.parse(shown).version ?? null;
+    return JSON.parse(
+      execFileSync("git", ["show", `${ref}:${path}`], { encoding: "utf8" }),
+    );
   } catch {
     return null;
   }
+}
+
+/** The library's version at a ref, or in the working tree when ref is empty. */
+function versionAt(ref) {
+  for (const path of MANIFESTS) {
+    const version = (ref ? showJson(ref, path) : readJson(path))?.version;
+    if (version) return version;
+  }
+  return null;
 }
 
 function tagExists(tag) {
