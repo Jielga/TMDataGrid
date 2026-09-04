@@ -129,6 +129,8 @@ jobs:
 
           head_sha=$(git rev-parse HEAD)
           current=""
+          # Set by build(): the directory the site was built into.
+          out=""
 
           build() {
             local slug="$1" ref="$2" label="$3" version="$4" kind="$5"
@@ -137,7 +139,6 @@ jobs:
 
             # A snapshot may predate the workspace layout, where the site was
             # the repository's own npm package and built into dist-demo.
-            local out
             if [ -f apps/docs/package.json ]; then
               VITE_DOCS_SITE_ROOT="$SITE_ROOT" VITE_DOCS_SLUG="$slug" \
                 bun run --cwd apps/docs build --base="$base"

@@ -1,5 +1,5 @@
 {
-  "name": "@jielga/docs",
+  "name": "tmdatagrid-docs",
   "private": true,
   "type": "module",
   "description": "The TMDataGrid documentation site: docs pages, live demos and the playground.",

@@ -46,7 +46,9 @@ The site depends on `@jielga/tmdatagrid` by name, as a user does, and resolves i
 The published manifest knows nothing of this.
 A new package that tests against the grid copies that pair; its declaration build must not, so that the grid resolves to the published `dist/index.d.ts` and stays external in its dts rollup.
 
-Every published package sits in one changesets `fixed` group: one version, one release, each package published on its own.
+Every published package sits in one changesets `fixed` group, `@jielga/*`: one version, one release, each package published on its own.
+A private package stays outside that scope (the docs app is `tmdatagrid-docs`): the glob would pull it into the group, and in pre mode `changeset version` crashes on any group member missing from `.changeset/pre.json`.
+For the same reason a new published package added during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
 
 ## The library boundary
 
