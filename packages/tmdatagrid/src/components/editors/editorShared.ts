@@ -1,5 +1,6 @@
 import { useStore } from "@tanstack/react-form";
 import { useLayoutEffect, useRef, type RefObject } from "react";
+import { isInputElement } from "../../core/dom";
 import { firstErrorText, type TMDataGridEditField } from "../../core/editEngine";
 
 /** The field's live value - one subscription, on the field's own store. */
@@ -30,7 +31,7 @@ export function useFieldInvalid(field: TMDataGridEditField): boolean {
 /** Select-all on focus - F2/Enter open with the value ready to replace. */
 export function selectAllOnFocus(event: { currentTarget: unknown }): void {
   const target = event.currentTarget;
-  if (target instanceof HTMLInputElement) target.select();
+  if (isInputElement(target)) target.select();
 }
 
 /**

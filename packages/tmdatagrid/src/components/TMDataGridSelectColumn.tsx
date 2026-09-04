@@ -5,6 +5,7 @@ import {
   useBodyControlTabIndex,
   useTMDataGridContext,
 } from "../TMDataGridContext";
+import { isMouseEvent } from "../core/dom";
 import {
   getDisplayedRows,
   getSelectableRowIds,
@@ -126,7 +127,7 @@ function SelectRowCheckbox<TData extends RowData>({
       // silently loses the clicked row, which `onChange` then toggles back off.
       onChange={(event) => {
         const native = event.nativeEvent;
-        const isMouse = native instanceof MouseEvent;
+        const isMouse = isMouseEvent(native);
         const resolved = resolveRowSelectionClick({
           rows: getDisplayedRows(row.table, features),
           rowId: row.id,

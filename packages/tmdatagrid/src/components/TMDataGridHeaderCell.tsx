@@ -13,6 +13,7 @@ import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import { getColumnCapabilities, getGridCapabilities } from "../core/capabilities";
 import { autosizeColumn } from "../core/autosize";
 import { getColumnResizeHandler } from "../core/columnResize";
+import { isNode } from "../core/dom";
 import {
   getColumnRegion,
   getStepTargetColumn,
@@ -193,7 +194,7 @@ export function TMDataGridHeaderCell({
   function handleDragLeave(event: DragEvent<HTMLDivElement>) {
     // dragleave also fires when the pointer crosses into a child element.
     const next = event.relatedTarget;
-    if (next instanceof Node && event.currentTarget.contains(next)) return;
+    if (isNode(next) && event.currentTarget.contains(next)) return;
     setDropSide(null);
   }
 

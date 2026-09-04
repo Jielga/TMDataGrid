@@ -1,6 +1,7 @@
 import type { RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridTable } from "../useTMDataGrid";
+import { isHTMLElement } from "./dom";
 
 /**
  * Room the header keeps for its hover-revealed actions (sort arrow, menu) and
@@ -26,7 +27,9 @@ const CONTENT_ALLOWANCE = 2;
  * measure (jsdom reports 0 there).
  */
 function contentSpanWidth(content: HTMLElement): number {
-  const range = document.createRange();
+  // The cell's own document, not the global one: a Range from the opener's
+  // document cannot select nodes in a window opened with `window.open`.
+  const range = content.ownerDocument.createRange();
   range.selectNodeContents(content);
   // jsdom's Range has no getBoundingClientRect at all, hence the guard
   // rather than a zero-check alone.
@@ -84,7 +87,7 @@ export function measureColumnContentWidth({
 
   for (const cell of mountedCells(container, columnId)) {
     const content = cell.firstElementChild;
-    if (!(content instanceof HTMLElement)) continue;
+    if (!isHTMLElement(content)) continue;
     const styles = getComputedStyle(cell);
     const padding =
       (Number.parseFloat(styles.paddingLeft) || 0) +

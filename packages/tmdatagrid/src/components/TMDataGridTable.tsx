@@ -49,6 +49,7 @@ import {
   type TMDataGridColumnTrack,
 } from "../core/resizePreview";
 import { useSettledTableState } from "../core/useSettledTableState";
+import { isInputElement } from "../core/dom";
 import { draftCellContext } from "../core/draftCellContext";
 import {
   getEditFieldName,
@@ -1971,7 +1972,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           event.preventDefault();
           nextControl.focus();
           // What Tab does on a text field, and what the caret otherwise loses.
-          if (nextControl instanceof HTMLInputElement) nextControl.select();
+          if (isInputElement(nextControl)) nextControl.select();
           return;
         }
         const rowIndex = rows.findIndex(
@@ -2186,13 +2187,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       return;
     }
 
+    // The grid's own document, not the global one: in a window opened with
+    // `window.open` the global document is the opener's, and its focus is
+    // never in this grid.
+    const activeElement = container.ownerDocument.activeElement;
+
     // Never take the focus from elsewhere on the page. A consumer moving the
     // cell while the user is typing in a form somewhere means "move the ring",
     // not "move the caret" - the scroll above already did the visible part.
-    if (
-      !wantsCellFocusRef.current &&
-      !container.contains(document.activeElement)
-    ) {
+    if (!wantsCellFocusRef.current && !container.contains(activeElement)) {
       return;
     }
     // Mid-hop: Tab parked the focus on a guard and the browser is about to
@@ -2203,8 +2206,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     // the cell, and that intent is honoured.
     if (
       !wantsCellFocusRef.current &&
-      document.activeElement instanceof Element &&
-      document.activeElement.closest('[data-dg-part="tab-guard"]') !== null
+      activeElement !== null &&
+      activeElement.closest('[data-dg-part="tab-guard"]') !== null
     ) {
       return;
     }
@@ -2215,7 +2218,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     wantsCellFocusRef.current = false;
     // Focus is already inside - on the control Enter stepped into. The cell is
     // where the ring belongs, so there is nothing to move.
-    if (cellElement.contains(document.activeElement)) return;
+    if (cellElement.contains(activeElement)) return;
     // An open editor outranks the ring, wherever it is. Row mode opens a whole
     // row from one gesture, so the caret legitimately sits in a cell other
     // than the one that gesture landed the ring on - the lane's pencil is the
@@ -2223,8 +2226,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     // the caret back onto that cell would leave the row open with the caret in
     // none of its editors, and the user with nothing to type into.
     if (
-      document.activeElement instanceof Element &&
-      document.activeElement.closest('[data-dg-part="editor"]') !== null
+      activeElement !== null &&
+      activeElement.closest('[data-dg-part="editor"]') !== null
     ) {
       return;
     }

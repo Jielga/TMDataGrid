@@ -11,6 +11,7 @@ import {
 } from "react";
 import classes from "./TMDataGridTable.module.css";
 import { type TMDataGridRowData, useTMDataGridContext } from "../TMDataGridContext";
+import { isButtonElement, isInputElement, isNode } from "../core/dom";
 import {
   getEditFieldName,
   normalizeFieldValidate,
@@ -202,7 +203,7 @@ export function TMDataGridCellEditor({
     // Enter on the ✓ or ✕ is the button's own press, and does what a click on
     // it does: commit and stay, or cancel. Left to the branch below it would
     // commit and move down, and the same button would mean two things.
-    if (event.key === "Enter" && event.target instanceof HTMLButtonElement) {
+    if (event.key === "Enter" && isButtonElement(event.target)) {
       event.stopPropagation();
       return;
     }
@@ -232,7 +233,7 @@ export function TMDataGridCellEditor({
         const next = tabbables[index + (event.shiftKey ? -1 : 1)];
         if (index >= 0 && next !== undefined) {
           next.focus();
-          if (next instanceof HTMLInputElement) next.select();
+          if (isInputElement(next)) next.select();
           return;
         }
         deferAndClose(event.shiftKey ? "defer-shift-tab" : "defer-tab");
@@ -260,7 +261,7 @@ export function TMDataGridCellEditor({
     // nothing there; the lane's buttons and the keys end the edit.
     if (isRowShaped) return;
     const next = event.relatedTarget;
-    if (next instanceof Node && event.currentTarget.contains(next)) return;
+    if (isNode(next) && event.currentTarget.contains(next)) return;
     closingRef.current = true;
     if (features.editMode === "cellConfirm") {
       // The draft stays, dirty-marked, waiting for its ✓.
@@ -326,7 +327,7 @@ export function TMDataGridCellEditor({
             // Focus moving inside the editor - into an open dropdown, say - is
             // not focus leaving it.
             const next = event.relatedTarget;
-            if (next instanceof Node && event.currentTarget.contains(next)) {
+            if (isNode(next) && event.currentTarget.contains(next)) {
               return;
             }
             setMessageFocused(false);

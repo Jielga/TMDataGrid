@@ -3,6 +3,7 @@ import { useSelector } from "@tanstack/react-store";
 import { useEffect, useRef } from "react";
 import classes from "./TMDataGridFilterSurface.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
+import { isElement } from "../core/dom";
 import { CloseIcon } from "./icons";
 import { TMDataGridFilterPanel } from "./TMDataGridFilterPanel";
 
@@ -76,10 +77,8 @@ export function TMDataGridFilterPopup() {
     if (!opened) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      // Duck-typed rather than `instanceof Element`: a node from another
-      // window is an instance of that window's `Element`, not this one's.
-      const target = event.target as Element | null;
-      if (typeof target?.closest !== "function") return;
+      const target = event.target;
+      if (!isElement(target)) return;
       if (popupRef.current?.contains(target)) return;
       // The toolbar button toggles the popup itself. Closing from here first
       // would leave its click reopening what the user meant to close.
