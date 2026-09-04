@@ -11,7 +11,7 @@
 # cannot work here: Changesets creates the tag and the Release using the default
 # GITHUB_TOKEN, and events raised by GITHUB_TOKEN do not start new workflow runs.
 # A `push: tags` trigger is dead for the same reason. Version drift is instead
-# prevented up front -- `npm run version-packages` bumps each skill's
+# prevented up front -- `bun run version-packages` bumps each skill's
 # library_version in the same PR that bumps package.json -- so the only drift
 # left for this job to find is a source doc changing under a skill, which a
 # schedule catches perfectly well.
@@ -55,9 +55,17 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
 
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - run: bun install --frozen-lockfile
 
       - name: Validate skills
         run: node scripts/intent.mjs validate --github-summary
@@ -76,9 +84,17 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
 
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - run: bun install --frozen-lockfile
 
       - name: Check skills
         id: stale

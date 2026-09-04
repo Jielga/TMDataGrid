@@ -1,13 +1,13 @@
 name: Release
 
 # Changesets owns versions; this workflow owns the publish. Pushing to main
-# opens (or updates) a "Version Packages" PR that bumps package.json, writes
-# CHANGELOG.md and syncs the skills' library_version. Merging that PR is what
-# releases, and the merge is itself just another push to main.
+# opens (or updates) a "Version Packages" PR that bumps every package manifest,
+# writes each CHANGELOG.md and syncs the skills' library_version. Merging that
+# PR is what releases, and the merge is itself just another push to main.
 #
-# Every push publishes whatever main's package.json says, if and only if the
-# registry does not already have that version, which holds however the merges
-# are ordered.
+# Every push publishes whatever version main's package manifests say, package
+# by package, if and only if the registry does not already have it, which holds
+# however the merges are ordered.
 on:
   push:
     branches: [main]
@@ -31,21 +31,35 @@ jobs:
           # more than the default shallow clone.
           fetch-depth: 0
 
+      # Node publishes (npm is the client that speaks trusted publishing) and
+      # runs the tool binaries; bun installs and runs the scripts.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: npm
 
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
 
-      - run: npm run lint
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
-      - run: npx tsc -b
+      - run: bun install --frozen-lockfile
+
+      - run: bun run lint
+
+      - run: bun run typecheck
 
       # A release is not worth making from a red suite, and CI's own run does
       # not gate this workflow.
-      - run: npm run test
+      - run: bun run test
+
+      # The publish step packs what is on disk, so the build is a step of its
+      # own here rather than a prepublishOnly hook.
+      - run: bun run build:lib
 
       # Publishing is this step's job rather than the action's below.
       #
@@ -60,31 +74,23 @@ jobs:
       # step switches the checkout to the changeset-release branch, so by the
       # time it returns package.json holds the *next* version.
       #
-      # `changeset publish` skips what the registry already has, and the check
-      # below says so in the log rather than leaving it to be inferred, so an
-      # ordinary push is a no-op. `prepublishOnly` rebuilds dist from this
-      # commit, so a stale build cannot reach the registry.
+      # The script publishes each public workspace package the registry lacks
+      # and says so in the log for the rest, so an ordinary push is a no-op.
+      # It packs with bun, which resolves the workspace and catalog protocols,
+      # and publishes the tarball with npm.
       #
       # There is no npm token: the registry authenticates this job through
       # trusted publishing, configured package-side on npmjs.com against this
       # repo and this workflow filename. Renaming this file breaks publishing,
       # and a broken config surfaces as a misleading `E404 ... PUT` on publish.
+      # A new package cannot start this way: trusted publishing needs the
+      # package to exist, so its first version is published by hand and the
+      # config added on npmjs.com before this job can take over.
       - name: Publish what the registry does not have
         id: publish
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: |
-          set -euo pipefail
-          name=$(node -p "require('./package.json').name")
-          version=$(node -p "require('./package.json').version")
-
-          if npm view "$name@$version" version >/dev/null 2>&1; then
-            echo "$name@$version is already on the registry; nothing to publish."
-            exit 0
-          fi
-
-          npm run release
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+        run: node scripts/publish-missing.mjs
 
       # The action does this for the releases it publishes; these are ours.
       #
@@ -114,7 +120,7 @@ jobs:
           fi
 
           notes="$RUNNER_TEMP/notes.md"
-          if ! node scripts/changelog-entry.mjs "$VERSION" > "$notes"; then
+          if ! node scripts/changelog-entry.mjs "$VERSION" packages/tmdatagrid/CHANGELOG.md > "$notes"; then
             echo "::warning::No changelog section for $VERSION; releasing without notes."
             echo "$tag" > "$notes"
           fi
@@ -130,14 +136,14 @@ jobs:
       # version pull request's body says the packages must be published by
       # hand, which is not true of this repository.
       #
-      # It cannot be `npm run release`: `changeset publish` asks the registry
-      # whether the version exists, and seconds after the publish above the
-      # registry can still say no, so it published again and npm refused the
-      # duplicate with a 409. 2.0.0-beta.8 failed that way, with the release
-      # already on the registry.
+      # It cannot be `changeset publish` either: that asks the registry whether
+      # the version exists, and seconds after the publish above the registry
+      # can still say no, so it published again and npm refused the duplicate
+      # with a 409. 2.0.0-beta.8 failed that way, with the release already on
+      # the registry.
       - uses: changesets/action@v1.9.0
         with:
-          version: npm run version-packages
+          version: bun run version-packages
           publish: echo published by the step above
           commit: "chore: version packages"
           title: "chore: version packages"

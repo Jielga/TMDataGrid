@@ -72,7 +72,15 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Check out the branch that stores the site
         env:
@@ -102,7 +110,7 @@ jobs:
           echo "work=$(jq -r .work <<<"$plan")" >> "$GITHUB_OUTPUT"
 
       - if: steps.plan.outputs.work == 'true'
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build and stage every target
         if: steps.plan.outputs.work == 'true'
@@ -117,7 +125,7 @@ jobs:
           tools="$RUNNER_TEMP/docs-deploy"
           mkdir -p "$tools"
           cp -a scripts/. "$tools/"
-          cp public/docs-spa-path.js public/docs-version-switcher.js "$tools/"
+          cp apps/docs/public/docs-spa-path.js apps/docs/public/docs-version-switcher.js "$tools/"
 
           head_sha=$(git rev-parse HEAD)
           current=""
@@ -127,30 +135,41 @@ jobs:
             local base="$SITE_ROOT"
             if [ "$slug" != "root" ]; then base="$SITE_ROOT$slug/"; fi
 
-            VITE_DOCS_SITE_ROOT="$SITE_ROOT" VITE_DOCS_SLUG="$slug" \
-              npm run build -- --base="$base"
+            # A snapshot may predate the workspace layout, where the site was
+            # the repository's own npm package and built into dist-demo.
+            local out
+            if [ -f apps/docs/package.json ]; then
+              VITE_DOCS_SITE_ROOT="$SITE_ROOT" VITE_DOCS_SLUG="$slug" \
+                bun run --cwd apps/docs build --base="$base"
+              out=apps/docs/dist
+            else
+              VITE_DOCS_SITE_ROOT="$SITE_ROOT" VITE_DOCS_SLUG="$slug" \
+                npm run build -- --base="$base"
+              out=dist-demo
+            fi
 
             # Pages answers every missing path with the site root's 404,
             # whatever directory the path was under: a copy's own is never
             # consulted. The root's therefore carries the redirect that sends a
             # version's deep link into that version, and every copy builds one
             # because the root is a mirror of one of them.
-            cp dist-demo/index.html dist-demo/404.html
+            cp "$out/index.html" "$out/404.html"
 
             # In the head, and synchronous: module scripts are deferred, so this
             # settles the URL before the router first reads it.
             head_tag="<script src=\"${SITE_ROOT}docs-spa-path.js\" data-site-root=\"$SITE_ROOT\" data-slug=\"$slug\"></script>"
-            sed -i "s#<head>#<head>$head_tag#" dist-demo/index.html dist-demo/404.html
+            sed -i "s#<head>#<head>$head_tag#" "$out/index.html" "$out/404.html"
 
             jq -n --arg slug "$slug" --arg label "$label" \
               --arg version "$version" --arg kind "$kind" \
               '{slug:$slug,label:$label,version:$version,kind:$kind}' \
-              > dist-demo/meta.json
+              > "$out/meta.json"
 
             # Only for a build whose own header cannot switch versions.
-            if ! git cat-file -e "$ref:src/docsVersions.ts" 2>/dev/null; then
+            if ! git cat-file -e "$ref:apps/docs/src/docsVersions.ts" 2>/dev/null &&
+               ! git cat-file -e "$ref:src/docsVersions.ts" 2>/dev/null; then
               local tag="<script src=\"${SITE_ROOT}docs-version-switcher.js\" data-site-root=\"$SITE_ROOT\" data-slug=\"$slug\" defer></script>"
-              sed -i "s#</body>#$tag</body>#" dist-demo/index.html dist-demo/404.html
+              sed -i "s#</body>#$tag</body>#" "$out/index.html" "$out/404.html"
             fi
           }
 
@@ -165,7 +184,7 @@ jobs:
 
             if [ "$ref" != "$current" ]; then
               git checkout --force "${ref:-$head_sha}"
-              npm ci
+              if [ -f bun.lock ]; then bun install --frozen-lockfile; else npm ci; fi
               current="$ref"
             fi
             sha="${ref:-$head_sha}"
@@ -173,7 +192,7 @@ jobs:
             build "$slug" "$sha" "$label" "$version" "$kind"
             rm -rf "site/$slug"
             mkdir -p "site/$slug"
-            cp -a dist-demo/. "site/$slug/"
+            cp -a "$out/." "site/$slug/"
 
             if [ "$mirror" = "true" ]; then
               build root "$sha" "$label" "$version" "$kind"
@@ -181,7 +200,7 @@ jobs:
               # directory beside it alone.
               find site -maxdepth 1 -type f -delete
               rm -rf site/assets
-              cp -a dist-demo/. site/
+              cp -a "$out/." site/
               # The root is a mirror, not a copy of its own: the manifest marks
               # the entry it serves rather than listing the root twice.
               jq -n --arg slug "$slug" '{slug:$slug}' > site/meta.json

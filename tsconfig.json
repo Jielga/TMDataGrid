@@ -1,7 +1,8 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
+    { "path": "./packages/tmdatagrid" },
+    { "path": "./apps/docs" },
     { "path": "./tsconfig.node.json" }
   ]
 }

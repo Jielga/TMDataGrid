@@ -85,25 +85,33 @@ no filter control.
 
 ## Documentation
 
-The documentation is markdown under [`src/docs/`](src/docs), served by the demo
-site. There is one page per topic, each holding the prose, its demos and a
-reference table. [`docsPages.ts`](src/docs/docsPages.ts) is the registry and the
-sidebar order.
+The documentation is markdown under [`packages/tmdatagrid/docs/`](packages/tmdatagrid/docs),
+shipped in the package and served by the docs site. There is one page per topic,
+each holding the prose, its demos and a reference table.
+[`docsPages.ts`](apps/docs/src/docs/docsPages.ts) is the registry and the sidebar
+order.
 
 | Section              | Pages                                                            |
 | -------------------- | ---------------------------------------------------------------- |
-| Start here           | [Getting started](src/docs/getting-started.md), [Grid anatomy](src/docs/anatomy.md) |
-| Columns              | [Defining columns](src/docs/columns.md), [Sorting](src/docs/sorting.md), [Filtering](src/docs/filtering.md), [Visibility, pinning, ordering and size](src/docs/column-layout.md) |
-| Rows                 | [Selection](src/docs/row-selection.md), [Details](src/docs/row-details.md), [Grouping](src/docs/grouping.md), [Summary row](src/docs/summary-row.md), [Row pinning and numbering](src/docs/row-pinning.md), [Clicks and context menus](src/docs/row-interaction.md), [Row styling](src/docs/row-styling.md) |
-| Cells and editing    | [Cell selection](src/docs/cell-selection.md), [Editing](src/docs/editing.md), [Editors and validation](src/docs/editors.md) |
-| Data                 | [Pagination](src/docs/pagination.md), [Quick search](src/docs/quick-search.md), [Persistence](src/docs/persistence.md), [Server-side](src/docs/server-side.md), [Loading and empty states](src/docs/loading-and-empty.md), [Scrolling and virtualization](src/docs/scrolling.md) |
-| Appearance           | [Size, styling and theming](src/docs/styling.md), [Toolbar](src/docs/toolbar.md), [Localization](src/docs/localization.md) |
-| Reference            | [useTMDataGrid](src/docs/use-tm-data-grid.md), [Testing](src/docs/testing.md) |
+| Start here           | [Getting started](packages/tmdatagrid/docs/getting-started.md), [Grid anatomy](packages/tmdatagrid/docs/anatomy.md) |
+| Columns              | [Defining columns](packages/tmdatagrid/docs/columns.md), [Sorting](packages/tmdatagrid/docs/sorting.md), [Filtering](packages/tmdatagrid/docs/filtering.md), [Visibility, pinning, ordering and size](packages/tmdatagrid/docs/column-layout.md) |
+| Rows                 | [Selection](packages/tmdatagrid/docs/row-selection.md), [Details](packages/tmdatagrid/docs/row-details.md), [Grouping](packages/tmdatagrid/docs/grouping.md), [Summary row](packages/tmdatagrid/docs/summary-row.md), [Row pinning and numbering](packages/tmdatagrid/docs/row-pinning.md), [Clicks and context menus](packages/tmdatagrid/docs/row-interaction.md), [Row styling](packages/tmdatagrid/docs/row-styling.md) |
+| Cells and editing    | [Cell selection](packages/tmdatagrid/docs/cell-selection.md), [Editing](packages/tmdatagrid/docs/editing.md), [Editors and validation](packages/tmdatagrid/docs/editors.md) |
+| Data                 | [Pagination](packages/tmdatagrid/docs/pagination.md), [Quick search](packages/tmdatagrid/docs/quick-search.md), [Persistence](packages/tmdatagrid/docs/persistence.md), [Server-side](packages/tmdatagrid/docs/server-side.md), [Loading and empty states](packages/tmdatagrid/docs/loading-and-empty.md), [Scrolling and virtualization](packages/tmdatagrid/docs/scrolling.md) |
+| Appearance           | [Size, styling and theming](packages/tmdatagrid/docs/styling.md), [Toolbar](packages/tmdatagrid/docs/toolbar.md), [Localization](packages/tmdatagrid/docs/localization.md) |
+| Reference            | [useTMDataGrid](packages/tmdatagrid/docs/use-tm-data-grid.md), [Testing](packages/tmdatagrid/docs/testing.md) |
 
 ## Development
 
-The grid lives in [`src/tmdatagrid/`](src/tmdatagrid); everything else in `src`
-is the demo site that documents it.
+A [bun](https://bun.sh) workspaces monorepo:
+
+| Path                   | Contents                                                        |
+| ---------------------- | --------------------------------------------------------------- |
+| `packages/tmdatagrid/` | The published package: `src/`, its `docs/` and its `skills/`     |
+| `apps/docs/`           | The docs site: pages, live demos and the playground              |
+| `scripts/`             | Tooling shared by the hooks and the workflows                    |
+
+Inside `packages/tmdatagrid/src/`:
 
 | Path                | Contents                                                     |
 | ------------------- | ------------------------------------------------------------ |
@@ -112,9 +120,14 @@ is the demo site that documents it.
 | `core/`             | Headless logic: filtering, ordering, persistence, capabilities |
 | `components/`       | The React components and their co-located CSS modules         |
 
+The site imports the grid as `@jielga/tmdatagrid`, the way an application
+does, and resolves it to the workspace source through
+[`vite.alias.ts`](apps/docs/vite.alias.ts) and the `paths` in its tsconfig, so
+`bun run dev` hot-reloads library files and nothing has to be built first.
+
 ### Examples
 
-The demo site's examples live in [`src/examples/`](src/examples):
+The site's examples live in [`apps/docs/src/examples/`](apps/docs/src/examples):
 
 | Path              | Contents                                                       |
 | ----------------- | -------------------------------------------------------------- |
@@ -126,27 +139,30 @@ The demo site's examples live in [`src/examples/`](src/examples):
 To add a demo, add a file under `demos/` and name it from a ` ```demo ` fence on
 the docs page that explains it. The registry pairs each module with its own
 source, so the code on screen cannot drift from the code running.
-[`demos.test.tsx`](src/examples/demos.test.tsx) mounts every registered demo, so
-a demo that stops working fails the suite whether or not it still compiles.
+[`demos.test.tsx`](apps/docs/src/examples/demos.test.tsx) mounts every registered
+demo, so a demo that stops working fails the suite whether or not it still
+compiles.
 
 ```sh
-npm install
-npm run dev    # demo site: examples, playground and docs
-npm run lint   # oxlint
-npm run test   # vitest, once
-npm run test:watch
+bun install
+bun run dev        # docs site: examples, playground and docs
+bun run lint       # oxlint
+bun run typecheck  # tsc -b over every project
+bun run test       # vitest, once, every project
+bun run test:watch
 ```
 
 ## Testing
 
 For testing an application that *uses* the grid, including the test ids, roles
 and ARIA attributes it publishes and how to drive it from Playwright, see
-[Testing](src/docs/testing.md). What follows is about this repo's own suite.
+[Testing](packages/tmdatagrid/docs/testing.md). What follows is about this repo's
+own suite.
 
 Vitest with React Testing Library, in jsdom. Tests sit next to the code they
 cover as `*.test.ts(x)` and are excluded from both the package and the
-declaration build; shared fixtures live in [`src/test/`](src/test) so they stay
-out of `src/tmdatagrid/` entirely.
+declaration build; the shared harness lives in
+[`packages/tmdatagrid/test/`](packages/tmdatagrid/test), outside `src/`.
 
 Two things to know before adding to them:
 
@@ -161,15 +177,15 @@ Two things to know before adding to them:
 
 Two independent outputs, neither committed:
 
-| Command             | Output       | Contents              |
-| ------------------- | ------------ | --------------------- |
-| `npm run build:lib` | `dist/`      | The published package |
-| `npm run build`     | `dist-demo/` | The demo site         |
+| Command              | Output                       | Contents              |
+| -------------------- | ---------------------------- | --------------------- |
+| `bun run build:lib`  | `packages/tmdatagrid/dist/`  | The published package |
+| `bun run build:docs` | `apps/docs/dist/`            | The docs site         |
 
-`build:lib` runs three steps. Vite bundles `src/tmdatagrid/index.ts` into
+`build:lib` runs three steps in the package. Vite bundles `src/index.ts` into
 `dist/index.js` with every peer dependency left external, and emits the CSS
 modules as a single `dist/styles.css`. TypeScript then writes per-file
-declarations to `.types-tmp/`, and rollup flattens those into one
+declarations to `.types-tmp/`, and rolldown flattens those into one
 `dist/index.d.ts`.
 
 The declarations are flattened rather than shipped as a tree because
@@ -181,31 +197,38 @@ works everywhere without putting `.js` extensions in the sources.
 ## Publishing
 
 Releases are managed by [Changesets](https://github.com/changesets/changesets).
-Nothing publishes from an ordinary push. A release happens only when the version
-PR is merged.
+Every published package sits in one fixed group, so a release moves all of them
+to the same version; each is still published as its own npm package. Nothing
+publishes from an ordinary push. A release happens only when the version PR is
+merged.
 
 Describe your change in the same PR that makes it:
 
 ```sh
-npm run changeset      # pick patch/minor/major, write a summary
+bun run changeset      # pick patch/minor/major, write a summary
 ```
 
 That writes a markdown file under `.changeset/`. Commit it alongside the code.
 
 Once on `main`, [`release.yml`](.github/workflows/release.yml) opens a
-**chore: version packages** PR that collects every pending changeset, bumps
-`package.json`, writes `CHANGELOG.md` and syncs the skills. Review the version it
-picked and the changelog it wrote, then merge it to publish to npm with
-provenance.
+**chore: version packages** PR that collects every pending changeset, bumps the
+package manifests, writes each `CHANGELOG.md` and syncs the skills. Review the
+version it picked and the changelog it wrote, then merge it to publish to npm
+with provenance.
 
-The package build runs from `prepublishOnly` rather than as a workflow step, so
-`npm publish` cannot ship a stale `dist` whether it runs in CI or by hand.
+The publish is [`scripts/publish-missing.mjs`](scripts/publish-missing.mjs): for
+every public package whose version the registry lacks, it packs with `bun pm
+pack`, which resolves the `workspace:` and `catalog:` protocols, and publishes
+the tarball with `npm publish` under trusted publishing. A brand-new package is
+published by hand once and its trusted-publishing config added on npmjs.com
+before the workflow can take it over.
 
 ### Skill versions
 
-`npm run version-packages` is `changeset version` followed by
+`bun run version-packages` is `changeset version` followed by
 [`scripts/sync-skill-version.mjs`](scripts/sync-skill-version.mjs), which sets
-`metadata.library_version` in every `skills/*/SKILL.md` to the new version.
+`metadata.library_version` in every `skills/*/SKILL.md` to its package's new
+version.
 
 Intent reports a skill as stale when its `library_version` trails the package
 version, so without that step every release would leave every skill stale.
@@ -215,5 +238,5 @@ the same PR.
 To check what a release would contain without publishing anything:
 
 ```sh
-npm publish --dry-run
+node scripts/publish-missing.mjs --dry-run
 ```
