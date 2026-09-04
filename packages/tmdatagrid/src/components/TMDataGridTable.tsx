@@ -1143,14 +1143,14 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     onReachEnd();
   });
 
-  // The *Visible* variants throughout: `getLeftLeafColumns()` and friends
+  // The *Visible* variants throughout: `getStartLeafColumns()` and friends
   // include hidden columns, while the cells below come from
-  // `row.getLeftVisibleCells()`, which does not. Mixing the two would lay down
+  // `row.getStartVisibleCells()`, which does not. Mixing the two would lay down
   // a grid track for a column that renders no cell, shifting every column after
   // it out of its header. The tree column is hidden exactly this way while
   // nothing is grouped.
-  const leftLeafColumns = table.getLeftVisibleLeafColumns();
-  const rightLeafColumns = table.getRightVisibleLeafColumns();
+  const leftLeafColumns = table.getStartVisibleLeafColumns();
+  const rightLeafColumns = table.getEndVisibleLeafColumns();
   const centerLeafColumns = table.getCenterVisibleLeafColumns();
 
   const orderedColumns = [
@@ -1162,8 +1162,8 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   // Headers and cells must follow the same left → center → right order as the
   // column tracks, otherwise pinning a column would shuffle it out of its lane.
   const centerHeaderGroups = table.getCenterHeaderGroups();
-  const leftHeaderGroups = table.getLeftHeaderGroups();
-  const rightHeaderGroups = table.getRightHeaderGroups();
+  const leftHeaderGroups = table.getStartHeaderGroups();
+  const rightHeaderGroups = table.getEndHeaderGroups();
   const headerGroups = centerHeaderGroups.map((group, index) => ({
     id: group.id,
     headers: [
@@ -1763,9 +1763,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     const row = rows.find((candidate) => candidate.id === rowId);
     if (row === undefined) return null;
     const cells = [
-      ...row.getLeftVisibleCells(),
+      ...row.getStartVisibleCells(),
       ...row.getCenterVisibleCells(),
-      ...row.getRightVisibleCells(),
+      ...row.getEndVisibleCells(),
     ];
     return (
       cells.find((cell) => edit.canEditCell(row, cell.column))?.column.id ??
@@ -2598,9 +2598,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               const isGroupRow = row.getIsGrouped();
               const isInteractive = rowGesturesFor(row);
               const rowCells = [
-                ...row.getLeftVisibleCells(),
+                ...row.getStartVisibleCells(),
                 ...row.getCenterVisibleCells(),
-                ...row.getRightVisibleCells(),
+                ...row.getEndVisibleCells(),
               ];
               // Row mode opens every editable cell of the row at once, and
               // rows accumulate: a second row opening leaves the first one

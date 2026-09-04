@@ -194,7 +194,7 @@ does not apply.
 **Ordering** is header dragging plus "Move left" / "Move right". A column can
 only move **within its own pinned region** - pinning splits the grid into left,
 centre and right, then `columnOrder` sequences the centre while
-`columnPinning.left` and `.right` sequence the pinned lanes. Unpin a column
+`columnPinning.start` and `.end` sequence the pinned lanes. Unpin a column
 first to move it out of one. A neighbour that cannot move acts as a wall rather
 than being stepped over, and columns inside a header group are not movable in
 either direction, because `columnOrder` sequences leaf columns.
@@ -321,14 +321,14 @@ Wrong:
 
 ```tsx
 columnHelper.accessor("name", { header: "Name", minSize: 220 });
-initialState: { columnPinning: { left: ["name"], right: [] } },
+initialState: { columnPinning: { start: ["name"], end: [] } },
 ```
 
 Correct:
 
 ```tsx
 columnHelper.accessor("name", { header: "Name", minSize: 220, size: 220 });
-initialState: { columnPinning: { left: ["name"], right: [] } },
+initialState: { columnPinning: { start: ["name"], end: [] } },
 ```
 
 Source: `packages/tmdatagrid/docs/column-layout.md` (Pinning).
@@ -482,7 +482,7 @@ Source: `packages/tmdatagrid/docs/columns.md` (Columns derived from the other ro
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
-| `getColumnRegion` | Export | `(column) => "left" \| "center" \| "right"` | – | Which pinned region a column is in. |
+| `getColumnRegion` | Export | `(column) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
 | `isColumnReorderable` | Export | `(column, features) => boolean` | – | Whether this column may move at all. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `measureColumnContentWidth` | Export | `(args) => number` | – | The measurement behind it. |

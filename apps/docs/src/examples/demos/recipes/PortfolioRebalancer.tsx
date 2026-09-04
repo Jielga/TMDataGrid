@@ -277,7 +277,7 @@ export function PortfolioRebalancer() {
       // decision columns get the width.
       columnVisibility: { price: false, shares: false, name: false },
       // The decision columns stay on screen while the identity columns scroll.
-      columnPinning: { left: [], right: ["targetPct", "drift", "tradeShares"] },
+      columnPinning: { start: [], end: ["targetPct", "drift", "tradeShares"] },
     },
     editing: {
       mode: "cell",

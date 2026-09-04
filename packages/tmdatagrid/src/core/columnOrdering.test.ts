@@ -13,11 +13,11 @@ import {
 } from "./columnOrdering";
 
 describe("getColumnRegion", () => {
-  const pinning = { left: ["a"], right: ["z"] };
+  const pinning = { start: ["a"], end: ["z"] };
 
   it("reads the lane off the pinning state", () => {
-    expect(getColumnRegion(pinning, "a")).toBe("left");
-    expect(getColumnRegion(pinning, "z")).toBe("right");
+    expect(getColumnRegion(pinning, "a")).toBe("start");
+    expect(getColumnRegion(pinning, "z")).toBe("end");
     expect(getColumnRegion(pinning, "m")).toBe("center");
     // An unknown id is centre, the lane that needs no membership.
     expect(getColumnRegion(pinning, "nope")).toBe("center");
@@ -73,7 +73,7 @@ describe("moveColumn", () => {
     const table = erased(result.current).table;
 
     act(() => {
-      table.setColumnPinning({ left: [SELECT_COLUMN_ID, "id"], right: [] });
+      table.setColumnPinning({ start: [SELECT_COLUMN_ID, "id"], end: [] });
     });
     const before = visibleColumnIds(result.current);
 
@@ -92,8 +92,8 @@ describe("moveColumn", () => {
 
     act(() => {
       table.setColumnPinning({
-        left: [SELECT_COLUMN_ID, "id", "name"],
-        right: [],
+        start: [SELECT_COLUMN_ID, "id", "name"],
+        end: [],
       });
     });
 
@@ -101,7 +101,7 @@ describe("moveColumn", () => {
       moveColumn({ table, columnId: "name", targetId: "id", side: "before" });
     });
 
-    expect(table.store.state.columnPinning.left).toEqual([
+    expect(table.store.state.columnPinning.start).toEqual([
       SELECT_COLUMN_ID,
       "name",
       "id",
@@ -197,7 +197,7 @@ describe("getStepTargetColumn", () => {
     const table = erased(result.current).table;
 
     act(() => {
-      table.setColumnPinning({ left: [SELECT_COLUMN_ID, "id"], right: [] });
+      table.setColumnPinning({ start: [SELECT_COLUMN_ID, "id"], end: [] });
     });
 
     expect(
@@ -279,17 +279,17 @@ describe("keepGeneratedColumnsOutermost", () => {
   it("keeps the generated lanes on the outside of both pinned lanes", () => {
     expect(
       keepGeneratedColumnsOutermost({
-        left: ["name", SELECT_COLUMN_ID, GROUP_COLUMN_ID],
-        right: [EDIT_COLUMN_ID, "city"],
+        start: ["name", SELECT_COLUMN_ID, GROUP_COLUMN_ID],
+        end: [EDIT_COLUMN_ID, "city"],
       }),
     ).toEqual({
-      left: [SELECT_COLUMN_ID, GROUP_COLUMN_ID, "name"],
-      right: ["city", EDIT_COLUMN_ID],
+      start: [SELECT_COLUMN_ID, GROUP_COLUMN_ID, "name"],
+      end: ["city", EDIT_COLUMN_ID],
     });
   });
 
   it("leaves the consumer's own order alone inside each part", () => {
-    const pinning = { left: ["id", "name"], right: ["age", "city"] };
+    const pinning = { start: ["id", "name"], end: ["age", "city"] };
     expect(keepGeneratedColumnsOutermost(pinning)).toEqual(pinning);
   });
 });

@@ -24,6 +24,7 @@ import {
   metaHelper,
   type Row,
   type RowData,
+  rowAggregationFeature,
   rowExpandingFeature,
   rowPaginationFeature,
   rowPinningFeature,
@@ -272,6 +273,7 @@ export const tmDataGridFeatures = tableFeatures({
   columnResizingFeature,
   columnFacetingFeature,
   columnGroupingFeature,
+  rowAggregationFeature,
   // Registered for grouping's sake rather than for tree data: the grouped row
   // model builds the parent rows, and this is what flattens the expanded ones
   // back into the flat list the body virtualizes.
@@ -1550,14 +1552,14 @@ export function useTMDataGrid<TData extends RowData>({
       columnPinning: {
         // The generated columns are structurally pinned, so they are re-applied
         // on top of anything restored from storage.
-        left: [
+        start: [
           ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
           ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
           ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
           ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
           ...(
-            persistedState.columnPinning?.left ??
-            options.initialState?.columnPinning?.left ??
+            persistedState.columnPinning?.start ??
+            options.initialState?.columnPinning?.start ??
             []
           ).filter(
             (id) =>
@@ -1569,10 +1571,10 @@ export function useTMDataGrid<TData extends RowData>({
         ],
         // The edit lane mirrors the generated columns on the left: structurally
         // pinned, outermost, re-applied over anything restored.
-        right: [
+        end: [
           ...(
-            persistedState.columnPinning?.right ??
-            options.initialState?.columnPinning?.right ??
+            persistedState.columnPinning?.end ??
+            options.initialState?.columnPinning?.end ??
             []
           ).filter((id) => id !== EDIT_COLUMN_ID),
           ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),
@@ -1898,12 +1900,12 @@ export function useTMDataGrid<TData extends RowData>({
     table.setColumnSizing({ ...initial?.columnSizing });
     table.setColumnOrder([...(initial?.columnOrder ?? [])]);
     table.setColumnPinning({
-      left: [
+      start: [
         ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
         ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
         ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
         ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
-        ...(initial?.columnPinning?.left ?? []).filter(
+        ...(initial?.columnPinning?.start ?? []).filter(
           (id) =>
             id !== ROW_NUMBER_COLUMN_ID &&
             id !== SELECT_COLUMN_ID &&
@@ -1911,8 +1913,8 @@ export function useTMDataGrid<TData extends RowData>({
             id !== GROUP_COLUMN_ID,
         ),
       ],
-      right: [
-        ...(initial?.columnPinning?.right ?? []).filter(
+      end: [
+        ...(initial?.columnPinning?.end ?? []).filter(
           (id) => id !== EDIT_COLUMN_ID,
         ),
         ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),

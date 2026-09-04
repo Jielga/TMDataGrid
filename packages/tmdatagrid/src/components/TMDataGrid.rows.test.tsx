@@ -657,7 +657,7 @@ describe("row details", () => {
 
     // The tree lane is pinned between them, and hidden until something is
     // grouped - so it holds its place without taking a track.
-    expect(api.table.store.state.columnPinning.left).toEqual([
+    expect(api.table.store.state.columnPinning.start).toEqual([
       SELECT_COLUMN_ID,
       GROUP_COLUMN_ID,
       DETAILS_COLUMN_ID,

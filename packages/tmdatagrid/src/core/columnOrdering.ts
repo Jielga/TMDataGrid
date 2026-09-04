@@ -1,4 +1,8 @@
-import type { Column, ColumnPinningState } from "@tanstack/react-table";
+import type {
+  Column,
+  ColumnPinningPosition,
+  ColumnPinningState,
+} from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import { isColumnReorderable, isGeneratedColumn } from "./columnUtils";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
@@ -10,11 +14,11 @@ type GridTable = TMDataGridTable<TMDataGridRowData>;
  * The lane a column renders in.
  *
  * Pinning splits the grid into three, and TanStack sequences them from two
- * different state slices: `columnPinning.left` / `.right` order the pinned
+ * different state slices: `columnPinning.start` / `.end` order the pinned
  * lanes, `columnOrder` orders the centre. A move therefore always stays inside
  * one lane - moving a column into another one would be a pin, not a reorder.
  */
-export type TMDataGridColumnRegion = "left" | "center" | "right";
+export type TMDataGridColumnRegion = "start" | "center" | "end";
 
 /** Which edge of the column under the pointer a dragged column lands on. */
 export type TMDataGridDropSide = "before" | "after";
@@ -23,9 +27,33 @@ export function getColumnRegion(
   columnPinning: ColumnPinningState,
   columnId: string,
 ): TMDataGridColumnRegion {
-  if (columnPinning.left.includes(columnId)) return "left";
-  if (columnPinning.right.includes(columnId)) return "right";
+  if (columnPinning.start.includes(columnId)) return "start";
+  if (columnPinning.end.includes(columnId)) return "end";
   return "center";
+}
+
+/**
+ * TanStack's pinned regions are logical: `start` and `end` follow the writing
+ * direction. The grid's own vocabulary - its sticky CSS, the `data-pinned`
+ * attribute, the column menu's "Pin left" and "Pin right" - is physical, and
+ * the grid renders left to right only. These two translate between the pair,
+ * so `left` maps to `start` and `right` to `end`.
+ */
+export function pinningPositionOfSide(
+  side: "left" | "right" | false,
+): ColumnPinningPosition {
+  if (side === "left") return "start";
+  if (side === "right") return "end";
+  return false;
+}
+
+/** The physical side of a logical pinning position. */
+export function sideOfPinningPosition(
+  position: ColumnPinningPosition,
+): "left" | "right" | false {
+  if (position === "start") return "left";
+  if (position === "end") return "right";
+  return false;
 }
 
 /** Moves one id next to another, leaving every other id in place. */
@@ -87,7 +115,7 @@ export function moveColumn({
  * Puts the generated lanes back on the outside of both pinned lanes: the ones
  * on the left before every consumer column, the edit lane after all of them.
  *
- * `column.pin("right")` appends, so pinning a column right would otherwise drop
+ * `column.pin("end")` appends, so pinning a column right would otherwise drop
  * it outside the edit lane, so the row's Save and Delete would no longer be
  * last in the row. Pinning left appends too, which is already correct there,
  * but the same pass keeps both lanes in place whatever a consumer writes into
@@ -101,13 +129,13 @@ export function keepGeneratedColumnsOutermost(
 ): ColumnPinningState {
   const generated = (id: string) => isGeneratedColumn(id);
   return {
-    left: [
-      ...pinning.left.filter(generated),
-      ...pinning.left.filter((id) => !generated(id)),
+    start: [
+      ...pinning.start.filter(generated),
+      ...pinning.start.filter((id) => !generated(id)),
     ],
-    right: [
-      ...pinning.right.filter((id) => !generated(id)),
-      ...pinning.right.filter(generated),
+    end: [
+      ...pinning.end.filter((id) => !generated(id)),
+      ...pinning.end.filter(generated),
     ],
   };
 }
@@ -117,8 +145,8 @@ function getRegionColumns(
   table: GridTable,
   region: TMDataGridColumnRegion,
 ): Array<GridColumn> {
-  if (region === "left") return table.getLeftVisibleLeafColumns();
-  if (region === "right") return table.getRightVisibleLeafColumns();
+  if (region === "start") return table.getStartVisibleLeafColumns();
+  if (region === "end") return table.getEndVisibleLeafColumns();
   return table.getCenterVisibleLeafColumns();
 }
 

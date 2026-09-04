@@ -12,7 +12,6 @@ import {
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import { getColumnCapabilities, getGridCapabilities } from "../core/capabilities";
 import { autosizeColumn } from "../core/autosize";
-import { getColumnResizeHandler } from "../core/columnResize";
 import { isNode } from "../core/dom";
 import {
   getColumnRegion,
@@ -20,6 +19,7 @@ import {
   keepGeneratedColumnsOutermost,
   moveColumn,
   moveColumnByStep,
+  pinningPositionOfSide,
   type TMDataGridDropSide,
 } from "../core/columnOrdering";
 import {
@@ -273,8 +273,8 @@ export function TMDataGridHeaderCell({
    */
   function setPinned(position: "left" | "right" | false) {
     if (position) freezeRenderedWidths();
-    column.pin(position);
-    // `pin("right")` appends, which would leave the column outside the edit
+    column.pin(pinningPositionOfSide(position));
+    // `pin("end")` appends, which would leave the column outside the edit
     // lane. Normalising after the pin rather than writing the lane by hand
     // keeps TanStack's own handling of a header group's leaves.
     table.setColumnPinning(keepGeneratedColumnsOutermost);
@@ -730,16 +730,15 @@ export function TMDataGridHeaderCell({
           // The handler listens for the moves and the release on the document
           // it is given - the separator's own, not the global one, which is
           // the opener's when the grid is rendered through a portal into a
-          // window opened with `window.open`. See `getColumnResizeHandler`.
+          // window opened with `window.open`.
           onMouseDown={
             canResize
               ? (event) => {
                   suppressSortRef.current = true;
                   freezeRenderedWidths();
-                  getColumnResizeHandler(
-                    header,
-                    event.currentTarget.ownerDocument,
-                  )(event);
+                  header.getResizeHandler(event.currentTarget.ownerDocument)(
+                    event,
+                  );
                 }
               : undefined
           }
@@ -747,10 +746,9 @@ export function TMDataGridHeaderCell({
             canResize
               ? (event) => {
                   freezeRenderedWidths();
-                  getColumnResizeHandler(
-                    header,
-                    event.currentTarget.ownerDocument,
-                  )(event);
+                  header.getResizeHandler(event.currentTarget.ownerDocument)(
+                    event,
+                  );
                 }
               : undefined
           }

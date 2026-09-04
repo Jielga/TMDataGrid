@@ -188,11 +188,25 @@ const SLICE_GUARDS: Record<
     isRecordOf(value, (entry) => typeof entry === "boolean"),
   columnSizing: (value) => isRecordOf(value, isFiniteNumber),
   columnOrder: (value) => isArrayOf(value, isString),
+  // Both the current logical shape and the physical one 1.x wrote.
   columnPinning: (value) =>
-    isArrayOf(prop(value, "left"), isString) &&
-    isArrayOf(prop(value, "right"), isString),
+    (isArrayOf(prop(value, "start"), isString) &&
+      isArrayOf(prop(value, "end"), isString)) ||
+    (isArrayOf(prop(value, "left"), isString) &&
+      isArrayOf(prop(value, "right"), isString)),
   grouping: (value) => isArrayOf(value, isString),
 };
+
+/**
+ * Settings saved by 1.x used TanStack's old physical `columnPinning` keys.
+ * Rewrite them once on read, so nothing downstream sees `left` / `right`.
+ */
+function normalizeColumnPinning(value: unknown): unknown {
+  const left = prop(value, "left");
+  const right = prop(value, "right");
+  if (left === undefined || right === undefined) return value;
+  return { start: left, end: right };
+}
 
 function isValidSlice(slice: keyof GridState, value: unknown): boolean {
   const guard = SLICE_GUARDS[slice as keyof typeof SLICE_GUARDS];
@@ -219,7 +233,10 @@ function readSlices(
     for (const slice of resolved.slices) {
       if (!(slice in record)) continue;
       if (!isValidSlice(slice, record[slice])) continue;
-      restored[slice] = record[slice];
+      restored[slice] =
+        slice === "columnPinning"
+          ? normalizeColumnPinning(record[slice])
+          : record[slice];
     }
     return restored as Partial<GridState>;
   } catch {
@@ -323,8 +340,8 @@ function realignToColumns(
   }
   if (restored.columnPinning) {
     realigned.columnPinning = {
-      left: keepIds(restored.columnPinning.left ?? []),
-      right: keepIds(restored.columnPinning.right ?? []),
+      start: keepIds(restored.columnPinning.start ?? []),
+      end: keepIds(restored.columnPinning.end ?? []),
     };
   }
   if (restored.sorting) realigned.sorting = keepEntries(restored.sorting);

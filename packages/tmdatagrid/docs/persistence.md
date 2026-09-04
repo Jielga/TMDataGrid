@@ -37,6 +37,9 @@ extraSources: data/employeeColumns.tsx
 `DATA_STATE_SLICES` and `SETTINGS_STATE_SLICES` are exported with the same
 values. Slice names are typed per group, so only valid names compile.
 
+Settings saved by 1.x with the old `columnPinning` keys `left` and `right` are
+read and migrated to `start` and `end`.
+
 ## Persisting only some of it
 
 A key on its own persists every slice in its group. Pass a tuple to narrow it:

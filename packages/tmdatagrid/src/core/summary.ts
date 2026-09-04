@@ -1,6 +1,10 @@
-import { aggregationFns, type RowData } from "@tanstack/react-table";
+import {
+  type AggregationContext,
+  aggregationFns,
+  type RowData,
+} from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
-import type { TMDataGridTable } from "../useTMDataGrid";
+import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 /** The registered aggregation names - the same set `aggregationFn` accepts. */
 export type TMDataGridAggregationName = keyof typeof aggregationFns;
@@ -33,11 +37,23 @@ export function aggregateColumn<TData extends RowData>({
   fn?: TMDataGridAggregationName;
 }): unknown {
   const erased = table as unknown as TMDataGridTable<TMDataGridRowData>;
+  const column = erased.getColumn(columnId);
+  // A summary for a column the table does not hold has no value.
+  if (!column) return undefined;
   // `flatRows`, not `rows`: the filtered model nests under `getSubRows`, and
   // the top-level array would total a tree's roots and drop every child.
   // Grouping does not nest it - the group rows are built from this model, not
   // held in it - so a grouped grid is unaffected either way.
   const rows = erased.getFilteredRowModel().flatRows;
-  // Leaf and child rows are the same set here: this is already every row.
-  return aggregationFns[fn](columnId, rows, rows);
+  // The rows are already every row, so there is nothing below them to select:
+  // `maxDepth: 0`, and no `subRows` or `groupingRow` - this is not a group.
+  const context: AggregationContext<TMDataGridFeatures, TMDataGridRowData> = {
+    column,
+    columnId,
+    maxDepth: 0,
+    getValue: (row) => row.getValue(columnId),
+    rows,
+    table: erased,
+  };
+  return aggregationFns[fn].aggregate(context);
 }
