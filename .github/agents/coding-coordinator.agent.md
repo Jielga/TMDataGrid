@@ -25,7 +25,7 @@ integrate, and verify.
 
 1. Break the request into subtasks and pick the right specialist for each:
    - **react-specialist** - React/TypeScript components, routing, and the
-     grid itself (`src/tmdatagrid/`: TanStack Table v9, column definitions,
+     grid itself (`packages/tmdatagrid/src/`: TanStack Table v9, column definitions,
      virtualization, grid state).
    - **playwright-specialist** - e2e tests. Always delegate test writing
      here; never let an implementation specialist write e2e tests.

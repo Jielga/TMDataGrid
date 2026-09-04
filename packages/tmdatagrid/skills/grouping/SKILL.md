@@ -16,10 +16,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/grouping.md'
-  - 'Jielga/TMDataGrid:src/docs/summary-row.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/grouping.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/summary.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/grouping.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/summary-row.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/grouping.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/summary.ts'
 ---
 
 # TMDataGrid - Grouping and totals
@@ -173,7 +173,7 @@ Correct:
 columnHelper.accessor("salary", { header: "Salary", aggregationFn: "sum" });
 ```
 
-Source: `src/docs/grouping.md` (Aggregation).
+Source: `packages/tmdatagrid/docs/grouping.md` (Aggregation).
 
 ### HIGH Looking for the grouped column in the grid
 
@@ -188,7 +188,7 @@ Correct, when the column must stay:
 useTMDataGrid({ data, columns, groupedColumnMode: "reorder" });
 ```
 
-Source: `src/docs/grouping.md` (What grouping does to the grid).
+Source: `packages/tmdatagrid/docs/grouping.md` (What grouping does to the grid).
 
 ### HIGH Combining the pager with grouping
 
@@ -197,7 +197,7 @@ out instead of paging the tree, so a footer count wired to `getPageCount()`
 reports a number nobody can navigate to. Read
 `isPagingActive(table, features)` before trusting the pager state.
 
-Source: `src/docs/grouping.md` (Grouping suspends pagination).
+Source: `packages/tmdatagrid/docs/grouping.md` (Grouping suspends pagination).
 
 ### HIGH Handing a group row to a row callback
 
@@ -224,7 +224,7 @@ const records = getGroupDataRows(groupRow).map((row) => row.original);
 />;
 ```
 
-Source: `src/docs/grouping.md` (Group rows are not data rows).
+Source: `packages/tmdatagrid/docs/grouping.md` (Group rows are not data rows).
 
 ### MEDIUM Totalling the page instead of the data
 
@@ -232,7 +232,7 @@ Source: `src/docs/grouping.md` (Group rows are not data rows).
 `table.getRowModel().rows` instead totals only what is currently paged in, and
 under virtualization not even that: only the mounted rows.
 
-Source: `src/docs/summary-row.md` (Totalling a column).
+Source: `packages/tmdatagrid/docs/summary-row.md` (Totalling a column).
 
 ### MEDIUM Grouping a server-paged grid
 
@@ -252,7 +252,7 @@ useTMDataGrid({
 });
 ```
 
-Source: `src/docs/grouping.md` (Server-side grids).
+Source: `packages/tmdatagrid/docs/grouping.md` (Server-side grids).
 
 ## Reference
 

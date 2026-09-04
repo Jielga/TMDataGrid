@@ -22,7 +22,7 @@ useTMDataGrid({
 Correct: wire `editing.onCommit` to apply the change where the data lives, as
 in the skill's Setup section.
 
-Source: `src/docs/editing.md`, `src/tmdatagrid/core/editEngine.ts`.
+Source: `packages/tmdatagrid/docs/editing.md`, `packages/tmdatagrid/src/core/editEngine.ts`.
 
 ## CRITICAL `getRowId` built from the row index
 
@@ -42,7 +42,7 @@ Correct:
 getRowId: (row) => String(row.id),
 ```
 
-Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
+Source: `packages/tmdatagrid/src/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 
 ## HIGH A cell editor defined inside the component
 
@@ -71,7 +71,7 @@ const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => (
 meta: { edit: { editor: SalaryEditor } },
 ```
 
-Source: `src/docs/editors.md`, `src/tmdatagrid/core/editEngine.ts`.
+Source: `packages/tmdatagrid/docs/editors.md`, `packages/tmdatagrid/src/core/editEngine.ts`.
 
 ## HIGH A cross-field rule under `editing.mode: "cell"`
 
@@ -82,7 +82,7 @@ other column's old value, and the row cannot be saved.
 Correct: `editing.rowValidators` needs `mode: "row"`, which validates the
 whole row in one commit.
 
-Source: `src/docs/editors.md` (Validation).
+Source: `packages/tmdatagrid/docs/editors.md` (Validation).
 
 ## HIGH An `accessorFn` column that never opens an editor
 
@@ -109,7 +109,7 @@ columnHelper.accessor((row) => `${row.firstName} ${row.lastName}`, {
 });
 ```
 
-Source: `src/docs/editing.md` (Which cells edit).
+Source: `packages/tmdatagrid/docs/editing.md` (Which cells edit).
 
 ## HIGH Swallowing the error in `editing.onCommit`
 
@@ -132,7 +132,7 @@ onCommit: async ({ rowId, value }) => {
 Correct: no `catch` - let the rejection propagate, and the form stays open
 with the error on the row.
 
-Source: `src/tmdatagrid/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
+Source: `packages/tmdatagrid/src/useTMDataGrid.tsx` (`TMDataGridEditingCallbacks`).
 
 ## HIGH Submitting an outer form while the grid holds a draft
 
@@ -153,7 +153,7 @@ const flushed = await grid.edit.saveDrafts();
 if (flushed) await form.handleSubmit();
 ```
 
-Source: `src/docs/query-builder.md` (Which mode, Submitting).
+Source: `packages/tmdatagrid/docs/query-builder.md` (Which mode, Submitting).
 
 ## HIGH A bulk write built from `begin`, `getForm` and `commit`
 
@@ -185,7 +185,7 @@ await grid.edit.setRowValues(rowId, { status: "Closed", closedOn: today() });
 Both write the stored value through the row's form, so `meta.edit.mapValue` does not run - no editor is involved - while `meta.edit.validate` does, at the commit.
 A refused value leaves the row open carrying its errors and the call resolves `false`, so read the result rather than assuming the fill landed.
 
-Source: `src/tmdatagrid/core/editEngine.ts` (`begin`, `writeFields`).
+Source: `packages/tmdatagrid/src/core/editEngine.ts` (`begin`, `writeFields`).
 
 ## MEDIUM A computed column frozen while a row is edited
 
@@ -204,7 +204,7 @@ function useDraftedRow(rowId: string, original: Product): Product {
 }
 ```
 
-Source: `src/docs/editing.md` (Draft lifetime).
+Source: `packages/tmdatagrid/docs/editing.md` (Draft lifetime).
 
 ## MEDIUM Reading a commit's result as the saved value
 
@@ -218,7 +218,7 @@ const saved = await grid.edit.saveDrafts();
 notifications.show({ message: saved ? "Saved" : "Some rows need attention" });
 ```
 
-Source: `src/tmdatagrid/core/editEngine.ts` (`TMDataGridEditApi`).
+Source: `packages/tmdatagrid/src/core/editEngine.ts` (`TMDataGridEditApi`).
 
 ## MEDIUM Expecting `editing.onRowDelete` to fire under a draft store
 
@@ -228,7 +228,7 @@ Under `draft: true` it only toggles a deletion mark, so nothing is removed until
 no such callback, in the per-row `editing.onRowDelete` loop. A confirmation
 placed inside `editing.onRowDelete` therefore guards the save, not the trash.
 
-Source: `src/docs/editing.md` (Adding and deleting rows).
+Source: `packages/tmdatagrid/docs/editing.md` (Adding and deleting rows).
 
 ## MEDIUM A custom editor that binds no invalid state
 
@@ -261,4 +261,4 @@ const SalaryEditor: TMDataGridEditorComponent = ({ field, commit }) => {
 };
 ```
 
-Source: `src/docs/editors.md` (Writing your own).
+Source: `packages/tmdatagrid/docs/editors.md` (Writing your own).

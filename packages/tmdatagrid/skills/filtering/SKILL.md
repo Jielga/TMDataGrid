@@ -20,10 +20,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/filtering.md'
-  - 'Jielga/TMDataGrid:src/docs/quick-search.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/filterOperators.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/quickSearch.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/filtering.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/quick-search.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/filterOperators.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/quickSearch.ts'
 ---
 
 # TMDataGrid - Filtering
@@ -327,7 +327,7 @@ import { activeColumnFilters } from "@jielga/tmdatagrid";
 const active = activeColumnFilters(columnFilters);
 ```
 
-Source: `src/docs/filtering.md` (How a filter is stored).
+Source: `packages/tmdatagrid/docs/filtering.md` (How a filter is stored).
 
 ### HIGH Assuming `value` is always a string
 
@@ -348,7 +348,7 @@ if (operatorTakesRangeValue(operator)) {
 }
 ```
 
-Source: `src/tmdatagrid/core/filterOperators.ts`.
+Source: `packages/tmdatagrid/src/core/filterOperators.ts`.
 
 ### HIGH A numeric column with no `meta.type`
 
@@ -357,7 +357,7 @@ Source: `src/tmdatagrid/core/filterOperators.ts`.
 `between` never appear in the panel, and comparisons run as text, where `"9"`
 sorts above `"10"`.
 
-Source: `src/docs/filtering.md` (Operators).
+Source: `packages/tmdatagrid/docs/filtering.md` (Operators).
 
 ### HIGH A filter control defined inside the component
 
@@ -374,7 +374,7 @@ const StatusFilter: TMDataGridFilterControlComponent = (args) => { /* … */ };
 meta: { filter: { control: StatusFilter } }
 ```
 
-Source: `src/docs/filtering.md` (Writing your own).
+Source: `packages/tmdatagrid/docs/filtering.md` (Writing your own).
 
 ### MEDIUM Writing the whole filter from a custom control
 
@@ -394,7 +394,7 @@ Correct:
 onChange(picked);
 ```
 
-Source: `src/docs/filtering.md` (Writing your own).
+Source: `packages/tmdatagrid/docs/filtering.md` (Writing your own).
 
 ### MEDIUM Expecting match highlighting in a custom cell
 
@@ -403,7 +403,7 @@ does not modify a custom renderer's output. A column with a `cell` renderer
 shows no marks whatever `enableMatchHighlighting` is set to. Equality operators
 highlight nothing either.
 
-Source: `src/docs/quick-search.md` (Match highlighting).
+Source: `packages/tmdatagrid/docs/quick-search.md` (Match highlighting).
 
 ### MEDIUM Expecting fuzzy ranking to survive a sort
 
@@ -411,7 +411,7 @@ The rank ordering applies only while the search is the sole narrowing. Any sort
 or grouping replaces it. The ordering is derived and never written into
 `sorting`, so there is nothing to clear afterwards.
 
-Source: `src/docs/quick-search.md` (Fuzzy by default).
+Source: `packages/tmdatagrid/docs/quick-search.md` (Fuzzy by default).
 
 ## Reference
 

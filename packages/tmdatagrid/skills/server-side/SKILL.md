@@ -17,9 +17,9 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/server-side.md'
-  - 'Jielga/TMDataGrid:src/docs/server-query.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/server-side.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/server-query.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
 ---
 
 # TMDataGrid - Server-side data

@@ -16,9 +16,9 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/use-tm-data-grid.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/persistence.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/use-tm-data-grid.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/persistence.ts'
 ---
 
 # TMDataGrid - useTMDataGrid

@@ -20,11 +20,11 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/editing.md'
-  - 'Jielga/TMDataGrid:src/docs/query-builder.md'
-  - 'Jielga/TMDataGrid:src/docs/editors.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/editEngine.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/useTMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/query-builder.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editors.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/editEngine.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
 ---
 
 # TMDataGrid - Editing

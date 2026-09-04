@@ -145,6 +145,13 @@ past 1.0.0 on 2026-08-01.
 
 ## Done
 
+**Monorepo** - **done 2026-09-04.**
+bun workspaces: `packages/tmdatagrid` holds the library with its docs markdown and skills, `apps/docs` the site, which imports the grid as `@jielga/tmdatagrid` and resolves it to source through an alias.
+Shared dependency versions sit in the root `catalog`; every published `@jielga/*` package is one changesets `fixed` group, released together and published one by one by `scripts/publish-missing.mjs` (bun packs, npm publishes under trusted publishing).
+The docs markdown now ships in the tarball under `docs/`, and every demo shows `@jielga/tmdatagrid` in its source instead of a relative path.
+Addons go in as `packages/<name>` with their own `docs/` and `skills/`; the site registers their pages.
+
+
 **Filter surfaces** - **done 2026-08-31**.
 The filter panel's place is a `filters` option: `surface: "popup"` (the default, the floating panel), `"sidebar"` (beside the rows, inside the grid frame, open by default, with `sidebarSide` / `sidebarWidth`), or `"none"` (no panel and no `FilterButton`, so a hand-placed `TMDataGrid.FilterPanel` is the only one) - plus `inHeader`, a header row of per-column value controls that composes with all three.
 `TMDataGrid.FilterPanel` became a plain block of controls with a `layout: "row" | "stacked"` prop; click-away, Escape and close-on-empty moved to the popup, and the title with its close button to the popup and the sidebar.

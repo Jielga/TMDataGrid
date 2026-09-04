@@ -17,10 +17,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/pagination.md'
-  - 'Jielga/TMDataGrid:src/docs/scrolling.md'
-  - 'Jielga/TMDataGrid:src/docs/loading-and-empty.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGridFooter.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/pagination.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/scrolling.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/loading-and-empty.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridFooter.tsx'
 ---
 
 # TMDataGrid - Pagination, scrolling and empty states
@@ -189,7 +189,7 @@ Virtualization is already unconditional, so paging a 200 000-row grid changes
 nothing about rendering cost. It only changes how users navigate. Enable it when
 they should move page by page, not for performance.
 
-Source: `src/docs/pagination.md`, `src/docs/scrolling.md`.
+Source: `packages/tmdatagrid/docs/pagination.md`, `packages/tmdatagrid/docs/scrolling.md`.
 
 ### CRITICAL A variable row height
 
@@ -210,7 +210,7 @@ Correct:
 useTMDataGrid({ data, columns, meta: { rowHeight: 64 } });
 ```
 
-Source: `src/docs/scrolling.md` (Row height).
+Source: `packages/tmdatagrid/docs/scrolling.md` (Row height).
 
 ### HIGH `scrollIntoView` on a row that is not mounted
 
@@ -226,7 +226,7 @@ grid.scrollToRow({ rowId: "4000", align: "center" });
 `scrollToRow` returns `false` when the row is not in the current view (filtered
 out, on another page, or an id matching no row) and nothing scrolled.
 
-Source: `src/docs/scrolling.md` (Scrolling to a row).
+Source: `packages/tmdatagrid/docs/scrolling.md` (Scrolling to a row).
 
 ### HIGH Loading more rows from `onScrollToBottom`
 
@@ -234,7 +234,7 @@ It fires at the very bottom, so the user waits at the end of the list for the
 fetch. `onReachEnd` fires a number of rows earlier and latches per row count, so
 a pending fetch is not requested twice.
 
-Source: `src/docs/scrolling.md` (Edge callbacks).
+Source: `packages/tmdatagrid/docs/scrolling.md` (Edge callbacks).
 
 ### HIGH `SummaryCount` reporting the page under manual pagination
 
@@ -253,7 +253,7 @@ useTMDataGrid({
 });
 ```
 
-Source: `src/docs/loading-and-empty.md` (Counting what is there).
+Source: `packages/tmdatagrid/docs/loading-and-empty.md` (Counting what is there).
 
 ### MEDIUM Rendering an empty message while data is loading
 
@@ -267,7 +267,7 @@ Correct:
 useTMDataGrid({ data, columns, meta: { loading: isFetching } });
 ```
 
-Source: `src/docs/loading-and-empty.md` (What wins).
+Source: `packages/tmdatagrid/docs/loading-and-empty.md` (What wins).
 
 ### MEDIUM Trusting the pager while grouped
 
@@ -275,7 +275,7 @@ Source: `src/docs/loading-and-empty.md` (What wins).
 grid is rendering the whole tree. A custom pager must read
 `isPagingActive(table, features)` rather than the page count.
 
-Source: `src/docs/pagination.md` (Grouping suspends it).
+Source: `packages/tmdatagrid/docs/pagination.md` (Grouping suspends it).
 
 ## Reference
 

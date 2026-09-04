@@ -20,12 +20,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/styling.md'
-  - 'Jielga/TMDataGrid:src/docs/toolbar.md'
-  - 'Jielga/TMDataGrid:src/docs/menu.md'
-  - 'Jielga/TMDataGrid:src/docs/localization.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/capabilities.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/labels.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/styling.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/toolbar.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/menu.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/localization.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/capabilities.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/labels.ts'
 ---
 
 # TMDataGrid - Appearance, toolbar and labels
@@ -259,7 +259,7 @@ own uses the same strings as the built-in parts.
 so an application that ordered its layers to put the grid underneath its own
 overrides silently gets the opposite.
 
-Source: `src/docs/styling.md` (The stylesheet).
+Source: `packages/tmdatagrid/docs/styling.md` (The stylesheet).
 
 ### CRITICAL A grid with no bounded height
 
@@ -279,7 +279,7 @@ Correct:
 <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }} />
 ```
 
-Source: `src/docs/styling.md` (Layout).
+Source: `packages/tmdatagrid/docs/styling.md` (Layout).
 
 ### HIGH Setting `--dg-row-height` to change density
 
@@ -294,7 +294,7 @@ Correct:
 useTMDataGrid({ data, columns, meta: { rowHeight: 64 } });
 ```
 
-Source: `src/docs/styling.md` (The size scale).
+Source: `packages/tmdatagrid/docs/styling.md` (The size scale).
 
 ### HIGH A capability check without `features`
 
@@ -317,7 +317,7 @@ const { canSort } = getColumnCapabilities(column, features);
 if (!canSort) return null;
 ```
 
-Source: `src/docs/toolbar.md` (Why `features` is a second argument).
+Source: `packages/tmdatagrid/docs/toolbar.md` (Why `features` is a second argument).
 
 ### MEDIUM An inline `labels` object
 
@@ -339,7 +339,7 @@ const labels = { noResults: "Inga träffar" } satisfies TMDataGridLabelsOverride
 useTMDataGrid({ data, columns, labels });
 ```
 
-Source: `src/docs/localization.md` (Keep the object stable).
+Source: `packages/tmdatagrid/docs/localization.md` (Keep the object stable).
 
 ### MEDIUM Conditionally rendering built-in toolbar parts
 
@@ -347,7 +347,7 @@ Each built-in already renders nothing when its feature is off. Wrapping them in
 your own checks duplicates the capability logic, and the two drift apart the
 first time an option changes.
 
-Source: `src/docs/toolbar.md` (The built-in parts).
+Source: `packages/tmdatagrid/docs/toolbar.md` (The built-in parts).
 
 ## Reference
 

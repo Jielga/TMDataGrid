@@ -13,10 +13,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/getting-started.md'
-  - 'Jielga/TMDataGrid:src/docs/anatomy.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/sizes.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/getting-started.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/anatomy.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/sizes.ts'
 ---
 
 # TMDataGrid - Getting started

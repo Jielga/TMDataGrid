@@ -18,12 +18,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/columns.md'
-  - 'Jielga/TMDataGrid:src/docs/column-layout.md'
-  - 'Jielga/TMDataGrid:src/docs/sorting.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnUtils.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/columnOrdering.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/autosize.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/columns.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/column-layout.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/sorting.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/columnUtils.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/columnOrdering.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/autosize.ts'
 ---
 
 # TMDataGrid - Columns
@@ -308,7 +308,7 @@ columnHelper.accessor("email", {
 The corollary is that a pinned column is fixed-width and does use `size`, so a
 column that is pinned needs one.
 
-Source: `src/docs/column-layout.md` (Sizing).
+Source: `packages/tmdatagrid/docs/column-layout.md` (Sizing).
 
 ### HIGH Pinning a column at mount without size
 
@@ -331,7 +331,7 @@ columnHelper.accessor("name", { header: "Name", minSize: 220, size: 220 });
 initialState: { columnPinning: { left: ["name"], right: [] } },
 ```
 
-Source: `src/docs/column-layout.md` (Pinning).
+Source: `packages/tmdatagrid/docs/column-layout.md` (Pinning).
 
 ### HIGH Addressing a dotted column by its accessor key
 
@@ -353,7 +353,7 @@ initialState: { columnVisibility: { address_city: false } },
 The edit path is the exception: `meta.edit.field` and validation issue paths
 stay dotted, because they address the data, not the column.
 
-Source: `src/docs/columns.md` (The column helper).
+Source: `packages/tmdatagrid/docs/columns.md` (The column helper).
 
 ### CRITICAL A component header without `meta.label`
 
@@ -376,7 +376,7 @@ columnHelper.accessor("fullName", {
 });
 ```
 
-Source: `src/tmdatagrid/core/columnUtils.ts`.
+Source: `packages/tmdatagrid/src/core/columnUtils.ts`.
 
 ### HIGH A numeric column without `meta.type`
 
@@ -385,7 +385,7 @@ Source: `src/tmdatagrid/core/columnUtils.ts`.
 as text - `"9"` above `"10"`. The column still sorts and filters, which is why
 it is easy to miss.
 
-Source: `src/tmdatagrid/core/filterOperators.ts`.
+Source: `packages/tmdatagrid/src/core/filterOperators.ts`.
 
 ### HIGH Expecting a move across pinned regions to work
 
@@ -400,7 +400,7 @@ table.getColumn("salary")?.pin(false);
 moveColumn({ table, columnId: "salary", targetId: "age", side: "before" });
 ```
 
-Source: `src/docs/column-layout.md` (Regions).
+Source: `packages/tmdatagrid/docs/column-layout.md` (Regions).
 
 ### HIGH Reaching for the v8 name of a v9 option
 
@@ -422,7 +422,7 @@ columnHelper.accessor("priority", { header: "Priority", sortFn: byRank });
 ```
 
 Source: `@tanstack/table-core` `rowSortingFeature.types.d.ts`, and
-`src/tmdatagrid/useTMDataGrid.tsx` (the registered `sortFns`).
+`packages/tmdatagrid/src/useTMDataGrid.tsx` (the registered `sortFns`).
 
 ### MEDIUM Expecting autosize to measure every row
 
@@ -430,7 +430,7 @@ Autosizing fits the **mounted** rows plus overscan, not every row, because
 virtualization leaves the rest with no DOM to measure. A column autosized at the
 top of a long list can be too narrow for a value further down.
 
-Source: `src/docs/column-layout.md` (Autosizing).
+Source: `packages/tmdatagrid/docs/column-layout.md` (Autosizing).
 
 ### MEDIUM Reordering a column inside a header group
 
@@ -439,7 +439,7 @@ the group header spanning columns that no longer belong to it. Grouped-header
 columns are therefore immovable in both directions, whatever `meta.enableOrdering`
 says.
 
-Source: `src/docs/column-layout.md` (Regions).
+Source: `packages/tmdatagrid/docs/column-layout.md` (Regions).
 
 ### MEDIUM Computing a cross-row value in accessorFn
 
@@ -464,7 +464,7 @@ const rows = useMemo(() => {
 columnHelper.accessor("pctOfTotal", { header: "Share" });
 ```
 
-Source: `src/docs/columns.md` (Columns derived from the other rows).
+Source: `packages/tmdatagrid/docs/columns.md` (Columns derived from the other rows).
 
 ## Reference
 

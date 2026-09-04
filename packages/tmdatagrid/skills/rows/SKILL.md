@@ -19,12 +19,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/row-selection.md'
-  - 'Jielga/TMDataGrid:src/docs/row-interaction.md'
-  - 'Jielga/TMDataGrid:src/docs/row-styling.md'
-  - 'Jielga/TMDataGrid:src/docs/row-details.md'
-  - 'Jielga/TMDataGrid:src/docs/row-pinning.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/rowSelection.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-selection.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-interaction.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-styling.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-details.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-pinning.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/rowSelection.ts'
 ---
 
 # TMDataGrid - Rows
@@ -295,7 +295,7 @@ Correct:
 rowStyle={() => ({ "--row-bg": "pink" })}
 ```
 
-Source: `src/docs/row-styling.md` (Set `--row-bg`, not `background`).
+Source: `packages/tmdatagrid/docs/row-styling.md` (Set `--row-bg`, not `background`).
 
 ### CRITICAL Reading the selection without subscribing
 
@@ -317,7 +317,7 @@ const selected = useSelector(grid.table.store, () =>
 );
 ```
 
-Source: `src/docs/row-selection.md` (Acting on a selection).
+Source: `packages/tmdatagrid/docs/row-selection.md` (Acting on a selection).
 
 ### HIGH Looking for the highlight in `rowSelection`
 
@@ -338,7 +338,7 @@ Correct:
 const current = useSelector(grid.ui, (state) => state.highlightedRowId);
 ```
 
-Source: `src/docs/row-selection.md` (The highlight is not a selection).
+Source: `packages/tmdatagrid/docs/row-selection.md` (The highlight is not a selection).
 
 ### HIGH Expecting a click handler to replace the built-in behaviour
 
@@ -353,7 +353,7 @@ Correct, when the click should only navigate:
 useTMDataGrid({ data, columns, selectionMode: "highlight" });
 ```
 
-Source: `src/docs/row-interaction.md`.
+Source: `packages/tmdatagrid/docs/row-interaction.md`.
 
 ### HIGH Reading `row.getIsExpanded()` in a cell without subscribing
 
@@ -366,7 +366,7 @@ Correct:
 const expanded = useSelector(row.table.store, () => row.getIsExpanded());
 ```
 
-Source: `src/docs/row-details.md` (Opening a row from elsewhere).
+Source: `packages/tmdatagrid/docs/row-details.md` (Opening a row from elsewhere).
 
 ### MEDIUM Assuming group rows behave like data rows
 
@@ -375,7 +375,7 @@ Group rows are built on their first child's record. They do not fire
 never pin, they take no row number, and they have no details panel. A handler
 written as though every row reaches it silently skips them.
 
-Source: `src/docs/row-interaction.md`, `src/docs/row-pinning.md`.
+Source: `packages/tmdatagrid/docs/row-interaction.md`, `packages/tmdatagrid/docs/row-pinning.md`.
 
 ### MEDIUM Open panels closing when `data` is replaced
 
@@ -388,7 +388,7 @@ Correct:
 useTMDataGrid({ data, columns, renderDetails, autoResetExpanded: false });
 ```
 
-Source: `src/docs/row-details.md`.
+Source: `packages/tmdatagrid/docs/row-details.md`.
 
 ### MEDIUM Expecting pinned rows to persist
 
@@ -396,7 +396,7 @@ Source: `src/docs/row-details.md`.
 layout store outlives any one data set. A pinned id whose row leaves `data` is
 not shown, and returns to its edge if the data comes back.
 
-Source: `src/docs/row-pinning.md`.
+Source: `packages/tmdatagrid/docs/row-pinning.md`.
 
 ## References
 

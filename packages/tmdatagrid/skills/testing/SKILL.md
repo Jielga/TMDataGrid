@@ -13,9 +13,9 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/testing.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/components/TMDataGridTable.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGrid.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridTable.tsx'
 ---
 
 # TMDataGrid - Testing

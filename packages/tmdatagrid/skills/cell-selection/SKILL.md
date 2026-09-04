@@ -16,10 +16,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.0.0-beta.14'
 sources:
-  - 'Jielga/TMDataGrid:src/docs/cell-selection.md'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/cellNavigation.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/cellRange.ts'
-  - 'Jielga/TMDataGrid:src/tmdatagrid/core/cellExport.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/cell-selection.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellNavigation.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellRange.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellExport.ts'
 ---
 
 # TMDataGrid - Cell selection
@@ -166,7 +166,7 @@ Correct:
 const OpenButton = ({ row }) => <Button onClick={() => open(row.id)}>Open</Button>;
 ```
 
-Source: `src/docs/cell-selection.md` (One tab stop).
+Source: `packages/tmdatagrid/docs/cell-selection.md` (One tab stop).
 
 ### HIGH Selectors written for `table` / `cell` roles
 
@@ -174,7 +174,7 @@ The grid reports `grid` and `gridcell` once cell selection is on, so a test or a
 query written against `getByRole("cell")` stops resolving the moment the option
 is set - including when `editing` turns it on implicitly.
 
-Source: `src/docs/cell-selection.md`, and the `testing` skill.
+Source: `packages/tmdatagrid/docs/cell-selection.md`, and the `testing` skill.
 
 ### HIGH Reading the selection as row and column indices
 
@@ -189,7 +189,7 @@ const row = grid.table.getRow(focusedCell.rowId);
 const value = row.getValue(focusedCell.columnId);
 ```
 
-Source: `src/docs/cell-selection.md` (Where the selection lives).
+Source: `packages/tmdatagrid/docs/cell-selection.md` (Where the selection lives).
 
 ### MEDIUM Expecting the export to match what the cells show
 
@@ -198,14 +198,14 @@ export writes the underlying value. A currency cell showing `32 000 kr` exports
 `32000`. Format in the data, or post-process the matrix from `buildCellMatrix`,
 if the file must match the screen.
 
-Source: `src/docs/cell-selection.md` (The CSV).
+Source: `packages/tmdatagrid/docs/cell-selection.md` (The CSV).
 
 ### MEDIUM Expecting headers in the clipboard
 
 Ctrl+C copies values only, matching Excel's own copy. Headers are an option of
 the export menu and of `cellExport`, not of the clipboard path.
 
-Source: `src/docs/cell-selection.md` (Copy and export).
+Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 
 ## Reference
 
