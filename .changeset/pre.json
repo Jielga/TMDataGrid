@@ -19,6 +19,7 @@
     "lucky-rows-report",
     "menu-toggle-boxes",
     "merry-drafts-arrive",
+    "monorepo-docs-in-package",
     "nine-moons-listen",
     "olive-eels-shout",
     "olive-jars-reach",
@@ -33,6 +34,7 @@
     "thick-cases-repeat",
     "tidy-sizes-remeasure",
     "wild-lions-choose",
-    "wise-donkeys-shave"
+    "wise-donkeys-shave",
+    "wrapper-style-props"
   ]
 }

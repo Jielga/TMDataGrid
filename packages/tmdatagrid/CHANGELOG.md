@@ -1,5 +1,20 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.15
+
+### Minor Changes
+
+- [#67](https://github.com/Jielga/TMDataGrid/pull/67) [`849bfa3`](https://github.com/Jielga/TMDataGrid/commit/849bfa3f1cdc2bd207e9e307ee9f68cc4b38a776) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.Toolbar`, `Spacer`, `Footer`, `FilterPanel`, `FilterPills` and
+  `ColumnsPanel` take Mantine's `BoxProps` - style props such as `mb`, `px` and
+  `hiddenFrom`, plus `className`, `style` and `mod` - set on their root element.
+  `TMDataGrid.Toolbar` gains `withBottomBorder`, a 1px line in the theme's
+  default border colour under the toolbar, off by default.
+  New types `TMDataGridToolbarProps` and `TMDataGridColumnsPanelProps`.
+
+### Patch Changes
+
+- [#69](https://github.com/Jielga/TMDataGrid/pull/69) [`3f17285`](https://github.com/Jielga/TMDataGrid/commit/3f17285e313333f0b383dec4f5a6e2a49f192e9a) Thanks [@Psvensso](https://github.com/Psvensso)! - The reference documentation ships in the package under `docs/`, importable as `@jielga/tmdatagrid/docs/<page>.md`.
+
 ## 2.0.0-beta.14
 
 ### Minor Changes
