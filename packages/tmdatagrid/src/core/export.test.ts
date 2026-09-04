@@ -65,9 +65,9 @@ describe("buildCellMatrix", () => {
   function gridSlice() {
     const api = erased(renderGrid().result.current);
     const columns = [
-      ...api.table.getLeftVisibleLeafColumns(),
+      ...api.table.getStartVisibleLeafColumns(),
       ...api.table.getCenterVisibleLeafColumns(),
-      ...api.table.getRightVisibleLeafColumns(),
+      ...api.table.getEndVisibleLeafColumns(),
     ];
     // Render order: the checkbox lane first, then id, name, age, city.
     expect(columns[0]?.id).toBe("__select__");

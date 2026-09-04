@@ -74,7 +74,7 @@ rather than forwarded to TanStack.
 | Slice | Default |
 | --- | --- |
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }` - inert until pagination is enabled |
-| `columnPinning.left` | The checkbox column, followed by any columns you provide |
+| `columnPinning.start` | The checkbox column, followed by any columns you provide |
 | `globalFilterFn` | `"includesString"` |
 
 ### Controlled state

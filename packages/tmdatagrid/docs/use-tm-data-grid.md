@@ -63,7 +63,7 @@ rather than forwarded to TanStack.
 | Slice | Default |
 | --- | --- |
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }`. Inert until pagination is enabled |
-| `columnPinning.left` | The checkbox, tree and details columns, followed by any columns you provide |
+| `columnPinning.start` | The checkbox, tree and details columns, followed by any columns you provide |
 | `globalFilterFn` | `"tmDataGridFuzzy"`, the fuzzy matcher behind `quickSearchMode`. `"includesString"` under `quickSearchMode: "contains"` |
 
 ### Controlled state

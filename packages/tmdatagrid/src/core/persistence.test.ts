@@ -25,7 +25,7 @@ function gridState(overrides: Partial<GridState> = {}): GridState {
     columnVisibility: { name: false },
     columnSizing: { name: 120 },
     columnOrder: ["name", "age"],
-    columnPinning: { left: ["name"], right: [] },
+    columnPinning: { start: ["name"], end: [] },
     grouping: ["city"],
     ...overrides,
   } as GridState;
@@ -237,11 +237,16 @@ describe("readPersistedState", () => {
     });
 
     it("requires both pinned lanes to be string arrays", () => {
-      write({ columnPinning: { left: ["a"] } });
+      write({ columnPinning: { start: ["a"] } });
       expect(readAll().columnPinning).toBeUndefined();
 
-      write({ columnPinning: { left: ["a"], right: [] } });
-      expect(readAll().columnPinning).toEqual({ left: ["a"], right: [] });
+      write({ columnPinning: { start: ["a"], end: [] } });
+      expect(readAll().columnPinning).toEqual({ start: ["a"], end: [] });
+    });
+
+    it("migrates the physical pinning keys 1.x wrote", () => {
+      write({ columnPinning: { left: ["a"], right: ["b"] } });
+      expect(readAll().columnPinning).toEqual({ start: ["a"], end: ["b"] });
     });
 
     it("requires column filters to carry an id", () => {
@@ -270,7 +275,7 @@ describe("readPersistedState", () => {
       expect(restored.columnOrder).toEqual(["name"]);
       expect(restored.columnVisibility).toEqual({ name: false });
       expect(restored.columnSizing).toEqual({ name: 120 });
-      expect(restored.columnPinning).toEqual({ left: ["name"], right: [] });
+      expect(restored.columnPinning).toEqual({ start: ["name"], end: [] });
       expect(restored.grouping).toEqual([]);
       expect(restored.sorting).toEqual([{ id: "name", desc: true }]);
       expect(restored.columnFilters).toHaveLength(1);

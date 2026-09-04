@@ -106,9 +106,9 @@ export function erased(
 /** Visible leaf column ids, in render order. */
 export function visibleColumnIds(api: TMDataGridApi<TestRow>): Array<string> {
   return [
-    ...api.table.getLeftVisibleLeafColumns(),
+    ...api.table.getStartVisibleLeafColumns(),
     ...api.table.getCenterVisibleLeafColumns(),
-    ...api.table.getRightVisibleLeafColumns(),
+    ...api.table.getEndVisibleLeafColumns(),
   ].map((column) => column.id);
 }
 

@@ -2,7 +2,8 @@
   "mode": "pre",
   "tag": "beta",
   "initialVersions": {
-    "@jielga/tmdatagrid": "1.1.1"
+    "@jielga/tmdatagrid": "1.1.1",
+    "@jielga/tmdatagrid-xlsx": "0.0.0"
   },
   "changesets": [
     "brave-drafts-arrive",

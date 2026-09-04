@@ -469,7 +469,7 @@ describe("resetSettings", () => {
     expect(state.columnOrder).toEqual([]);
     expect(state.grouping).toEqual([]);
     // The structural lanes keep their pinning through a reset.
-    expect(state.columnPinning.left).toContain(SELECT_COLUMN_ID);
+    expect(state.columnPinning.start).toContain(SELECT_COLUMN_ID);
   });
 
   it("keeps the consumer's initialState as the floor", () => {
@@ -529,7 +529,7 @@ describe("column pinning", () => {
     await clickMenuItem(user, "City", "Pin to right");
 
     // The row's Save and Cancel stay the last thing in the row: a column pinned
-    // right lands to the left of the lane, not outside it. `column.pin("right")`
+    // right lands to the left of the lane, not outside it. `column.pin("end")`
     // appends, so this is the grid putting the lane back on the edge.
     expect(renderedHeaderIds().at(-1)).toBe(EDIT_COLUMN_ID);
     expect(renderedHeaderIds().at(-2)).toBe("city");

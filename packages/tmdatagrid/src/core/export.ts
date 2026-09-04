@@ -398,9 +398,9 @@ export function resolveExportOptions(
  */
 function allLeafColumns(table: ErasedTable): Array<ErasedColumn> {
   const ordered = [
-    ...table.getLeftLeafColumns(),
+    ...table.getStartLeafColumns(),
     ...table.getCenterLeafColumns(),
-    ...table.getRightLeafColumns(),
+    ...table.getEndLeafColumns(),
   ];
   const seen = new Set(ordered.map((column) => column.id));
   // The flat list rather than `getAllLeafColumns`: that one runs through the
@@ -556,9 +556,9 @@ export function buildExportData<TData extends RowData>({
   // them the slice comes before the filter.
   const columns = bounds
     ? [
-        ...erased.getLeftVisibleLeafColumns(),
+        ...erased.getStartVisibleLeafColumns(),
         ...erased.getCenterVisibleLeafColumns(),
-        ...erased.getRightVisibleLeafColumns(),
+        ...erased.getEndVisibleLeafColumns(),
       ]
         .slice(bounds.left, bounds.right + 1)
         .filter(isExportedColumn)

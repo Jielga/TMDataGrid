@@ -414,7 +414,7 @@ describe("cell selection", () => {
     const user = userEvent.setup();
     renderGridUi({
       cellSelection: "single",
-      initialState: { columnPinning: { left: ["id"], right: [] } },
+      initialState: { columnPinning: { start: ["id"], end: [] } },
     });
 
     const pinnedCell = () =>

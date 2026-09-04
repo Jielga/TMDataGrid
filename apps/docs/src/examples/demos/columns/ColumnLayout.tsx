@@ -55,7 +55,7 @@ export function ColumnLayout() {
     initialState: {
       // Pinned columns stop being fluid - sticky offsets are measured in
       // pixels, so the grid freezes the width a column had when it was pinned.
-      columnPinning: { left: ["id"], right: ["status"] },
+      columnPinning: { start: ["id"], end: ["status"] },
       columnVisibility: { age: false },
     },
   });

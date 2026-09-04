@@ -47,7 +47,7 @@ not apply. Give such a column an explicit `size`:
 ```tsx
 columnHelper.accessor("registration", { header: "Registration", size: 220 });
 
-initialState: { columnPinning: { left: ["registration"], right: [] } }
+initialState: { columnPinning: { start: ["registration"], end: [] } }
 ```
 
 The generated lanes stay outside both pinned lanes: pinning a column right puts
@@ -74,7 +74,7 @@ ships the ordering state and APIs but no `enable` option. The per-column form is
 A column can only move **within its own pinned region**; a header in another
 region does not accept the drop. This follows TanStack's ordering pipeline:
 pinning splits the grid into left, centre and right, then `columnOrder`
-sequences the centre while `columnPinning.left` and `.right` sequence the
+sequences the centre while `columnPinning.start` and `.end` sequence the
 pinned lanes. Unpin a column first to move it out of one.
 
 A neighbour that cannot be moved blocks the move; it is not stepped over. The
@@ -199,6 +199,6 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
 | `keepGeneratedColumnsOutermost` | Export | `(columnPinning) => ColumnPinningState` | – | Puts the generated lanes back on the outside of both pinned lanes. The grid runs it after every pin. |
-| `getColumnRegion` | Export | `(column) => "left" \| "center" \| "right"` | – | Which pinned region a column is in. |
+| `getColumnRegion` | Export | `(column) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | – | – | The column chooser, as menu items and as plain controls. See [Grid menu](/docs/menu). |
