@@ -11,7 +11,11 @@ import {
 import { useState } from "react";
 import classes from "./TMDataGridColumnsPanel.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { getColumnLabel } from "../core/columnUtils";
+import {
+  getColumnLabel,
+  showColumnSearch,
+  type TMDataGridColumnSearchable,
+} from "../core/columnUtils";
 import { useHideableColumns } from "./useHideableColumns";
 import { SearchIcon } from "./icons";
 
@@ -21,10 +25,17 @@ import { SearchIcon } from "./icons";
  * the same chooser as menu items.
  */
 /** Mantine's style props (`w={320}`, `p="sm"`) are set on the panel block. */
-export type TMDataGridColumnsPanelProps = BoxProps;
+export type TMDataGridColumnsPanelProps = BoxProps & {
+  /**
+   * The search box over the list: `"auto"` (the default) from six hideable
+   * columns, `true` always, `false` never.
+   */
+  searchable?: TMDataGridColumnSearchable;
+};
 
 export function TMDataGridColumnsPanel({
   className,
+  searchable = "auto",
   ...others
 }: TMDataGridColumnsPanelProps = {}) {
   const { labels, controlSize, resetSettings } = useTMDataGridContext();
@@ -46,17 +57,19 @@ export function TMDataGridColumnsPanel({
       className={[classes.columnsPanel, className].filter(Boolean).join(" ")}
       {...others}
     >
-      <div className={classes.columnsPanelSearch}>
-        <TextInput
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          placeholder={labels.columnsSearchPlaceholder}
-          leftSection={<SearchIcon size={16} stroke={1.6} />}
-          size={controlSize}
-          data-dg-part="columns-search"
-          data-autofocus
-        />
-      </div>
+      {showColumnSearch(searchable, columns.length) && (
+        <div className={classes.columnsPanelSearch}>
+          <TextInput
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            placeholder={labels.columnsSearchPlaceholder}
+            leftSection={<SearchIcon size={16} stroke={1.6} />}
+            size={controlSize}
+            data-dg-part="columns-search"
+            data-autofocus
+          />
+        </div>
+      )}
 
       <ScrollArea.Autosize mah={260} type="auto">
         <div className={classes.columnsPanelList}>

@@ -160,6 +160,12 @@ export type TMDataGridLabels = {
   exportPickerTitle: string;
   exportPickerConfirm: string;
   exportPickerCancel: string;
+  /** The select-all row over the picker's list. */
+  exportPickerSelectAll: string;
+  /** The "3 of 12" count beside it. */
+  exportPickerCount: (checked: number, total: number) => string;
+  /** Marks a column the grid hides at the moment. */
+  exportPickerHidden: string;
 
   // Generated checkbox lane
   selectColumnLabel: string;
@@ -293,6 +299,9 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   exportPickerTitle: "Columns to export",
   exportPickerConfirm: "Export",
   exportPickerCancel: "Cancel",
+  exportPickerSelectAll: "Select all",
+  exportPickerCount: (checked, total) => `${checked} of ${total}`,
+  exportPickerHidden: "Hidden",
 
   selectColumnLabel: "Checkbox selection",
   selectAllRows: "Select all rows",

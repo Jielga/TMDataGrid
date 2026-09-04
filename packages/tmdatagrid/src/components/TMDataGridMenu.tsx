@@ -13,7 +13,11 @@ import {
   type ReactNode,
 } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { getColumnLabel } from "../core/columnUtils";
+import {
+  getColumnLabel,
+  showColumnSearch,
+  type TMDataGridColumnSearchable,
+} from "../core/columnUtils";
 import type {
   TMDataGridExportColumns,
   TMDataGridExportOptions,
@@ -45,8 +49,12 @@ export type TMDataGridMenuProps = Omit<MenuProps, "children"> & {
 };
 
 export type TMDataGridMenuColumnsProps = {
-  /** Renders a `Menu.Search` above the toggles. Default `true`. Use `false` inside a `Menu.Sub`. */
-  searchable?: boolean;
+  /**
+   * Renders a `Menu.Search` above the toggles: `"auto"` (the default) from
+   * six hideable columns, `true` always, `false` never. Use `false` inside a
+   * `Menu.Sub`.
+   */
+  searchable?: TMDataGridColumnSearchable;
 };
 
 // Documented on the `TMDataGridMenu` export below.
@@ -97,13 +105,15 @@ function TMDataGridMenuRoot({
  * behaviour.
  */
 export function TMDataGridMenuColumns({
-  searchable = true,
+  searchable = "auto",
 }: TMDataGridMenuColumnsProps) {
   const { labels, controlSize } = useTMDataGridContext();
   const { columns } = useHideableColumns();
   const [search, setSearch] = useState("");
 
   if (columns.length === 0) return null;
+
+  const withSearch = showColumnSearch(searchable, columns.length);
 
   // `Menu.Search` walks every item of the dropdown from the top, so with items
   // placed above this block ArrowDown from the search lands on the first of
@@ -124,7 +134,7 @@ export function TMDataGridMenuColumns({
 
   return (
     <>
-      {searchable && (
+      {withSearch && (
         <Menu.Search
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}

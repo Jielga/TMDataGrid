@@ -1,18 +1,31 @@
-import { Button, Checkbox, Group, Modal, Stack } from "@mantine/core";
+import {
+  Button,
+  Checkbox,
+  Group,
+  Modal,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
 import { useState } from "react";
+import classes from "./TMDataGridExportPicker.module.css";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { getColumnLabel } from "../core/columnUtils";
+import { getColumnLabel, showColumnSearch } from "../core/columnUtils";
 import {
+  countSelectedExportRows,
   getExportableColumns,
   type TMDataGridExportPickerRequest,
 } from "../core/export";
 import { useTMDataGridExport } from "../useTMDataGridExport";
+import { SearchIcon } from "./icons";
 
 /**
- * The column picker behind `columns="custom"` on the export menu items: every
- * exportable column as a checkbox, the visible ones ticked, and an Export
- * button that downloads the ticked ones.
+ * The column picker behind `columns="custom"` on the export menu items: a
+ * list of every exportable column, the visible ones ticked and the hidden
+ * ones marked, a select-all row over the list, a search box once the list is
+ * long, and an Export button that downloads the ticked ones.
  *
  * Mounted once by the root and driven by `ui.state.exportPicker`, because the
  * menu item that opens it unmounts with the dropdown on the click. The form
@@ -39,6 +52,7 @@ function PickerForm({ request }: { request: TMDataGridExportPickerRequest }) {
   const { table, ui, labels, controlSize } = useTMDataGridContext();
   const { exportAll, exportSelected } = useTMDataGridExport(request.options);
   const columns = getExportableColumns(table);
+  const [search, setSearch] = useState("");
   const [checked, setChecked] = useState<ReadonlySet<string>>(
     () =>
       new Set(
@@ -48,11 +62,35 @@ function PickerForm({ request }: { request: TMDataGridExportPickerRequest }) {
       ),
   );
 
+  const searchable = showColumnSearch("auto", columns.length);
+  const needle = search.trim().toLowerCase();
+  const listed = needle
+    ? columns.filter((column) =>
+        getColumnLabel(column).toLowerCase().includes(needle),
+      )
+    : columns;
+
+  // Select all works on the listed columns: with a search active it ticks the
+  // matches and leaves the rest as they are, the way a filtered list reads.
+  const listedChecked = listed.filter((column) => checked.has(column.id));
+  const allListed = listed.length > 0 && listedChecked.length === listed.length;
+  const someListed = listedChecked.length > 0 && !allListed;
+
   const toggle = (columnId: string, on: boolean) =>
     setChecked((previous) => {
       const next = new Set(previous);
       if (on) next.add(columnId);
       else next.delete(columnId);
+      return next;
+    });
+
+  const toggleListed = (on: boolean) =>
+    setChecked((previous) => {
+      const next = new Set(previous);
+      for (const column of listed) {
+        if (on) next.add(column.id);
+        else next.delete(column.id);
+      }
       return next;
     });
 
@@ -66,21 +104,86 @@ function PickerForm({ request }: { request: TMDataGridExportPickerRequest }) {
     ui.actions.closeExportPicker();
   };
 
+  const scope =
+    request.rows === "selected"
+      ? labels.exportSelected(countSelectedExportRows(table))
+      : labels.exportAll;
+
   return (
     <Stack gap="sm" data-dg-part="export-picker">
-      <Stack gap="xs">
-        {columns.map((column) => (
+      <Text size={controlSize} c="dimmed" data-dg-part="export-picker-scope">
+        {scope}
+      </Text>
+
+      {searchable && (
+        <TextInput
+          value={search}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+          placeholder={labels.columnsSearchPlaceholder}
+          leftSection={<SearchIcon size={16} stroke={1.6} />}
+          size={controlSize}
+          data-dg-part="export-picker-search"
+          data-autofocus
+        />
+      )}
+
+      <div className={classes.list}>
+        <div className={classes.listHeader}>
           <Checkbox
-            key={column.id}
             size={controlSize}
-            label={getColumnLabel(column)}
-            checked={checked.has(column.id)}
-            onChange={(event) => toggle(column.id, event.currentTarget.checked)}
-            data-dg-part="export-column"
-            data-column-id={column.id}
+            label={labels.exportPickerSelectAll}
+            checked={allListed}
+            indeterminate={someListed}
+            onChange={(event) => toggleListed(event.currentTarget.checked)}
+            classNames={{ label: classes.headerLabel }}
+            data-dg-part="export-column-all"
           />
-        ))}
-      </Stack>
+          <Text size="xs" c="dimmed" data-dg-part="export-picker-count">
+            {labels.exportPickerCount(checked.size, columns.length)}
+          </Text>
+        </div>
+
+        <ScrollArea.Autosize mah="50vh" type="auto">
+          <div className={classes.rows}>
+            {listed.map((column) => (
+              <Checkbox
+                key={column.id}
+                size={controlSize}
+                label={
+                  <>
+                    <span className={classes.rowText}>
+                      {getColumnLabel(column)}
+                    </span>
+                    {!column.getIsVisible() && (
+                      <span className={classes.rowHint}>
+                        {labels.exportPickerHidden}
+                      </span>
+                    )}
+                  </>
+                }
+                checked={checked.has(column.id)}
+                onChange={(event) =>
+                  toggle(column.id, event.currentTarget.checked)
+                }
+                classNames={{
+                  root: classes.row,
+                  body: classes.rowBody,
+                  labelWrapper: classes.rowLabelWrapper,
+                  label: classes.rowLabel,
+                }}
+                data-dg-part="export-column"
+                data-column-id={column.id}
+              />
+            ))}
+            {listed.length === 0 && (
+              <Text size={controlSize} c="dimmed" className={classes.empty}>
+                {labels.columnsNoMatch(search)}
+              </Text>
+            )}
+          </div>
+        </ScrollArea.Autosize>
+      </div>
+
       <Group justify="flex-end" gap="xs">
         <Button
           variant="default"

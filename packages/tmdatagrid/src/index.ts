@@ -161,6 +161,7 @@ export {
   isColumnReorderable,
   isControlColumn,
   isGeneratedColumn,
+  type TMDataGridColumnSearchable,
 } from "./core/columnUtils";
 export { getGroupDataRows } from "./core/grouping";
 export {

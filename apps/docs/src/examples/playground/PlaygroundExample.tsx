@@ -712,6 +712,7 @@ export function PlaygroundExample() {
             </Button>
             <TMDataGrid.FilterButton />
             <TMDataGrid.Menu>
+              <TMDataGrid.Menu.Export columns="custom" />
               <TMDataGrid.Menu.Columns />
             </TMDataGrid.Menu>
           </TMDataGrid.Toolbar>

@@ -18,7 +18,11 @@ import {
 import { captureDownloads } from "../../test/downloadStub";
 import { jsonFormat } from "../core/export";
 import { TMDATAGRID_LABELS_EN } from "../core/labels";
-import { useTMDataGrid, type UseTMDataGridOptions } from "../useTMDataGrid";
+import {
+  createTMDataGridColumnHelper,
+  useTMDataGrid,
+  type UseTMDataGridOptions,
+} from "../useTMDataGrid";
 import { TMDataGrid } from "./TMDataGrid";
 
 /** Every hideable column of the harness grid, in render order. */
@@ -28,6 +32,15 @@ const toggledColumnIds = () =>
   parts("columns-toggle").map((item) => item.dataset.columnId);
 
 type MenuGridOptions = Partial<UseTMDataGridOptions<TestRow>>;
+
+const wide = createTMDataGridColumnHelper<TestRow>();
+
+/** Six columns: the length from which a chooser shows its search box. */
+const wideColumns = wide.columns([
+  ...testColumns,
+  wide.accessor("name", { id: "nameAgain", header: "Name again" }),
+  wide.accessor("city", { id: "cityAgain", header: "City again" }),
+]);
 
 /**
  * A grid whose toolbar is whatever the test passes. The harness toolbar is
@@ -92,9 +105,35 @@ describe("TMDataGrid.Menu", () => {
     expect(toggledColumnIds()).toEqual(HIDEABLE);
   });
 
+  it("shows the search box from six columns", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderGridUi();
+
+    await user.click(part("menu-button"));
+    expect(queryPart("columns-search")).not.toBeInTheDocument();
+    expect(toggledColumnIds()).toEqual(HIDEABLE);
+    unmount();
+
+    renderWithMantine(
+      <MenuGrid options={{ columns: wideColumns }}>
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns />
+        </TMDataGrid.Menu>
+      </MenuGrid>,
+    );
+    await user.click(part("menu-button"));
+    expect(part("columns-search")).toBeInTheDocument();
+  });
+
   it("narrows the list from the search box", async () => {
     const user = userEvent.setup();
-    renderGridUi();
+    renderWithMantine(
+      <MenuGrid>
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Columns searchable />
+        </TMDataGrid.Menu>
+      </MenuGrid>,
+    );
 
     await user.click(part("menu-button"));
     await user.type(part("columns-search"), "ci");
@@ -197,7 +236,7 @@ describe("TMDataGrid.Menu", () => {
       <MenuGrid>
         <TMDataGrid.Menu>
           <Menu.Item>Export CSV</Menu.Item>
-          <TMDataGrid.Menu.Columns />
+          <TMDataGrid.Menu.Columns searchable />
         </TMDataGrid.Menu>
       </MenuGrid>,
     );
@@ -387,6 +426,80 @@ describe("TMDataGrid.Menu.Export columns", () => {
 
     await waitFor(() => expect(downloads).toHaveLength(1));
     expect(await downloads[0]?.text()).toContain("ID;Name;Age;City\r\n");
+  });
+
+  it("select all ticks every exportable column and unticks them again", async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    customMenu({ initialState: { columnVisibility: { city: false } } });
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(part("export-picker-scope", undefined, dialog)).toHaveTextContent(
+      TMDATAGRID_LABELS_EN.exportAll,
+    );
+    expect(part("export-picker-count", undefined, dialog)).toHaveTextContent(
+      "3 of 4",
+    );
+    expect(
+      screen.getByText(TMDATAGRID_LABELS_EN.exportPickerHidden),
+    ).toBeInTheDocument();
+    // Four columns: no search box.
+    expect(queryPart("export-picker-search")).not.toBeInTheDocument();
+
+    const all = part("export-column-all", undefined, dialog);
+    expect(all).not.toBeChecked();
+    expect(all).toBePartiallyChecked();
+
+    await user.click(all);
+    expect(all).toBeChecked();
+    expect(part("export-column", { columnId: "city" }, dialog)).toBeChecked();
+
+    await user.click(all);
+    expect(part("export-column", { columnId: "id" }, dialog)).not.toBeChecked();
+    expect(part("export-picker-confirm", undefined, dialog)).toBeDisabled();
+
+    await user.click(all);
+    await user.click(part("export-picker-confirm", undefined, dialog));
+    await waitFor(() => expect(downloads).toHaveLength(1));
+    expect(await downloads[0]?.text()).toContain("ID;Name;Age;City\r\n");
+  });
+
+  it("select all under a search ticks the matches only", async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    customMenu({
+      columns: wideColumns,
+      initialState: { columnVisibility: { nameAgain: false, cityAgain: false } },
+    });
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+
+    const dialog = await screen.findByRole("dialog");
+    await user.type(part("export-picker-search", undefined, dialog), "again");
+    expect(
+      parts("export-column", undefined, dialog).map((item) => item.dataset.columnId),
+    ).toEqual(["nameAgain", "cityAgain"]);
+
+    const all = part("export-column-all", undefined, dialog);
+    expect(all).not.toBeChecked();
+    expect(all).not.toBePartiallyChecked();
+    await user.click(all);
+    expect(part("export-picker-count", undefined, dialog)).toHaveTextContent(
+      "6 of 6",
+    );
+
+    await user.clear(part("export-picker-search", undefined, dialog));
+    await user.click(part("export-column", { columnId: "city" }, dialog));
+    await user.click(part("export-picker-confirm", undefined, dialog));
+
+    await waitFor(() => expect(downloads).toHaveLength(1));
+    expect(await downloads[0]?.text()).toContain(
+      "ID;Name;Age;Name again;City again\r\n",
+    );
   });
 
   it("cancel closes the picker without a download", async () => {

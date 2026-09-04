@@ -151,15 +151,16 @@ Its children are the dropdown. See [Grid menu](/docs/menu).
 | Mantine `MenuProps` | | `position="bottom-end"`, `shadow="md"`, `width={260}`, `withinPortal` | Passed to the `Menu`. |
 
 `TMDataGrid.Menu.Columns`, `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` are the column chooser as menu items, for this menu or any Mantine `Menu` inside the grid.
-`Columns` takes `searchable` (default `true`), `ColumnToggles` takes `search`; the other two take no props.
+`Columns` takes `searchable` (default `"auto"`, a search box from six columns), `ColumnToggles` takes `search`; the other two take no props.
 
 ## TMDataGrid.ColumnsPanel
 
-The column chooser as plain controls: a searchable checkbox list of the hideable columns, with a show-all toggle and a reset button.
+The column chooser as plain controls: a checkbox list of the hideable columns, a search box once there are six of them, a show-all toggle and a reset button.
 For a Popover, a Drawer or an inline layout; `TMDataGrid.Menu.Columns` is the same thing as menu items.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `searchable` | `boolean \| "auto"` | `"auto"` | The search box over the list. `"auto"` shows it from six columns, `true` always, `false` never. |
 | Mantine `BoxProps` | | – | Style props (`w`, `p`, …), `className` and `style`, set on the panel block. |
 
 ## TMDataGrid.LoadingIndicator

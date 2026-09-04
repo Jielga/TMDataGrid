@@ -130,6 +130,9 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   exportPickerTitle: "Kolumner att exportera",
   exportPickerConfirm: "Exportera",
   exportPickerCancel: "Avbryt",
+  exportPickerSelectAll: "Markera alla",
+  exportPickerCount: (checked, total) => `${checked} av ${total}`,
+  exportPickerHidden: "Dold",
 
   selectColumnLabel: "Kryssrutemarkering",
   selectAllRows: "Markera alla rader",

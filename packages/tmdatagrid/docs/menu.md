@@ -45,13 +45,13 @@ const { canHideAny } = getGridCapabilities(table, features);
 
 ## The column chooser as menu items
 
-`TMDataGrid.Menu.Columns` is the whole chooser: a search box, one checkbox item per column that can be hidden, **Show/Hide All** and **Reset layout**.
+`TMDataGrid.Menu.Columns` is the whole chooser: one checkbox item per column that can be hidden, a search box once there are six of them, **Show/Hide All** and **Reset layout**.
 It renders nothing when no column can be hidden.
 The pieces it is made of are exported for menus that want only some of them.
 
 | Component | Renders |
 | --- | --- |
-| `TMDataGrid.Menu.Columns` | `Menu.Search`, the toggles, a divider, show/hide all and reset layout. `searchable={false}` drops the search box. |
+| `TMDataGrid.Menu.Columns` | `Menu.Search`, the toggles, a divider, show/hide all and reset layout. By default the search box shows from six columns; `searchable` shows it always and `searchable={false}` never. |
 | `TMDataGrid.Menu.ColumnToggles` | One item per hideable column, with a checkbox that shows both states. `search` narrows the list to the labels containing it. |
 | `TMDataGrid.Menu.ShowHideAll` | One checkbox item over the same list. An indeterminate box marks a partial state, and a click then shows all. |
 | `TMDataGrid.Menu.ResetLayout` | One item calling `resetSettings()`: visibility, order, pinning and widths. |
@@ -133,7 +133,7 @@ See [Testing](/docs/testing).
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `TMDataGrid.Menu` | Component | Mantine `MenuProps` without `children`, plus `children`, `icon`, `label` | `position="bottom-end"`, `shadow="md"`, `width={260}`, `withinPortal` | The burger and its dropdown. `icon` replaces the burger; `label` is the tooltip and `aria-label`, default `labels.menuButton`. |
-| `TMDataGrid.Menu.Columns` | Component | `searchable?: boolean` | `true` | The whole column chooser as menu items. Renders nothing when no column can be hidden. |
+| `TMDataGrid.Menu.Columns` | Component | `searchable?: boolean \| "auto"` | `"auto"` | The whole column chooser as menu items. `"auto"` shows the search box from six columns. Renders nothing when no column can be hidden. |
 | `TMDataGrid.Menu.ColumnToggles` | Component | `search?: string` | – | One checkbox item per hideable column. |
 | `TMDataGrid.Menu.ShowHideAll` | Component | – | – | One checkbox item over every hideable column. |
 | `TMDataGrid.Menu.ResetLayout` | Component | – | – | Calls `resetSettings()`. |
