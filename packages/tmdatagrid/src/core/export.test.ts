@@ -16,6 +16,7 @@ import {
   DEFAULT_EXPORT_OPTIONS,
   exportGrid,
   fromCellExportOptions,
+  getExportableColumns,
   guardFormula,
   jsonFormat,
   resolveExportOptions,
@@ -430,7 +431,12 @@ describe("resolveExportOptions", () => {
       undefined,
     );
 
-    expect(resolved).toEqual({ format, fileName: "a", includeHeaders: true });
+    expect(resolved).toEqual({
+      format,
+      fileName: "a",
+      includeHeaders: true,
+      columns: "visible",
+    });
     expect(resolveExportOptions()).toEqual(DEFAULT_EXPORT_OPTIONS);
   });
 
@@ -445,5 +451,61 @@ describe("resolveExportOptions", () => {
     expect(options.format?.id).toBe("csvExcel");
     expect(options.format?.decimalComma).toBe(false);
     expect(fromCellExportOptions({ fileName: "y" }).format).toBeUndefined();
+  });
+});
+
+describe("column selection", () => {
+  it('takes hidden columns under "all" and leaves them out under "visible"', () => {
+    const { result } = renderGrid();
+    act(() => {
+      result.current.table.getColumn("city")?.toggleVisibility(false);
+    });
+
+    expect(buildExportData({ table: result.current.table }).columnIds).toEqual([
+      "id",
+      "name",
+      "age",
+    ]);
+    expect(
+      buildExportData({ table: result.current.table, columns: "all" }).columnIds,
+    ).toEqual(["id", "name", "age", "city"]);
+  });
+
+  it("takes a list of ids in render order, unknown ones ignored", () => {
+    const { result } = renderGrid();
+
+    const data = buildExportData({
+      table: result.current.table,
+      columns: ["city", "nope", "id"],
+    });
+
+    expect(data.columnIds).toEqual(["id", "city"]);
+    expect(data.rows[0]).toEqual([1, "Stockholm"]);
+  });
+
+  it("lists every exportable column for the picker, lanes left out", () => {
+    const { result } = renderGrid();
+
+    expect(
+      getExportableColumns(result.current.table).map((column) => column.id),
+    ).toEqual(["id", "name", "age", "city"]);
+  });
+});
+
+describe("a grouped grid", () => {
+  it("writes the grouped column and never the tree lane", () => {
+    const { result } = renderGrid();
+    act(() => {
+      result.current.table.setGrouping(["city"]);
+    });
+
+    const data = buildExportData({ table: result.current.table });
+
+    // The tree lane is a display column with nothing to read; the city it
+    // shows is the city column's, which `groupedColumnMode: "remove"` only
+    // took off the screen.
+    expect(data.columnIds).not.toContain("__group__");
+    expect(data.columnIds).toContain("city");
+    expect(data.rows).toHaveLength(testRows.length);
   });
 });

@@ -14,7 +14,10 @@ import {
 } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
 import { getColumnLabel } from "../core/columnUtils";
-import type { TMDataGridExportOptions } from "../core/export";
+import type {
+  TMDataGridExportColumns,
+  TMDataGridExportOptions,
+} from "../core/export";
 import { useTMDataGridExport } from "../useTMDataGridExport";
 import { useHideableColumns } from "./useHideableColumns";
 import { BurgerIcon, DownloadIcon, RestoreIcon } from "./icons";
@@ -241,7 +244,17 @@ export function TMDataGridMenuResetLayout() {
 }
 
 /** Per-item overrides of the grid's `exportOptions`, and the item's text. */
-export type TMDataGridMenuExportProps = TMDataGridExportOptions & {
+export type TMDataGridMenuExportProps = Omit<
+  TMDataGridExportOptions,
+  "columns"
+> & {
+  /**
+   * Which columns the item writes: `"visible"`, `"all"`, a list of ids, or
+   * `"custom"` - a picker listing every exportable column with the visible
+   * ones ticked, and the download on its Export button. Defaults to the grid's
+   * `exportOptions.columns`.
+   */
+  columns?: TMDataGridExportColumns | "custom";
   /**
    * The item's text. Defaults to `labels.exportAll`, or for the selected-rows
    * item `labels.exportSelected(count)`. Two items offering two formats need
@@ -250,22 +263,32 @@ export type TMDataGridMenuExportProps = TMDataGridExportOptions & {
   label?: ReactNode;
 };
 
+/** The item's props as export options, with `"custom"` set aside for the picker. */
+function splitExportProps({ label, columns, ...rest }: TMDataGridMenuExportProps) {
+  const custom = columns === "custom";
+  const options: TMDataGridExportOptions = custom
+    ? rest
+    : { ...rest, columns };
+  return { label, custom, options };
+}
+
 /**
  * Downloads every filtered and sorted row, all pages, in the grid's export
  * format. Props override `exportOptions` for this item alone, which is how one
  * menu offers two formats.
  */
-export function TMDataGridMenuExport({
-  label,
-  ...options
-}: TMDataGridMenuExportProps) {
-  const { labels } = useTMDataGridContext();
+export function TMDataGridMenuExport(props: TMDataGridMenuExportProps) {
+  const { label, custom, options } = splitExportProps(props);
+  const { ui, labels } = useTMDataGridContext();
   const { exportAll } = useTMDataGridExport(options);
 
   return (
     <Menu.Item
       leftSection={<DownloadIcon size={16} stroke={1.6} />}
-      onClick={() => void exportAll()}
+      onClick={() => {
+        if (custom) ui.actions.openExportPicker({ rows: "all", options });
+        else void exportAll();
+      }}
       data-dg-part="menu-export"
     >
       {label ?? labels.exportAll}
@@ -278,11 +301,9 @@ export function TMDataGridMenuExport({
  * selected; renders nothing when row selection is off, since then there is
  * never anything for it to do.
  */
-export function TMDataGridMenuExportSelected({
-  label,
-  ...options
-}: TMDataGridMenuExportProps) {
-  const { labels } = useTMDataGridContext();
+export function TMDataGridMenuExportSelected(props: TMDataGridMenuExportProps) {
+  const { label, custom, options } = splitExportProps(props);
+  const { ui, labels } = useTMDataGridContext();
   const { exportSelected, selectedCount, canExportSelected } =
     useTMDataGridExport(options);
 
@@ -292,7 +313,10 @@ export function TMDataGridMenuExportSelected({
     <Menu.Item
       leftSection={<DownloadIcon size={16} stroke={1.6} />}
       disabled={selectedCount === 0}
-      onClick={() => void exportSelected()}
+      onClick={() => {
+        if (custom) ui.actions.openExportPicker({ rows: "selected", options });
+        else void exportSelected();
+      }}
       data-dg-part="menu-export-selected"
     >
       {label ?? labels.exportSelected(selectedCount)}

@@ -156,6 +156,10 @@ export type TMDataGridLabels = {
   // Export
   exportAll: string;
   exportSelected: (count: number) => string;
+  /** Title of the column picker `columns="custom"` opens. */
+  exportPickerTitle: string;
+  exportPickerConfirm: string;
+  exportPickerCancel: string;
 
   // Generated checkbox lane
   selectColumnLabel: string;
@@ -286,6 +290,9 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   exportAll: "Export all rows",
   exportSelected: (count) =>
     count === 1 ? "Export 1 selected row" : `Export ${count} selected rows`,
+  exportPickerTitle: "Columns to export",
+  exportPickerConfirm: "Export",
+  exportPickerCancel: "Cancel",
 
   selectColumnLabel: "Checkbox selection",
   selectAllRows: "Select all rows",

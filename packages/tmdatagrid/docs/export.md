@@ -23,9 +23,15 @@ hint: Tick a few rows, then open the menu. The Excel CSV opens straight into col
 
 ## What is written
 
-The columns are the visible data columns in render order, so a hidden column is not exported and a pinned one keeps its place.
-The generated lanes (checkbox, details, edit, row numbers) are never exported.
-Set `meta.enableExport: false` to leave a column of your own out:
+By default the columns are the visible data columns in render order, so a hidden column is not exported and a pinned one keeps its place.
+`columns` on `exportOptions`, on the menu items and on the functions picks another set:
+
+- `"visible"` - the data columns on screen. The default.
+- `"all"` - every exportable column, hidden ones in the place they would take if shown.
+- a list of column ids - those columns, in render order.
+
+The generated lanes (checkbox, details, edit, row numbers) are never exported, whichever is asked for.
+Set `meta.enableExport: false` to leave a column of your own out the same way:
 
 ```tsx
 columnHelper.display({
@@ -72,6 +78,7 @@ const grid = useTMDataGrid({
 | `format` | `TMDataGridExportFormat` | `csvExcelFormat()` | The file format. See [Formats](#formats). |
 | `fileName` | `string` | `"export"` | The file name without extension; the format adds its own. |
 | `includeHeaders` | `boolean` | `true` | Determines whether the column labels are written as the first row. |
+| `columns` | `"visible" \| "all" \| Array<string>` | `"visible"` | Which columns are written. See [What is written](#what-is-written). |
 
 The option is read field by field, so a literal is fine.
 Every export of the grid reads it: the menu items, the hook, and the export item of the cell-range menu.
@@ -144,7 +151,20 @@ Its props override `exportOptions` for this item alone, which is how one menu of
 | `format` | `TMDataGridExportFormat` | `exportOptions.format` | The file format for this item. |
 | `fileName` | `string` | `exportOptions.fileName` | The file name for this item. |
 | `includeHeaders` | `boolean` | `exportOptions.includeHeaders` | Determines whether this item writes the header row. |
+| `columns` | `"visible" \| "all" \| Array<string> \| "custom"` | `exportOptions.columns` | Which columns the item writes. `"custom"` opens the column picker. |
 | `label` | `ReactNode` | `labels.exportAll` | The item's text. |
+
+### The column picker
+
+`columns="custom"` opens a dialog instead of downloading: every exportable column as a checkbox, the visible ones ticked, hidden ones offered unticked, and an Export button that downloads the ticked columns in render order.
+Cancel closes it with no download.
+
+```tsx
+<TMDataGrid.Menu.Export columns="custom" label="Export all rows, choose columns" />
+```
+
+The picker is rendered by the `TMDataGrid` root and driven by `ui.state.exportPicker`, which holds `{ rows, options }` while it is open and `null` otherwise.
+`ui.actions.openExportPicker({ rows: "all", options })` opens it from a control of your own; `getExportableColumns(table)` is the list it shows.
 
 ## TMDataGrid.Menu.ExportSelected
 
@@ -182,11 +202,12 @@ function ExportButtons() {
 ```
 
 It takes a `TMDataGridExportOptions` argument, folded over the grid's `exportOptions` for this caller.
+`exportAll` and `exportSelected` take one more, folded over both for that call, which is how a control passes a chosen set of columns.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `exportAll` | `() => Promise<void>` | Downloads every filtered and sorted row, all pages. |
-| `exportSelected` | `() => Promise<void>` | Downloads the selected rows of the current view. Resolves without a download when none is selected. |
+| `exportAll` | `(overrides?) => Promise<void>` | Downloads every filtered and sorted row, all pages. |
+| `exportSelected` | `(overrides?) => Promise<void>` | Downloads the selected rows of the current view. Resolves without a download when none is selected. |
 | `selectedCount` | `number` | How many rows `exportSelected` would write. Subscribes to the selection. |
 | `canExportSelected` | `boolean` | `true` while row selection is on. |
 
@@ -200,8 +221,8 @@ import { exportGrid, jsonFormat } from "@jielga/tmdatagrid";
 await exportGrid({ table: grid.table, rows: "selected", options: { format: jsonFormat() } });
 ```
 
-`rows` is `"all"` (the default), `"selected"`, or an array of TanStack rows of your own.
-`buildExportData({ table, rows })` is the step before the file: the columns, their labels and the raw values as a `TMDataGridExportData`, for a format or a post-processing step of your own.
+`rows` is `"all"` (the default), `"selected"`, or an array of TanStack rows of your own; `options.columns` picks the columns.
+`buildExportData({ table, rows, columns })` is the step before the file: the columns, their labels and the raw values as a `TMDataGridExportData`, for a format or a post-processing step of your own.
 `writeExportFile(data, settings)` writes and downloads it.
 
 ## Writing your own format
@@ -243,12 +264,16 @@ See [Copy and export](/docs/cell-selection#copy-and-export).
 | `exportAll` | `"Export all rows"` | `TMDataGrid.Menu.Export` |
 | `exportSelected` | `(count) => "Export 3 selected rows"` | `TMDataGrid.Menu.ExportSelected` |
 | `exportCells` | `"Export cells"` | The cell-range menu |
+| `exportPickerTitle` | `"Columns to export"` | The column picker |
+| `exportPickerConfirm` | `"Export"` | The column picker |
+| `exportPickerCancel` | `"Cancel"` | The column picker |
 
 See [Localization](/docs/localization).
 
 ## Testing
 
 `TMDataGrid.Menu.Export` is `data-dg-part="menu-export"` and `TMDataGrid.Menu.ExportSelected` is `data-dg-part="menu-export-selected"`.
+The column picker is `export-picker`, its checkboxes `export-column` with `data-column-id`, and its buttons `export-picker-confirm` and `export-picker-cancel`.
 A download is an anchor with an object URL, clicked; a jsdom test stubs `URL.createObjectURL` and `HTMLAnchorElement.prototype.click` to read the file back.
 See [Testing](/docs/testing).
 
@@ -273,11 +298,14 @@ The names below still work and go in the next beta.
 | `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row for every export of the grid. |
 | `meta.enableExport` | Column meta | `boolean` | `true` | `false` leaves the column out of every export and of Ctrl+C. |
 | `meta.exportValue` | Column meta | `({ value, row, column }) => unknown` | – | The value written in place of `row.getValue`. |
-| `TMDataGrid.Menu.Export` | Component | `TMDataGridExportOptions` | – | Menu item: every filtered row. |
-| `TMDataGrid.Menu.ExportSelected` | Component | `TMDataGridExportOptions` | – | Menu item: the selected rows. Renders nothing when row selection is off. |
+| `TMDataGrid.Menu.Export` | Component | `TMDataGridMenuExportProps` | – | Menu item: every filtered row. `columns="custom"` opens the picker. |
+| `TMDataGrid.Menu.ExportSelected` | Component | `TMDataGridMenuExportProps` | – | Menu item: the selected rows. Renders nothing when row selection is off. |
+| `ui.state.exportPicker` | UI state | `{ rows, options } \| null` | `null` | The column picker while open. |
+| `ui.actions.openExportPicker` · `closeExportPicker` | UI actions | – | – | Open the picker from your own code. |
+| `getExportableColumns` | Function | `(table) => Array<Column>` | – | Every column an export could take, hidden ones included. |
 | `useTMDataGridExport` | Hook | `(overrides?) => TMDataGridExportApi` | – | `exportAll`, `exportSelected`, `selectedCount`, `canExportSelected`. |
 | `exportGrid` | Function | `({ table, rows?, options? }) => Promise<void>` | – | Downloads the grid from outside a component. |
-| `buildExportData` | Function | `({ table, rows?, bounds? }) => TMDataGridExportData` | – | The columns, labels and values a format writes. |
+| `buildExportData` | Function | `({ table, rows?, columns?, bounds? }) => TMDataGridExportData` | – | The columns, labels and values a format writes. |
 | `writeExportFile` | Function | `(data, settings) => Promise<void>` | – | Writes export data in a format and downloads it. |
 | `csvExcelFormat` · `csvFormat` · `tsvFormat` · `jsonFormat` | Functions | `(options?) => TMDataGridExportFormat` | – | The built-in formats. |
 | `guardFormula` · `formatExportValue` | Functions | – | – | The formula guard and the text rule, for a format of your own. |

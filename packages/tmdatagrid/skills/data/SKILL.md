@@ -213,13 +213,18 @@ function ExportButton() {
 }
 ```
 
-What is written: the visible data columns in render order (never the generated
-lanes, never a column with `meta.enableExport: false`), every row after
-filtering and sorting (a grouped grid writes the records under every group,
-never the group rows), and each cell's **value** rather than what it renders -
+What is written: the data columns in render order (never the generated lanes,
+never a column with `meta.enableExport: false`), every row after filtering and
+sorting (a grouped grid writes the records under every group, never the group
+rows), and each cell's **value** rather than what it renders -
 `meta.exportValue: ({ value, row, column }) => unknown` substitutes one.
-`TMDataGrid.Menu.ExportSelected` counts and writes the ticked rows of the
-current view, in grid order; it renders nothing when row selection is off.
+`columns` on `exportOptions`, the items and the functions is `"visible"` (the
+default), `"all"` (hidden columns too) or a list of ids; `columns="custom"` on
+a menu item opens a picker instead - every exportable column, the visible ones
+ticked, Export and Cancel - driven by `ui.state.exportPicker` and
+`ui.actions.openExportPicker`. `TMDataGrid.Menu.ExportSelected` counts and
+writes the ticked rows of the current view, in grid order; it renders nothing
+when row selection is off.
 
 Formats, each a `TMDataGridExportFormat` from a factory:
 

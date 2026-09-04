@@ -119,6 +119,7 @@ import type { TMDataGridCellRange } from "./core/cellRange";
 import {
   resolveExportOptions,
   type TMDataGridExportOptions,
+  type TMDataGridExportPickerRequest,
   type TMDataGridExportSettings,
   type TMDataGridExportValueGetter,
 } from "./core/export";
@@ -396,11 +397,21 @@ export type TMDataGridUiState = {
    * describe different places.
    */
   cellRange: TMDataGridCellRange | null;
+  /**
+   * The export column picker, while it is open: which rows it exports and the
+   * options of the item that opened it. `null` while closed. Held here rather
+   * than in the menu item, which unmounts with the dropdown the moment it is
+   * clicked.
+   */
+  exportPicker: TMDataGridExportPickerRequest | null;
 };
 
 export type TMDataGridUiActions = {
   openFilterPanel: (columnId?: string | null) => void;
   closeFilterPanel: () => void;
+  /** Opens the export column picker for `request`. See `TMDataGrid.Menu.Export`'s `columns="custom"`. */
+  openExportPicker: (request: TMDataGridExportPickerRequest) => void;
+  closeExportPicker: () => void;
   /**
    * Points at a column's row in the filter panel without opening anything.
    * `openFilterPanel` does this as well as opening; this is the half a panel
@@ -1123,6 +1134,7 @@ export function useTMDataGrid<TData extends RowData>({
     format: exportFormat,
     fileName: exportFileName,
     includeHeaders: exportIncludeHeaders,
+    columns: exportColumns,
   } = exportOptionsOverride ?? {};
   const exportOptions = useMemo(
     () =>
@@ -1130,8 +1142,9 @@ export function useTMDataGrid<TData extends RowData>({
         format: exportFormat,
         fileName: exportFileName,
         includeHeaders: exportIncludeHeaders,
+        columns: exportColumns,
       }),
-    [exportFormat, exportFileName, exportIncludeHeaders],
+    [exportFormat, exportFileName, exportIncludeHeaders, exportColumns],
   );
   // Unpacked before the memo, so the api is keyed on the five fields rather
   // than on the object's identity - which is what lets `filters` be written as
@@ -1774,6 +1787,7 @@ export function useTMDataGrid<TData extends RowData>({
       selectionAnchorRowId: null,
       focusedCell: null,
       cellRange: null,
+      exportPicker: null,
     },
     ({ setState }) => ({
       openFilterPanel: (columnId = null) =>
@@ -1788,6 +1802,10 @@ export function useTMDataGrid<TData extends RowData>({
           filterPanelOpen: false,
           filterPanelColumnId: null,
         })),
+      openExportPicker: (request) =>
+        setState((prev) => ({ ...prev, exportPicker: request })),
+      closeExportPicker: () =>
+        setState((prev) => ({ ...prev, exportPicker: null })),
       focusPanelFilter: (columnId) =>
         setState((prev) => ({ ...prev, filterPanelColumnId: columnId })),
       focusHeaderFilter: (columnId) =>

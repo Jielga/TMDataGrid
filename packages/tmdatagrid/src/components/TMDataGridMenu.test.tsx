@@ -319,3 +319,89 @@ describe("TMDataGrid.Menu.Export", () => {
     expect(queryPart("menu-export-selected")).not.toBeInTheDocument();
   });
 });
+
+describe("TMDataGrid.Menu.Export columns", () => {
+  const customMenu = (options?: MenuGridOptions) =>
+    renderWithMantine(
+      <MenuGrid options={options}>
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Export columns="custom" />
+        </TMDataGrid.Menu>
+      </MenuGrid>,
+    );
+
+  it('"all" writes hidden columns too, straight from the click', async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    renderWithMantine(
+      <MenuGrid options={{ initialState: { columnVisibility: { city: false } } }}>
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Export columns="all" />
+        </TMDataGrid.Menu>
+      </MenuGrid>,
+    );
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+
+    await waitFor(() => expect(downloads).toHaveLength(1));
+    expect(await downloads[0]?.text()).toContain("ID;Name;Age;City\r\n");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it('"custom" opens a picker with the visible columns ticked and writes the ticked ones', async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    customMenu();
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(downloads).toHaveLength(0);
+    expect(part("export-column", { columnId: "city" }, dialog)).toBeChecked();
+
+    await user.click(part("export-column", { columnId: "city" }, dialog));
+    await user.click(part("export-picker-confirm", undefined, dialog));
+
+    await waitFor(() => expect(downloads).toHaveLength(1));
+    expect(await downloads[0]?.text()).toContain("ID;Name;Age\r\n1;Anna;20\r\n");
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("offers a hidden column in the picker, unticked", async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    customMenu({ initialState: { columnVisibility: { city: false } } });
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(part("export-column", { columnId: "city" }, dialog)).not.toBeChecked();
+
+    await user.click(part("export-column", { columnId: "city" }, dialog));
+    await user.click(part("export-picker-confirm", undefined, dialog));
+
+    await waitFor(() => expect(downloads).toHaveLength(1));
+    expect(await downloads[0]?.text()).toContain("ID;Name;Age;City\r\n");
+  });
+
+  it("cancel closes the picker without a download", async () => {
+    const downloads = captureDownloads();
+    const user = userEvent.setup();
+    customMenu();
+
+    await user.click(part("menu-button"));
+    await user.click(part("menu-export"));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(part("export-picker-cancel", undefined, dialog));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(downloads).toHaveLength(0);
+  });
+});

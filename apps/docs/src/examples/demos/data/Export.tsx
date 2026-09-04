@@ -94,6 +94,12 @@ export function Export() {
             fileName="employees-plain"
             label="Export all rows as plain CSV"
           />
+          {/* A picker instead of a download: visible columns ticked, hidden
+              ones offered. */}
+          <TMDataGrid.Menu.Export
+            columns="custom"
+            label="Export all rows, choose columns"
+          />
           <TMDataGrid.Menu.ExportSelected />
           <Menu.Divider />
           <Menu.Label>Columns</Menu.Label>

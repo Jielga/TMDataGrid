@@ -2,7 +2,7 @@ import type { Column, Row, RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 import type { TMDataGridRangeBounds } from "./cellRange";
-import { getColumnLabel, isControlColumn } from "./columnUtils";
+import { getColumnLabel, isGeneratedColumn } from "./columnUtils";
 
 /**
  * The byte order mark Excel looks for before it will read a file as UTF-8.
@@ -62,6 +62,13 @@ export type TMDataGridExportFormat = {
   ) => string | Blob | Promise<string | Blob>;
 };
 
+/**
+ * Which columns an export takes: the visible ones, every exportable column
+ * hidden or not, or a list of column ids. The generated lanes and columns
+ * with `meta.enableExport: false` are never taken, whatever is asked for.
+ */
+export type TMDataGridExportColumns = "visible" | "all" | ReadonlyArray<string>;
+
 /** How the grid exports: the format, the file name and whether headers go in. */
 export type TMDataGridExportOptions = {
   /** Defaults to `csvExcelFormat()`. */
@@ -70,6 +77,17 @@ export type TMDataGridExportOptions = {
   fileName?: string;
   /** Column labels as the first row. Defaults to `true`. */
   includeHeaders?: boolean;
+  /** Defaults to `"visible"`. See {@link TMDataGridExportColumns}. */
+  columns?: TMDataGridExportColumns;
+};
+
+/**
+ * What the column picker was opened for: which rows, and the options of the
+ * item that opened it. Held in `ui.state.exportPicker` while it is open.
+ */
+export type TMDataGridExportPickerRequest = {
+  rows: "all" | "selected";
+  options: TMDataGridExportOptions;
 };
 
 /** `TMDataGridExportOptions` with every default filled in. */
@@ -349,6 +367,7 @@ export const DEFAULT_EXPORT_OPTIONS: TMDataGridExportSettings = {
   format: csvExcelFormat(),
   fileName: "export",
   includeHeaders: true,
+  columns: "visible",
 };
 
 /**
@@ -367,28 +386,79 @@ export function resolveExportOptions(
     if (override.includeHeaders !== undefined) {
       resolved.includeHeaders = override.includeHeaders;
     }
+    if (override.columns !== undefined) resolved.columns = override.columns;
   }
   return resolved;
 }
 
-/** Every visible leaf column in render order: left, center, right. */
-function visibleColumns(table: ErasedTable): Array<ErasedColumn> {
-  return [
-    ...table.getLeftVisibleLeafColumns(),
-    ...table.getCenterVisibleLeafColumns(),
-    ...table.getRightVisibleLeafColumns(),
+/**
+ * Every leaf column in render order - left, center, right - hidden ones in
+ * the place they would take if shown. `getAllLeafColumns` is definition
+ * order, which pinning and reordering have long since left behind.
+ */
+function allLeafColumns(table: ErasedTable): Array<ErasedColumn> {
+  const ordered = [
+    ...table.getLeftLeafColumns(),
+    ...table.getCenterLeafColumns(),
+    ...table.getRightLeafColumns(),
   ];
+  const seen = new Set(ordered.map((column) => column.id));
+  // The flat list rather than `getAllLeafColumns`: that one runs through the
+  // ordering step too, which is where `groupedColumnMode: "remove"` drops a
+  // grouped column, so it is the only list that still holds one.
+  const missing = table
+    .getAllFlatColumns()
+    .filter((column) => column.columns.length === 0 && !seen.has(column.id));
+  if (missing.length === 0) return ordered;
+  // A removed grouped column goes first, where the tree lane showing its
+  // value sits. Anything else the lanes left out goes last.
+  const grouping = table.store.state.grouping;
+  const grouped = grouping.flatMap((id) =>
+    missing.filter((column) => column.id === id),
+  );
+  const rest = missing.filter((column) => !grouping.includes(column.id));
+  return [...grouped, ...ordered, ...rest];
+}
+
+/**
+ * Every column an export could take, in render order: the data columns minus
+ * the generated lanes and `meta.enableExport: false`, hidden ones included.
+ * What the column picker lists; `column.getIsVisible()` says which of them a
+ * `"visible"` export would take.
+ */
+export function getExportableColumns<TData extends RowData>(
+  table: TMDataGridTable<TData>,
+): Array<Column<TMDataGridFeatures, TData, unknown>> {
+  const erased = table as unknown as ErasedTable;
+  return allLeafColumns(erased).filter(isExportedColumn) as unknown as Array<
+    Column<TMDataGridFeatures, TData, unknown>
+  >;
+}
+
+/** The columns `columns` names, in render order. */
+function selectColumns(
+  table: ErasedTable,
+  columns: TMDataGridExportColumns,
+): Array<ErasedColumn> {
+  const all = allLeafColumns(table).filter(isExportedColumn);
+  if (columns === "all") return all;
+  if (columns === "visible") return all.filter((column) => column.getIsVisible());
+  const wanted = new Set(columns);
+  return all.filter((column) => wanted.has(column.id));
 }
 
 /**
  * The generated lanes - the checkbox, the details chevron, the edit lane, the
- * row numbers - hold controls rather than data, so a column of empty strings
- * is all they could contribute, and pasting one into a spreadsheet only shifts
- * everything to its right. `meta.enableExport: false` is the consumer's way of
- * saying the same about a column of their own.
+ * row numbers, the tree lane - hold controls rather than data, so a column of
+ * empty strings is all they could contribute, and pasting one into a
+ * spreadsheet only shifts everything to its right. The tree lane is a display
+ * column with no accessor, so on a grouped grid the value it shows lives in
+ * the grouped column, which stays exportable even while `groupedColumnMode`
+ * has taken it off the screen. `meta.enableExport: false` is the consumer's
+ * way of saying the same about a column of their own.
  */
 function isExportedColumn(column: ErasedColumn): boolean {
-  if (isControlColumn(column.id)) return false;
+  if (isGeneratedColumn(column.id)) return false;
   return column.columnDef.meta?.enableExport !== false;
 }
 
@@ -450,6 +520,8 @@ export type BuildExportDataArgs<TData extends RowData> = {
   table: TMDataGridTable<TData>;
   /** Defaults to `"all"`. */
   rows?: TMDataGridExportRows<TData>;
+  /** Defaults to `"visible"`. Ignored under `bounds`. */
+  columns?: TMDataGridExportColumns;
   /**
    * A rectangle over `rows` and the visible columns, both by index - the
    * cell-range path. `rows` is then the list the indices refer to, usually
@@ -461,26 +533,36 @@ export type BuildExportDataArgs<TData extends RowData> = {
 /**
  * What an export writes, before any format touches it.
  *
- * Columns are the visible data columns in render order, minus the generated
- * lanes and any column with `meta.enableExport: false` - what you see is what
- * you get, minus paging. Rows are `"all"` (every filtered and sorted row across
- * every page, group rows flattened to their records), `"selected"` (those of
- * them the user has ticked, in the same order - the selection map is walked
- * through the row list rather than the other way round, because TanStack's
- * selected row models ignore filtering and sorting), or a list of your own.
+ * Columns are `"visible"` (the data columns on screen, in render order),
+ * `"all"` (every exportable column, hidden or not) or a list of ids; the
+ * generated lanes and any column with `meta.enableExport: false` are left out
+ * whichever is asked for. Rows are `"all"` (every filtered and sorted row
+ * across every page, group rows flattened to their records), `"selected"`
+ * (those of them the user has ticked, in the same order - the selection map
+ * is walked through the row list rather than the other way round, because
+ * TanStack's selected row models ignore filtering and sorting), or a list of
+ * your own.
  */
 export function buildExportData<TData extends RowData>({
   table,
   rows = "all",
+  columns: which = "visible",
   bounds,
 }: BuildExportDataArgs<TData>): TMDataGridExportData {
   // The same erasure the context provider performs: this only ever reads
   // generic row and column APIs.
   const erased = table as unknown as ErasedTable;
-  const allColumns = visibleColumns(erased);
-  const columns = (
-    bounds ? allColumns.slice(bounds.left, bounds.right + 1) : allColumns
-  ).filter(isExportedColumn);
+  // The bounds index into every visible column, lanes included, so under
+  // them the slice comes before the filter.
+  const columns = bounds
+    ? [
+        ...erased.getLeftVisibleLeafColumns(),
+        ...erased.getCenterVisibleLeafColumns(),
+        ...erased.getRightVisibleLeafColumns(),
+      ]
+        .slice(bounds.left, bounds.right + 1)
+        .filter(isExportedColumn)
+    : selectColumns(erased, which);
   if (columns.length === 0) return { columnIds: [], headers: [], rows: [] };
 
   let list: ReadonlyArray<ErasedRow>;
@@ -538,9 +620,10 @@ export async function exportGrid<TData extends RowData>({
   rows,
   options,
 }: ExportGridArgs<TData>): Promise<void> {
-  const data = buildExportData({ table, rows });
+  const resolved = resolveExportOptions(options);
+  const data = buildExportData({ table, rows, columns: resolved.columns });
   if (data.columnIds.length === 0) return;
-  await writeExportFile(data, resolveExportOptions(options));
+  await writeExportFile(data, resolved);
 }
 
 export type TMDataGridClipboardTextOptions = {

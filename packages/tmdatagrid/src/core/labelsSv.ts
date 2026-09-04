@@ -127,6 +127,9 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   exportAll: "Exportera alla rader",
   exportSelected: (count) =>
     count === 1 ? "Exportera 1 vald rad" : `Exportera ${count} valda rader`,
+  exportPickerTitle: "Kolumner att exportera",
+  exportPickerConfirm: "Exportera",
+  exportPickerCancel: "Avbryt",
 
   selectColumnLabel: "Kryssrutemarkering",
   selectAllRows: "Markera alla rader",

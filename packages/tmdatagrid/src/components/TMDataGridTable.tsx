@@ -39,7 +39,11 @@ import {
   type TMDataGridCellEditorClose,
 } from "./TMDataGridCellEditor";
 import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
-import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import {
+  getColumnAlign,
+  isControlColumn,
+  isGeneratedColumn,
+} from "../core/columnUtils";
 import {
   resizePreview,
   type TMDataGridColumnTrack,
@@ -1634,7 +1638,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
           .slice(selectionBounds.left, selectionBounds.right + 1)
           .filter(
             (column) =>
-              !isControlColumn(column.id) &&
+              !isGeneratedColumn(column.id) &&
               column.columnDef.meta?.enableExport !== false,
           ).length;
 
