@@ -148,8 +148,26 @@ export type TMDataGridLabels = {
   // Cell selection menu
   cellCount: (count: number) => string;
   copy: string;
-  exportCsv: string;
+  exportCells: string;
+  /** @deprecated Use `exportCells`. Read as its fallback for one beta. */
+  exportCsv?: string;
   includeHeaders: string;
+
+  // Export
+  exportAll: string;
+  exportSelected: (count: number) => string;
+  /** Title of the column picker `columns="custom"` opens; `format` is the file extension in upper case, "CSV". */
+  exportPickerTitle: (format: string) => string;
+  /** The line under the title; `selected` is the selected row count, or `null` for an export of all rows. */
+  exportPickerHint: (selected: number | null) => string;
+  exportPickerConfirm: string;
+  exportPickerCancel: string;
+  /** The select-all row over the picker's list. */
+  exportPickerSelectAll: string;
+  /** The "3 of 12" count beside it. */
+  exportPickerCount: (checked: number, total: number) => string;
+  /** Marks a column the grid hides at the moment. */
+  exportPickerHidden: string;
 
   // Generated checkbox lane
   selectColumnLabel: string;
@@ -274,8 +292,24 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} cells`),
   copy: "Copy",
-  exportCsv: "Export as CSV for Excel",
+  exportCells: "Export cells",
   includeHeaders: "Include headers",
+
+  exportAll: "Export all rows",
+  exportSelected: (count) =>
+    count === 1 ? "Export 1 selected row" : `Export ${count} selected rows`,
+  exportPickerTitle: (format) => `Export as ${format}`,
+  exportPickerHint: (selected) =>
+    selected === null
+      ? "Select the columns to export"
+      : selected === 1
+        ? "Select the columns to export for the selected row"
+        : `Select the columns to export for the ${selected} selected rows`,
+  exportPickerConfirm: "Export",
+  exportPickerCancel: "Cancel",
+  exportPickerSelectAll: "Select all",
+  exportPickerCount: (checked, total) => `${checked} of ${total}`,
+  exportPickerHidden: "Hidden",
 
   selectColumnLabel: "Checkbox selection",
   selectAllRows: "Select all rows",
@@ -302,6 +336,10 @@ export function mergeLabels(
   return {
     ...TMDATAGRID_LABELS_EN,
     ...override,
+    exportCells:
+      override.exportCells ??
+      override.exportCsv ??
+      TMDATAGRID_LABELS_EN.exportCells,
     operators: {
       ...TMDATAGRID_LABELS_EN.operators,
       ...override.operators,

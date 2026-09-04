@@ -26,7 +26,7 @@ import {
   createTMDataGridColumnHelper,
   DgAutocompleteFilter,
   DgRangeSliderFilter,
-  exportGridToCsv,
+  exportGrid,
   TMDataGrid,
   TMDATAGRID_LABELS_SV,
   type TMDataGridFilterValue,
@@ -702,7 +702,7 @@ export function PlaygroundExample() {
               variant="subtle"
               color="gray"
               onClick={() =>
-                exportGridToCsv({
+                exportGrid({
                   table: grid.table,
                   options: { fileName: "employees" },
                 })
@@ -712,6 +712,7 @@ export function PlaygroundExample() {
             </Button>
             <TMDataGrid.FilterButton />
             <TMDataGrid.Menu>
+              <TMDataGrid.Menu.Export columns="custom" />
               <TMDataGrid.Menu.Columns />
             </TMDataGrid.Menu>
           </TMDataGrid.Toolbar>

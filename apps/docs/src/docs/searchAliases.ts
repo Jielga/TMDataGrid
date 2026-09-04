@@ -37,7 +37,8 @@ export const SEARCH_ALIASES: ReadonlyArray<SearchAlias> = [
   { terms: ["filter sidebar", "filter drawer", "filter panel placement"], pageId: "filtering", hash: "the-filters-option" },
 
   // Words for a feature the docs name with a different one.
-  { terms: ["excel", "xlsx", "spreadsheet"], pageId: "cell-selection", hash: "the-csv" },
+  { terms: ["excel", "xlsx", "spreadsheet"], pageId: "xlsx" },
+  { terms: ["export", "csv", "download"], pageId: "export", hash: "formats" },
   { terms: ["localstorage", "sessionstorage", "storage"], pageId: "persistence" },
   { terms: ["dark mode", "light mode", "colour scheme", "color scheme", "theme", "theming"], pageId: "styling", hash: "colours" },
   { terms: ["performance", "large data", "big data", "many rows"], pageId: "scrolling" },

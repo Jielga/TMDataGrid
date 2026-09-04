@@ -17,6 +17,7 @@ import {
   TMDataGridToolbar,
   TMDataGridToolbarSpacer,
 } from "./TMDataGridToolbar";
+import { TMDataGridExportPicker } from "./TMDataGridExportPicker";
 import {
   DEFAULT_TMDATAGRID_SIZE,
   SIZE_CONTROL_SIZE,
@@ -62,6 +63,7 @@ function TMDataGridRoot<TData extends RowData>({
   edit,
   features,
   filters,
+  exportOptions,
   labels,
   renderDetails,
   renderDetailsEstHeight,
@@ -85,6 +87,7 @@ function TMDataGridRoot<TData extends RowData>({
       edit,
       features,
       filters,
+      exportOptions,
       labels,
       renderDetails,
       renderDetailsEstHeight,
@@ -102,6 +105,7 @@ function TMDataGridRoot<TData extends RowData>({
       edit,
       features,
       filters,
+      exportOptions,
       labels,
       renderDetails,
       renderDetailsEstHeight,
@@ -127,6 +131,9 @@ function TMDataGridRoot<TData extends RowData>({
       >
         {children}
       </div>
+      {/* Portaled by Mantine, so outside the root element; inside the
+          provider, since it reads the grid. */}
+      <TMDataGridExportPicker />
     </TMDataGridContextProvider>
   );
 }

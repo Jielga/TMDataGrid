@@ -1,16 +1,17 @@
 ---
 name: cell-selection
 description: >
-  Cell cursor, ranges, clipboard and CSV export in TMDataGrid. Covers the
+  Cell cursor, ranges and the clipboard in TMDataGrid. Covers the
   cellSelection option and its none / single / range modes, the keyboard map
   (arrows, Shift+arrows, PageUp/PageDown, Home/End, Enter, F2, Escape, Space,
   Ctrl+C), the one-tab-stop rule and the in-row Tab walk over controls inside
   cells, the role flip from table/cell to grid/gridcell, ui.state.focusedCell
-  and ui.state.cellRange keyed by id, onFocusedCellChange, the copy and export
-  context menu, the cellExport options and their Nordic Excel defaults, and
-  exportGridToCsv over every filtered row. Load when adding keyboard cell
-  navigation, selecting blocks of cells, copying to a spreadsheet, exporting
-  CSV, or when Tab walks through controls inside the grid body.
+  and ui.state.cellRange keyed by id, onFocusedCellChange, and the Copy /
+  Export cells / Include headers context menu that writes the rectangle in the
+  grid's exportOptions format. Load when adding keyboard cell navigation,
+  selecting blocks of cells, copying to a spreadsheet, or when Tab walks
+  through controls inside the grid body. Exporting whole rows is the data
+  skill.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -19,7 +20,7 @@ sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/cell-selection.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellNavigation.ts'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellRange.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellExport.ts'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/export.ts'
 ---
 
 # TMDataGrid - Cell selection
@@ -115,31 +116,34 @@ Ctrl+C puts the block on the clipboard as tab-separated text with CRLF between
 rows, the format Excel, Sheets and Numbers all produce themselves. Values only:
 Excel's own copy carries no header row either.
 
-Right-clicking inside the selection opens Copy, "Export as CSV for Excel" and an
+Right-clicking inside the selection opens Copy, "Export cells" and an
 "Include headers" toggle. A right-click outside it moves the selection there
 first, the way a spreadsheet does. Your own `renderRowContextMenu` items are appended
 below a divider, so nothing is lost by turning cell selection on.
 
-The CSV is written for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF
-endings, semicolons between fields and a comma as the decimal mark. That
-combination opens straight into columns with å ä ö intact.
+"Export cells" writes the rectangle in the grid's export format - by default a
+CSV for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF endings,
+semicolons between fields and a comma as the decimal mark. The format, the file
+name and the header row are the grid's `exportOptions`:
 
 ```tsx
-<TMDataGrid.Table
-  cellExport={{ separator: ",", decimalComma: false, fileName: "employees" }}
-/>
+const grid = useTMDataGrid({
+  data,
+  columns,
+  cellSelection: "range",
+  exportOptions: { format: csvFormat(), fileName: "employees" },
+});
 ```
 
-What gets written is the cell's **value**, not what it renders. Dates come out
-in the `sv-SE` form (`2026-07-31`), which Excel reads as a date.
+What gets written is the cell's **value**, not what it renders, for the file and
+for Ctrl+C alike; `meta.exportValue` substitutes a value and
+`meta.enableExport: false` drops a column from both. Ctrl+C writes numbers with
+the format's decimal mark, so what is pasted matches what is exported.
 
-`exportGridToCsv({ table, options })` takes **every filtered row** instead of the
-selected block, with the same options and defaults. There is no built-in button
-for it:
-
-```tsx
-<Button onClick={() => exportGridToCsv({ table: grid.table })}>Export</Button>
-```
+Exporting every filtered row rather than the rectangle is
+`TMDataGrid.Menu.Export`, `TMDataGrid.Menu.ExportSelected` and
+`useTMDataGridExport`, covered by the data skill. The `cellExport` Table prop is
+deprecated: it is converted and merged over `exportOptions` for this menu only.
 
 ## Common mistakes
 
@@ -195,15 +199,15 @@ Source: `packages/tmdatagrid/docs/cell-selection.md` (Where the selection lives)
 
 A cell renders React - often a badge, a link or a formatted string - and the
 export writes the underlying value. A currency cell showing `32 000 kr` exports
-`32000`. Format in the data, or post-process the matrix from `buildCellMatrix`,
-if the file must match the screen.
+`32000`. Set `meta.exportValue` on the column, or post-process the data from
+`buildExportData`, if the file must match the screen.
 
-Source: `packages/tmdatagrid/docs/cell-selection.md` (The CSV).
+Source: `packages/tmdatagrid/docs/cell-selection.md` (The file).
 
 ### MEDIUM Expecting headers in the clipboard
 
 Ctrl+C copies values only, matching Excel's own copy. Headers are an option of
-the export menu and of `cellExport`, not of the clipboard path.
+the export menu and of `exportOptions`, not of the clipboard path.
 
 Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 
@@ -213,15 +217,14 @@ Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 | --- | --- | --- | --- | --- |
 | `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"`, or `"single"` under `editing` | Turns the cursor, and the rectangle, on. |
 | `onFocusedCellChange` | Callback | `(cell \| null) => void` | – | Follows the cursor. |
-| `cellExport` | Table prop | `TMDataGridCellExportOptions` | Nordic Excel | Separator, decimal mark, headers, file name. |
+| `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row of the Export cells item. |
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |
 | `ui.state.cellRange` | UI state | `{ anchor, focus } \| null` | `null` | The rectangle's two corners. |
 | `ui.actions.setFocusedCell` · `setCellRange` | UI actions | – | – | Move either from your own code. |
-| `exportGridToCsv` | Export | `({ table, options? }) => void` | – | Downloads every filtered row as CSV. |
-| `buildGridCellMatrix` · `buildCellMatrix` | Exports | – | – | The value matrix behind the file, for post-processing. |
-| `toClipboardText` · `toExcelCsv` · `writeClipboardText` · `downloadTextFile` | Exports | – | – | The pieces behind Ctrl+C and the file. |
-| `formatExportValue` | Export | `(value, options) => string` | – | One value, formatted as the export would. |
-| `DEFAULT_CELL_EXPORT_OPTIONS` | Export | object | – | The Nordic Excel defaults, to spread over. |
+| `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`; the whole grid without. |
+| `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
+| `formatExportValue` | Export | `(value, options) => string` | – | One value, formatted as the text formats would. |
+| `cellExport` | Table prop | `TMDataGridCellExportOptions` | – | Deprecated; merged over `exportOptions` for the cell-range menu only. |
 | `isSameCell` · `resolveCellMove` | Exports | – | – | The cursor arithmetic, for a custom navigator. |
 | `resolveRangeBounds` · `isWithinBounds` · `boundsEdges` · `boundsCellCount` | Exports | – | – | The rectangle arithmetic. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |

@@ -11,7 +11,7 @@ import { Menu } from "@mantine/core";
   <TMDataGrid.Spacer />
   <TMDataGrid.FilterButton />
   <TMDataGrid.Menu>
-    <Menu.Item onClick={exportCsv}>Export CSV</Menu.Item>
+    <TMDataGrid.Menu.Export />
     <Menu.Item onClick={saveView}>Save view</Menu.Item>
     <Menu.Divider />
     <Menu.Label>Columns</Menu.Label>
@@ -26,6 +26,7 @@ hint: The burger holds the app's own items above the column chooser.
 ```
 
 A custom item reads the grid from context, the same way a [toolbar button](/docs/toolbar#buttons-of-your-own) does.
+`TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected` are the built-in export items; their props and formats are on [Export](/docs/export).
 Mantine's `Menu.Divider`, `Menu.Label` and `Menu.Sub` work as they do in any Mantine menu; the grid wraps nothing of Mantine's.
 
 `TMDataGrid.Menu` always renders: it cannot see whether its children render anything.
@@ -44,13 +45,13 @@ const { canHideAny } = getGridCapabilities(table, features);
 
 ## The column chooser as menu items
 
-`TMDataGrid.Menu.Columns` is the whole chooser: a search box, one checkbox item per column that can be hidden, **Show/Hide All** and **Reset layout**.
+`TMDataGrid.Menu.Columns` is the whole chooser: one checkbox item per column that can be hidden, a search box once there are six of them, **Show/Hide All** and **Reset layout**.
 It renders nothing when no column can be hidden.
 The pieces it is made of are exported for menus that want only some of them.
 
 | Component | Renders |
 | --- | --- |
-| `TMDataGrid.Menu.Columns` | `Menu.Search`, the toggles, a divider, show/hide all and reset layout. `searchable={false}` drops the search box. |
+| `TMDataGrid.Menu.Columns` | `Menu.Search`, the toggles, a divider, show/hide all and reset layout. By default the search box shows from six columns; `searchable` shows it always and `searchable={false}` never. |
 | `TMDataGrid.Menu.ColumnToggles` | One item per hideable column, with a checkbox that shows both states. `search` narrows the list to the labels containing it. |
 | `TMDataGrid.Menu.ShowHideAll` | One checkbox item over the same list. An indeterminate box marks a partial state, and a click then shows all. |
 | `TMDataGrid.Menu.ResetLayout` | One item calling `resetSettings()`: visibility, order, pinning and widths. |
@@ -124,6 +125,7 @@ See [Localization](/docs/localization).
 
 The burger is `data-dg-part="menu-button"`.
 The items publish the same parts as the panel: `columns-search`, `columns-toggle` with `data-column-id`, `columns-toggle-all` and `columns-reset`, so a test written against the panel reads the same on the menu.
+The export items are `menu-export` and `menu-export-selected`.
 See [Testing](/docs/testing).
 
 ## Reference
@@ -131,10 +133,11 @@ See [Testing](/docs/testing).
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `TMDataGrid.Menu` | Component | Mantine `MenuProps` without `children`, plus `children`, `icon`, `label` | `position="bottom-end"`, `shadow="md"`, `width={260}`, `withinPortal` | The burger and its dropdown. `icon` replaces the burger; `label` is the tooltip and `aria-label`, default `labels.menuButton`. |
-| `TMDataGrid.Menu.Columns` | Component | `searchable?: boolean` | `true` | The whole column chooser as menu items. Renders nothing when no column can be hidden. |
+| `TMDataGrid.Menu.Columns` | Component | `searchable?: boolean \| "auto"` | `"auto"` | The whole column chooser as menu items. `"auto"` shows the search box from six columns. Renders nothing when no column can be hidden. |
 | `TMDataGrid.Menu.ColumnToggles` | Component | `search?: string` | – | One checkbox item per hideable column. |
 | `TMDataGrid.Menu.ShowHideAll` | Component | – | – | One checkbox item over every hideable column. |
 | `TMDataGrid.Menu.ResetLayout` | Component | – | – | Calls `resetSettings()`. |
+| `TMDataGrid.Menu.Export` · `.ExportSelected` | Components | `TMDataGridExportOptions` | – | The export items. Props on [Export](/docs/export). |
 | `TMDataGrid.ColumnsPanel` | Component | – | – | The chooser as plain controls, for a host that is not a menu. |
 | `labels.menuButton` | Option | `string` | `"Menu"` | The burger's tooltip and `aria-label`. |
-| `TMDataGridMenuProps` · `TMDataGridMenuColumnsProps` | Export | types | – | The prop types. |
+| `TMDataGridMenuProps` · `TMDataGridMenuColumnsProps` · `TMDataGridMenuExportProps` | Export | types | – | The prop types. |

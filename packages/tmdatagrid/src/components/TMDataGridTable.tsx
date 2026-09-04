@@ -39,7 +39,11 @@ import {
   type TMDataGridCellEditorClose,
 } from "./TMDataGridCellEditor";
 import { TMDataGridEntryRows } from "./TMDataGridEntryRows";
-import { getColumnAlign, isControlColumn } from "../core/columnUtils";
+import {
+  getColumnAlign,
+  isControlColumn,
+  isGeneratedColumn,
+} from "../core/columnUtils";
 import {
   resizePreview,
   type TMDataGridColumnTrack,
@@ -63,14 +67,14 @@ import {
   resolveRangeBounds,
 } from "../core/cellRange";
 import {
-  buildCellMatrix,
-  DEFAULT_CELL_EXPORT_OPTIONS,
-  downloadTextFile,
+  buildExportData,
+  fromCellExportOptions,
+  resolveExportOptions,
   toClipboardText,
-  toExcelCsv,
   writeClipboardText,
+  writeExportFile,
   type TMDataGridCellExportOptions,
-} from "../core/cellExport";
+} from "../core/export";
 import { autosizeColumn, hasMountedCells } from "../core/autosize";
 import {
   getDisplayedRows,
@@ -675,9 +679,10 @@ export type TMDataGridTableProps<TData extends RowData> = {
    */
   rowContextMenuProps?: Omit<MenuProps, "opened" | "onChange" | "children">;
   /**
-   * How Ctrl+C and the export item write values, under
-   * `cellSelection: "range"`. Defaults to the Nordic Excel conventions - see
-   * {@link TMDataGridCellExportOptions}.
+   * @deprecated Set `exportOptions` on `useTMDataGrid` instead; it covers the
+   * cell-range menu and every other export alike. Until it goes, this is
+   * converted (`separator` and `decimalComma` become a `csvExcelFormat`) and
+   * merged over `exportOptions` for the cell-range menu only.
    */
   cellExport?: TMDataGridCellExportOptions;
   /**
@@ -743,6 +748,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     edit,
     features,
     filters,
+    exportOptions: gridExportOptions,
     labels,
     rowHeight,
     controlSize,
@@ -1630,24 +1636,26 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
       ? 0
       : orderedColumns
           .slice(selectionBounds.left, selectionBounds.right + 1)
-          .filter((column) => !isControlColumn(column.id)).length;
+          .filter(
+            (column) =>
+              !isGeneratedColumn(column.id) &&
+              column.columnDef.meta?.enableExport !== false,
+          ).length;
 
-  const exportOptions = { ...DEFAULT_CELL_EXPORT_OPTIONS, ...cellExport };
+  const exportOptions = resolveExportOptions(
+    gridExportOptions,
+    cellExport && fromCellExportOptions(cellExport),
+  );
   // Sticky across menus, the way a checkbox in a dialog is: a user who exports
   // with headers once almost always wants them the next time too.
   const [exportIncludesHeaders, setExportIncludesHeaders] = useState(
     exportOptions.includeHeaders,
   );
-  const buildSelectionMatrix = (includeHeaders: boolean) =>
+  // The rectangle's values, over the displayed rows the bounds index into.
+  const buildSelectionData = () =>
     selectionBounds === null
-      ? []
-      : buildCellMatrix({
-          rows,
-          columns: orderedColumns,
-          bounds: selectionBounds,
-          includeHeaders,
-          decimalComma: exportOptions.decimalComma,
-        });
+      ? null
+      : buildExportData({ table, rows, bounds: selectionBounds });
 
   /**
    * Ctrl+C. Values only, no header row - Excel's own copy does not include one
@@ -1656,9 +1664,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    * because a file is a document and a clipboard is a fragment.
    */
   const copySelection = async () => {
-    const matrix = buildSelectionMatrix(false);
-    if (matrix.length === 0) return;
-    await writeClipboardText(toClipboardText(matrix));
+    const data = buildSelectionData();
+    if (data === null || data.columnIds.length === 0) return;
+    await writeClipboardText(
+      toClipboardText(data, {
+        decimalComma: exportOptions.format.decimalComma,
+      }),
+    );
   };
 
   /**
@@ -1691,12 +1703,13 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
     if (!extend) setIsDraggingRange(true);
   };
 
-  const exportSelectionCsv = (includeHeaders: boolean) => {
-    const matrix = buildSelectionMatrix(includeHeaders);
-    if (matrix.length === 0) return;
-    downloadTextFile({
-      fileName: `${exportOptions.fileName}.csv`,
-      text: toExcelCsv(matrix, { separator: exportOptions.separator }),
+  /** The export item: the rectangle, in the grid's export format. */
+  const exportSelection = () => {
+    const data = buildSelectionData();
+    if (data === null || data.columnIds.length === 0) return;
+    void writeExportFile(data, {
+      ...exportOptions,
+      includeHeaders: exportIncludesHeaders,
     });
   };
 
@@ -2307,9 +2320,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
         </Menu.Item>
         <Menu.Item
           disabled={selectedDataColumnCount === 0}
-          onClick={() => exportSelectionCsv(exportIncludesHeaders)}
+          onClick={exportSelection}
         >
-          {labels.exportCsv}
+          {labels.exportCells}
         </Menu.Item>
         {/* Stays open on click: it is the setting the item above reads, and
             reopening the menu to change your mind about headers is a worse

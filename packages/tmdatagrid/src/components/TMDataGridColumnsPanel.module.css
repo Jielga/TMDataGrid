@@ -12,7 +12,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-sm);
-  padding: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-sm);
+}
+
+.columnsPanelSearch + * .columnsPanelList {
+  padding-top: 0;
 }
 
 .columnsPanelFooter {

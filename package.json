@@ -27,6 +27,7 @@
       "@types/react-dom": "^19.2.3",
       "@vitejs/plugin-react": "^6.0.4",
       "babel-plugin-react-compiler": "^1.0.0",
+      "exceljs": "^4.4.0",
       "jsdom": "^29.1.1",
       "react": "^19.2.7",
       "react-dom": "^19.2.7",
@@ -39,7 +40,7 @@
   "scripts": {
     "dev": "bun run --cwd apps/docs dev",
     "build": "bun run build:lib && bun run build:docs",
-    "build:lib": "bun run --filter './packages/*' build",
+    "build:lib": "bun run --cwd packages/tmdatagrid build && bun run --cwd packages/tmdatagrid-xlsx build",
     "build:docs": "bun run --cwd apps/docs build",
     "lint": "oxlint",
     "typecheck": "tsc -b",

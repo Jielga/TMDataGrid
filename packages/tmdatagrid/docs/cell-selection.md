@@ -1,4 +1,4 @@
-# Cell selection, copy and export
+# Cell selection and copy
 
 A cell cursor moved with the arrow keys, a rectangle of cells that can be
 dragged out, and Ctrl+C that pastes into Excel as cells rather than as one
@@ -112,30 +112,30 @@ file: cells/CopyAndExport.tsx
 hint: Select a block and press Ctrl+C. It pastes into Excel as cells, not as one string.
 ```
 
-Right-clicking inside the selection opens a menu with **Copy**, **Export as CSV
-for Excel** and an **Include headers** toggle. A right-click outside it moves the
+Right-clicking inside the selection opens a menu with **Copy**, **Export cells**
+and an **Include headers** toggle. A right-click outside it moves the
 selection there first, as a spreadsheet does. Your own
 [`renderRowContextMenu`](/docs/row-interaction#context-menus) items are appended
 below a divider, so turning cell selection on removes nothing. Those three items are also what that slot's `internalItems` contains.
 
-### The CSV
+### The file
 
-Written for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF endings,
-semicolons between fields and a comma as the decimal mark. That combination
-opens straight into columns with å ä ö intact.
-
-`cellExport` on `TMDataGrid.Table` changes any of it:
+**Export cells** writes the rectangle in the grid's export format, by default a CSV for a Nordic Excel: a `sep=;` first line, a UTF-8 BOM, CRLF endings, semicolons between fields and a comma as the decimal mark.
+The format, the file name and the header row are the grid's `exportOptions`; the formats, `meta.exportValue` and `meta.enableExport` are on [Export](/docs/export).
 
 ```tsx
-<TMDataGrid.Table cellExport={{ separator: ",", decimalComma: false, fileName: "employees" }} />
+const grid = useTMDataGrid({
+  data,
+  columns,
+  cellSelection: "range",
+  exportOptions: { format: csvFormat(), fileName: "employees" },
+});
 ```
 
-What is written is the cell's **value**, not what it renders. Dates are written
-in the `sv-SE` form (`2026-07-31`), which Excel reads as a date.
+What is written is the cell's **value**, not what it renders, for the file and for Ctrl+C alike.
+Ctrl+C writes numbers with the format's decimal mark, so what is pasted matches what is exported.
 
-`exportGridToCsv({ table, options })` takes **every filtered row** instead of the
-selected block, with the same options and defaults. There is no built-in button
-for it; add one to your own [toolbar](/docs/toolbar).
+Exporting every filtered row rather than the rectangle is `TMDataGrid.Menu.Export` and `useTMDataGridExport`, on [Export](/docs/export).
 
 ## Reference
 
@@ -143,12 +143,12 @@ for it; add one to your own [toolbar](/docs/toolbar).
 | --- | --- | --- | --- | --- |
 | `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"` | Turns the cell cursor, and the rectangle, on. |
 | `onFocusedCellChange` | Callback | `(cell \| null) => void` | – | Follows the cursor. |
-| `cellExport` | Table prop | `TMDataGridCellExportOptions` | Nordic Excel | Separator, decimal mark, headers, file name. |
+| `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row of the Export cells item. See [Export](/docs/export). |
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |
 | `ui.state.cellRange` | UI state | `{ anchor, focus } \| null` | `null` | The rectangle's two corners. |
 | `ui.actions.setFocusedCell` · `setCellRange` | UI actions | – | – | Move either from your own code. |
-| `exportGridToCsv` | Export | `({ table, options? }) => void` | – | Downloads every filtered row as CSV. |
-| `toClipboardText` · `toExcelCsv` · `buildCellMatrix` | Exports | – | – | The pieces behind Ctrl+C and the file. |
-| `DEFAULT_CELL_EXPORT_OPTIONS` | Export | object | – | The Nordic Excel defaults, for spreading over. |
+| `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
+| `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`. |
+| `labels.copy` · `labels.exportCells` · `labels.includeHeaders` · `labels.cellCount` | Labels | – | – | The menu's strings. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |
 | `data-edge-top` · `-bottom` · `-left` · `-right` | Data attributes | – | – | On cells at the rectangle's border. |

@@ -91,7 +91,7 @@ Pass the row type so the handlers are typed:
 | `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Infinite scroll](/docs/server-side#infinite-scroll). |
 | `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
 | `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty states](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | `DEFAULT_CELL_EXPORT_OPTIONS` | Separator, decimal mark, headers and file name for the CSV. See [The CSV](/docs/cell-selection#the-csv). |
+| `cellExport` | `TMDataGridCellExportOptions` | – | Deprecated. Set `exportOptions` on `useTMDataGrid` instead; until it goes, it is merged over that for the cell-range menu only. See [Export](/docs/export). |
 | `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name, announced on entry and matched by `getByRole("grid", { name })`. |
 
 Note that `onReachEnd` and `enablePagination` slice the same scroll: the pager caps the rows, so the end reached is the page's.
@@ -151,15 +151,16 @@ Its children are the dropdown. See [Grid menu](/docs/menu).
 | Mantine `MenuProps` | | `position="bottom-end"`, `shadow="md"`, `width={260}`, `withinPortal` | Passed to the `Menu`. |
 
 `TMDataGrid.Menu.Columns`, `.ColumnToggles`, `.ShowHideAll` and `.ResetLayout` are the column chooser as menu items, for this menu or any Mantine `Menu` inside the grid.
-`Columns` takes `searchable` (default `true`), `ColumnToggles` takes `search`; the other two take no props.
+`Columns` takes `searchable` (default `"auto"`, a search box from six columns), `ColumnToggles` takes `search`; the other two take no props.
 
 ## TMDataGrid.ColumnsPanel
 
-The column chooser as plain controls: a searchable checkbox list of the hideable columns, with a show-all toggle and a reset button.
+The column chooser as plain controls: a checkbox list of the hideable columns, a search box once there are six of them, a show-all toggle and a reset button.
 For a Popover, a Drawer or an inline layout; `TMDataGrid.Menu.Columns` is the same thing as menu items.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
+| `searchable` | `boolean \| "auto"` | `"auto"` | The search box over the list. `"auto"` shows it from six columns, `true` always, `false` never. |
 | Mantine `BoxProps` | | – | Style props (`w`, `p`, …), `className` and `style`, set on the panel block. |
 
 ## TMDataGrid.LoadingIndicator
@@ -299,4 +300,4 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. Props on [Filtering](/docs/filtering). |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control. See [Filtering](/docs/filtering#opencolumnfilter). |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |
-| `DEFAULT_CELL_EXPORT_OPTIONS` | Constant | `TMDataGridCellExportOptions` | – | The CSV defaults `cellExport` merges over. |
+| `DEFAULT_EXPORT_OPTIONS` | Constant | `TMDataGridExportSettings` | – | The export defaults `exportOptions` merges over. See [Export](/docs/export). |

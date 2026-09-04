@@ -149,12 +149,12 @@ describe("docs search", () => {
       // aliases existed. The docs use a different word on purpose.
       const expected: Array<[string, string]> = [
         ["freeze column", "Visibility, pinning, ordering and size"],
-        ["excel", "Cell selection, copy and export"],
+        ["excel", "Excel export (xlsx)"],
         ["localstorage", "Persistence"],
         ["conditional formatting", "Row styling"],
         ["dark mode", "Size, styling and theming"],
         ["master detail", "Row details"],
-        ["keyboard shortcuts", "Cell selection, copy and export"],
+        ["keyboard shortcuts", "Cell selection and copy"],
         ["date picker", "Editors and validation"],
         ["tree data", "Grouping"],
       ];

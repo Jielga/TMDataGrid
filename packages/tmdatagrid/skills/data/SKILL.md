@@ -10,8 +10,11 @@ description: >
   onReachEnd is better for loading more, the header and pinned-lane depth
   shadows, and the four empty states in precedence order with meta.loading,
   renderEmptyState, hasActiveFilters, TMDataGrid.LoadingIndicator and
-  TMDataGrid.SummaryCount. Load when adding a pager, tuning scrolling, scrolling
-  to a row, or deciding what an empty grid should say.
+  TMDataGrid.SummaryCount, and export: TMDataGrid.Menu.Export and
+  Menu.ExportSelected, useTMDataGridExport, exportGrid, exportOptions, the
+  csvExcel / csv / tsv / json formats, meta.exportValue and meta.enableExport.
+  Load when adding a pager, tuning scrolling, scrolling to a row, deciding what
+  an empty grid should say, or exporting rows to Excel or CSV.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -20,7 +23,9 @@ sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/pagination.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/scrolling.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/loading-and-empty.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/export.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridFooter.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/export.ts'
 ---
 
 # TMDataGrid - Pagination, scrolling and empty states
@@ -180,6 +185,71 @@ server-driven grid refetching with rows still on screen keeps showing them.
 `meta.loading` is true. `TMDataGrid.SummaryCount` shows visible rows out of
 total, where the total is `meta.totalRowCount` when provided and the pre-filtered
 count otherwise.
+
+## Export
+
+Every filtered and sorted row across every page, or the selected rows, as a
+file. The built-in entry points are menu items; a button of your own uses the
+hook.
+
+```tsx
+const grid = useTMDataGrid({
+  data,
+  columns,
+  exportOptions: { format: csvFormat(), fileName: "employees" },
+});
+
+<TMDataGrid.Menu>
+  <TMDataGrid.Menu.Export />
+  <TMDataGrid.Menu.ExportSelected />
+</TMDataGrid.Menu>
+```
+
+```tsx
+function ExportButton() {
+  const { exportAll, exportSelected, selectedCount, canExportSelected } =
+    useTMDataGridExport();
+  return <Button onClick={() => void exportAll()}>Export</Button>;
+}
+```
+
+What is written: the data columns in render order (never the generated lanes,
+never a column with `meta.enableExport: false`), every row after filtering and
+sorting (a grouped grid writes the records under every group, never the group
+rows), and each cell's **value** rather than what it renders -
+`meta.exportValue: ({ value, row, column }) => unknown` substitutes one.
+`columns` on `exportOptions`, the items and the functions is `"visible"` (the
+default), `"all"` (hidden columns too) or a list of ids; `columns="custom"` on
+a menu item opens a picker instead - every exportable column, the visible ones
+ticked, Export and Cancel - driven by `ui.state.exportPicker` and
+`ui.actions.openExportPicker`. `TMDataGrid.Menu.ExportSelected` counts and
+writes the ticked rows of the current view, in grid order; it renders nothing
+when row selection is off.
+
+Formats, each a `TMDataGridExportFormat` from a factory:
+
+| Factory | Writes |
+| --- | --- |
+| `csvExcelFormat()` (default) | BOM, `sep=;` line, CRLF, `;` fields, `,` decimal - opens straight into columns in Excel. `separator`, `decimalComma` for another locale. |
+| `csvFormat()` | RFC 4180: `,` fields, `.` decimal, BOM, no `sep=` line - for Google Sheets, Numbers and tooling. |
+| `tsvFormat()` | Tab-separated, the clipboard shape as a file. |
+| `jsonFormat()` | One object per row keyed by column label, numbers as numbers, dates as ISO strings. |
+| `xlsxFormat()` | Excel workbook, from the separate `@jielga/tmdatagrid-xlsx` package. |
+
+The text formats guard against formula injection by default: a value starting
+with `=`, `+`, `-` or `@` that is not a number is prefixed with `'`.
+`escapeFormulas: false` on the format turns that off.
+
+`exportGrid({ table, rows: "all" | "selected" | rows, options })` is the same
+export for code outside a component; `buildExportData` is the step before the
+file. A format of your own is `{ id, extension, mimeType, write(data, { includeHeaders }) }`
+returning a string, a `Blob`, or a promise of either.
+
+Deprecated for one beta: `exportGridToCsv`, the `cellExport` Table prop,
+`TMDataGridCellExportOptions`, `buildCellMatrix` / `buildGridCellMatrix`,
+`toExcelCsv`, `downloadTextFile`, `labels.exportCsv`.
+
+Source: `packages/tmdatagrid/docs/export.md`.
 
 ## Common mistakes
 

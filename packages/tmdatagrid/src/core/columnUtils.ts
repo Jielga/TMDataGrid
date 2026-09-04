@@ -159,3 +159,22 @@ export function isColumnReorderable(column: ColumnLike): boolean {
   if (column.columnDef.meta?.enableOrdering === false) return false;
   return column.parent === undefined;
 }
+
+/** The list length from which a column chooser shows its search box. */
+export const COLUMN_SEARCH_MIN = 6;
+
+/** `"auto"` shows the search box from `COLUMN_SEARCH_MIN` columns. */
+export type TMDataGridColumnSearchable = boolean | "auto";
+
+/**
+ * Whether a column list shows a search box. A handful of columns is read at
+ * a glance, so `"auto"` keeps the input out of the way until the list is long
+ * enough to need one.
+ */
+export function showColumnSearch(
+  searchable: TMDataGridColumnSearchable,
+  count: number,
+): boolean {
+  if (searchable === "auto") return count >= COLUMN_SEARCH_MIN;
+  return searchable;
+}

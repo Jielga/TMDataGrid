@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/tmdatagrid" },
+    { "path": "./packages/tmdatagrid-xlsx" },
     { "path": "./apps/docs" },
     { "path": "./tsconfig.node.json" }
   ]

@@ -121,8 +121,24 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
 
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",
-  exportCsv: "Exportera som CSV för Excel",
+  exportCells: "Exportera celler",
   includeHeaders: "Inkludera rubriker",
+
+  exportAll: "Exportera alla rader",
+  exportSelected: (count) =>
+    count === 1 ? "Exportera 1 vald rad" : `Exportera ${count} valda rader`,
+  exportPickerTitle: (format) => `Exportera som ${format}`,
+  exportPickerHint: (selected) =>
+    selected === null
+      ? "Välj kolumner att exportera"
+      : selected === 1
+        ? "Välj kolumner att exportera för den valda raden"
+        : `Välj kolumner att exportera för de ${selected} valda raderna`,
+  exportPickerConfirm: "Exportera",
+  exportPickerCancel: "Avbryt",
+  exportPickerSelectAll: "Markera alla",
+  exportPickerCount: (checked, total) => `${checked} av ${total}`,
+  exportPickerHidden: "Dold",
 
   selectColumnLabel: "Kryssrutemarkering",
   selectAllRows: "Markera alla rader",

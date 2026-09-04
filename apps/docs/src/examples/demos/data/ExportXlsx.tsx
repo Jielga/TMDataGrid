@@ -1,17 +1,15 @@
-import { csvFormat, TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
+import { TMDataGrid, useTMDataGrid } from "@jielga/tmdatagrid";
+import { xlsxFormat } from "@jielga/tmdatagrid-xlsx";
 import { employeeColumns } from "../../data/employeeColumns";
 import { EMPLOYEES, type Employee } from "../../data/employees";
 
-export function CopyAndExport() {
+export function ExportXlsx() {
   const grid = useTMDataGrid({
     data: EMPLOYEES,
     columns: employeeColumns,
     getRowId: (row) => String(row.id),
-    cellSelection: "range",
-    selectionMode: "highlight",
-    // What Ctrl+C and the "Export cells" item write. The default is a CSV for
-    // a Nordic Excel; this one is plain CSV, for Sheets and tooling.
-    exportOptions: { format: csvFormat(), fileName: "employees" },
+    selectionMode: "checkbox",
+    exportOptions: { fileName: "employees" },
   });
 
   return (
@@ -19,7 +17,14 @@ export function CopyAndExport() {
       <TMDataGrid.Toolbar>
         <TMDataGrid.SummaryCount />
         <TMDataGrid.Spacer />
-        <TMDataGrid.FilterButton />
+        <TMDataGrid.Menu>
+          <TMDataGrid.Menu.Export />
+          <TMDataGrid.Menu.Export
+            format={xlsxFormat()}
+            label="Export all rows as xlsx"
+          />
+          <TMDataGrid.Menu.ExportSelected format={xlsxFormat()} />
+        </TMDataGrid.Menu>
       </TMDataGrid.Toolbar>
 
       <TMDataGrid.Table<Employee> />
