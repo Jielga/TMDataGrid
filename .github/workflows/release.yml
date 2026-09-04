@@ -31,21 +31,31 @@ jobs:
           # more than the default shallow clone.
           fetch-depth: 0
 
+      # Node publishes (npm is the client that speaks trusted publishing) and
+      # runs the tool binaries; bun installs and runs the scripts.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: npm
 
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
 
-      - run: npm run lint
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
-      - run: npx tsc -b
+      - run: bun install --frozen-lockfile
+
+      - run: bun run lint
+
+      - run: bun run typecheck
 
       # A release is not worth making from a red suite, and CI's own run does
       # not gate this workflow.
-      - run: npm run test
+      - run: bun run test
 
       # Publishing is this step's job rather than the action's below.
       #
@@ -137,7 +147,7 @@ jobs:
       # already on the registry.
       - uses: changesets/action@v1.9.0
         with:
-          version: npm run version-packages
+          version: bun run version-packages
           publish: echo published by the step above
           commit: "chore: version packages"
           title: "chore: version packages"

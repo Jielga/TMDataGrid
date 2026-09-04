@@ -60,6 +60,7 @@
     "build": "tsc -b && vite build",
     "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rolldown -c rolldown.dts.config.mjs",
     "lint": "oxlint",
+    "typecheck": "tsc -b",
     "check:skills": "node scripts/intent.mjs validate",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -67,7 +68,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-skill-version.mjs",
     "release": "changeset publish",
-    "prepublishOnly": "npm run lint && npm run build:lib",
+    "prepublishOnly": "bun run lint && bun run build:lib",
     "prepare": "husky"
   },
   "peerDependencies": {

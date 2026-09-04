@@ -41,7 +41,7 @@ ${libraryChanges.map((file) => `    ${file}`).join("\n")}
 
   Describe the change so it reaches the changelog and bumps the version:
 
-    npm run changeset
+    bun run changeset
 
   If this genuinely needs no release -- a comment, a test, an internal
   refactor with no observable effect -- skip the check:
