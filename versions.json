@@ -24,12 +24,6 @@
       "label": "1.0.2",
       "version": "1.0.2",
       "kind": "stable"
-    },
-    {
-      "path": "b/old-layout",
-      "label": "2.0.0-beta.14",
-      "version": "2.0.0-beta.14",
-      "kind": "preview"
     }
   ]
 }
