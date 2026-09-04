@@ -12,6 +12,7 @@ import {
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 import { getColumnCapabilities, getGridCapabilities } from "../core/capabilities";
 import { autosizeColumn } from "../core/autosize";
+import { getColumnResizeHandler } from "../core/columnResize";
 import {
   getColumnRegion,
   getStepTargetColumn,
@@ -724,12 +725,20 @@ export function TMDataGridHeaderCell({
           // The drag starts from `column.getSize()`, so the rendered width has
           // to be in `columnSizing` before the handler reads it - otherwise
           // the first pointer move snaps a fluid column to its declared size.
+          //
+          // The handler listens for the moves and the release on the document
+          // it is given - the separator's own, not the global one, which is
+          // the opener's when the grid is rendered through a portal into a
+          // window opened with `window.open`. See `getColumnResizeHandler`.
           onMouseDown={
             canResize
               ? (event) => {
                   suppressSortRef.current = true;
                   freezeRenderedWidths();
-                  header.getResizeHandler()(event);
+                  getColumnResizeHandler(
+                    header,
+                    event.currentTarget.ownerDocument,
+                  )(event);
                 }
               : undefined
           }
@@ -737,7 +746,10 @@ export function TMDataGridHeaderCell({
             canResize
               ? (event) => {
                   freezeRenderedWidths();
-                  header.getResizeHandler()(event);
+                  getColumnResizeHandler(
+                    header,
+                    event.currentTarget.ownerDocument,
+                  )(event);
                 }
               : undefined
           }

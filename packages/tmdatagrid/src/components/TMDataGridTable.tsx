@@ -1684,12 +1684,15 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
 
   // The drag ends wherever the button comes up, which is routinely outside the
   // grid - over the scrollbar, or past the window edge. Only the window hears
-  // that, so only the window can end it.
+  // that, so only the window can end it. The grid's own window, not the
+  // global one: rendered through a portal into a window opened with
+  // `window.open`, the global is the opener and never hears the release.
   useEffect(() => {
     if (!isDraggingRange) return;
     const stop = () => setIsDraggingRange(false);
-    window.addEventListener("mouseup", stop);
-    return () => window.removeEventListener("mouseup", stop);
+    const view = gridElementRef.current?.ownerDocument.defaultView ?? window;
+    view.addEventListener("mouseup", stop);
+    return () => view.removeEventListener("mouseup", stop);
   }, [isDraggingRange]);
 
   const startRangeDrag = (

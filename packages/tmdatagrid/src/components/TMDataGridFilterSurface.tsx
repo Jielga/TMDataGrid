@@ -76,8 +76,10 @@ export function TMDataGridFilterPopup() {
     if (!opened) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
+      // Duck-typed rather than `instanceof Element`: a node from another
+      // window is an instance of that window's `Element`, not this one's.
+      const target = event.target as Element | null;
+      if (typeof target?.closest !== "function") return;
       if (popupRef.current?.contains(target)) return;
       // The toolbar button toggles the popup itself. Closing from here first
       // would leave its click reopening what the user meant to close.
@@ -90,8 +92,12 @@ export function TMDataGridFilterPopup() {
       ui.actions.closeFilterPanel();
     };
 
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    // The popup's own document, not the global one: rendered through a
+    // portal into a window opened with `window.open`, the global `document`
+    // is the opener's and never sees a press in the grid's window.
+    const doc = popupRef.current?.ownerDocument ?? document;
+    doc.addEventListener("pointerdown", handlePointerDown);
+    return () => doc.removeEventListener("pointerdown", handlePointerDown);
   }, [opened, ui]);
 
   if (!opened) return null;

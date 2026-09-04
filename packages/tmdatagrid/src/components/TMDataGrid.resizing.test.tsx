@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   MantineWrapper,
@@ -119,5 +119,40 @@ describe("column resizing", () => {
     expect(
       headers().filter((header) => header.getAttribute("draggable") === "true"),
     ).not.toHaveLength(0);
+  });
+
+  it("listens for the drag on the grid's own document, not the global one", () => {
+    stubHeaderWidths({ name: 260 });
+    const { result } = renderGrid();
+    const { table } = result.current;
+    // A grid rendered through a portal into a window opened with
+    // `window.open` lives in that window's document. The opener's global
+    // `document` never sees the pointer move there.
+    const popupDocument = document.implementation.createHTMLDocument("popup");
+    const { container } = render(
+      <TMDataGrid {...result.current}>
+        <TMDataGrid.Table<TestRow> />
+      </TMDataGrid>,
+      { wrapper: MantineWrapper, container: popupDocument.body },
+    );
+
+    // Dispatched by hand: `fireEvent` refuses a document with no window, and
+    // one made by `createHTMLDocument` has none.
+    const mouse = (target: EventTarget, type: string, clientX: number) =>
+      act(() => {
+        target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX }));
+      });
+
+    mouse(separator(container, "name"), "mousedown", 260);
+    mouse(document, "mousemove", 300);
+    mouse(document, "mouseup", 300);
+    // The opener's document heard nothing: the drag is still on.
+    expect(table.store.state.columnResizing.isResizingColumn).toBe("name");
+    expect(table.store.state.columnSizing.name).toBe(260);
+
+    mouse(popupDocument, "mousemove", 280);
+    mouse(popupDocument, "mouseup", 280);
+    expect(table.store.state.columnSizing.name).toBe(280);
+    expect(table.store.state.columnResizing.isResizingColumn).toBe(false);
   });
 });
