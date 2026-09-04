@@ -1654,42 +1654,16 @@ export function useTMDataGrid<TData extends RowData>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Two things have to happen whenever `grouping` changes.
-  //
-  // One: the tree column appears with the first grouped column and goes away
-  // with the last, so an ungrouped grid looks exactly as it did before grouping
+  // The tree column appears with the first grouped column and goes away with
+  // the last, so an ungrouped grid looks exactly as it did before grouping
   // existed. Driven from a subscription rather than by rebuilding the column
   // array, because the array is what the table is built from - deriving it from
   // table state would close the loop. Visibility is the one column property
   // that can be changed after the fact without touching the definitions.
   //
-  // Two, and this one is a workaround. In table-core 9.0.0-beta.21 the
-  // per-region column APIs do not list `grouping` among their memo
-  // dependencies, even though they all derive from `getAllLeafColumns()`, which
-  // does:
-  //
-  // | API | Declares |
-  // | --- | --- |
-  // | `getLeft/Center/RightVisibleLeafColumns` | columns, columnPinning, columnVisibility, columnOrder |
-  // | `getLeft/Center/RightHeaderGroups` | columnPinning, columnOrder |
-  // | `row.getLeft/Center/RightVisibleCells` | columnPinning, columnVisibility |
-  //
-  // So grouping a *second* column leaves every one of them returning the
-  // previous list: the column TanStack removed keeps its header and its grid
-  // track, and the row cells no longer line up with them. The first grouping
-  // appears to work only because the visibility write above happens to touch a
-  // dependency they share.
-  //
-  // Re-publishing `columnVisibility` and `columnOrder` - same contents, new
-  // identity - invalidates all three families. `columnOrder` is the only
-  // dependency the header groups declare, and `columnVisibility` the only one
-  // the cells do, so both are needed. Remove this once the deps are fixed
-  // upstream; the test that fails without it groups two columns and asserts the
-  // second one leaves the grid.
-  //
   // Writing back into the store from its own subscriber is safe: the guard is
-  // on `grouping`'s identity, and neither write touches it, so the callback
-  // these writes trigger short-circuits.
+  // on `grouping`'s identity, and the write does not touch it, so the callback
+  // it triggers short-circuits.
   useEffect(() => {
     if (!groupColumnEnabled) return;
     let previousGrouping = table.store.state.grouping;
@@ -1723,8 +1697,8 @@ export function useTMDataGrid<TData extends RowData>({
       // Keeps the entry injected into a controlled `columnVisibility` (see
       // requestedState) in sync with grouping.
       groupingActiveRef.current = state.grouping.length > 0;
-      // On a controlled slice the writes below round-trip through the
-      // consumer's handler; the next render must forward them unstabilized.
+      // On a controlled slice the write below round-trips through the
+      // consumer's handler; the next render must forward it unstabilized.
       // See republishControlledStateRef.
       republishControlledStateRef.current = true;
 
@@ -1732,7 +1706,6 @@ export function useTMDataGrid<TData extends RowData>({
         ...old,
         [GROUP_COLUMN_ID]: state.grouping.length > 0,
       }));
-      table.setColumnOrder((old) => [...old]);
     });
 
     return () => subscription.unsubscribe();

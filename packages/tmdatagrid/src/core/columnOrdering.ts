@@ -36,23 +36,14 @@ export function getColumnRegion(
  * TanStack's pinned regions are logical: `start` and `end` follow the writing
  * direction. The grid's own vocabulary - its sticky CSS, the `data-pinned`
  * attribute, the column menu's "Pin left" and "Pin right" - is physical, and
- * the grid renders left to right only. These two translate between the pair,
- * so `left` maps to `start` and `right` to `end`.
+ * the grid renders left to right only. This translates between the pair:
+ * `left` maps to `start` and `right` to `end`.
  */
 export function pinningPositionOfSide(
   side: "left" | "right" | false,
 ): ColumnPinningPosition {
   if (side === "left") return "start";
   if (side === "right") return "end";
-  return false;
-}
-
-/** The physical side of a logical pinning position. */
-export function sideOfPinningPosition(
-  position: ColumnPinningPosition,
-): "left" | "right" | false {
-  if (position === "start") return "left";
-  if (position === "end") return "right";
   return false;
 }
 
