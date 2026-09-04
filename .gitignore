@@ -9,7 +9,6 @@ lerna-debug.log*
 .playwright-mcp
 node_modules
 dist
-dist-demo
 dist-ssr
 .types-tmp
 *.local

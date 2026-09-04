@@ -11,6 +11,6 @@ node scripts/check-changeset.mjs
 
 # Only worth running when the published library changed. The dts rollup can
 # fail in ways tsc -b does not catch, which is the point of running it here.
-if git diff --cached --name-only --diff-filter=ACMR | grep -q '^src/tmdatagrid/'; then
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^packages/[^/]+/src/'; then
   bun run build:lib
 fi

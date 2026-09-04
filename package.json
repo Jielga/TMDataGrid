@@ -1,131 +1,67 @@
 {
-  "name": "@jielga/tmdatagrid",
-  "version": "2.0.0-beta.14",
-  "description": "A React data grid built on TanStack Table v9 and Mantine - always virtualized, with resizable, reorderable, sortable, filterable, hideable and pinnable columns.",
-  "license": "MIT",
+  "name": "tmdatagrid-monorepo",
+  "private": true,
   "type": "module",
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Jielga/TMDataGrid.git"
-  },
-  "homepage": "https://jielga.github.io/TMDataGrid/",
-  "bugs": {
-    "url": "https://github.com/Jielga/TMDataGrid/issues"
-  },
-  "keywords": [
-    "react",
-    "datagrid",
-    "data-grid",
-    "table",
-    "mantine",
-    "tanstack-table",
-    "virtualized",
-    "tanstack-intent"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "intent": {
-    "docs": "src/docs/",
-    "skills": [
-      "@tanstack/react-table",
-      "@tanstack/table-core",
-      "@tanstack/router-core"
-    ]
-  },
-  "files": [
-    "dist",
-    "src/tmdatagrid",
-    "!src/tmdatagrid/**/*.test.*",
-    "skills",
-    "!skills/_artifacts"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./styles.css": "./dist/styles.css",
-    "./styles.layer.css": "./dist/styles.layer.css",
-    "./package.json": "./package.json"
+  "workspaces": {
+    "packages": ["packages/*", "apps/*"],
+    "catalog": {
+      "@babel/core": "^7.29.7",
+      "@mantine/code-highlight": "^9.4.1",
+      "@mantine/core": "^9.4.0",
+      "@mantine/hooks": "^9.4.1",
+      "@rolldown/plugin-babel": "^0.2.3",
+      "@tabler/icons-react": "^3.46.0",
+      "@tanstack/intent": "0.3.6",
+      "@tanstack/match-sorter-utils": "^8.19.4",
+      "@tanstack/react-form": "^1.33.2",
+      "@tanstack/react-store": "^0.11.0",
+      "@tanstack/react-table": "^9.0.0-beta.21",
+      "@tanstack/react-virtual": "^3.14.4",
+      "@tanstack/store": "^0.11.0",
+      "@tanstack/table-core": "^9.0.0-beta.21",
+      "@testing-library/jest-dom": "^7.0.0",
+      "@testing-library/react": "^16.3.2",
+      "@testing-library/user-event": "^14.6.1",
+      "@types/babel__core": "^7.20.5",
+      "@types/react": "^19.2.17",
+      "@types/react-dom": "^19.2.3",
+      "@vitejs/plugin-react": "^6.0.4",
+      "babel-plugin-react-compiler": "^1.0.0",
+      "jsdom": "^29.1.1",
+      "react": "^19.2.7",
+      "react-dom": "^19.2.7",
+      "typescript": "~7.0.2",
+      "vite": "^8.1.5",
+      "vitest": "^4.1.10",
+      "zod": "^4.4.3"
+    }
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json && rolldown -c rolldown.dts.config.mjs",
+    "dev": "bun run --cwd apps/docs dev",
+    "build": "bun run build:lib && bun run build:docs",
+    "build:lib": "bun run --filter './packages/*' build",
+    "build:docs": "bun run --cwd apps/docs build",
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "check:skills": "node scripts/intent.mjs validate",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-skill-version.mjs",
-    "release": "changeset publish",
-    "prepublishOnly": "bun run lint && bun run build:lib",
     "prepare": "husky"
   },
-  "peerDependencies": {
-    "@mantine/core": "^9.4.0",
-    "@tabler/icons-react": "^3.46.0",
-    "@tanstack/react-form": "^1.33.0",
-    "@tanstack/react-store": "^0.11.0",
-    "@tanstack/react-table": "^9.0.0-beta.21",
-    "@tanstack/react-virtual": "^3.14.4",
-    "@tanstack/store": "^0.11.0",
-    "@tanstack/table-core": "^9.0.0-beta.21",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
   "devDependencies": {
-    "@babel/core": "^7.29.7",
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.1",
-    "@mantine/code-highlight": "^9.4.1",
-    "@mantine/core": "^9.4.0",
-    "@mantine/hooks": "^9.4.1",
-    "@rolldown/plugin-babel": "^0.2.3",
-    "@tabler/icons-react": "^3.46.0",
-    "@tanstack/intent": "0.3.6",
-    "@tanstack/react-form": "^1.33.2",
-    "@tanstack/react-router": "^1.170.17",
-    "@tanstack/react-router-devtools": "^1.167.0",
-    "@tanstack/react-store": "^0.11.0",
-    "@tanstack/react-table": "^9.0.0-beta.21",
-    "@tanstack/react-virtual": "^3.14.4",
-    "@tanstack/store": "^0.11.0",
-    "@tanstack/table-core": "^9.0.0-beta.21",
-    "@testing-library/jest-dom": "^7.0.0",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/babel__core": "^7.20.5",
+    "@manypkg/get-packages": "^3.1.0",
+    "@tanstack/intent": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/node": "^24.13.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
-    "babel-plugin-react-compiler": "^1.0.0",
     "husky": "^9.1.7",
-    "jsdom": "^29.1.1",
+    "jsdom": "catalog:",
     "oxlint": "^1.69.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "rolldown": "~1.1.5",
-    "rolldown-plugin-dts": "^0.27.14",
-    "shiki": "^4.4.3",
-    "typescript": "~7.0.2",
-    "vite": "^8.1.5",
-    "vitest": "^4.1.10",
-    "zod": "^4.4.3"
-  },
-  "dependencies": {
-    "@tanstack/match-sorter-utils": "^8.19.4"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

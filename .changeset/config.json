@@ -2,13 +2,23 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
   "changelog": [
     "@changesets/changelog-github",
-    { "repo": "Jielga/TMDataGrid" }
+    {
+      "repo": "Jielga/TMDataGrid"
+    }
   ],
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@jielga/*"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [],
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }

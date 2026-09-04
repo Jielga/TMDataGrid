@@ -1,0 +1,50 @@
+{
+  "name": "@jielga/docs",
+  "private": true,
+  "type": "module",
+  "description": "The TMDataGrid documentation site: docs pages, live demos and the playground.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@jielga/tmdatagrid": "workspace:*",
+    "@mantine/code-highlight": "catalog:",
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:",
+    "@tabler/icons-react": "catalog:",
+    "@tanstack/match-sorter-utils": "catalog:",
+    "@tanstack/react-form": "catalog:",
+    "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-router-devtools": "^1.167.0",
+    "@tanstack/react-store": "catalog:",
+    "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
+    "@tanstack/store": "catalog:",
+    "@tanstack/table-core": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.4.3",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@babel/core": "catalog:",
+    "@rolldown/plugin-babel": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/babel__core": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
