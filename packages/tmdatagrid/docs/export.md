@@ -160,6 +160,7 @@ Its props override `exportOptions` for this item alone, which is how one menu of
 A select-all row heads the list with a count of the ticked columns, a search box appears once there are six columns, and the list scrolls inside the dialog past half the viewport.
 Under a search, select all ticks the matches and leaves the rest as they are.
 Cancel closes it with no download.
+The dialog follows the grid's `size`: its width, title and controls step with the toolbar's.
 
 ```tsx
 <TMDataGrid.Menu.Export columns="custom" label="Export all rows, choose columns" />

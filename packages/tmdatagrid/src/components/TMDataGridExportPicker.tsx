@@ -2,6 +2,7 @@ import {
   Button,
   Checkbox,
   Group,
+  type MantineSize,
   Modal,
   ScrollArea,
   Stack,
@@ -18,6 +19,7 @@ import {
   getExportableColumns,
   type TMDataGridExportPickerRequest,
 } from "../core/export";
+import type { TMDataGridSize } from "../core/sizes";
 import { useTMDataGridExport } from "../useTMDataGridExport";
 import { SearchIcon } from "./icons";
 
@@ -33,7 +35,7 @@ import { SearchIcon } from "./icons";
  * columns again rather than from the last choice.
  */
 export function TMDataGridExportPicker() {
-  const { ui, labels } = useTMDataGridContext();
+  const { ui, labels, size, controlSize } = useTMDataGridContext();
   const request = useSelector(ui, (state) => state.exportPicker);
 
   return (
@@ -41,12 +43,31 @@ export function TMDataGridExportPicker() {
       opened={request !== null}
       onClose={() => ui.actions.closeExportPicker()}
       title={labels.exportPickerTitle}
-      size="sm"
+      size={MODAL_WIDTH[size]}
+      closeButtonProps={{ size: CLOSE_BUTTON_SIZE[controlSize] }}
+      classNames={{ title: classes.title }}
+      styles={{ title: { fontSize: `var(--mantine-font-size-${controlSize})` } }}
     >
       {request && <PickerForm request={request} />}
     </Modal>
   );
 }
+
+/** Dialog width per grid size: the same three steps as the controls. */
+const MODAL_WIDTH: Record<TMDataGridSize, MantineSize> = {
+  xs: "xs",
+  sm: "xs",
+  md: "sm",
+  lg: "sm",
+  xl: "md",
+};
+
+/** The close button one step above the controls, which is Mantine's own ratio. */
+const CLOSE_BUTTON_SIZE: Record<string, MantineSize> = {
+  xs: "sm",
+  sm: "md",
+  md: "lg",
+};
 
 function PickerForm({ request }: { request: TMDataGridExportPickerRequest }) {
   const { table, ui, labels, controlSize } = useTMDataGridContext();
