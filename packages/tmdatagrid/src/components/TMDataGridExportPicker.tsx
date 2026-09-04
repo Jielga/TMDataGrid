@@ -17,6 +17,7 @@ import { getColumnLabel, showColumnSearch } from "../core/columnUtils";
 import {
   countSelectedExportRows,
   getExportableColumns,
+  resolveExportOptions,
   type TMDataGridExportPickerRequest,
 } from "../core/export";
 import type { TMDataGridSize } from "../core/sizes";
@@ -35,14 +36,20 @@ import { SearchIcon } from "./icons";
  * columns again rather than from the last choice.
  */
 export function TMDataGridExportPicker() {
-  const { ui, labels, size, controlSize } = useTMDataGridContext();
+  const { ui, labels, size, controlSize, exportOptions } =
+    useTMDataGridContext();
   const request = useSelector(ui, (state) => state.exportPicker);
+  const format = request
+    ? resolveExportOptions(exportOptions, request.options).format
+    : null;
 
   return (
     <Modal
       opened={request !== null}
       onClose={() => ui.actions.closeExportPicker()}
-      title={labels.exportPickerTitle}
+      title={
+        format && labels.exportPickerTitle(format.extension.toUpperCase())
+      }
       size={MODAL_WIDTH[size]}
       closeButtonProps={{ size: CLOSE_BUTTON_SIZE[controlSize] }}
       classNames={{ title: classes.title }}
@@ -125,15 +132,14 @@ function PickerForm({ request }: { request: TMDataGridExportPickerRequest }) {
     ui.actions.closeExportPicker();
   };
 
-  const scope =
-    request.rows === "selected"
-      ? labels.exportSelected(countSelectedExportRows(table))
-      : labels.exportAll;
+  const hint = labels.exportPickerHint(
+    request.rows === "selected" ? countSelectedExportRows(table) : null,
+  );
 
   return (
     <Stack gap="sm" data-dg-part="export-picker">
-      <Text size={controlSize} c="dimmed" data-dg-part="export-picker-scope">
-        {scope}
+      <Text size={controlSize} c="dimmed" data-dg-part="export-picker-hint">
+        {hint}
       </Text>
 
       {searchable && (

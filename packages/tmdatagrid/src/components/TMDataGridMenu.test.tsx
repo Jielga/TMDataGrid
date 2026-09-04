@@ -437,8 +437,9 @@ describe("TMDataGrid.Menu.Export columns", () => {
     await user.click(part("menu-export"));
 
     const dialog = await screen.findByRole("dialog");
-    expect(part("export-picker-scope", undefined, dialog)).toHaveTextContent(
-      TMDATAGRID_LABELS_EN.exportAll,
+    expect(dialog).toHaveTextContent(TMDATAGRID_LABELS_EN.exportPickerTitle("CSV"));
+    expect(part("export-picker-hint", undefined, dialog)).toHaveTextContent(
+      TMDATAGRID_LABELS_EN.exportPickerHint(null),
     );
     expect(part("export-picker-count", undefined, dialog)).toHaveTextContent(
       "3 of 4",

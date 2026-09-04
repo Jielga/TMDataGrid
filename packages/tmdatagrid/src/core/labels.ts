@@ -156,8 +156,10 @@ export type TMDataGridLabels = {
   // Export
   exportAll: string;
   exportSelected: (count: number) => string;
-  /** Title of the column picker `columns="custom"` opens. */
-  exportPickerTitle: string;
+  /** Title of the column picker `columns="custom"` opens; `format` is the file extension in upper case, "CSV". */
+  exportPickerTitle: (format: string) => string;
+  /** The line under the title; `selected` is the selected row count, or `null` for an export of all rows. */
+  exportPickerHint: (selected: number | null) => string;
   exportPickerConfirm: string;
   exportPickerCancel: string;
   /** The select-all row over the picker's list. */
@@ -296,7 +298,13 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   exportAll: "Export all rows",
   exportSelected: (count) =>
     count === 1 ? "Export 1 selected row" : `Export ${count} selected rows`,
-  exportPickerTitle: "Columns to export",
+  exportPickerTitle: (format) => `Export as ${format}`,
+  exportPickerHint: (selected) =>
+    selected === null
+      ? "Select the columns to export"
+      : selected === 1
+        ? "Select the columns to export for the selected row"
+        : `Select the columns to export for the ${selected} selected rows`,
   exportPickerConfirm: "Export",
   exportPickerCancel: "Cancel",
   exportPickerSelectAll: "Select all",

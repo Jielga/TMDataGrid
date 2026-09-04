@@ -127,7 +127,13 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   exportAll: "Exportera alla rader",
   exportSelected: (count) =>
     count === 1 ? "Exportera 1 vald rad" : `Exportera ${count} valda rader`,
-  exportPickerTitle: "Kolumner att exportera",
+  exportPickerTitle: (format) => `Exportera som ${format}`,
+  exportPickerHint: (selected) =>
+    selected === null
+      ? "Välj kolumner att exportera"
+      : selected === 1
+        ? "Välj kolumner att exportera för den valda raden"
+        : `Välj kolumner att exportera för de ${selected} valda raderna`,
   exportPickerConfirm: "Exportera",
   exportPickerCancel: "Avbryt",
   exportPickerSelectAll: "Markera alla",

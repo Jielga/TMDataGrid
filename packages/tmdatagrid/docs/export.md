@@ -156,7 +156,8 @@ Its props override `exportOptions` for this item alone, which is how one menu of
 
 ### The column picker
 
-`columns="custom"` opens a dialog instead of downloading: every exportable column as a checkbox, the visible ones ticked and the hidden ones marked **Hidden**, and an Export button that downloads the ticked columns in render order.
+`columns="custom"` opens a dialog instead of downloading, titled with the format ("Export as CSV"): every exportable column as a checkbox, the visible ones ticked and the hidden ones marked **Hidden**, and an Export button that downloads the ticked columns in render order.
+The line under the title names the selected rows when the item is `ExportSelected`.
 A select-all row heads the list with a count of the ticked columns, a search box appears once there are six columns, and the list scrolls inside the dialog past half the viewport.
 Under a search, select all ticks the matches and leaves the rest as they are.
 Cancel closes it with no download.
@@ -267,7 +268,8 @@ See [Copy and export](/docs/cell-selection#copy-and-export).
 | `exportAll` | `"Export all rows"` | `TMDataGrid.Menu.Export` |
 | `exportSelected` | `(count) => "Export 3 selected rows"` | `TMDataGrid.Menu.ExportSelected` |
 | `exportCells` | `"Export cells"` | The cell-range menu |
-| `exportPickerTitle` | `"Columns to export"` | The column picker |
+| `exportPickerTitle` | `` (format) => `Export as ${format}` `` | The column picker; `format` is the extension in upper case |
+| `exportPickerHint` | `(selected) => "Select the columns to export"`, or `… for the ${selected} selected rows` | The line under the picker's title |
 | `exportPickerConfirm` | `"Export"` | The column picker |
 | `exportPickerCancel` | `"Cancel"` | The column picker |
 | `exportPickerSelectAll` | `"Select all"` | The column picker |
@@ -279,7 +281,7 @@ See [Localization](/docs/localization).
 ## Testing
 
 `TMDataGrid.Menu.Export` is `data-dg-part="menu-export"` and `TMDataGrid.Menu.ExportSelected` is `data-dg-part="menu-export-selected"`.
-The column picker is `export-picker`, its checkboxes `export-column` with `data-column-id`, its select-all row `export-column-all` with the count `export-picker-count`, its search box `export-picker-search`, the row scope `export-picker-scope`, and its buttons `export-picker-confirm` and `export-picker-cancel`.
+The column picker is `export-picker`, its checkboxes `export-column` with `data-column-id`, its select-all row `export-column-all` with the count `export-picker-count`, its search box `export-picker-search`, the line under the title `export-picker-hint`, and its buttons `export-picker-confirm` and `export-picker-cancel`.
 The search box and the picker share `columnsSearchPlaceholder` and `columnsNoMatch` with the column chooser.
 A download is an anchor with an object URL, clicked; a jsdom test stubs `URL.createObjectURL` and `HTMLAnchorElement.prototype.click` to read the file back.
 See [Testing](/docs/testing).
