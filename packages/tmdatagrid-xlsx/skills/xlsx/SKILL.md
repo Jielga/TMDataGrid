@@ -1,10 +1,10 @@
 ---
 name: xlsx
 description: >
-  Excel (.xlsx) export for TMDataGrid through the @jielga/tmdatagrid-xlsx
-  addon. Covers why exceljs lives in a separate package, xlsxFormat() as a
-  TMDataGridExportFormat, setting it as exportOptions.format or per menu item
-  on TMDataGrid.Menu.Export and TMDataGrid.Menu.ExportSelected, how each value
+  Excel (.xlsx) export for TMDataGrid through the @jielga/tmdatagrid-xlsx addon.
+  Covers why exceljs lives in a separate package, xlsxFormat() as a
+  TMDataGridExportFormat, setting it as exportOptions.format or per menu item on
+  TMDataGrid.Menu.Export and TMDataGrid.Menu.ExportSelected, how each value
   becomes a typed cell (numbers, dates with their number format, booleans,
   arrays, objects, empties), the bold header row under includeHeaders, and the
   sheetName and autoWidth options. Load when a grid should download a real
@@ -13,7 +13,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid-xlsx'
-  library_version: '2.0.0-beta.14'
+  library_version: '2.0.0-beta.16'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid-xlsx/docs/xlsx.md'
 ---
