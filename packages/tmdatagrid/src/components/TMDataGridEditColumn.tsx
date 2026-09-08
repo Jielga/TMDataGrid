@@ -65,10 +65,10 @@ function RowStateIndicator({
  * | open | the mode's own controls: Save and Cancel | `editing.mode` |
  * | neither | the pencil (row mode) and the trash | `editing.mode` |
  *
- * A row error turns the Save red with the message in its tooltip - a
- * pathless `.refine()` has nowhere else to land, and a field error outlives
- * the editor that found it. A parked row never offers a save: it has had its
- * submit, and `TMDataGrid.DraftActions` is what sends it.
+ * A row error turns the Save - or an entry row's ✓ - red with the message in
+ * its tooltip: a pathless `.refine()` has nowhere else to land, and a field
+ * error outlives the editor that found it. A parked row never offers a save:
+ * it has had its submit, and `TMDataGrid.DraftActions` is what sends it.
  *
  * The lane's controls take the tab index every body control does - see
  * useBodyControlTabIndex. The open row's save and cancel are the exception,
@@ -186,10 +186,10 @@ function EditLaneCell<TData extends RowData>({
     }
     return (
       <Group gap={0} wrap="nowrap">
-        <Tooltip label={labels.confirmNewRow} withArrow>
+        <Tooltip label={rowError ?? labels.confirmNewRow} withArrow>
           <ActionIcon
             variant="subtle"
-            color="green"
+            color={hasErrors ? "red" : "green"}
             size="sm"
             tabIndex={tabIndex}
             aria-label={labels.confirmNewRow}
@@ -339,15 +339,9 @@ function EditLaneCell<TData extends RowData>({
 
   return (
     <Group gap={0} wrap="nowrap">
-      {rowError === null ? (
-        <Tooltip label={labels.saveRow} withArrow>
-          {save}
-        </Tooltip>
-      ) : (
-        <Tooltip label={rowError} withArrow>
-          {save}
-        </Tooltip>
-      )}
+      <Tooltip label={rowError ?? labels.saveRow} withArrow>
+        {save}
+      </Tooltip>
       <Tooltip label={labels.cancelRowEdit} withArrow>
         <ActionIcon
           variant="subtle"

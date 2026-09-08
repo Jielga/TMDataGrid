@@ -1,6 +1,7 @@
 import {
   flexRender,
   useTable,
+  type Cell,
   type Column,
   type Row,
 } from "@tanstack/react-table";
@@ -14,7 +15,7 @@ import {
   isColumnEditableForRow,
   isControlColumn,
 } from "../core/columnUtils";
-import type { TMDataGridEditApi } from "../core/editEngine";
+import { getEditFieldName, type TMDataGridEditApi } from "../core/editEngine";
 import { focusEditorContent } from "../core/editorFocus";
 import {
   tmDataGridFeatures,
@@ -25,6 +26,8 @@ import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
 import type { TMDataGridColumnLayout } from "./TMDataGridTable";
 
 type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
+type EntryRow = Row<TMDataGridFeatures, TMDataGridRowData>;
+type EntryCellApi = Cell<TMDataGridFeatures, TMDataGridRowData, unknown>;
 
 /**
  * Whether an entry cell edits. `edit.canEditCell` asks the main table for
@@ -38,6 +41,92 @@ function isEntryCellEditable(
 ): boolean {
   if (!edit.isColumnEditable(column)) return false;
   return isColumnEditableForRow(column, row);
+}
+
+/**
+ * One cell of an entry row: the lane's controls, a value once the row is
+ * committed, or an editor. The invalid marker subscribes here, per cell, as
+ * a body cell's does - a refused ✓ paints the cells its issues name and
+ * nothing else. No dirty marker: everything in an entry row is new.
+ */
+function EntryCell({
+  entryRow,
+  column,
+  cell,
+  committed,
+  layout,
+  rowHeight,
+  pinnedZ,
+}: {
+  entryRow: EntryRow;
+  column: ErasedColumn;
+  cell: EntryCellApi | undefined;
+  committed: boolean;
+  layout: TMDataGridColumnLayout;
+  rowHeight: number;
+  pinnedZ: string;
+}) {
+  const { edit } = useTMDataGridContext();
+  const fieldName = getEditFieldName(column);
+  const isInvalid = useSelector(edit.store, (state) => {
+    if (fieldName === null) return false;
+    const projection = state.rows[entryRow.id];
+    return projection !== undefined && projection.errorFields.includes(fieldName);
+  });
+  const editable =
+    cell !== undefined && isEntryCellEditable(entryRow, column, edit);
+  return (
+    <div
+      role="cell"
+      data-column-id={column.id}
+      data-align={getColumnAlign(column)}
+      data-control-column={isControlColumn(column.id)}
+      data-invalid={isInvalid || undefined}
+      // A committed row re-opens where it is double-clicked, the same
+      // gesture a body cell answers - and, like a body cell, a cell that
+      // takes no edit answers nothing.
+      onDoubleClick={
+        committed && editable
+          ? () => edit.begin({ rowId: entryRow.id, columnId: column.id })
+          : undefined
+      }
+      className={[
+        classes.entryCell,
+        layout.isBoundary && layout.pinnedAt === "left" ? sticky.stickyLeft : "",
+        layout.isBoundary && layout.pinnedAt === "right"
+          ? sticky.stickyRight
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{
+        minHeight: rowHeight,
+        left: layout.pinnedAt === "left" ? layout.offset : undefined,
+        right: layout.pinnedAt === "right" ? layout.offset : undefined,
+        position: layout.pinnedAt ? "sticky" : undefined,
+        zIndex: layout.pinnedAt ? pinnedZ : undefined,
+      }}
+    >
+      {cell !== undefined && column.id === EDIT_COLUMN_ID ? (
+        // The lane's cell - the entry row's controls.
+        flexRender(cell.column.columnDef.cell, cell.getContext())
+      ) : committed && cell !== undefined ? (
+        // Entered, awaiting Save all: a value row through the columns' own
+        // renderers, over the draft the entry table was fed.
+        <span className={classes.cellContent}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </span>
+      ) : editable && cell !== undefined ? (
+        <TMDataGridCellEditor
+          cell={cell}
+          row={entryRow}
+          takeSeedText={() => undefined}
+          onClose={() => {}}
+          inEntryBlock
+        />
+      ) : null}
+    </div>
+  );
 }
 
 /**
@@ -194,71 +283,18 @@ export function TMDataGridEntryRows({
         data-draft={committed}
         className={classes.entryRow}
       >
-        {orderedColumns.map((column) => {
-          const cell = cellsById.get(column.id);
-          const layout = layoutFor(column.id);
-          const editable =
-            cell !== undefined && isEntryCellEditable(entryRow, column, edit);
-          return (
-            <div
-              key={column.id}
-              role="cell"
-              data-column-id={column.id}
-              data-align={getColumnAlign(column)}
-              data-control-column={isControlColumn(column.id)}
-              // A committed row re-opens where it is double-clicked, the
-              // same gesture a body cell answers - and, like a body cell, a
-              // cell that takes no edit answers nothing.
-              onDoubleClick={
-                committed && editable
-                  ? () =>
-                      edit.begin({
-                        rowId: entryRow.id,
-                        columnId: column.id,
-                      })
-                  : undefined
-              }
-              className={[
-                classes.entryCell,
-                layout.isBoundary && layout.pinnedAt === "left"
-                  ? sticky.stickyLeft
-                  : "",
-                layout.isBoundary && layout.pinnedAt === "right"
-                  ? sticky.stickyRight
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              style={{
-                minHeight: rowHeight,
-                left: layout.pinnedAt === "left" ? layout.offset : undefined,
-                right: layout.pinnedAt === "right" ? layout.offset : undefined,
-                position: layout.pinnedAt ? "sticky" : undefined,
-                zIndex: layout.pinnedAt ? pinnedZ : undefined,
-              }}
-            >
-              {cell !== undefined && column.id === EDIT_COLUMN_ID ? (
-                // The lane's cell - the entry row's controls.
-                flexRender(cell.column.columnDef.cell, cell.getContext())
-              ) : committed && cell !== undefined ? (
-                // Entered, awaiting Save all: a value row through the
-                // columns' own renderers, over the draft the memo above
-                // fed this table.
-                <span className={classes.cellContent}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </span>
-              ) : editable && cell !== undefined ? (
-                <TMDataGridCellEditor
-                  cell={cell}
-                  row={entryRow}
-                  takeSeedText={() => undefined}
-                  onClose={() => {}}
-                  inEntryBlock
-                />
-              ) : null}
-            </div>
-          );
-        })}
+        {orderedColumns.map((column) => (
+          <EntryCell
+            key={column.id}
+            entryRow={entryRow}
+            column={column}
+            cell={cellsById.get(column.id)}
+            committed={committed}
+            layout={layoutFor(column.id)}
+            rowHeight={rowHeight}
+            pinnedZ={pinnedZ}
+          />
+        ))}
       </div>
     );
   };

@@ -102,7 +102,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `data-dg-part` | What it is |
 | --- | --- |
 | `row` | A body row, pinned or not. A committed new row is one of them, marked `data-new` |
-| `entry-row` | An entry row being typed into. Carries `data-new`, and `data-committed` / `data-draft` once committed, which is where a committed row stays under `editing.newRowsSticky` |
+| `entry-row` | An entry row being typed into. Carries `data-new`, and `data-committed` / `data-draft` once committed, which is where a committed row stays under `editing.newRowsSticky`. Its cells carry `data-column-id` and, on a failed ✓, `data-invalid` |
 | `details` | A row's detail panel |
 | `select-row` | Its selection checkbox |
 | `details-toggle`, `group-toggle` | Its detail and tree chevrons |

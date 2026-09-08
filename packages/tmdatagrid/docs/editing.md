@@ -146,7 +146,7 @@ The edit lane holds two things at once, one per axis: the mode's own controls wh
 
 A parked row has had its submit, so the lane never offers to save it again - `TMDataGrid.DraftActions` is what sends it.
 A parked row also hides the trash: revert first, then delete.
-If validation blocks a row, its icon turns red with the message in the tooltip: the parked row's marker, or the open row's ✓.
+If validation blocks a row, its icon turns red with the message in the tooltip: the parked row's marker, or the open row's ✓, an entry row's included.
 A pathless issue from `rowValidators` has no cell to land on, so that tooltip is where its message shows.
 
 ### Marking the drafts
@@ -327,7 +327,8 @@ own `cell` renderer, in every mode - a `"cellConfirm"` draft kept on the way
 out displays what was typed, not the value in `data`. Cell corners show the
 state: blue for a dirty draft, red for a validation error, and the row carries
 `data-dirty`. A red corner outlives the editor that found the error: it stands
-until that field's value changes.
+until that field's value changes. An entry row's cells take the red corner,
+and never the blue one.
 
 The draft is displayed by the column that owns the field. A column computed
 from other fields - `accessorFn` or `display` - reads `row.original`, which is

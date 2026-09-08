@@ -745,6 +745,103 @@ describe("cell editing", () => {
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
 
+  /** Columns with no rules of their own - the row rule is the only one. */
+  const plainColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Employee>();
+    return helper.columns([
+      helper.accessor("name", { header: "Name" }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+    ]);
+  })();
+
+  /**
+   * Row mode with an add button and one row rule. `path` is where the rule's
+   * issue lands: nowhere, so it is the row's, or on `age`, so it is the
+   * cell's as well. The defaults already break the rule, so the ✓ is the
+   * whole gesture.
+   */
+  function EntryRuleGrid({
+    path,
+    onRowAdd,
+  }: {
+    path?: ["age"];
+    onRowAdd: (args: unknown) => void;
+  }) {
+    const grid = useTMDataGrid<Employee>({
+      data: editRows,
+      columns: plainColumns,
+      getRowId: (row) => String(row.id),
+      editing: {
+        mode: "row",
+        rowValidators: {
+          onSubmit: z
+            .object({ name: z.string(), age: z.number() })
+            .refine((row) => row.age < 100, {
+              message: "Nobody is that old",
+              path,
+            }),
+        },
+        newRowDefaults: () => ({ id: 0, name: "Ny", age: 120, note: "" }),
+        onRowAdd,
+      },
+      selectionMode: "highlight",
+    } as UseTMDataGridOptions<Employee>);
+    return (
+      <TMDataGrid {...grid}>
+        <TMDataGrid.Toolbar>
+          <button type="button" onClick={() => grid.edit.addRow()}>
+            add
+          </button>
+        </TMDataGrid.Toolbar>
+        <TMDataGrid.Table<Employee> />
+      </TMDataGrid>
+    );
+  }
+
+  it("blocks an entry row on a row rule, message on the ✓", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    renderWithMantine(
+      <EntryRuleGrid onRowAdd={(args) => void adds.push(args)} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    expect(adds.length).toBe(0);
+    // Still an entry row - a refused add is not a decision - and the
+    // pathless message rides the ✓'s tooltip, as it rides the Save's.
+    expect(part("entry-row", { rowId: "__new__1" })).toHaveAttribute(
+      "data-committed",
+      "false",
+    );
+    await user.hover(part("confirm-new-row", { rowId: "__new__1" }));
+    expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
+  });
+
+  it("marks the entry cell a pathed row rule names", async () => {
+    const user = userEvent.setup();
+    const adds: unknown[] = [];
+    renderWithMantine(
+      <EntryRuleGrid path={["age"]} onRowAdd={(args) => void adds.push(args)} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "add" }));
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    expect(adds.length).toBe(0);
+    // The cell is marked, as a body cell would be, and the ✓ says why.
+    const entryRow = part("entry-row", { rowId: "__new__1" });
+    expect(entryRow.querySelector('[data-column-id="age"]')).toHaveAttribute(
+      "data-invalid",
+      "true",
+    );
+    await user.hover(part("confirm-new-row", { rowId: "__new__1" }));
+    expect(
+      (await screen.findAllByText("Nobody is that old")).length,
+    ).toBeGreaterThan(0);
+  });
+
   /**
    * A grid with the draft store on: the toolbar's Save and Discard, plus an
    * add button for the entry block - `addRow` has no chrome of its own. The

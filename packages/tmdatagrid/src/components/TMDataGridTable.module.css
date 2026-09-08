@@ -266,16 +266,19 @@
 }
 
 /* Corner triangles for a cell's edit state, drawn like a spreadsheet's: a
-   draft not yet saved is blue, a value failing validation is red. The cell
-   needs a positioning context; pinned and focused cells set their own inline
+   draft not yet saved is blue, a value failing validation is red. An entry
+   cell takes the red one only - everything in it is new. The cell needs a
+   positioning context; pinned and focused cells set their own inline
    `position`, which wins over this. */
 .bodyCell[data-dirty],
-.bodyCell[data-invalid] {
+.bodyCell[data-invalid],
+.entryCell[data-invalid] {
   position: relative;
 }
 
 .bodyCell[data-dirty]::after,
-.bodyCell[data-invalid]::after {
+.bodyCell[data-invalid]::after,
+.entryCell[data-invalid]::after {
   content: "";
   position: absolute;
   top: 0;
@@ -286,7 +289,8 @@
 }
 
 /* Invalid wins over dirty - a cell is usually both. */
-.bodyCell[data-invalid]::after {
+.bodyCell[data-invalid]::after,
+.entryCell[data-invalid]::after {
   border-top-color: var(--mantine-color-error);
   border-right-color: var(--mantine-color-error);
 }
