@@ -1,5 +1,50 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.16
+
+### Major Changes
+
+- [#71](https://github.com/Jielga/TMDataGrid/pull/71) [`77b0819`](https://github.com/Jielga/TMDataGrid/commit/77b0819640f2f99e8a203ea4ad173a46c6459171) Thanks [@Psvensso](https://github.com/Psvensso)! - TanStack Table 9.2.4: the peer dependencies `@tanstack/react-table` and `@tanstack/table-core` move from `^9.0.0-beta.21` to `^9.2.4`, and column pinning follows TanStack's rename from physical to logical sides.
+
+  Upgrading:
+
+  - Install `@tanstack/react-table@^9.2.4` and `@tanstack/table-core@^9.2.4`. The `@tanstack/store` and `@tanstack/react-store` peers move to `^0.11.1`, the range table-core requires; a second store copy at 0.11.0 stops the grid from re-rendering on external atoms.
+  - `columnPinning` is `{ start, end }` instead of `{ left, right }`: in `initialState`, in a controlled `state.columnPinning` and its `onColumnPinningChange`, and wherever `table.store.state.columnPinning` is read.
+  - `column.pin("left" | "right")` is `column.pin("start" | "end")`, `column.getIsPinned()` returns `"start"`, `"end"` or `false`, and the table's `getLeft*` / `getRight*` methods are `getStart*` / `getEnd*`. TanStack lists every rename in `node_modules/@tanstack/table-core/skills/migrate-v8-to-v9/SKILL.md`, section 5.
+  - `getColumnRegion` returns `"start" | "center" | "end"`, and `TMDataGridColumnRegion` matches.
+  - Settings saved under `settingsKey` by 1.x with the old `left` / `right` keys are read and migrated; nothing to do.
+  - A custom `aggregationFn` on a column definition is now a `constructAggregationFn({ aggregate })` definition rather than a bare function. The named built-ins (`"sum"`, `"min"`, ...) and `TMDataGridAggregationName` are unchanged.
+  - The menu labels, the `data-pinned` cell attribute and the sticky CSS keep `left` / `right`: they name the physical side.
+
+### Minor Changes
+
+- [#70](https://github.com/Jielga/TMDataGrid/pull/70) [`007c308`](https://github.com/Jielga/TMDataGrid/commit/007c30871d2000aa4cc35ec083ef518ba86f57df) Thanks [@Psvensso](https://github.com/Psvensso)! - Export.
+
+  - `TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected` - menu items downloading every filtered row, or the selected rows in grid order, in the grid's format. Props override the format, file name, headers and label per item.
+  - `useTMDataGridExport` - the export as click handlers (`exportAll`, `exportSelected`, `selectedCount`, `canExportSelected`) for a control of your own.
+  - `exportGrid`, `buildExportData`, `writeExportFile` - the same export from outside a component.
+  - Formats: `csvExcelFormat` (the default, as before), `csvFormat`, `tsvFormat`, `jsonFormat`; `TMDataGridExportFormat` for one of your own.
+  - `exportOptions` on `useTMDataGrid` - format, file name, header row and `columns` (`"visible"`, `"all"` or ids) for every export, the cell-range menu included.
+  - `columns="custom"` on the menu items opens a column picker: every exportable column, the visible ones ticked and the hidden ones marked, select all with a count, a search box from six columns, Export and Cancel. `ui.state.exportPicker`, `ui.actions.openExportPicker` / `closeExportPicker`, `getExportableColumns`.
+  - Column meta `enableExport` and `exportValue`.
+  - The text formats prefix a value that a spreadsheet would run as a formula; `escapeFormulas: false` on the format turns it off.
+  - `data-dg-part`: `menu-export`, `menu-export-selected`, `export-picker`, `export-picker-hint`, `export-picker-search`, `export-column`, `export-column-all`, `export-picker-count`, `export-picker-confirm`, `export-picker-cancel`.
+  - Labels: `exportAll`, `exportSelected(count)`, `exportPickerTitle(format)`, `exportPickerHint(selected)`, `exportPickerConfirm`, `exportPickerCancel`, `exportPickerSelectAll`, `exportPickerCount(checked, total)`, `exportPickerHidden`, `exportCells` (the cell-range item, was `exportCsv`).
+  - Deprecated, removed in the next beta: `cellExport` on `TMDataGrid.Table`, `exportGridToCsv`, `TMDataGridCellExportOptions`, `DEFAULT_CELL_EXPORT_OPTIONS`, `buildCellMatrix`, `buildGridCellMatrix`, `TMDataGridCellMatrix`, `toExcelCsv`, `downloadTextFile`, `labels.exportCsv`.
+  - New package `@jielga/tmdatagrid-xlsx`: `xlsxFormat()` writes an Excel workbook with typed cells, on exceljs.
+
+### Patch Changes
+
+- [#70](https://github.com/Jielga/TMDataGrid/pull/70) [`a95b8c3`](https://github.com/Jielga/TMDataGrid/commit/a95b8c3d21c561d78082d0004969dffc7059f4c9) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.Menu.Columns` and `TMDataGrid.ColumnsPanel` show their search box from six hideable columns.
+  `searchable` is `TMDataGridColumnSearchable` (`boolean | "auto"`), default `"auto"`; `true` keeps the box on a shorter list.
+
+- [`60f8292`](https://github.com/Jielga/TMDataGrid/commit/60f8292f3538594ad667339ed8f815192148a0c9) Thanks [@Psvensso](https://github.com/Psvensso)! - An entry row blocked by validation now shows it: the ✓ turns red with the message in its tooltip, as the Save does, and a cell a pathed issue names carries `data-invalid` and the red corner.
+
+- [`2e107ad`](https://github.com/Jielga/TMDataGrid/commit/2e107ad29899c89d3e3d26253b3b262d3345cd07) Thanks [@Psvensso](https://github.com/Psvensso)! - Column resizing, the cell range drag and the filter popup's click-away now work when the grid is rendered through a portal into a window opened with `window.open`.
+  Their listeners attach to the grid's own document and window rather than the global ones.
+
+  Focus checks, editor focus handling, select-column click detection and autosize measurement use the grid's own document and window as well, so they behave the same in a popup window as inline.
+
 ## 2.0.0-beta.15
 
 ### Minor Changes

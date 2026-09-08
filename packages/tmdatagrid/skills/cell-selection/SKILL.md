@@ -1,21 +1,20 @@
 ---
 name: cell-selection
 description: >
-  Cell cursor, ranges and the clipboard in TMDataGrid. Covers the
-  cellSelection option and its none / single / range modes, the keyboard map
-  (arrows, Shift+arrows, PageUp/PageDown, Home/End, Enter, F2, Escape, Space,
-  Ctrl+C), the one-tab-stop rule and the in-row Tab walk over controls inside
-  cells, the role flip from table/cell to grid/gridcell, ui.state.focusedCell
-  and ui.state.cellRange keyed by id, onFocusedCellChange, and the Copy /
-  Export cells / Include headers context menu that writes the rectangle in the
-  grid's exportOptions format. Load when adding keyboard cell navigation,
-  selecting blocks of cells, copying to a spreadsheet, or when Tab walks
-  through controls inside the grid body. Exporting whole rows is the data
-  skill.
+  Cell cursor, ranges and the clipboard in TMDataGrid. Covers the cellSelection
+  option and its none / single / range modes, the keyboard map (arrows,
+  Shift+arrows, PageUp/PageDown, Home/End, Enter, F2, Escape, Space, Ctrl+C),
+  the one-tab-stop rule and the in-row Tab walk over controls inside cells, the
+  role flip from table/cell to grid/gridcell, ui.state.focusedCell and
+  ui.state.cellRange keyed by id, onFocusedCellChange, and the Copy / Export
+  cells / Include headers context menu that writes the rectangle in the grid's
+  exportOptions format. Load when adding keyboard cell navigation, selecting
+  blocks of cells, copying to a spreadsheet, or when Tab walks through controls
+  inside the grid body. Exporting whole rows is the data skill.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.15'
+  library_version: '2.0.0-beta.16'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/cell-selection.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellNavigation.ts'
