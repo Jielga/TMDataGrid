@@ -229,8 +229,8 @@ const grid = useTMDataGrid({
 ```
 
 Issues with a path land on the matching column's cell; pathless issues land on
-the row, where the message shows in the edit lane's tooltip - on the open
-row's ✓, and on the parked row's marker. A nested schema's issues follow the
+the row, where the message shows in the edit lane's tooltip on the open
+row's ✓. A nested schema's issues follow the
 same rule, so a `address.city` issue lands on the column whose `editField` is
 `"address.city"`.
 
@@ -300,11 +300,12 @@ error on the row.
 | Blue cell corner | The field is dirty against its original value |
 | Red cell corner | The field carries a validation error |
 | Field error message | In a tooltip on the open editor, shown while the input has focus and on hover |
-| Row error text | A pathless rule failed, or a commit was rejected. In the lane's tooltip: the open row's ✓, or the parked row's marker |
+| Row error text | A pathless rule failed, or a commit was rejected. In the lane's tooltip, on the open row's ✓ |
 | `data-dirty` on the row | The row holds a dirty draft |
 
 The same information is readable from `edit.store`: `rows[rowId].dirtyFields`,
 `rows[rowId].errorFields`, `rows[rowId].errorMessages` (`{ field, message }`
 pairs), `rows[rowId].hasRowError`, `rows[rowId].isSubmitting`, and
 `rows[rowId].values` for the draft itself. The pathless message's text is not
-in the store; read it from `edit.getForm(rowId)?.state.errors`.
+in the store; read it from `edit.getForm(rowId)?.state.errors` on the open
+row that carries it.

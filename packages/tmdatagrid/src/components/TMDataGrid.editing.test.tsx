@@ -1250,7 +1250,8 @@ describe("cell editing", () => {
 
     await user.click(part("edit-row", { rowId: "__new__1" }));
 
-    // The editors come back over the same form, draft and all.
+    // The editors come back over a form built from the committed values, so
+    // the row reads exactly as it was left.
     const entryRow = part("entry-row", { rowId: "__new__1" });
     expect(entryRow).toHaveAttribute("data-committed", "false");
     expect(

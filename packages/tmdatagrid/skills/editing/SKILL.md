@@ -34,9 +34,10 @@ happen. Three facts decide every wiring question below:
 
 - **The grid never mutates `data`.** `editing.onCommit` applies the change
   wherever the data lives, and the updated rows arrive back through `data`.
-- **One row, one form.** Each editing row gets its own TanStack Form, keyed by
-  row id and living outside the DOM, so a draft survives scrolling, sorting and
-  filtering.
+- **One row, one form, while it is open.** Each row being edited gets its own
+  TanStack Form, keyed by row id and living outside the DOM, so a draft
+  survives scrolling, sorting and filtering. A committed row holds values, not
+  a form.
 - **`getRowId` is required** once `editing` is set, and it must be the record's
   own identity. Drafts are keyed by it.
 
@@ -231,8 +232,9 @@ duplicate keys, no overlapping ranges, shares summing to a total. Its
 overlaid, committed new rows among them, the entry rows the table does not hold
 appended, deletion-marked rows removed. Each row appears once. Same result
 vocabulary as `rowValidators`; errors land on the committing row. The rules
-re-run per parked row during `saveDrafts`, so a draft a later edit
-invalidated blocks the save.
+re-run per committed row during `saveDrafts`, the only validation that runs
+there: a committed row a later edit invalidated is reopened with its errors
+and the save resolves `false`.
 
 ```tsx
 tableValidators: {
@@ -389,9 +391,10 @@ Every member with its signature, the gates, `isColumnEditable`, `deactivate`,
 and the `edit.store` shape are in
 [references/editing-api.md](references/editing-api.md#the-edit-engine).
 
-`getForm` exposes the row's form: render it in a drawer and it shares values,
-dirty state and errors with the inline cells, because it is the same
-`FormApi`.
+`getForm` exposes an open row's form: render it in a drawer and it shares
+values, dirty state and errors with the inline cells, because it is the same
+`FormApi`. It is `undefined` for a committed row, which holds values and no
+form; `begin` reopens the row with a form seeded from them.
 
 `edit.setCellValue(rowId, columnId, value)` writes one cell and commits its row with no editor open, which is what a toolbar action or a bulk fill wants.
 The row need not be mounted, so a selected row inside a collapsed group takes the write like any other.

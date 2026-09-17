@@ -13,7 +13,7 @@ A row moves through three places, and the words for them are used exactly:
 | --- | --- | --- | --- |
 | **data** | Your rows, the only source of truth | - | - |
 | **form state** | A row being edited: its own TanStack Form, undecided | `edit.begin`, `edit.addRow` | `edit.cancel` |
-| **draft store** | Rows whose form passed its submit, parked in the grid | `edit.commit` | `edit.saveDrafts` |
+| **draft store** | Rows that passed their commit, held as values in the grid | `edit.commit` | `edit.saveDrafts` |
 
 A row is **open** while it is form state, and **committed** once it is in the draft store.
 The store only has dwell under `draft: true`; without it a commit goes straight to `onCommit` and the form is dropped, which is the same pipeline with the middle step lasting no time at all.
@@ -123,6 +123,10 @@ The row callbacks are handed the same rows: `onRowClick`, `renderRowContextMenu`
 Only top-level rows are overlaid: children reached through `getSubRows` keep their `data` values.
 A row reopened for a further edit keeps its place until it commits again or is cancelled.
 
+A committed row holds no form: its values are data in the draft store.
+`begin` on it, or a write through `setCellValue`, `setRowValues` or `clearCell`, builds a fresh form seeded with those values and takes the row back out of the store until it commits again.
+At `saveDrafts` only `editing.tableValidators` run again, over every committed row; a row they reject is reopened with its errors, and so is a row whose `onCommit` or `onRowAdd` rejects on the per-row path.
+
 A row left open is not lost and not sent. It keeps everything typed into it,
 stays open across a save, and joins the next save once it is committed. This
 is what `edit.commitAll()` is for: it submits every open row at once, so
@@ -146,7 +150,7 @@ The edit lane holds two things at once, one per axis: the mode's own controls wh
 
 A parked row has had its submit, so the lane never offers to save it again - `TMDataGrid.DraftActions` is what sends it.
 A parked row also hides the trash: revert first, then delete.
-If validation blocks a row, its icon turns red with the message in the tooltip: the parked row's marker, or the open row's ✓, an entry row's included.
+If validation blocks a row, its icon turns red with the message in the tooltip: the open row's ✓, an entry row's included.
 A pathless issue from `rowValidators` has no cell to land on, so that tooltip is where its message shows.
 
 ### Marking the drafts
@@ -428,9 +432,8 @@ way, so the file's bad rows can be reported before anything is saved.
 Under `draft: true` the whole import is one publish: the rows are validated
 together and land in the draft store in the same render that shows them, so
 ten thousand rows take about a second, and the grid renders once rather than
-once per row. `saveDrafts` sends them the same way. Each parked row holds its
-own form until the save drops it; budget about 8 kB of heap per row of a
-dozen fields.
+once per row. `saveDrafts` sends them the same way. A committed row is held
+as plain values, not as a form.
 
 ```tsx
 const { committed, open } = await grid.edit.addRows(parsedRows, {
@@ -493,7 +496,7 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.deleteRows(rowIds)` | `deleteRow` over a list in one call - safe to feed a selection as it stands |
 | `edit.restoreRow(rowId)` | Removes a row's deletion mark - what the lane's Restore calls |
 | `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
-| `edit.getForm(rowId)` | The row's live `FormApi` |
+| `edit.getForm(rowId)` | The open row's live `FormApi`; `undefined` for a committed row |
 | `edit.getRowValues(rowId)` | The row as shown: its draft where one is held, else the `data` value. `undefined` for an unknown row |
 | `edit.getRows()` | Every row as shown - drafts overlaid, entry rows appended, deletion-marked rows included and flagged `deleted` |
 | `edit.store` | Open rows, committed rows, active cell, dirty and error projections, draft values, the committed values the table shows (`committedValues`), entry rows, deletion marks |
@@ -502,8 +505,9 @@ The built-in controls do everything through `edit`, which is public.
 `clearCell` and `addRows` return promises. Await each call before starting the
 next when driving edits in a loop.
 
-`getForm` returns the row's own `FormApi`. Render it in a drawer or side panel
-and it shares values, dirty state and errors with the inline cells.
+`getForm` returns the open row's own `FormApi`. Render it in a drawer or side
+panel and it shares values, dirty state and errors with the inline cells.
+A committed row has no form, so `getForm` returns `undefined` for it: call `begin` first, which reopens the row with a form seeded from the committed values.
 
 `getRowValues` and `getRows` read what the grid shows rather than what `data` holds: an open form's values, a parked draft, or the `data` value when neither exists.
 `getRows` walks the core row model, so it is unfiltered and never contains group rows, and it filters nothing out - a row marked deleted comes back flagged `deleted`, an entry row flagged `isNew` under its temp id.

@@ -168,10 +168,11 @@ useTMDataGrid({
 A plain function is typed `TMDataGridValidator`, whose `value` is `never`, so annotate the parameter - `{ value: unknown }`, or the type the column's editor writes - rather than leaving it to be inferred.
 
 Pathed issues land on the matching cells; pathless ones on the row, where the
-message shows in the edit lane's tooltip - on the open row's ✓, and on the
-parked row's marker. To show a pathless message somewhere of your own, read it
-from `edit.getForm(rowId)?.state.errors`; `edit.store` carries the flag
-(`hasRowError`) and the field messages (`errorMessages`), not the row text.
+message shows in the edit lane's tooltip on the open row's ✓. To show a
+pathless message somewhere of your own, read it from
+`edit.getForm(rowId)?.state.errors` on the open row that carries it;
+`edit.store` carries the flag (`hasRowError`) and the field messages
+(`errorMessages`), not the row text.
 
 A commit blocked by validation keeps the editor open, invalid, with the message
 in its tooltip. A rejected `editing.onCommit` keeps the draft too, with the
@@ -214,10 +215,11 @@ committing row's cells. `onSubmit` runs first, and its failure stands without
 `onSubmitAsync` running.
 
 The rules run at every commit, after the row's own validators, and again for
-every parked row during `saveDrafts` - a draft that a later edit has
-invalidated fails there, keeps its markers, and the save resolves `false`.
-Errors land on the committing row only; the row it clashes with is not
-marked.
+every committed row during `saveDrafts`, where they are the only rules that
+run: column rules and `rowValidators` saw the same values at commit. A
+committed row that a later edit has invalidated is reopened with its errors,
+the valid rows are sent, and the save resolves `false`. Errors land on the
+committing row only; the row it clashes with is not marked.
 
 `rows` is unfiltered, so a rule sees the whole collection whatever the view
 shows, and it never contains group rows.

@@ -56,7 +56,7 @@ path, which may be dotted.
 | `begin` | `({ rowId, columnId }) => void` | Row mode opens the entire row either way. `columnId` selects which cell takes the caret; `null` (the pencil) uses its first editable one. On a committed row it reopens it, taking it back out of the draft store. |
 | `commit` | `(rowId) => Promise<boolean>` | The OK gesture: submits the row's form. `false` keeps it open with its errors, and the message outlives the editor that found it. Under `draft: true` a pass parks the row - no consumer callback runs until `saveDrafts`. Column rules run whether or not an editor is mounted. |
 | `commitAll` | `() => Promise<boolean>` | Submits every open row. Rows that fail stay open. `false` when one did. |
-| `saveDrafts` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone and stay open. |
+| `saveDrafts` | `() => Promise<boolean>` | Sends the draft store, re-running `editing.tableValidators` only; a committed row that fails is reopened with its errors. Open rows are left alone and stay open. |
 | `cancel` | `(rowId) => void` | Drops one draft. |
 | `cancelAll` | `() => void` | Drops every draft. |
 | `deactivate` | `() => void` | Closes the editor without touching the draft, as blur does under `"cellConfirm"`. |
@@ -71,7 +71,7 @@ path, which may be dotted.
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
 | `isColumnEditable` | `(column) => boolean` | The column's half alone, with no row in hand: it maps to a field, `editing.columns` lists it when that is set, and `meta.edit.enabled` is not `false`. |
 | `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
-| `getForm` | `(rowId) => TMDataGridRowEditForm \| undefined` | The row's live `FormApi`. |
+| `getForm` | `(rowId) => TMDataGridRowEditForm \| undefined` | The open row's live `FormApi`; `undefined` for a committed row. |
 | `state` | `TMDataGridEditState` | Snapshot, for reads outside React. |
 | `store` | `Store<TMDataGridEditState>` | For `useSelector`. |
 
@@ -81,10 +81,10 @@ path, which may be dotted.
 type TMDataGridEditState = {
   // The cell the last open gesture named - where the caret goes.
   active: { rowId: string; columnId: string | null } | null;
-  // Rows with a live form, committed or not. A row is *open* when it is in
-  // here and not in `committedRowIds`.
+  // Every row the grid holds work for: open rows and committed rows. A row
+  // is *open* when it is in here and not in `committedRowIds`.
   openRowIds: ReadonlyArray<string>;
-  // One `TMDataGridEditRowProjection` per open row.
+  // One `TMDataGridEditRowProjection` per row in `openRowIds`.
   rows: Record<
     string,
     {
@@ -96,8 +96,8 @@ type TMDataGridEditState = {
       values: TMDataGridRowData;
     }
   >;
-  // The draft store's edit slice: existing rows whose form passed its submit,
-  // parked for `saveDrafts`. Empty without `editing.draft`.
+  // The draft store's edit slice: existing rows that passed their commit,
+  // held as values for `saveDrafts`. Empty without `editing.draft`.
   committedRowIds: ReadonlyArray<string>;
   // What a committed row *is* to the table: the draft store's values per row,
   // snapshotted at each commit and kept across a reopen, so the row holds its
