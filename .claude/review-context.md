@@ -18,7 +18,7 @@ Confirm that before a review leans on it.
 | Persona                 | Has                                                                                | Does not have                                                                   |
 | ----------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | **Site reader**         | The docs site, the README, npm's package page                                      | Anything in the repo, the skills, the source                                    |
-| **Installed developer** | Everything under "What ships", plus the docs site                                  | The repo, `CLAUDE.md`, `BACKLOG.md`, the demo sources, `src/docs/*.md` as files |
+| **Installed developer** | Everything under "What ships", plus the docs site                                  | The repo, `CLAUDE.md`, the demo sources, `src/docs/*.md` as files               |
 | **Agent consumer**      | The installed `skills/*/SKILL.md`, the published source, whatever `intent` fetches | The repo's own instruction files                                                |
 | **Maintainer**          | Everything                                                                         | -                                                                               |
 
@@ -27,7 +27,7 @@ A review that reads as "agent consumer" has to say so, because it changes what c
 
 ## Internal, for every persona below maintainer
 
-`CLAUDE.md`, `AGENTS.md`, `BACKLOG.md`, `plans/`, `user-feedback/`, `.changeset/`, the Vite configs, `src/test/`, `src/examples/` as source files, and every `*.test.tsx`.
+`CLAUDE.md`, `AGENTS.md`, `plans/`, `user-feedback/`, `.changeset/`, the Vite configs, `src/test/`, `src/examples/` as source files, and every `*.test.tsx`.
 
 The demo _source_ is internal.
 The demo _rendered on the docs page_ is not: the site reader sees the code fence and the live grid.
@@ -61,4 +61,4 @@ A review reports; the maintainer runs the checks.
 
 `user-feedback/` is gitignored, like `plans/`.
 Nothing committed may depend on a report.
-Anything that survives a review moves into [BACKLOG.md](../BACKLOG.md), which is the only place item status lives.
+Anything that survives a review becomes a GitHub issue on `Jielga/TMDataGrid`, which is the only place item status lives.
