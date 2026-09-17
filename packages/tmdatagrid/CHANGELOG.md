@@ -1,5 +1,14 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.18
+
+### Minor Changes
+
+- [#110](https://github.com/Jielga/TMDataGrid/pull/110) [`f353e0d`](https://github.com/Jielga/TMDataGrid/commit/f353e0d070f92e76e72866784e9541869b2641c0) Thanks [@Psvensso](https://github.com/Psvensso)! - A committed row is data, not a form: a row that commits into the draft store drops its TanStack Form and is held as a snapshot of its values, so ten thousand imported rows cost a few megabytes instead of about eighty. Reopening a committed row - `begin`, `setCellValue`, `setRowValues`, `clearCell` - builds a fresh form seeded with the committed values. Closes [#81](https://github.com/Jielga/TMDataGrid/issues/81).
+
+  - **Breaking.** `edit.getForm(rowId)` returns `undefined` for a committed row. A drawer over one calls `begin` first.
+  - `saveDrafts` re-runs `editing.tableValidators` only; column rules and `rowValidators` ran at commit on the same values. A committed row that fails a table rule at Save, or whose `onCommit` / `onRowAdd` rejects on the per-row path, is reopened with the error instead of staying committed with errors on its form.
+
 ## 2.0.0-beta.17
 
 ### Patch Changes
