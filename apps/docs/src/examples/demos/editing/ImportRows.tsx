@@ -1,4 +1,4 @@
-import { Button, Text, Textarea } from "@mantine/core";
+import { Button, Group, Text, Textarea } from "@mantine/core";
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@jielga/tmdatagrid";
 import {
   DEPARTMENTS,
+  makeEmployee,
   makeEmployees,
   sek,
   type Employee,
@@ -64,6 +65,21 @@ const newEmployee = (): Employee => ({
   skills: [],
 });
 
+/** A generated file of `count` rows, one in every 500 below the salary floor. */
+function generateRows(count: number): Array<Partial<Employee>> {
+  return Array.from({ length: count }, (_, index) => {
+    const { firstName, lastName, salary, department } = makeEmployee(
+      10_000 + index,
+    );
+    return {
+      firstName,
+      lastName,
+      salary: index % 500 === 499 ? 19_000 : salary,
+      department,
+    };
+  });
+}
+
 /** One pasted line into the fields the columns edit. */
 function parseLine(line: string): Partial<Employee> {
   const [firstName = "", lastName = "", salary = "", department = ""] = line
@@ -113,20 +129,29 @@ export function ImportRows() {
     enableGrouping: false,
   });
 
-  const importRows = async () => {
-    const lines = raw.split("\n").filter((line) => line.trim() !== "");
+  const importRows = async (rows: Array<Partial<Employee>>) => {
+    const started = performance.now();
     // Committed rows are ready to save; the rest stay open in the entry
-    // block, each carrying the error that stopped it.
-    const { committed, open } = await grid.edit.addRows(
-      lines.map(parseLine),
-      { commit: true },
-    );
+    // block, each carrying the error that stopped it. One render for the
+    // lot, whatever the count.
+    const { committed, open } = await grid.edit.addRows(rows, {
+      commit: true,
+    });
+    const took = `${Math.round(performance.now() - started)} ms`;
     setReport(
       open.length === 0
-        ? `${committed.length} rows ready`
-        : `${committed.length} ready, ${open.length} need fixing`,
+        ? `${committed.length} rows ready in ${took}`
+        : `${committed.length} ready, ${open.length} need fixing, ${took}`,
     );
   };
+
+  const importPasted = () =>
+    importRows(
+      raw
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .map(parseLine),
+    );
 
   return (
     <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
@@ -138,9 +163,22 @@ export function ImportRows() {
           value={raw}
           onChange={(event) => setRaw(event.currentTarget.value)}
         />
-        <Button size="compact-xs" variant="light" onClick={() => void importRows()}>
-          Import
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            size="compact-xs"
+            variant="light"
+            onClick={() => void importPasted()}
+          >
+            Import
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="default"
+            onClick={() => void importRows(generateRows(10_000))}
+          >
+            Import 10 000 rows
+          </Button>
+        </Group>
         {report !== null && (
           <Text size="xs" c="dimmed">
             {report}

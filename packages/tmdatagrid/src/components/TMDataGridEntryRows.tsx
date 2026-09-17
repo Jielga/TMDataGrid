@@ -6,6 +6,7 @@ import {
   type Row,
 } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import classes from "./TMDataGridTable.module.css";
 import sticky from "./sticky.module.css";
@@ -155,7 +156,21 @@ export function TMDataGridEntryRows({
   rowHeight: number;
 }) {
   const { table, edit, features } = useTMDataGridContext();
-  const newRows = useSelector(edit.store, (state) => state.newRows);
+  const sticky = features.editNewRowsSticky;
+  // A row being *typed* into is always here - it exists nowhere else to
+  // scroll back to. A committed row is a body row, sorted and filtered with
+  // the rest (the hook feeds it to the table as `data`), unless
+  // `newRowsSticky` keeps it pinned here until the save. Only the rows the
+  // block renders go into its table: after an import `newRows` runs to
+  // thousands, every one of them committed and in the body.
+  const newRows = useSelector(
+    edit.store,
+    (state) =>
+      sticky
+        ? state.newRows
+        : state.newRows.filter((newRow) => !newRow.committed),
+    { compare: shallow },
+  );
   // The reopen gesture: `begin` on a committed entry row flips it back to
   // editors and names the cell double-clicked - where the caret goes.
   const activeEntry = useSelector(edit.store, (state) =>
@@ -249,23 +264,12 @@ export function TMDataGridEntryRows({
 
   if (newRows.length === 0) return null;
 
-  const entryRows = entryTable.getCoreRowModel().rows;
+  const stickyRows = entryTable.getCoreRowModel().rows;
   const committedById = new Map(
     newRows.map((newRow) => [newRow.tempId, newRow.committed]),
   );
-  // A row being *typed* into is always here - it exists nowhere else to
-  // scroll back to. A committed row is a body row, sorted and filtered with
-  // the rest (the hook feeds it to the table as `data`), unless
-  // `newRowsSticky` keeps it pinned here until the save.
-  const stickyRows = entryRows.filter(
-    (entryRow) =>
-      features.editNewRowsSticky || committedById.get(entryRow.id) !== true,
-  );
 
-  const renderEntryRow = (
-    entryRow: (typeof entryRows)[number],
-    pinnedZ: string,
-  ) => {
+  const renderEntryRow = (entryRow: EntryRow, pinnedZ: string) => {
     const cellsById = new Map(
       entryRow.getAllCells().map((cell) => [cell.column.id, cell]),
     );
