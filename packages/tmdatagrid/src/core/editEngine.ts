@@ -1557,8 +1557,13 @@ export function createEditEngine(
    */
   const demote = (rowId: string, error: unknown) => {
     const snapshot = committed.get(rowId);
-    const entry = reopen(rowId);
-    if (entry === undefined || snapshot === undefined) return;
+    // No snapshot: `begin` took the row back out while a per-row save was
+    // still waiting on the consumer. The row is open already, and the
+    // answer lands on the form it has rather than being lost.
+    const entry = snapshot === undefined ? forms.get(rowId) : reopen(rowId);
+    if (entry === undefined) return;
+    const values =
+      snapshot?.values ?? (entry.form.state.values as TMDataGridRowData);
     const shape =
       typeof error === "object" && error !== null
         ? (error as { form?: unknown; fields?: Record<string, unknown> })
@@ -1574,7 +1579,7 @@ export function createEditEngine(
           ? [
               {
                 field,
-                value: getBy(snapshot.values, field),
+                value: getBy(values, field),
                 message: firstErrorText(issue) ?? "",
               },
             ]
@@ -2137,9 +2142,13 @@ export function createEditEngine(
    * programmatic write joins an edit in progress rather than discarding it;
    * a committed row is reopened from its snapshot and commits afresh.
    *
-   * Held from the first write to the end of the commit: in between, the row
-   * is out of the draft store, and the markers it carries there must not
-   * flicker off for the length of an async validator.
+   * Only that last case runs under a hold. Reopened, the row is out of the
+   * draft store until it commits again, and its markers must not flicker
+   * off for the length of the validators. The hold is safe there because a
+   * committed row exists only under `editing.draft`, where the commit parks
+   * and never waits on the consumer. An open row's commit without `draft`
+   * awaits `onEditCommit`, and holding the engine's publish for a server
+   * round trip would stall every other row's markers and the caret.
    *
    * No editor is involved, so `meta.edit.mapValue` does not run - the caller
    * writes the stored value itself. Validation is untouched: this is the same
@@ -2154,15 +2163,20 @@ export function createEditEngine(
     const row = getRow(rowId);
     if (row === undefined) return false;
     if (writes.length === 0) return true;
-    return held(async () => {
-      const entry =
-        forms.get(rowId) ??
-        reopen(rowId) ??
-        createForm(rowId, row.original, false);
+    const write = (entry: FormEntry): Promise<boolean> => {
       for (const { field, value } of writes) {
         entry.form.setFieldValue(field as never, value as never);
       }
       return commit(rowId);
+    };
+    const open = forms.get(rowId);
+    if (open !== undefined) return write(open);
+    if (!committed.has(rowId)) {
+      return write(createForm(rowId, row.original, false));
+    }
+    return held(async () => {
+      const entry = reopen(rowId);
+      return entry === undefined ? false : write(entry);
     });
   };
 

@@ -9,7 +9,7 @@ kind.
 | --- | --- | --- | --- |
 | `editing` | `TMDataGridEditingOptions` | off | The editing namespace. Setting it turns editing on. |
 | `editing.mode` | `"cell" \| "cellConfirm" \| "row"` | – | What counts as a commit, and which controls trigger it. |
-| `editing.draft` | `boolean` | `false` | Where a commit goes. On, it parks in the grid's draft store until `edit.saveDrafts()`. |
+| `editing.draft` | `boolean` | `false` | Where a commit goes. On, it is held in the grid's draft store until `edit.saveDrafts()`. |
 | `getRowId` | `(row) => string` | – | A TanStack table option, required once `editing` is set. Drafts are keyed by it. |
 | `editing.columns` | `ReadonlyArray<string>` | every column mapping to a data path | The column ids that take edits. Gates before `meta.edit`, never past it: a column left out takes no edits whatever its meta says, and a listed column still answers to its `meta.edit.enabled`. Also decides which cells an entry row opens. |
 | `editing.isRowEditable` | `(row) => boolean` | – | Closes a whole row to editing, in every mode. |
@@ -54,7 +54,7 @@ path, which may be dotted.
 | Member | Signature | Notes |
 | --- | --- | --- |
 | `begin` | `({ rowId, columnId }) => void` | Row mode opens the entire row either way. `columnId` selects which cell takes the caret; `null` (the pencil) uses its first editable one. On a committed row it reopens it, taking it back out of the draft store. |
-| `commit` | `(rowId) => Promise<boolean>` | The OK gesture: submits the row's form. `false` keeps it open with its errors, and the message outlives the editor that found it. Under `draft: true` a pass parks the row - no consumer callback runs until `saveDrafts`. Column rules run whether or not an editor is mounted. |
+| `commit` | `(rowId) => Promise<boolean>` | The OK gesture: submits the row's form. `false` keeps it open with its errors, and the message outlives the editor that found it. Under `draft: true` a pass commits the row into the draft store - no consumer callback runs until `saveDrafts`. Column rules run whether or not an editor is mounted. |
 | `commitAll` | `() => Promise<boolean>` | Submits every open row. Rows that fail stay open. `false` when one did. |
 | `saveDrafts` | `() => Promise<boolean>` | Sends the draft store, re-running `editing.tableValidators` only; a committed row that fails is reopened with its errors. Open rows are left alone and stay open. |
 | `cancel` | `(rowId) => void` | Drops one draft. |
@@ -62,7 +62,7 @@ path, which may be dotted.
 | `deactivate` | `() => void` | Closes the editor without touching the draft, as blur does under `"cellConfirm"`. |
 | `submitAll` | `() => Promise<boolean>` | **Deprecated** - `commitAll()` then `saveDrafts()`. |
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
-| `setCellValue` | `(rowId, columnId, value) => Promise<boolean>` | Writes one cell and commits the row, with no editor - toolbar actions and bulk fills. The row need not be mounted; a row inside a collapsed group takes the write. `value` is the stored value, so `meta.edit.mapValue` does not run and `meta.edit.validate` does. Under `draft: true` the row parks like any hand-made edit. `false` when the cell takes no edit, or when validation refused the value and left the row open with its errors. |
+| `setCellValue` | `(rowId, columnId, value) => Promise<boolean>` | Writes one cell and commits the row, with no editor - toolbar actions and bulk fills. The row need not be mounted; a row inside a collapsed group takes the write. `value` is the stored value, so `meta.edit.mapValue` does not run and `meta.edit.validate` does. Under `draft: true` the row is committed into the draft store like any hand-made edit. `false` when the cell takes no edit, or when validation refused the value and left the row open with its errors. |
 | `setRowValues` | `(rowId, values) => Promise<boolean>` | `setCellValue` for several cells of one row in a single commit - one consumer call and one draft entry. Keys are column ids. All or nothing: if any named cell takes no edit, nothing is written and it resolves `false`. |
 | `addRow` | `(values?) => string` | Opens an entry row, returns its `tempId`. `values` overrides `editing.newRowDefaults` key by key for that row; with no argument the row is `newRowDefaults` alone. |
 | `addRows` | `(rows, options?) => Promise<{ committed, open }>` | Opens a batch in one write, each row seeded as `addRow` seeds. `{ commit: true }` submits each as it lands - valid rows commit, invalid ones stay open with their errors. |
@@ -148,11 +148,11 @@ The trash itself shows when the deletion has somewhere to report to:
 mark is part of the save.
 
 What the lane holds follows the row's state, one axis each. An open row shows
-the mode's own controls, `save-row` and `cancel-row`. A parked row shows
+the mode's own controls, `save-row` and `cancel-row`. A committed row shows
 `row-state` instead, whose `data-state` is `new`, `edited` or `deleted`,
 together with `revert-row` on an edited row, `restore-row` on one marked for
 deletion, and `edit-row` plus `discard-new-row` on an entered new row - never a
-save, which the engine would only park again. A parked row hides `delete-row`.
+save, which the engine would only commit again. A committed row hides `delete-row`.
 Every control carries a tooltip from the labels, `revertRow`, `rowStateNew`,
 `rowStateEdited` and `rowStateDeleted` among them.
 

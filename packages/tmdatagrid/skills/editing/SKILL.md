@@ -94,7 +94,7 @@ Leaving a cell commits it only once the value passes: a refused commit keeps the
 | `true` | Into the grid's draft store, until `edit.saveDrafts()` sends the lot |
 
 Which to pick: `"cell"` for spreadsheet feel; `"cellConfirm"` when a stray click must not fire a request; `"row"` when the row is the unit of the save or a rule spans two columns.
-Add `draft: true` for many edits sent as one transaction - `{ mode: "row", draft: true }` parks a whole row from the lane's ✓, `{ mode: "cell", draft: true }` parks a row as the caret leaves it.
+Add `draft: true` for many edits sent as one transaction - `{ mode: "row", draft: true }` commits a whole row from the lane's ✓, `{ mode: "cell", draft: true }` commits a row as the caret leaves it.
 
 An editor opens on double-click, or with the cell cursor on the cell: Enter, F2,
 or typing, where the first character replaces the value. Delete or Backspace
@@ -111,11 +111,11 @@ commit. Rows accumulate: opening a second row leaves the first open, and each
 row's ✓ and ✕ act on that row alone.
 
 Under `draft: true` nothing reaches a callback until `saveDrafts`.
-The mode's own commit gesture parks the row instead of sending it, Escape drops that one draft, and parked rows accumulate.
-`edit.commit(rowId)` parks too, so there is no per-row escape hatch to the consumer.
-A parked row is displayed: the cell renders the draft value through the column's own `cell` renderer, with the blue corner marking it dirty and `data-dirty` on the row.
+The mode's own commit gesture puts the row in the draft store instead of sending it, Escape drops that one draft, and committed rows accumulate.
+`edit.commit(rowId)` goes to the draft store too, so there is no per-row escape hatch to the consumer.
+A committed row is displayed: the cell renders the draft value through the column's own `cell` renderer, with the blue corner marking it dirty and `data-dirty` on the row.
 It is a row like any other to the table: sorting, filtering, quick search, grouping, aggregates, export, selection, the row counts, `edit.getRows()` and `editing.tableValidators` all read its draft values, and the row callbacks receive it with the draft as `row.original`.
-A parked row that stops matching a filter leaves the view, and the Save bar still counts it.
+A committed row that stops matching a filter leaves the view, and the Save bar still counts it.
 `data` itself is never modified, and only top-level rows are overlaid - `getSubRows` children keep their `data` values.
 An entry row is row-shaped in every mode - every editable cell open at once, the browser's Tab, and the lane's ✓ to enter it.
 
@@ -263,7 +263,7 @@ from `editing.newRowDefaults`. `edit.addRow(values)` overrides that seed key by
 key, so `addRow()` opens the `newRowDefaults` row and `addRow(values)` opens it
 with those fields filled in - pass a whole row to duplicate it. Enter, or the
 lane's ✓, commits the add through `editing.onRowAdd`; under `draft: true` it
-parks the row in the draft store, validated, and
+commits the row into the draft store, validated, and
 `saveDrafts` reports it in `added`. Escape, or ✕, discards the entry. An entry
 row never OK'd is not part of a save - it stays open.
 
@@ -326,8 +326,8 @@ it toggles a mark instead: the row renders struck through and inert
 
 The generated edit lane (`EDIT_COLUMN_ID`, pinned right) appears when `editing.mode` is `"row"`, when `editing.draft` is on, or when `editing.onRowDelete` is set.
 Nothing else adds it.
-It holds one thing per axis: the mode's own controls while a row is open - Save and Cancel under `"row"` - and, once a row is parked, the row-state marker with Revert or Restore.
-A parked row never offers a save.
+It holds one thing per axis: the mode's own controls while a row is open - Save and Cancel under `"row"` - and, once a row is committed, the row-state marker with Revert or Restore.
+A committed row never offers a save.
 The trash shows when the deletion has somewhere to report to: `onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is.
 If validation blocks a row, its marker - or the open row's ✓ - turns red with the message in the tooltip, which is where a pathless `rowValidators` message shows.
 Every control carries a tooltip from the labels.
@@ -384,7 +384,7 @@ row it reaches.
 `setCellValue` / `setRowValues` / `clearCell`, `addRow` / `addRows` /
 `deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
 [Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
-`edit.store` publishes each open or parked row's drafted values as
+`edit.store` publishes each open or committed row's drafted values as
 `rows[rowId].values`, which is what a computed cell or a cross-row check reads
 - `useTMDataGridContext()` reaches the engine from inside a cell renderer.
 Every member with its signature, the gates, `isColumnEditable`, `deactivate`,
@@ -406,7 +406,7 @@ for (const row of grid.table.getSelectedRowModel().rows) {
 }
 ```
 
-Under `draft: true` each row parks in the draft store like any hand-made edit, with the same change markers and the same per-row revert, and the basket leaves through `saveDrafts`.
+Under `draft: true` each row is committed into the draft store like any hand-made edit, with the same change markers and the same per-row revert, and the basket leaves through `saveDrafts`.
 `value` is the stored value: no editor runs, so `meta.edit.mapValue` does not run either, while `meta.edit.validate` does.
 Both resolve `false` when the cell takes no edit - no such row or column, `editing.columns` excludes it, `meta.edit.enabled` is off, or the row is not editable - and when validation refuses the value, which leaves the row open carrying its errors.
 

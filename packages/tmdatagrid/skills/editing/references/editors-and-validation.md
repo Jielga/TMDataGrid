@@ -266,9 +266,9 @@ row's cells. `onSubmit` runs first, and its failure stands without
 `onSubmitAsync` running. Errors land on the committing row only.
 
 The rules run at every commit - typed, ✓, `edit.setCellValue`, an entry
-row's - after the row's own validators, and again for every parked row during
-`saveDrafts`: a draft that a later edit invalidated fails there, keeps its
-markers, and the save resolves `false`.
+row's - after the row's own validators, and again for every committed row during
+`saveDrafts`, the only rules that run there: a committed row that a later edit
+invalidated is reopened with its errors, and the save resolves `false`.
 
 ## Server-side errors
 

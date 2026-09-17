@@ -1523,6 +1523,85 @@ describe("the draft store", () => {
     );
   });
 
+  it("a row reopened during a per-row save still receives the rejection", async () => {
+    let reject: (error: Error) => void = () => {};
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((_, fail) => {
+          reject = fail;
+        }),
+    );
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    const saving = edit.saveDrafts();
+    await vi.waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
+    // The user takes the row back while the server is still deciding.
+    edit.begin({ rowId: "1", columnId: "age" });
+    reject(new Error("server said no"));
+    await expect(saving).resolves.toBe(false);
+
+    // The refusal lands on the form the reopen built, not on a snapshot that
+    // is no longer there.
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+    expect(firstErrorText(edit.getForm("1")?.state.errors)).toBe(
+      "server said no",
+    );
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+  });
+
+  it("setCellValue without draft keeps publishing while the commit waits on the consumer", async () => {
+    let resolve: () => void = () => {};
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+    );
+    const grid = renderEditGrid({ mode: "row", onCommit });
+    const { edit } = grid.current;
+
+    const writing = edit.setCellValue("1", "name", "Annika");
+    await vi.waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
+
+    // Nothing is held: the written row reports its submit in flight, and the
+    // caret can move to another row while the server takes its time.
+    expect(edit.state.rows["1"]?.isSubmitting).toBe(true);
+    edit.begin({ rowId: "2", columnId: "name" });
+    expect(edit.state.active).toEqual({ rowId: "2", columnId: "name" });
+
+    resolve();
+    await expect(writing).resolves.toBe(true);
+  });
+
+  it("reopening a committed row runs rowValidators.onMount over the committed values", async () => {
+    const onMount = vi.fn((_args: { value: Person }) => undefined);
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      rowValidators: { onMount },
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(onMount).toHaveBeenCalledTimes(1);
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    // A reopen is a new form, so the mount pass runs again - over what the
+    // user last decided, not over the seed.
+    edit.begin({ rowId: "1", columnId: "age" });
+    expect(onMount).toHaveBeenCalledTimes(2);
+    expect(onMount.mock.calls[1]?.[0]?.value.name).toBe("Annika");
+  });
+
   it("the draft store is plain data", async () => {
     const grid = renderEditGrid({
       mode: "row",
