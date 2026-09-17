@@ -109,7 +109,7 @@ so a part that repeats is addressed by adding the coordinate.
 | `edit-row`, `delete-row` | The edit lane, idle. `edit-row` also reopens an entered new row |
 | `save-row`, `cancel-row` | The edit lane's Save and Cancel on an open row |
 | `row-state` | The draft store's change marker; `data-state` is `new`, `edited` or `deleted` |
-| `revert-row` | Drops a parked row's draft |
+| `revert-row` | Drops a committed row's draft |
 | `restore-row` | Undo a deletion mark |
 | `confirm-new-row`, `discard-new-row` | An entry row's ✓ (commit) and ✕ |
 | `open-rows-note` | `DraftActions`' count of rows still open. Carries `data-open-count`; absent while there are none |

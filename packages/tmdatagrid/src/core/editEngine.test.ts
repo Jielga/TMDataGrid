@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MantineWrapper } from "../../test/gridHarness";
 import {
   clearedValueForType,
+  firstErrorText,
   getEditFieldName,
   getOpenRowIds,
   normalizeFieldValidate,
@@ -406,12 +407,14 @@ describe("edit engine", () => {
 
     await expect(edit.commit("1")).resolves.toBe(true);
 
-    // Nothing reaches the consumer until submitAll; the draft stays open and
-    // dirty, and the editor it was made in closes.
+    // Nothing reaches the consumer until submitAll; the row stays in the
+    // grid, dirty, as data rather than as a form, and the editor it was made
+    // in closes.
     expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
-    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+    expect(edit.getForm("1")).toBeUndefined();
     expect(edit.state.active).toBe(null);
   });
 
@@ -524,7 +527,7 @@ describe("edit engine", () => {
     await expect(edit.submitAll()).resolves.toBe(false);
 
     expect(edit.state.openRowIds).toEqual(["1", "2"]);
-    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
   });
 
   it("addRow opens an entry form and commit adds it through onRowAdd", async () => {
@@ -769,7 +772,7 @@ describe("edit engine", () => {
     expect(edit.state.newRows).toEqual([]);
   });
 
-  it("keeps a confirmed entry row that no longer validates at submitAll", async () => {
+  it("a write to a committed entry row is validated at the write, not at Save", async () => {
     const onCommitDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
@@ -791,16 +794,19 @@ describe("edit engine", () => {
     const { edit } = grid.current;
     const tempId = edit.addRow();
     await expect(edit.commit(tempId)).resolves.toBe(true);
-    // The same form the entry's editors write through - a consumer holding it
-    // in a drawer writes here too, and a confirmed row is not frozen.
-    edit.getForm(tempId)?.setFieldValue("name", "N");
+
+    // A confirmed row is not frozen: a write reopens it, and the value the
+    // rule refuses is refused there and then.
+    await expect(edit.setCellValue(tempId, "name", "N")).resolves.toBe(false);
+
+    // The entry is open again, carrying what the rule said, and the store has
+    // nothing left to send.
+    expect(edit.state.newRows).toEqual([{ tempId, committed: false }]);
+    expect(edit.state.rows[tempId]?.errorFields).toContain("name");
+    expect(edit.getForm(tempId)).toBeDefined();
 
     await expect(edit.submitAll()).resolves.toBe(false);
-
-    // Nothing valid to report, and the entry is still there to be fixed.
     expect(onCommitDrafts).not.toHaveBeenCalled();
-    expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
-    expect(edit.state.rows[tempId]?.errorFields).toContain("name");
   });
 
   it("cancel drops the draft without a consumer call", () => {
@@ -842,7 +848,7 @@ describe("edit engine", () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["age"]);
-    expect(edit.getForm("1")?.state.values["age"]).toBe(null);
+    expect(edit.state.committedValues["1"]?.age).toBe(null);
   });
 
   it("cancelAll drops every draft, mark and entry in one motion", () => {
@@ -1013,8 +1019,8 @@ describe("the draft store", () => {
     // Row 1 saved and is gone; row 2 stays committed, values intact, so the
     // next save retries it.
     expect(edit.state.committedRowIds).toEqual(["2"]);
-    expect(edit.getForm("1")).toBeUndefined();
-    expect(edit.getForm("2")?.state.values["name"]).toBe("Namn 2");
+    expect(edit.state.committedValues["1"]).toBeUndefined();
+    expect(edit.state.committedValues["2"]?.name).toBe("Namn 2");
   });
 
   it("keeps a failed entry row and a failed deletion mark", async () => {
@@ -1306,7 +1312,7 @@ describe("the draft store", () => {
     );
 
     expect(result.committed).toHaveLength(1);
-    expect(edit.getForm(result.committed[0]!)?.state.values["name"]).toBe("Bo");
+    expect(edit.state.committedValues[result.committed[0]!]?.name).toBe("Bo");
     expect(result.open).toHaveLength(2);
     for (const tempId of result.open) {
       expect(edit.state.rows[tempId]?.hasRowError).toBe(true);
@@ -1341,6 +1347,343 @@ describe("the draft store", () => {
       rows: Array<{ rowId: string }>;
     };
     expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+  });
+
+  it("commit drops the form and keeps the row as data", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    // Decided, so there is nothing left for a form to hold: the row is the
+    // values and the markers that go with them.
+    expect(edit.getForm("1")).toBeUndefined();
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+    expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
+    // One object behind both, so a cell and the table cannot disagree.
+    expect(edit.state.rows["1"]?.values).toBe(edit.state.committedValues["1"]);
+    expect(edit.state.openRowIds).toEqual(["1"]);
+  });
+
+  it("reopen restores an editable form seeded with the committed values", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    edit.begin({ rowId: "1", columnId: "age" });
+
+    const form = edit.getForm("1");
+    expect(form?.state.values).toEqual({ ...people[0], name: "Annika" });
+    expect(edit.state.committedRowIds).toEqual([]);
+    // The snapshot stands until the next decision - the row holds its place
+    // in the sort while the second cell is typed into.
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
+
+    form?.setFieldValue("age", 44);
+    await expect(edit.commit("1")).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    // Both edits, diffed against the data row rather than against the draft
+    // the reopen started from.
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<TMDataGridEditCommitArgs<Person>>;
+    };
+    expect(args.updated[0]?.original).toEqual(people[0]);
+    expect(args.updated[0]?.changes.map((change) => change.field)).toEqual([
+      "name",
+      "age",
+    ]);
+  });
+
+  it("saveDrafts with no table validators runs no validator", async () => {
+    const columnRule = vi.fn(() => undefined);
+    const rowRule = vi.fn(() => undefined);
+    const onSaveDrafts = vi.fn();
+    // Built once for this test: the hook memoizes on the columns reference.
+    const spiedColumns = helper.columns([
+      helper.accessor("name", {
+        header: "Name",
+        meta: { edit: { validate: { onSubmit: columnRule } } },
+      }),
+      helper.accessor("age", { header: "Age", meta: { type: "number" } }),
+    ]);
+    const { result } = renderHook(
+      () =>
+        useTMDataGrid<Person>({
+          data: people,
+          columns: spiedColumns,
+          getRowId: (row) => String(row.id),
+          editing: {
+            mode: "row",
+            draft: true,
+            onSaveDrafts,
+            rowValidators: { onSubmit: rowRule },
+          },
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper },
+    );
+    const { edit } = result.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    expect(columnRule).toHaveBeenCalled();
+    expect(rowRule).toHaveBeenCalled();
+    const atCommit = [columnRule.mock.calls.length, rowRule.mock.calls.length];
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    // A committed row's values cannot have moved since it committed, so the
+    // rules that judge the row alone would only say what they said then.
+    expect([
+      columnRule.mock.calls.length,
+      rowRule.mock.calls.length,
+    ]).toEqual(atCommit);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+    };
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
+  });
+
+  it("a table rule broken by a later commit reopens the earlier row at Save", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts,
+      tableValidators: {
+        // A name belongs to the last row that took it, so a row loses it to
+        // the next one - the clash only exists once that one has committed.
+        onSubmit: ({ value, rowId, rows }: TMDataGridTableValidateArgs<Person>) =>
+          rows.some(
+            (row) => row.rowId > rowId && row.value.name === value.name,
+          )
+            ? { form: "Name taken", fields: { name: "Duplicate name" } }
+            : undefined,
+      },
+    });
+    const { edit } = grid.current;
+
+    for (const rowId of ["1", "2"]) {
+      edit.begin({ rowId, columnId: "name" });
+      edit.getForm(rowId)?.setFieldValue("name", "Dubblett");
+      await expect(edit.commit(rowId)).resolves.toBe(true);
+    }
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    // Row 2 saved and left the store; row 1 is open again, carrying what the
+    // rule said, which is what the user has to fix.
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+    };
+    expect(args.updated.map((row) => row.rowId)).toEqual(["2"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+    expect(edit.state.rows["1"]?.errorFields).toContain("name");
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Dubblett");
+  });
+
+  it("the default save path reopens a row whose callback threw", async () => {
+    const onCommit = vi.fn(({ rowId }: TMDataGridEditCommitArgs<Person>) =>
+      rowId === "1"
+        ? Promise.reject(new Error("server said no"))
+        : Promise.resolve(),
+    );
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
+    const { edit } = grid.current;
+
+    for (const rowId of ["1", "2"]) {
+      edit.begin({ rowId, columnId: "name" });
+      edit.getForm(rowId)?.setFieldValue("name", `Namn ${rowId}`);
+      await expect(edit.commit(rowId)).resolves.toBe(true);
+    }
+
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    // The refused row is open with the message on it, the same answer a
+    // rejected commit gets outside the draft store; the other one left.
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+    expect(firstErrorText(edit.getForm("1")?.state.errors)).toBe(
+      "server said no",
+    );
+  });
+
+  it("a row reopened during a per-row save still receives the rejection", async () => {
+    let reject: (error: Error) => void = () => {};
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((_, fail) => {
+          reject = fail;
+        }),
+    );
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    const saving = edit.saveDrafts();
+    await vi.waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
+    // The user takes the row back while the server is still deciding.
+    edit.begin({ rowId: "1", columnId: "age" });
+    reject(new Error("server said no"));
+    await expect(saving).resolves.toBe(false);
+
+    // The refusal lands on the form the reopen built, not on a snapshot that
+    // is no longer there.
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.rows["1"]?.hasRowError).toBe(true);
+    expect(firstErrorText(edit.getForm("1")?.state.errors)).toBe(
+      "server said no",
+    );
+    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+  });
+
+  it("setCellValue without draft keeps publishing while the commit waits on the consumer", async () => {
+    let resolve: () => void = () => {};
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+    );
+    const grid = renderEditGrid({ mode: "row", onCommit });
+    const { edit } = grid.current;
+
+    const writing = edit.setCellValue("1", "name", "Annika");
+    await vi.waitFor(() => expect(onCommit).toHaveBeenCalledTimes(1));
+
+    // Nothing is held: the written row reports its submit in flight, and the
+    // caret can move to another row while the server takes its time.
+    expect(edit.state.rows["1"]?.isSubmitting).toBe(true);
+    edit.begin({ rowId: "2", columnId: "name" });
+    expect(edit.state.active).toEqual({ rowId: "2", columnId: "name" });
+
+    resolve();
+    await expect(writing).resolves.toBe(true);
+  });
+
+  it("reopening a committed row runs rowValidators.onMount over the committed values", async () => {
+    const onMount = vi.fn((_args: { value: Person }) => undefined);
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      rowValidators: { onMount },
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(onMount).toHaveBeenCalledTimes(1);
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+
+    // A reopen is a new form, so the mount pass runs again - over what the
+    // user last decided, not over the seed.
+    edit.begin({ rowId: "1", columnId: "age" });
+    expect(onMount).toHaveBeenCalledTimes(2);
+    expect(onMount.mock.calls[1]?.[0]?.value.name).toBe("Annika");
+  });
+
+  it("the draft store is plain data", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      newRowDefaults: () => ({
+        id: 0,
+        name: "Ny",
+        age: 20,
+        address: { city: "Lund" },
+      }),
+    });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    const tempId = edit.addRow();
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    edit.deleteRow("2");
+
+    // Values, ids and flags - nothing that only lives in memory. A store that
+    // survives JSON is a store a consumer could keep across a reload.
+    const { state } = edit;
+    const roundTripped = JSON.parse(
+      JSON.stringify(state),
+    ) as TMDataGridEditState;
+    expect(roundTripped.committedValues).toEqual(state.committedValues);
+    expect(roundTripped.newRows).toEqual(state.newRows);
+    expect(roundTripped.deletedRowIds).toEqual(state.deletedRowIds);
+    expect(roundTripped.committedRowIds).toEqual(state.committedRowIds);
+    expect(roundTripped.openRowIds).toEqual(state.openRowIds);
+  });
+
+  it("setCellValue on a committed row reopens, writes and commits it again", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+    });
+    const { edit } = grid.current;
+
+    // Row 2 first, so the order has something to keep.
+    await expect(edit.setCellValue("2", "name", "Erik B")).resolves.toBe(true);
+    await expect(edit.setCellValue("1", "name", "Annika")).resolves.toBe(true);
+    await expect(edit.setCellValue("1", "age", 44)).resolves.toBe(true);
+
+    expect(edit.state.committedValues["1"]).toMatchObject({
+      name: "Annika",
+      age: 44,
+    });
+    // Back to data when the write is done, and the row never doubled up.
+    expect(edit.getForm("1")).toBeUndefined();
+    expect(edit.state.openRowIds).toEqual(["2", "1"]);
+    expect(edit.state.committedRowIds).toEqual(["2", "1"]);
+  });
+
+  it("openRowIds keeps the entry order across a reopen", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    for (const rowId of ["1", "2"]) {
+      edit.begin({ rowId, columnId: "name" });
+      edit.getForm(rowId)?.setFieldValue("name", `Namn ${rowId}`);
+      await expect(edit.commit(rowId)).resolves.toBe(true);
+    }
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+
+    // Out of the store and back in: the row keeps the place it entered with,
+    // and so does the payload the save is built from.
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+    edit.getForm("1")?.setFieldValue("name", "Annika");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    expect(edit.state.openRowIds).toEqual(["1", "2"]);
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+    };
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1", "2"]);
   });
 });
 
@@ -1394,7 +1737,7 @@ describe("writing a cell from outside an editor", () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(edit.state.committedRowIds).toEqual(["1"]);
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name"]);
-    expect(edit.getForm("1")?.state.values["name"]).toBe("Annika");
+    expect(edit.state.committedValues["1"]?.name).toBe("Annika");
 
     // And it leaves the way every other draft does.
     await expect(edit.saveDrafts()).resolves.toBe(true);
@@ -2016,7 +2359,7 @@ describe("editing.tableValidators", () => {
     expect(edit.state.rows["2"]?.errorFields).toContain("name");
   });
 
-  it("re-runs at saveDrafts, holding back a draft the rule now rejects", async () => {
+  it("re-runs the table rules at saveDrafts and reopens a draft the rule now rejects", async () => {
     const onSaveDrafts = vi.fn();
     let clashes = false;
     const grid = renderEditGrid({
@@ -2043,9 +2386,13 @@ describe("editing.tableValidators", () => {
 
     await expect(edit.saveDrafts()).resolves.toBe(false);
 
-    // Nothing valid to send, and the draft is still there to be fixed.
+    // Nothing valid to send, and the row is open again with the rule's
+    // answer on it - "committed" means validated, so a draft the rules now
+    // refuse cannot stay in the store.
     expect(onSaveDrafts).not.toHaveBeenCalled();
-    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.getForm("1")).toBeDefined();
     expect(edit.state.rows["1"]?.errorFields).toContain("name");
     expect(edit.state.rows["1"]?.hasRowError).toBe(true);
   });
@@ -2378,8 +2725,10 @@ describe("bulk deletes over the draft store", () => {
     edit.cancel("1");
     await pending;
 
-    // The form is gone, so nothing may claim the row is parked - a ghost id
-    // here inflates the Save count and can never be saved or cleared.
+    // Nothing may claim the row is in the draft store - a ghost id there
+    // inflates the Save count and can never be saved or cleared. A committed
+    // row has no form either, so the two assertions below are what carry
+    // this: the store itself has to be empty.
     expect(edit.getForm("1")).toBe(undefined);
     expect(edit.state.committedRowIds).toEqual([]);
     expect(draftCount(edit.state)).toBe(0);

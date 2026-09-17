@@ -171,6 +171,13 @@ export function TMDataGridEntryRows({
         : state.newRows.filter((newRow) => !newRow.committed),
     { compare: shallow },
   );
+  // What a committed row renders from. It has no form - its values are the
+  // draft store's - and this is the same snapshot the table feeds a
+  // committed row in the body.
+  const committedValues = useSelector(
+    edit.store,
+    (state) => state.committedValues,
+  );
   // The reopen gesture: `begin` on a committed entry row flips it back to
   // editors and names the cell double-clicked - where the caret goes.
   const activeEntry = useSelector(edit.store, (state) =>
@@ -240,19 +247,19 @@ export function TMDataGridEntryRows({
 
   // Open (uncommitted) rows keep the seed values frozen at addRow - the live values
   // belong to the forms, which the editors read directly, and this table only
-  // provides row and cell identity. A committed row's cells render values, so
-  // there the draft itself is the row; the memo recomputes on every
-  // commit/reopen because either flips `newRows`' identity.
+  // provides row and cell identity. A committed row's cells render values, and
+  // a committed row is data: its values come from the draft store, which is
+  // also what the row keeps while a reopen is undecided.
   const data = useMemo(
     () =>
       newRows.map(
         ({ tempId, committed }) =>
           ((committed
-            ? edit.getForm(tempId)?.state.values
+            ? committedValues[tempId]
             : edit.getForm(tempId)?.options.defaultValues) ??
             {}) as TMDataGridRowData,
       ),
-    [newRows, edit],
+    [newRows, committedValues, edit],
   );
 
   const entryTable = useTable({

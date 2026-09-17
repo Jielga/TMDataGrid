@@ -471,8 +471,10 @@ export type TMDataGridApi<TData extends RowData> = {
   /**
    * The edit engine - open forms, dirty/error projections, and the verbs
    * (`begin`, `commit`, `cancel`, `submitAll`). `edit.getForm(rowId)` hands
-   * out the same TanStack Form the inline editors write through, so a drawer
-   * or detail panel can share a row's draft. Inert until `editing` is set.
+   * out the same TanStack Form the inline editors write through while a row
+   * is open, so a drawer or detail panel can share a row's draft; a
+   * committed row has no form until `begin` reopens it. Inert until
+   * `editing` is set.
    */
   edit: TMDataGridEditApi<TData>;
   /** Table-level feature switches, re-read from options on every render. */

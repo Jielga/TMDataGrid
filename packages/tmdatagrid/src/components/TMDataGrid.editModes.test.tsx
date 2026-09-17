@@ -232,8 +232,8 @@ describe("edit modes", () => {
     await waitFor(() =>
       expect(rowOne()).toHaveAttribute("data-draft", "true"),
     );
-    // A parked row is decided, so it goes back to rendering values - it keeps
-    // its form, which is what used to leave every editor mounted.
+    // A committed row is decided, so it goes back to rendering values: its
+    // form is gone and the row is the draft store's values.
     expect(noEditor()).toBe(true);
     expect(cellAt(0, 0)).toHaveTextContent("Annika");
     expect(part("row-state", { rowId: "1" })).toHaveAttribute(
