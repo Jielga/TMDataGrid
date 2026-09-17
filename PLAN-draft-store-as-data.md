@@ -4,7 +4,7 @@ Branch `feat/draft-store-as-data`, based on `claude/batch-row-commit-perf-ymwakd
 (commit `f2d4fae`, "fix: import thousands of rows into the draft store in one
 publish"). Written 2026-09-17 as a hand-over: the thread that produced it
 cannot be resumed, so everything needed is here. Delete this file in the PR
-that lands the work; the outcome goes into `BACKLOG.md` under Done.
+that lands the work; the pull request closes #81.
 
 Realistic target: 10 000 - 20 000 rows in the draft store. Not 500k - at that
 size TanStack Table's client-side row model is the ceiling, not the engine.

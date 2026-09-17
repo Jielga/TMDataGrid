@@ -7,10 +7,11 @@ A bun workspaces monorepo: `packages/tmdatagrid/` is the library with its docs a
 
 Start here after a break, or on a cold session:
 
-- [BACKLOG.md](BACKLOG.md) - what is planned, held, done and iceboxed.
-  It is the only place item status lives; update it there when something ships.
+- The GitHub issues of `Jielga/TMDataGrid` - `gh issue list` is the backlog, and an issue is the only place item status lives.
+  `held` marks planned work waiting on the stakeholder's go, `icebox` a known gap with no decision to build; an issue without either label is cleared.
+  Close the issue from the pull request that ships it, and put what shipped in the changeset, not in a file here.
 
-Do not start planned work without the stakeholder's go - the backlog names what is held and what is cleared.
+Do not start held or iceboxed work without the stakeholder's go.
 
 `plans/` is gitignored. Working notes may live there, but they stay local and nothing committed may depend on them.
 
