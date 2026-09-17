@@ -1225,6 +1225,94 @@ describe("the draft store", () => {
     expect(edit.state.newRows).toEqual([]);
   });
 
+  it("addRows with commit is one publish for the whole import", async () => {
+    const grid = renderValidatedGrid({ onSaveDrafts: vi.fn() });
+    const { edit } = grid.current;
+    const publishes = vi.fn();
+    const subscription = edit.store.subscribe(publishes);
+
+    // An import: every row that validates lands committed in the same
+    // publish that shows it. One render for the lot, not one per row - the
+    // difference between a second and minutes at ten thousand rows.
+    const result = await edit.addRows(
+      Array.from({ length: 500 }, (_, index) => ({
+        name: index % 100 === 99 ? "X" : `Rad ${String(index)}`,
+        age: index,
+      })),
+      { commit: true },
+    );
+    subscription.unsubscribe();
+
+    expect(publishes).toHaveBeenCalledTimes(1);
+    expect(result.committed).toHaveLength(495);
+    expect(result.open).toHaveLength(5);
+    expect(getOpenRowIds(edit.state)).toEqual(result.open);
+    expect(
+      edit.state.newRows.filter((newRow) => newRow.committed),
+    ).toHaveLength(495);
+    // The file's order, whichever way each row went.
+    expect(result.committed[0]).toBe(edit.state.newRows[0]?.tempId);
+    expect(result.open[0]).toBe(edit.state.newRows[99]?.tempId);
+  });
+
+  it("saveDrafts sends an import in the order it committed, in one call", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderValidatedGrid({ onSaveDrafts });
+    const { edit } = grid.current;
+
+    const names = Array.from({ length: 200 }, (_, index) => `Rad ${String(index)}`);
+    await edit.addRows(
+      names.map((name, index) => ({ name, age: index })),
+      { commit: true },
+    );
+    const publishes = vi.fn();
+    const subscription = edit.store.subscribe(publishes);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    subscription.unsubscribe();
+
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      created: Array<{ value: Person }>;
+    };
+    expect(args.created.map((add) => add.value.name)).toEqual(names);
+    expect(edit.state.newRows).toEqual([]);
+    expect(edit.state.openRowIds).toEqual([]);
+    // The submit pass and the drop of the saved rows - not one per row.
+    expect(publishes.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  it("a table validator during an import sees the rows imported with it", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: vi.fn(),
+      tableValidators: {
+        onSubmit: ({ value, rows }: TMDataGridTableValidateArgs<Person>) =>
+          rows.filter((row) => row.value.name === value.name).length > 1
+            ? "Duplicate name"
+            : undefined,
+      },
+    });
+    const { edit } = grid.current;
+
+    // The two "Anna" rows see each other, so both stay open; "Bo" lands.
+    const result = await edit.addRows(
+      [
+        { name: "Anna", age: 1 },
+        { name: "Bo", age: 2 },
+        { name: "Anna", age: 3 },
+      ],
+      { commit: true },
+    );
+
+    expect(result.committed).toHaveLength(1);
+    expect(edit.getForm(result.committed[0]!)?.state.values["name"]).toBe("Bo");
+    expect(result.open).toHaveLength(2);
+    for (const tempId of result.open) {
+      expect(edit.state.rows[tempId]?.hasRowError).toBe(true);
+    }
+  });
+
   it("saveDrafts sends nothing while the store is empty", async () => {
     const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });

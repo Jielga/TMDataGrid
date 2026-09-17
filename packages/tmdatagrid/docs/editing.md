@@ -420,11 +420,17 @@ const hasOpenEntry = useSelector(grid.edit.store, (state) =>
 over `addRow` is one write per row. Each row is seeded over `newRowDefaults`
 exactly as `addRow` is.
 
-`{ commit: true }` submits each row as it lands, which is what an import
-wants: rows that validate are committed, and rows that fail stay open in the
-entry block carrying their errors, for the user to fix. The result says which
-went which way, so the file's bad rows can be reported before anything is
-saved.
+`{ commit: true }` submits the rows too, which is what an import wants: rows
+that validate are committed, and rows that fail stay open in the entry block
+carrying their errors, for the user to fix. The result says which went which
+way, so the file's bad rows can be reported before anything is saved.
+
+Under `draft: true` the whole import is one publish: the rows are validated
+together and land in the draft store in the same render that shows them, so
+ten thousand rows take about a second, and the grid renders once rather than
+once per row. `saveDrafts` sends them the same way. Each parked row holds its
+own form until the save drops it; budget about 8 kB of heap per row of a
+dozen fields.
 
 ```tsx
 const { committed, open } = await grid.edit.addRows(parsedRows, {
@@ -438,11 +444,11 @@ Column rules are enforced here even though the rows never had an editor on
 screen: the engine runs `meta.edit.validate` itself at commit, so an imported
 row is held to the same rules as a typed one. Without `draft: true` there is
 no store to park in, so `commit: true` adds each valid row through `onRowAdd`
-- one call per row.
+- one call per row, in the order given.
 
 ```demo
 file: editing/ImportRows.tsx
-hint: Import parses the pasted rows, commits the valid ones and leaves the rest open with their errors.
+hint: Import parses the pasted rows, commits the valid ones and leaves the rest open with their errors. The second button imports ten thousand generated rows, twenty of them invalid.
 height: 460
 ```
 
@@ -482,7 +488,7 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.setRowValues(rowId, values)` | The same for several cells of one row, in one commit. All or nothing |
 | `edit.clearCell(rowId, columnId)` | Writes the type's empty value and commits it - what Delete does |
 | `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
-| `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits each as it lands |
+| `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits the rows too - one publish for the lot under `draft: true` |
 | `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true`. Idempotent; discards an entry row; ignores an unknown id |
 | `edit.deleteRows(rowIds)` | `deleteRow` over a list in one call - safe to feed a selection as it stands |
 | `edit.restoreRow(rowId)` | Removes a row's deletion mark - what the lane's Restore calls |

@@ -18,6 +18,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -795,6 +796,24 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const editDraftRowIds = useSelector(
     edit.store,
     (state) => state.committedRowIds,
+  );
+  // The same lists by id: the body asks them once per rendered row, and an
+  // import runs each of them to thousands.
+  const editOpenRowIdSet = useMemo(
+    () => new Set(editOpenRowIds),
+    [editOpenRowIds],
+  );
+  const editDirtyRowIdSet = useMemo(
+    () => new Set(editDirtyRowIds),
+    [editDirtyRowIds],
+  );
+  const editDraftRowIdSet = useMemo(
+    () => new Set(editDraftRowIds),
+    [editDraftRowIds],
+  );
+  const newRowIdSet = useMemo(
+    () => new Set(newRows.map((newRow) => newRow.tempId)),
+    [newRows],
   );
 
   const { loading, noResultsLabel = labels.noResults } =
@@ -2616,9 +2635,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               // reopening takes it back to the entry block.
               const rowEditing =
                 features.editMode === "row" &&
-                editOpenRowIds.includes(row.id) &&
-                !editDraftRowIds.includes(row.id) &&
-                !newRows.some((newRow) => newRow.tempId === row.id);
+                editOpenRowIdSet.has(row.id) &&
+                !editDraftRowIdSet.has(row.id) &&
+                !newRowIdSet.has(row.id);
               // Cell selection takes the body's tab stop off the row and puts
               // it on a cell - two stops per row would make Tab a way of
               // walking the grid, which is what the arrow keys are for. Space
@@ -2691,25 +2710,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   }
                   // Carrying a dirty draft - the row-level face of the cells'
                   // own data-dirty markers, for row-scoped styling.
-                  data-dirty={
-                    editDirtyRowIds.length > 0 &&
-                    editDirtyRowIds.includes(row.id)
-                  }
+                  data-dirty={editDirtyRowIdSet.has(row.id)}
                   // Committed into the draft store, waiting for Save. A
                   // committed entry row is one too - it is in the body
                   // because it is committed - and carries `data-new` besides.
                   data-draft={
-                    (editDraftRowIds.length > 0 &&
-                      editDraftRowIds.includes(row.id)) ||
-                    (newRowCount > 0 &&
-                      newRows.some((newRow) => newRow.tempId === row.id))
+                    editDraftRowIdSet.has(row.id) || newRowIdSet.has(row.id)
                   }
                   // An entered row not yet in `data`, committed into the draft
                   // store and sorted, filtered and grouped with the rest.
-                  data-new={
-                    newRowCount > 0 &&
-                    newRows.some((newRow) => newRow.tempId === row.id)
-                  }
+                  data-new={newRowIdSet.has(row.id)}
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is
                   // what says which row the open menu is about.

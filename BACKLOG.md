@@ -47,6 +47,14 @@ past 1.0.0 on 2026-08-01.
 
 ## To explore later
 
+- A parked row without a form. Every row in the draft store holds its own
+  TanStack Form today - about 8 kB of heap per row of a dozen fields, so an
+  import of ten thousand rows is some 80 MB - though nothing reads a parked
+  row's form until it is reopened or saved. Holding the values alone and
+  creating the form on `begin` would drop the memory; the catch is
+  `rowValidators`, which are Form-shaped and take a `formApi`, so the save's
+  re-validation pass would need a form per row again or a different contract.
+  Raised 2026-09-17 with the import fix below; a decision, not a defect.
 - Controlled state through `options.atoms` - the intended end state for the
   render-phase publish workaround shipped 2026-08-31: `controlledStateSync.ts`
   patches `table.store.subscribe` and defers notifications raised during
@@ -145,6 +153,11 @@ past 1.0.0 on 2026-08-01.
   `unfiltered: true` option. Raised 2026-08-27.
 
 ## Done
+
+**Import at scale** - **done 2026-09-17.**
+`edit.addRows(rows, { commit: true })` under `editing.draft` took minutes for a few thousand rows: every commit copied the store and rendered the grid, the rows re-validated one timer apart, and each form registered three `window` listeners for TanStack Form devtools.
+The engine now keeps its state in maps and sets, publishes once per batch verb (`addRows`, `commitAll`, `saveDrafts`, `cancelAll`, `deleteRows`), validates a parked batch concurrently and skips the devtools mount.
+Ten thousand rows import in about a second and save in under one; the `ImportRows` demo has a button for it.
 
 **Export** - **done 2026-09-04.**
 `TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected` as the built-in entry points, `useTMDataGridExport` for a control of your own, `exportGrid` from outside a component.
