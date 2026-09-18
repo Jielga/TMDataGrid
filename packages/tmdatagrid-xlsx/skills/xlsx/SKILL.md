@@ -13,7 +13,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid-xlsx'
-  library_version: '2.0.0-beta.18'
+  library_version: '2.0.0-beta.19'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid-xlsx/docs/xlsx.md'
 ---

@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.19
+
+### Patch Changes
+
+- [#112](https://github.com/Jielga/TMDataGrid/pull/112) [`2a7c318`](https://github.com/Jielga/TMDataGrid/commit/2a7c3189afd73658bf2442e59bdcc348c79a0268) Thanks [@Psvensso](https://github.com/Psvensso)! - A row the engine takes out of the table now leaves `rowSelection` with it: an entry row discarded by `deleteRow`, `deleteRows` or `cancel`, or saved by `saveDrafts`, and a marked row once its deletion is saved. A stale id used to keep the select-all box indeterminate and the selection non-empty after a bulk delete of selected rows.
+
 ## 2.0.0-beta.18
 
 ### Minor Changes
