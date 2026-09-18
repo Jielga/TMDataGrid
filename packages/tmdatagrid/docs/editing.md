@@ -199,10 +199,10 @@ visible rather than silently left behind.
 The toolbar is declarative: the grid does not add or remove this component for you, so include it when the grid runs a draft store - without `draft: true` there is nothing to save and Save stays disabled.
 
 `renderActions` replaces the set and hands over its pieces: `state.draftCount`,
-`state.openCount`, `state.openRowIds`, `state.isSubmitting`, the `save`,
-`commitAll`, `discard`, `scrollToRow` and `scrollToFirstOpenRow` actions, and
-`Controls.Save` / `Controls.Discard` / `Controls.OpenRowsNote` as the built-in
-pieces.
+`state.openCount`, `state.openRowIds`, `state.isSubmitting`, `state.isSaving`,
+the `save`, `commitAll`, `discard`, `scrollToRow` and `scrollToFirstOpenRow`
+actions, and `Controls.Save` / `Controls.Discard` / `Controls.OpenRowsNote` as
+the built-in pieces.
 
 Counting the open rows is only half the job on a long grid: the row that still
 needs a decision may be nowhere near the viewport, and the grid is always
@@ -240,7 +240,7 @@ without moving.
 
 ```demo
 file: editing/DraftEditing.tsx
-hint: Double-click a row, ✓ commits it into the draft store, "Go to open row" returns to one left undecided - nothing leaves the grid until Save.
+hint: Double-click a row, ✓ commits it into the draft store and the Backend panel stays quiet. Save sends the whole store in one call; with "Reject Sales rows" on, the backend refuses those and they keep their drafts. "Go to open row" returns to a row left undecided.
 height: 440
 ```
 
