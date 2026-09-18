@@ -44,7 +44,7 @@ Turning it on changes three things about the body:
 | Ctrl+V | Not handled. The grid never writes cells from the clipboard |
 
 There is no paste and no fill handle: values arrive through a cell editor or
-through [`edit.addRows`](/docs/editing#adding-and-deleting-rows), which is the
+through [`edit.addRows`](/docs/editing#importing-rows), which is the
 path for importing a block of rows at once.
 
 A [cell editor](/docs/editing) takes over Enter and F2 when editing is on.

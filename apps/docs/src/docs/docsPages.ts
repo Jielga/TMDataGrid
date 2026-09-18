@@ -170,7 +170,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     id: "editing",
     section: "Cells and editing",
     label: "Editing",
-    description: "Three modes, and which cells edit",
+    description: "Three modes, the draft store, and which cells edit",
     source: editingDoc,
   },
   {
