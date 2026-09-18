@@ -123,6 +123,11 @@ The row callbacks are handed the same rows: `onRowClick`, `renderRowContextMenu`
 Only top-level rows are overlaid: children reached through `getSubRows` keep their `data` values.
 A row reopened for a further edit keeps its place until it commits again or is cancelled.
 
+A commit moves nothing else: the page stays, and open details panels and groups stay open.
+TanStack's `autoResetPageIndex` and `autoResetExpanded` fire on any change to the `data` array, which under `draft: true` is every commit, so the grid switches both off and resets the page on a query change itself - see `resetPageOnQueryChange`.
+A refetch that no longer returns a row drops that row's draft, its open editor and its deletion mark: the server has nothing for Save to act on.
+Under `manualPagination` or `manualFiltering` a row missing from `data` is on another page, not gone, so its draft is kept until Save.
+
 A committed row holds no form: its values are data in the draft store.
 `begin` on it, or a write through `setCellValue`, `setRowValues` or `clearCell`, builds a fresh form seeded with those values and takes the row back out of the store until it commits again.
 At `saveDrafts` only `editing.tableValidators` run again, over every committed row; a row they reject is reopened with its errors, and so is a row whose `onCommit` or `onRowAdd` rejects on the per-row path.
@@ -471,12 +476,20 @@ exactly as a selection stands - duplicates, already-marked rows and stale ids
 included. The trash can shows when the deletion has somewhere to report to:
 `onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is.
 
-A row the engine takes out of the table leaves `rowSelection` with it: an
-entry row that is discarded or saved, and a marked row once `saveDrafts` has
-reported its deletion. A marked row still in the grid keeps its selection
-until then. TanStack itself never drops an id from the map, so without this
-a deleted row would keep the select-all box indeterminate and count as
-selected for good.
+A marked row is read-only and not selectable until it is restored: `begin`,
+`setCellValue`, `setRowValues` and `clearCell` refuse it, the keyboard cannot
+open an editor on it, its checkbox is disabled, select-all skips it, and the
+mark drops it from `rowSelection`. An editor open on the row when it is marked
+is cancelled. A committed edit stays under the mark, so Restore brings the row
+back as edited; Save leaves that edit out of `updated` - the row is in
+`deleted` only - and forgets it once the deletion is saved. A marked row still
+sorts, filters, groups, aggregates and counts, and is left out of an export.
+
+A row the engine takes out of the table - an entry row that is discarded or
+saved, a marked row once its deletion is saved - leaves `rowSelection`,
+`expanded` and `rowPinning` with it. TanStack itself never drops an id from
+those maps, so without this a deleted row would keep the select-all box
+indeterminate and count as selected for good.
 
 The grid still never mutates `data`: you apply adds and deletes, and the new
 rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not

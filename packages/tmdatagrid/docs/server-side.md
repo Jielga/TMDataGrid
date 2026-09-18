@@ -65,13 +65,13 @@ column manager behave identically in both modes.
 ## The page index
 
 A column filter, the quick search or a sort changes what page 3 means.
-The result set is a different one, and it may not have a page 3 at all - so the grid resets `pageIndex` to 0 whenever the query changes under `manualPagination`.
+The result set is a different one, and it may not have a page 3 at all - so the grid resets `pageIndex` to 0 whenever the query changes, on every grid.
 The reset is applied in the same event as the change, so one request goes out, for the first page of the new query.
 
 `resetPageOnQueryChange: false` switches it off.
 
 TanStack's `autoResetPageIndex` is a different rule and does not cover this.
-It defaults to `!manualPagination`, so it is off exactly here, and it fires on a change to `data` - which server-side is the response landing, after the request was sent.
+It fires on a change to `data` - which server-side is the response landing, after the request was sent, and under `editing.draft` every commit - so the grid switches it off everywhere and resets on the query change itself.
 
 ## Column options
 
@@ -199,7 +199,7 @@ Two constraints apply:
 | `rowCount` | Table option | `number` | – | The true total. `pageCount: -1` when it is unknown. |
 | `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. See [Loading and empty states](/docs/loading-and-empty). |
 | `meta.totalRowCount` | Option | `number` | – | The unfiltered total, for `SummaryCount`. |
-| `resetPageOnQueryChange` | Option | `boolean` | `true` under `manualPagination` | Back to page 1 when a filter, the quick search or the sort changes. |
+| `resetPageOnQueryChange` | Option | `boolean` | `true` | Back to page 1 when a filter, the quick search, the sort or the grouping changes. |
 | `onReachEnd` | Table prop | `() => void` | – | Fires as the scroll nears the last row. Latches per row count. |
 | `reachEndThreshold` | Table prop | `number` | `10` | How many rows before the end it fires. |
 | `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |

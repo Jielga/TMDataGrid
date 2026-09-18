@@ -47,7 +47,6 @@ describe("cell editing", () => {
   ];
 
   /** The same rows with row two out - a stable identity, for the remount. */
-  const firstRowOnly: Employee[] = [editRows[0]!];
 
   const editColumns = (() => {
     const helper = createTMDataGridColumnHelper<Employee>();
@@ -642,19 +641,27 @@ describe("cell editing", () => {
      * lives outside the DOM, so its editors remount over the same form.
      */
     function RemountingGrid() {
-      const [hideSecond, setHideSecond] = useState(false);
       const grid = useTMDataGrid<Employee>({
-        // Both identities are stable: `useTMDataGrid` memoizes on the data
-        // reference, and a fresh array each render is a render loop.
-        data: hideSecond ? firstRowOnly : editRows,
+        data: editRows,
         columns: editColumns,
         getRowId: (row) => String(row.id),
         editing: { mode: "row", onCommit: () => {} },
         selectionMode: "highlight",
       } as UseTMDataGridOptions<Employee>);
+      // A column filter takes row two out of the row model and brings it
+      // back without touching `data`. A record that leaves `data` is gone
+      // for good and takes its draft with it - see forgetMissingRows.
+      const toggle = () => {
+        const column = grid.table.getColumn("name")!;
+        column.setFilterValue(
+          column.getFilterValue() === undefined
+            ? { operator: "contains", value: editRows[0]!.name }
+            : undefined,
+        );
+      };
       return (
         <>
-          <button type="button" onClick={() => setHideSecond((it) => !it)}>
+          <button type="button" onClick={toggle}>
             Toggle row two
           </button>
           <TMDataGrid {...grid}>

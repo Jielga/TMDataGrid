@@ -81,9 +81,14 @@ function SelectRowCheckbox<TData extends RowData>({
   // Cells render inside the grid's provider, so the checkbox can reach the
   // chrome store - it needs the shift-click pivot, and the feature flags to know
   // which row model a range is measured over.
-  const { ui, features, labels } = useTMDataGridContext();
+  const { ui, features, labels, edit } = useTMDataGridContext();
   const tabIndex = useBodyControlTabIndex();
   const isGroupRow = row.subRows.length > 0;
+  // A deletion mark makes the row unselectable (see `enableRowSelection` in
+  // the hook), and the box below reads that through `getCanSelect`. The
+  // mark lives in the edit store, so the subscription is what re-renders
+  // the box when it lands - the row and cell identities do not change.
+  useSelector(edit.store, (state) => state.deletedRowIds.includes(row.id));
 
   // A group row is never selected by id: `rowSelection` only holds the leaves,
   // and TanStack's `getIsSelected()` is a plain lookup in that map. A group

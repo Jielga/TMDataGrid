@@ -863,9 +863,24 @@ async function runFieldValidator(
  * form keeps its values, meta and errors; scroll back and the editor
  * re-mounts over the same form.
  */
+/**
+ * The engine as the hook holds it: the public `edit` API plus the verbs the
+ * grid calls on its own behalf and does not document.
+ */
+export type TMDataGridEditEngine = TMDataGridEditApi & {
+  /** See the implementation. `rowsById` is the core row model's. */
+  forgetMissingRows: (rowsById: Record<string, unknown>) => void;
+  /**
+   * Whether the row carries a deletion mark - the set behind
+   * `state.deletedRowIds`, for a check per row from a predicate the table
+   * calls per row.
+   */
+  isRowDeleted: (rowId: string) => boolean;
+};
+
 export function createEditEngine(
   getContext: () => TMDataGridEditEngineContext,
-): TMDataGridEditApi {
+): TMDataGridEditEngine {
   const store = new Store<TMDataGridEditState>(EMPTY_EDIT_STATE);
 
   /**
@@ -1252,44 +1267,68 @@ export function createEditEngine(
   /** Above zero, `publish` waits for the run holding it to end. */
   let holdDepth = 0;
 
-  // Ids the table's row selection has to let go of - see flushUnselect.
+  // Rows the engine took out of the table, and rows that only lost their
+  // selection - see flushRowState.
+  const pendingLeft = new Set<string>();
   const pendingUnselect = new Set<string>();
 
   /**
-   * Drops rows the engine took out of the table from `rowSelection`.
+   * Drops rows the engine took out of the table from the table state keyed
+   * by row id: `rowSelection`, `expanded` and `rowPinning`. A row that was
+   * only marked for deletion loses its selection alone - it is still there,
+   * pinned or open as it was.
    *
-   * TanStack never prunes that map itself: `toggleAllRowsSelected(false)`
-   * unticks only rows still in the model and `getIsSomeRowsSelected` counts
-   * every key. An id left behind keeps the header box indeterminate, flips
-   * "select all" back to selecting, and shows a consumer reading the keys a
-   * row that is gone. Two kinds of row leave through the engine: an entry
-   * row, discarded or saved - its temp id never comes back - and a marked
-   * row whose deletion the consumer has acted on. Run from `publish`, so a
-   * bulk delete or a save prunes in one selection update.
+   * TanStack never prunes those maps itself: `toggleAllRowsSelected(false)`
+   * unticks only rows still in the model, `getIsSomeRowsSelected` counts
+   * every key, and `expanded` is persisted with whatever ids it holds. An id
+   * left behind keeps the header box indeterminate, flips "select all" back
+   * to selecting, and shows a consumer reading the keys a row that is gone.
+   * Two kinds of row leave through the engine: an entry row, discarded or
+   * saved - its temp id never comes back - and a marked row whose deletion
+   * the consumer has acted on. Run from `publish`, so a bulk delete or a
+   * save prunes in one update per slice.
    */
-  const flushUnselect = () => {
-    if (pendingUnselect.size === 0) return;
-    const rowIds = [...pendingUnselect];
+  const flushRowState = () => {
+    if (pendingLeft.size === 0 && pendingUnselect.size === 0) return;
+    const left = [...pendingLeft];
+    const unselect = [...left, ...pendingUnselect];
+    pendingLeft.clear();
     pendingUnselect.clear();
     const table = getContext().table;
-    const selection = table.store.state.rowSelection;
-    if (
-      !rowIds.some((rowId) =>
-        Object.prototype.hasOwnProperty.call(selection, rowId),
-      )
-    ) {
-      return;
+    const { rowSelection, expanded, rowPinning } = table.store.state;
+    const has = (map: object, rowId: string) =>
+      Object.prototype.hasOwnProperty.call(map, rowId);
+    if (unselect.some((rowId) => has(rowSelection, rowId))) {
+      table.setRowSelection((old) => {
+        const next = { ...old };
+        for (const rowId of unselect) delete next[rowId];
+        return next;
+      });
     }
-    table.setRowSelection((old) => {
-      const next = { ...old };
-      for (const rowId of rowIds) delete next[rowId];
-      return next;
-    });
+    if (left.length === 0) return;
+    if (expanded !== true && left.some((rowId) => has(expanded, rowId))) {
+      table.setExpanded((old) => {
+        if (old === true) return old;
+        const next = { ...old };
+        for (const rowId of left) delete next[rowId];
+        return next;
+      });
+    }
+    const gone = new Set(left);
+    if (
+      rowPinning.top.some((rowId) => gone.has(rowId)) ||
+      rowPinning.bottom.some((rowId) => gone.has(rowId))
+    ) {
+      table.setRowPinning((old) => ({
+        top: old.top.filter((rowId) => !gone.has(rowId)),
+        bottom: old.bottom.filter((rowId) => !gone.has(rowId)),
+      }));
+    }
   };
 
   const publish = () => {
     if (holdDepth > 0) return;
-    flushUnselect();
+    flushRowState();
     if (staleRows.size > 0) {
       for (const rowId of staleRows) {
         const entry = forms.get(rowId);
@@ -1443,8 +1482,9 @@ export function createEditEngine(
       if (working.committedValues.delete(rowId)) dirty.add("committedValues");
       if (isNew && working.newRows.delete(rowId)) dirty.add("newRows");
       // An entry row leaves the table for good: discarded, or saved and
-      // coming back under the consumer's own id. Its selection goes with it.
-      if (isNew) pendingUnselect.add(rowId);
+      // coming back under the consumer's own id. Its selection, expansion
+      // and pin go with it - see flushRowState.
+      if (isNew) pendingLeft.add(rowId);
       if (working.active?.rowId === rowId) {
         working.active = null;
         dirty.add("active");
@@ -1633,12 +1673,18 @@ export function createEditEngine(
 
   const canEditRow = (row: ErasedRow): boolean => {
     if (row.getIsGrouped()) return false;
+    // A deletion-marked row is read-only until it is restored: an edit on a
+    // row the save is about to delete has nowhere to go. The mark is checked
+    // here, in the engine, so the keyboard and the verbs agree with the
+    // pointer, which the table's CSS blocks.
+    if (working.deletedRowIds.has(row.id)) return false;
     return getContext().isRowEditable?.(row) !== false;
   };
 
   const canEditCell = (row: ErasedRow, column: ErasedColumn): boolean => {
     const context = getContext();
     if (row.getIsGrouped()) return false;
+    if (working.deletedRowIds.has(row.id)) return false;
     if (!isColumnEditable(column)) return false;
     if (!isColumnEditableForRow(column, row)) return false;
     if (context.isRowEditable !== undefined && !context.isRowEditable(row)) {
@@ -1769,7 +1815,7 @@ export function createEditEngine(
       if (columnId !== null) {
         const column = getContext().table.getColumn(columnId);
         if (column === undefined || !canEditCell(row, column)) return;
-      } else if (getContext().isRowEditable?.(row) === false) {
+      } else if (!canEditRow(row)) {
         return;
       }
       // Reopening a committed row takes it back out of the draft store: what
@@ -1923,8 +1969,19 @@ export function createEditEngine(
       ) {
         return;
       }
-      working.deletedRowIds.add(rowId);
-      touch("deletedRowIds");
+      heldSync(() => {
+        // An editor open on the row loses: what was being typed into a row
+        // the user then deleted is not worth keeping, and a marked row has
+        // no editor. A committed edit stays under the mark, so Restore
+        // brings the row back as it was edited.
+        if (forms.has(rowId)) forget(rowId);
+        working.deletedRowIds.add(rowId);
+        dirty.add("deletedRowIds");
+        // Not selectable while marked - see `enableRowSelection` in the
+        // hook - so the selection lets it go now, the way a row leaving the
+        // table would. See flushRowState.
+        pendingUnselect.add(rowId);
+      });
       return;
     }
     const row = getRow(rowId);
@@ -2010,8 +2067,13 @@ export function createEditEngine(
   });
 
   const saveDraftsInner = async (): Promise<boolean> => {
-    const ids = committedIds();
     const deletedIds = [...working.deletedRowIds];
+    // A marked row's edit is not sent - the save deletes the row. The edit
+    // stays under the mark for Restore and leaves with the row once the
+    // deletion is saved; a rejected deletion keeps both.
+    const ids = committedIds().filter(
+      (rowId) => !working.deletedRowIds.has(rowId),
+    );
     // Nothing decided: open rows are not this verb's business, so a grid
     // mid-edit with an empty draft store saves cleanly and stays as it is.
     if (ids.length === 0 && deletedIds.length === 0) return true;
@@ -2074,10 +2136,16 @@ export function createEditEngine(
         ),
       );
       // The marks are consumed here whatever the consumer does with them,
-      // so the rows' selection goes at the same time - see flushUnselect.
-      const taken = takeDeletedRowIds();
-      for (const rowId of taken) pendingUnselect.add(rowId);
-      publish();
+      // so the rows' selection and the edits held under the marks go at the
+      // same time - see flushRowState and saveDraftsInner's `ids`.
+      const taken = heldSync(() => {
+        const marked = takeDeletedRowIds();
+        for (const rowId of marked) {
+          pendingLeft.add(rowId);
+          if (committed.has(rowId)) forget(rowId);
+        }
+        return marked;
+      });
       for (const rowId of taken) {
         const row = getRow(rowId);
         if (row !== undefined) {
@@ -2164,8 +2232,10 @@ export function createEditEngine(
           }
           if (working.deletedRowIds.delete(id)) deletionsChanged = true;
           // The consumer has deleted the record; the row is on its way out
-          // of `data`, and its selection goes now - see flushUnselect.
-          pendingUnselect.add(id);
+          // of `data`, and its selection goes now - see flushRowState. So
+          // does the edit held under the mark.
+          pendingLeft.add(id);
+          if (committed.has(id)) forget(id);
         }
         if (deletionsChanged) dirty.add("deletedRowIds");
       });
@@ -2209,6 +2279,8 @@ export function createEditEngine(
   ): Promise<boolean> => {
     const row = getRow(rowId);
     if (row === undefined) return false;
+    // Read-only while marked - see canEditRow.
+    if (working.deletedRowIds.has(rowId)) return false;
     if (writes.length === 0) return true;
     const write = (entry: FormEntry): Promise<boolean> => {
       for (const { field, value } of writes) {
@@ -2310,11 +2382,39 @@ export function createEditEngine(
     return rows;
   };
 
+  /**
+   * Drops what the store holds for records that left `data`: a refetch that
+   * no longer returns a row takes its open form, its committed edit and its
+   * deletion mark with it. The server has nothing for the save to update or
+   * delete, and a row nobody can see must not sit in the Save count. Entry
+   * rows are the engine's own and stay. Called by the hook whenever the rows
+   * as shown change, with the core row model's `rowsById`; not called where
+   * the grid does not own the result set, since there a row missing from
+   * `data` is on another page, not gone.
+   */
+  const forgetMissingRows = (rowsById: Record<string, unknown>) => {
+    heldSync(() => {
+      // Open rows and committed ones alike - `openRowIds` is both.
+      for (const rowId of [...working.openRowIds]) {
+        const isNew =
+          forms.get(rowId)?.isNew ?? committed.get(rowId)?.isNew ?? false;
+        if (!isNew && !(rowId in rowsById)) forget(rowId);
+      }
+      for (const rowId of [...working.deletedRowIds]) {
+        if (rowId in rowsById) continue;
+        working.deletedRowIds.delete(rowId);
+        dirty.add("deletedRowIds");
+      }
+    });
+  };
+
   return {
     store,
     get state() {
       return store.state;
     },
+    forgetMissingRows,
+    isRowDeleted: (rowId) => working.deletedRowIds.has(rowId),
     getForm: (rowId) => forms.get(rowId)?.form,
     getRowValues,
     getRows,

@@ -60,8 +60,10 @@ Because it is the standard state, `table.toggleAllRowsExpanded()`,
 `data` slices, so open panels survive a reload on a
 [persisted](/docs/use-tm-data-grid#persist) grid.
 
-> TanStack resets `expanded` when the row structure changes, so replacing
-> `data` closes open panels. Pass `autoResetExpanded: false` to keep them.
+> TanStack resets `expanded` whenever the `data` array changes, which would
+> close every panel on each draft commit. The grid therefore sets
+> `autoResetExpanded: false`; pass `autoResetExpanded: true` to have a new
+> `data` array close the panels.
 
 ## The two kinds of expanding
 
@@ -104,7 +106,7 @@ Group rows have no panel. Expanding one opens its children.
 | `renderDetails` | Option | `({ row, table }) => ReactNode` | – | Contents of the panel. Setting it adds the lane. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A data slice, so it persists. |
-| `autoResetExpanded` | Table option | `boolean` | `true` | `false` keeps panels open when `data` changes. |
+| `autoResetExpanded` | Table option | `boolean` | `false` | `true` closes the panels when the `data` array changes. Off by default, so a draft commit keeps them open. |
 | `DETAILS_COLUMN_ID` | Export | `"__details__"` | – | Id of the generated chevron column. |
 | `resolveExpandAll` | Export | `(args) => ExpandedState` | – | Expand or collapse every group, or every panel, but not both. |
 | `areAllRowsExpanded` | Export | `(args) => boolean` | – | Whether every row of one target is open. |

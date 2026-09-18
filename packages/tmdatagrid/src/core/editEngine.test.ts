@@ -2744,18 +2744,33 @@ describe("bulk deletes over the draft store", () => {
     subscription.unsubscribe();
 
     // The entry rows left the table, and the selection with them. The data
-    // rows are only marked - still in the grid, still selected.
-    expect(table.store.state.rowSelection).toEqual({ "1": true, "2": true });
-    expect(selectionPublishes).toBe(1);
-
-    // Select-all off - what the header box does - now empties the map.
-    // TanStack unticks only rows still in the model, so a stale temp id
-    // would survive this and keep the box indeterminate.
-    act(() => {
-      table.toggleAllRowsSelected(false);
-    });
+    // rows are only marked - still in the grid, but a marked row is not
+    // selectable, so they are unticked too, in the same update.
     expect(table.store.state.rowSelection).toEqual({});
     expect(table.getIsSomeRowsSelected()).toBe(false);
+    expect(selectionPublishes).toBe(1);
+  });
+
+  it("select-all skips marked rows and still reads as all selected", async () => {
+    const grid = renderBulkGrid();
+    const { edit, table } = grid.current;
+    edit.deleteRows(["1", "2"]);
+
+    act(() => {
+      table.toggleAllRowsSelected(true);
+    });
+
+    const selected = Object.keys(table.store.state.rowSelection);
+    expect(selected).not.toContain("1");
+    expect(selected).not.toContain("2");
+    expect(selected).toHaveLength(manyPeople.length - 2);
+    // Every selectable row is selected: the header box shows a tick, not a
+    // dash, which is what `getIsAllRowsSelected` decides.
+    expect(table.getIsAllRowsSelected()).toBe(true);
+    expect(table.getRow("1").getCanSelect()).toBe(false);
+
+    edit.restoreRow("1");
+    expect(table.getRow("1").getCanSelect()).toBe(true);
   });
 
   it("cancelling a committed entry row drops its selection too", async () => {
@@ -2816,21 +2831,185 @@ describe("bulk deletes over the draft store", () => {
     expect(table.store.state.rowSelection).toEqual({ "1": true });
   });
 
-  it("a rejected save keeps the marked rows selected along with their marks", async () => {
-    const onSaveDrafts = vi.fn().mockResolvedValue({ deleted: { "2": false } });
+  it("a deletion mark makes the row read-only and unselectable until restored", async () => {
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts: vi.fn() });
+    const { edit, table } = grid.current;
+    act(() => {
+      table.setRowSelection({ "1": true, "2": true });
+    });
+
+    edit.deleteRow("1");
+
+    // The mark drops the row from the selection and refuses it back.
+    expect(table.store.state.rowSelection).toEqual({ "2": true });
+    expect(table.getRow("1").getCanSelect()).toBe(false);
+    // And every way into an editor - the verbs and the keyboard's `begin`.
+    expect(edit.canEditRow(table.getRow("1") as never)).toBe(false);
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(edit.getForm("1")).toBeUndefined();
+    await expect(edit.setCellValue("1", "name", "Nope")).resolves.toBe(false);
+    expect(edit.getRowValues("1")?.name).toBe("Anna");
+
+    edit.restoreRow("1");
+    expect(table.getRow("1").getCanSelect()).toBe(true);
+    await expect(edit.setCellValue("1", "name", "Yes")).resolves.toBe(true);
+  });
+
+  it("marking a row cancels its open editor and keeps a committed edit under the mark", async () => {
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts: vi.fn() });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Edited");
+    edit.begin({ rowId: "2", columnId: "name" });
+    edit.getForm("2")?.setFieldValue("name", "Typing");
+
+    edit.deleteRows(["1", "2"]);
+
+    expect(edit.getForm("2")).toBeUndefined();
+    expect(edit.state.openRowIds).toEqual(["1"]);
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.deletedRowIds).toEqual(["1", "2"]);
+    expect(edit.getRowValues("2")?.name).toBe("Erik");
+    // Restore brings the row back as it was edited.
+    edit.restoreRow("1");
+    expect(edit.getRowValues("1")?.name).toBe("Edited");
+  });
+
+  it("saveDrafts sends a marked row as deleted only, and forgets its edit once saved", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Edited");
+    edit.deleteRow("1");
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+      deleted: Array<string>;
+    };
+    expect(args.updated).toEqual([]);
+    expect(args.deleted).toEqual(["1"]);
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+  });
+
+  it("a rejected deletion keeps the mark and the edit under it", async () => {
+    const onSaveDrafts = vi.fn().mockResolvedValue({ deleted: { "1": false } });
     const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
     const { edit, table } = grid.current;
-    edit.deleteRow("2");
-    act(() => {
-      table.setRowSelection({ "2": true });
-    });
+    await edit.setCellValue("1", "name", "Edited");
+    edit.deleteRow("1");
 
+    await expect(edit.saveDrafts()).resolves.toBe(false);
+
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.deletedRowIds).toEqual(["1"]);
+    expect(edit.getRowValues("1")?.name).toBe("Edited");
+    expect(table.getRow("1").getCanSelect()).toBe(false);
+  });
+
+  it("the per-row save path reports a marked row's deletion only", async () => {
+    const onCommit = vi.fn();
+    const onRowDelete = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onCommit, onRowDelete });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Edited");
+    edit.deleteRow("1");
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onRowDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ rowId: "1" }),
+    );
+    expect(edit.state.committedRowIds).toEqual([]);
+  });
+
+  /** A draft grid whose `data` can be swapped, the way a refetch would. */
+  function renderSwappableGrid(
+    extra: Partial<UseTMDataGridOptions<Person>> = {},
+  ) {
+    return renderHook(
+      ({ data }: { data: Array<Person> }) =>
+        useTMDataGrid<Person>({
+          data,
+          columns,
+          getRowId: (row) => String(row.id),
+          editing: {
+            mode: "row",
+            draft: true,
+            onSaveDrafts: vi.fn(),
+            newRowDefaults: () => ({
+              id: 0,
+              name: "",
+              age: 0,
+              address: { city: "" },
+            }),
+          },
+          ...extra,
+        } as UseTMDataGridOptions<Person>),
+      { wrapper: MantineWrapper, initialProps: { data: people } },
+    );
+  }
+
+  it("a refetch that drops a record drops its draft, its editor and its mark", async () => {
+    const { result, rerender } = renderSwappableGrid();
+    await result.current.edit.setCellValue("1", "name", "Edited");
+    result.current.edit.deleteRow("2");
+    const tempId = result.current.edit.addRow({ name: "Ny", age: 1 });
+
+    rerender({ data: [] });
+
+    const { edit } = result.current;
+    expect(edit.state.committedRowIds).toEqual([]);
+    expect(edit.state.deletedRowIds).toEqual([]);
+    // Entry rows are the engine's own and stay.
+    expect(edit.state.newRows.map((newRow) => newRow.tempId)).toEqual([
+      tempId,
+    ]);
+  });
+
+  it("keeps drafts for rows missing from a server-side page", async () => {
+    const { result, rerender } = renderSwappableGrid({
+      manualPagination: true,
+      rowCount: 10,
+    });
+    await result.current.edit.setCellValue("1", "name", "Edited");
+    result.current.edit.deleteRow("2");
+
+    // The next page: the rows are elsewhere, not gone.
+    rerender({ data: [] });
+
+    expect(result.current.edit.state.committedRowIds).toEqual(["1"]);
+    expect(result.current.edit.state.deletedRowIds).toEqual(["2"]);
+  });
+
+  it("a discarded entry row leaves expanded and rowPinning too", async () => {
+    const { result } = renderSwappableGrid({
+      enableRowPinning: true,
+      renderDetails: () => null,
+    });
+    const api = result.current;
+    let tempId = "";
     await act(async () => {
-      await expect(edit.saveDrafts()).resolves.toBe(false);
+      const added = await api.edit.addRows([{ name: "Ny", age: 1 }], {
+        commit: true,
+      });
+      tempId = added.committed[0]!;
+    });
+    act(() => {
+      api.table.getRow(tempId).pin("top");
+      api.table.getRow(tempId).toggleExpanded(true);
+      api.table.getRow("1").pin("top");
+      api.table.getRow("1").toggleExpanded(true);
     });
 
-    expect(edit.state.deletedRowIds).toEqual(["2"]);
-    expect(table.store.state.rowSelection).toEqual({ "2": true });
+    act(() => {
+      api.edit.deleteRow(tempId);
+    });
+
+    expect(api.table.store.state.rowPinning.top).toEqual(["1"]);
+    expect(api.table.store.state.expanded).toEqual({ "1": true });
   });
 
   it("cancel during a pending commit leaves no ghost committed row", async () => {

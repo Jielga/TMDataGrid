@@ -112,6 +112,7 @@ import {
   deferControlledStateSyncPublishes,
   endControlledStateSync,
 } from "./core/controlledStateSync";
+import { registerDeletedRows } from "./core/deletedRows";
 import {
   withPageReset,
   type TMDataGridQueryTable,
@@ -783,9 +784,10 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
   enablePagination?: boolean;
   /**
    * Sends the grid back to the first page whenever the query changes - a
-   * column filter, the quick search or the sort. Defaults to `true` under
-   * `manualPagination` and `false` otherwise, where TanStack's own
-   * `autoResetPageIndex` already does it.
+   * column filter, the quick search, the sort or the grouping. On by
+   * default. TanStack's own `autoResetPageIndex` is switched off by the
+   * grid: it fires on any change to the `data` array, which under
+   * `editing.draft` is every commit.
    *
    * Server-side, `pageIndex` is a position in a result set the grid does not
    * own: narrowing the query leaves it pointing past the last page, and the
@@ -1361,12 +1363,10 @@ export function useTMDataGrid<TData extends RowData>({
   const editContextRef = useRef<TMDataGridEditEngineContext>(null as never);
   // The engine is erased; the row type comes back on the way out, which is
   // what makes `edit.addRow(values)` check against `TData`.
-  const [edit] = useState(
-    () =>
-      createEditEngine(
-        () => editContextRef.current,
-      ) as unknown as TMDataGridEditApi<TData>,
+  const [engine] = useState(() =>
+    createEditEngine(() => editContextRef.current),
   );
+  const edit = engine as unknown as TMDataGridEditApi<TData>;
 
   // The rows as shown. Under `editing.draft` a committed row is a row like any
   // other to the table: its draft replaces the consumer's record and a
@@ -1450,10 +1450,10 @@ export function useTMDataGrid<TData extends RowData>({
   // over it rather than over `table`, since they are built as part of the
   // options the table is constructed from.
   const tableRef = useRef<TMDataGridTable<TData>>(null as never);
-  // Server-side, a narrower query invalidates the page the grid is on - see
-  // pageReset.ts. On by default only where the grid does not own the result
-  // set; TanStack's `autoResetPageIndex` covers the client-side case.
-  const resetPage = resetPageOnQueryChange ?? options.manualPagination === true;
+  // A narrower query invalidates the page the grid is on - see pageReset.ts.
+  // On by default everywhere: TanStack's own `autoResetPageIndex` is switched
+  // off below, since it also fires on every draft commit.
+  const resetPage = resetPageOnQueryChange ?? true;
   const getQueryTable = useCallback(
     () => tableRef.current as unknown as TMDataGridQueryTable,
     [],
@@ -1469,6 +1469,13 @@ export function useTMDataGrid<TData extends RowData>({
     // once, when the pointer is released. `"onChange"` publishes a width on
     // every pointer move instead, which re-renders the grid for each of them.
     columnResizeMode: "onEnd",
+    // TanStack resets both whenever the `data` array's identity changes, and
+    // the rows as shown are a new array on every draft commit (see `shown`),
+    // so a commit on page 3 would land on page 1 with every details panel
+    // closed. Off here; the page reset the grid does want - on a query
+    // change - is its own, below. A consumer's explicit option still wins.
+    autoResetExpanded: false,
+    autoResetPageIndex: false,
     enableSorting: true,
     enableColumnResizing: true,
     // The quick search's matcher. Fuzzy by default (Q4); `"contains"` keeps
@@ -1509,6 +1516,11 @@ export function useTMDataGrid<TData extends RowData>({
             options.onSortingChange as never,
             getQueryTable,
           ) as TableOptions<TMDataGridFeatures, TData>["onSortingChange"],
+          onGroupingChange: withPageReset(
+            "grouping",
+            options.onGroupingChange as never,
+            getQueryTable,
+          ) as TableOptions<TMDataGridFeatures, TData>["onGroupingChange"],
         }
       : {}),
     // The rows as shown - see `shown` above. The consumer's own array passes
@@ -1533,6 +1545,20 @@ export function useTMDataGrid<TData extends RowData>({
       (typeof options.enableRowPinning === "function"
         ? options.enableRowPinning(row)
         : options.enableRowPinning === true),
+    // A deletion-marked row is not selectable: it is on its way out, and a
+    // bulk action over the selection must not see it. TanStack reads the
+    // predicate on every call, so the mark is checked live against the
+    // engine. Only under `editing.draft`, the one place marks exist; the
+    // consumer's own option keeps the final say, predicate form included.
+    ...(editDraft
+      ? {
+          enableRowSelection: (row: Row<TMDataGridFeatures, TData>) =>
+            !engine.isRowDeleted(row.id) &&
+            (typeof options.enableRowSelection === "function"
+              ? options.enableRowSelection(row)
+              : options.enableRowSelection !== false),
+        }
+      : {}),
     features: tmDataGridFeatures,
     columns: columns as TableOptions<TMDataGridFeatures, TData>["columns"],
     // The stabilized controlled state; `undefined` when nothing is controlled.
@@ -1629,6 +1655,29 @@ export function useTMDataGrid<TData extends RowData>({
     previousEditPolicyRef.current = { editMode, editDraft };
     edit.cancelAll();
   }, [editMode, editDraft, edit]);
+
+  // A refetch that drops a record takes the engine's state for it along -
+  // see forgetMissingRows. Not where the grid does not own the result set:
+  // there a row missing from `data` is on another page or filtered away
+  // server-side, not gone, and its draft has to wait for Save. Keyed on the
+  // rows as shown, which is what the core row model is built from.
+  // Through the ref, not `table`: `useTable` hands out a fresh copy of the
+  // table every render, and listing it would run this on every one.
+  const editingOn = editing !== undefined;
+  const serverSideRows =
+    options.manualPagination === true || options.manualFiltering === true;
+  useEffect(() => {
+    if (!editingOn || serverSideRows) return;
+    engine.forgetMissingRows(tableRef.current.getCoreRowModel().rowsById);
+  }, [shown.rows, editingOn, serverSideRows, engine]);
+
+  // Readers that hold the table and nothing else - `exportGrid`,
+  // `buildGridCellMatrix` - still leave a deletion-marked row out. Keyed on
+  // the store, which every copy of the table shares, so once is enough.
+  useEffect(
+    () => registerDeletedRows(tableRef.current, engine.isRowDeleted),
+    [engine],
+  );
 
   // Editing without stable ids points every draft at whatever record slides
   // into that index after a sort. Loud, once, in development.
