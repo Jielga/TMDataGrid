@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.21
+
+### Minor Changes
+
+- [#116](https://github.com/Jielga/TMDataGrid/pull/116) [`713d8fa`](https://github.com/Jielga/TMDataGrid/commit/713d8fa075d3c64b171e2b5dcfd9467bf5e68781) Thanks [@Psvensso](https://github.com/Psvensso)! - `edit.state.isSaving` is `true` while `saveDrafts` is in flight, and `TMDataGrid.DraftActions`' Save shows it as its loading state. `renderActions` receives it as `state.isSaving`. Part of [#89](https://github.com/Jielga/TMDataGrid/issues/89).
+
 ## 2.0.0-beta.20
 
 ### Minor Changes

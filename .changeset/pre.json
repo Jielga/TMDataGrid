@@ -14,6 +14,7 @@
     "cold-rules-agree",
     "column-search-auto",
     "committed-rows-as-data",
+    "draft-save-in-flight",
     "draft-store-table-state",
     "eager-guards-return",
     "eager-melons-tell",
