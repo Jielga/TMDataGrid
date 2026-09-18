@@ -233,6 +233,14 @@ export type TMDataGridEditState = {
   newRows: ReadonlyArray<{ tempId: string; committed: boolean }>;
   /** The draft store's delete slice: rows marked deleted, awaiting the save. */
   deletedRowIds: ReadonlyArray<string>;
+  /**
+   * `true` while `saveDrafts` is in flight - from the call until the
+   * consumer's callbacks (`onSaveDrafts`, or the per-row `onCommit` /
+   * `onRowAdd` / `onRowDelete` loop) have settled. Concurrent `saveDrafts`
+   * calls join the same run, so it flips once per run. It stays `false` for
+   * a save that finds nothing to send.
+   */
+  isSaving: boolean;
 };
 
 const EMPTY_EDIT_STATE: TMDataGridEditState = {
@@ -243,6 +251,7 @@ const EMPTY_EDIT_STATE: TMDataGridEditState = {
   committedValues: {},
   newRows: [],
   deletedRowIds: [],
+  isSaving: false,
 };
 
 /**
@@ -1259,6 +1268,7 @@ export function createEditEngine(
     /** `tempId` to its committed flag, in the order the rows were opened. */
     newRows: new Map<string, boolean>(),
     deletedRowIds: new Set<string>(),
+    isSaving: false,
   };
   /** The slices the next publish has to rebuild. */
   const dirty = new Set<keyof TMDataGridEditState>();
@@ -1361,6 +1371,7 @@ export function createEditEngine(
     if (dirty.has("deletedRowIds")) {
       next.deletedRowIds = [...working.deletedRowIds];
     }
+    if (dirty.has("isSaving")) next.isSaving = working.isSaving;
     dirty.clear();
     store.setState(() => next);
   };
@@ -2050,6 +2061,12 @@ export function createEditEngine(
     if (saveInFlight !== null) return saveInFlight;
     saveInFlight = saveDraftsInner().finally(() => {
       saveInFlight = null;
+      // Guarded: a save that found nothing to send never raised the flag,
+      // so it publishes nothing either.
+      if (working.isSaving) {
+        working.isSaving = false;
+        touch("isSaving");
+      }
     });
     return saveInFlight;
   };
@@ -2077,6 +2094,9 @@ export function createEditEngine(
     // Nothing decided: open rows are not this verb's business, so a grid
     // mid-edit with an empty draft store saves cleanly and stays as it is.
     if (ids.length === 0 && deletedIds.length === 0) return true;
+
+    working.isSaving = true;
+    touch("isSaving");
 
     // Only the table rules run here, and only once per row. A committed
     // row's values passed its column and row validators on the way in and

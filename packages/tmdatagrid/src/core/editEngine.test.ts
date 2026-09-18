@@ -129,6 +129,7 @@ describe("getOpenRowIds", () => {
     committedValues: {},
     newRows: [],
     deletedRowIds: [],
+    isSaving: false,
     ...over,
   });
 
@@ -1107,6 +1108,67 @@ describe("the draft store", () => {
     expect(edit.state.committedRowIds).toEqual([]);
   });
 
+  it("isSaving is true while onSaveDrafts is pending and false once it resolves", async () => {
+    let resolveSave: () => void = () => {};
+    const onSaveDrafts = vi.fn(
+      () => new Promise<void>((resolve) => (resolveSave = resolve)),
+    );
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+    expect(edit.state.isSaving).toBe(false);
+
+    const saving = edit.saveDrafts();
+    await vi.waitFor(() => expect(onSaveDrafts).toHaveBeenCalled());
+    expect(edit.state.isSaving).toBe(true);
+
+    resolveSave();
+    await expect(saving).resolves.toBe(true);
+    expect(edit.state.isSaving).toBe(false);
+  });
+
+  it("isSaving is false again after a rejected save", async () => {
+    let rejectSave: (error: Error) => void = () => {};
+    const onSaveDrafts = vi.fn(
+      () => new Promise<void>((_, fail) => (rejectSave = fail)),
+    );
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+
+    const saving = edit.saveDrafts();
+    await vi.waitFor(() => expect(onSaveDrafts).toHaveBeenCalled());
+    expect(edit.state.isSaving).toBe(true);
+
+    rejectSave(new Error("server said no"));
+    await expect(saving).resolves.toBe(false);
+    expect(edit.state.isSaving).toBe(false);
+    // The refused rows keep their drafts, so the flag is the only thing the
+    // failed save moved.
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+  });
+
+  it("a save with nothing to send never publishes isSaving", async () => {
+    const grid = renderEditGrid({ mode: "row", draft: true });
+    const { edit } = grid.current;
+    const seen: Array<boolean> = [];
+    const subscription = edit.store.subscribe((state) => {
+      seen.push(state.isSaving);
+    });
+
+    await expect(edit.saveDrafts()).resolves.toBe(true);
+    subscription.unsubscribe();
+
+    expect(seen).not.toContain(true);
+    expect(edit.state.isSaving).toBe(false);
+  });
+
   it("re-opening a committed row takes it back out of the store", async () => {
     const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
@@ -1283,8 +1345,9 @@ describe("the draft store", () => {
     expect(args.created.map((add) => add.value.name)).toEqual(names);
     expect(edit.state.newRows).toEqual([]);
     expect(edit.state.openRowIds).toEqual([]);
-    // The submit pass and the drop of the saved rows - not one per row.
-    expect(publishes.mock.calls.length).toBeLessThanOrEqual(2);
+    // The two `isSaving` flips, the submit pass and the drop of the saved
+    // rows - a fixed handful, not one per row.
+    expect(publishes.mock.calls.length).toBeLessThanOrEqual(4);
   });
 
   it("a table validator during an import sees the rows imported with it", async () => {

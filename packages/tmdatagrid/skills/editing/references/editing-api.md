@@ -108,6 +108,8 @@ type TMDataGridEditState = {
   // a commit adds through `onRowAdd`, so it stays `false`.
   newRows: ReadonlyArray<{ tempId: string; committed: boolean }>;
   deletedRowIds: ReadonlyArray<string>;
+  // `true` while `saveDrafts` is in flight.
+  isSaving: boolean;
 };
 ```
 

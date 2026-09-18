@@ -62,15 +62,15 @@ function useOpenRowIds(): ReadonlyArray<string> {
 function EditSaveButton() {
   const { edit, labels } = useTMDataGridContext();
   const draftCount = useDraftCount();
-  const isSubmitting = useSelector(edit.store, (state) =>
-    state.openRowIds.some((rowId) => state.rows[rowId]?.isSubmitting === true),
-  );
+  // Save sends the draft store, so its loading state is the save in flight,
+  // not an open row's submit.
+  const isSaving = useSelector(edit.store, (state) => state.isSaving);
 
   return (
     <Button
       size="compact-sm"
       disabled={draftCount === 0}
-      loading={isSubmitting}
+      loading={isSaving}
       data-dg-part="save-all"
       data-draft-count={draftCount}
       onClick={() => void edit.saveDrafts()}
@@ -151,8 +151,10 @@ export type TMDataGridDraftActionsState = {
    * Reads as `draftCount + openCount`; use whichever you meant.
    */
   pendingCount: number;
-  /** Whether a submit is in flight. */
+  /** Whether a submit is in flight - any open row is submitting. */
   isSubmitting: boolean;
+  /** `true` while `saveDrafts` is in flight. */
+  isSaving: boolean;
 };
 
 /** What the edit chrome can do. */
@@ -249,6 +251,7 @@ export function TMDataGridDraftActions({
   const isSubmitting = useSelector(edit.store, (state) =>
     state.openRowIds.some((rowId) => state.rows[rowId]?.isSubmitting === true),
   );
+  const isSaving = useSelector(edit.store, (state) => state.isSaving);
 
   if (!features.editing) return null;
 
@@ -260,6 +263,7 @@ export function TMDataGridDraftActions({
         openRowIds,
         pendingCount: draftCount + openRowIds.length,
         isSubmitting,
+        isSaving,
       },
       actions: {
         save: () => edit.saveDrafts(),

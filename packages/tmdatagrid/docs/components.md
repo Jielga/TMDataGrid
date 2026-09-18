@@ -196,7 +196,8 @@ The slot argument carries the state, the operations and the built-in pieces:
 | `state.openCount` | `number` | Rows still open, so not part of the save. |
 | `state.openRowIds` | `ReadonlyArray<string>` | The ids behind `openCount`, in the order the grid opened them. An entered row appears as its `tempId`. |
 | `state.pendingCount` | `number` | **Deprecated.** Reads as `draftCount + openCount`. |
-| `state.isSubmitting` | `boolean` | `true` while any open row is submitting. |
+| `state.isSubmitting` | `boolean` | `true` while any open row is submitting. Not the save; see `state.isSaving`. |
+| `state.isSaving` | `boolean` | `true` while `saveDrafts` is in flight, until the consumer's callbacks settle. The built-in Save shows it as its loading state. |
 | `actions.save` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone. |
 | `actions.commitAll` | `() => Promise<boolean>` | Submits every open row, committing the ones that validate. |
 | `actions.discard` | `() => void` | Drops open form state and the draft store alike. |
