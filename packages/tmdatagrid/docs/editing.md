@@ -471,6 +471,13 @@ exactly as a selection stands - duplicates, already-marked rows and stale ids
 included. The trash can shows when the deletion has somewhere to report to:
 `onRowDelete` is set, or under `draft: true`, `onSaveDrafts` is.
 
+A row the engine takes out of the table leaves `rowSelection` with it: an
+entry row that is discarded or saved, and a marked row once `saveDrafts` has
+reported its deletion. A marked row still in the grid keeps its selection
+until then. TanStack itself never drops an id from the map, so without this
+a deleted row would keep the select-all box indeterminate and count as
+selected for good.
+
 The grid still never mutates `data`: you apply adds and deletes, and the new
 rows arrive back through `data`. The engine's `tempId` (`__new__1`, …) does not
 need to become a real id; assign one when you create the record.

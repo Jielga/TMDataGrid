@@ -2714,6 +2714,125 @@ describe("bulk deletes over the draft store", () => {
     expect(draftCount(edit.state)).toBe(2);
   });
 
+  it("a bulk delete drops the discarded entry rows from rowSelection, in one update", async () => {
+    const grid = renderBulkGrid();
+    const { edit, table } = grid.current;
+    const tempIds = await commitThreeEntryRows(edit);
+    // The reported flow: a selection mixing committed entry rows and data
+    // rows, fed to deleteRows as it stands.
+    act(() => {
+      table.setRowSelection({
+        [tempIds[0]!]: true,
+        [tempIds[1]!]: true,
+        "1": true,
+        "2": true,
+      });
+    });
+    // One selection publish for the whole batch, however many rows leave.
+    let selectionPublishes = 0;
+    let lastSelection = table.store.state.rowSelection;
+    const subscription = table.store.subscribe((state) => {
+      if (state.rowSelection !== lastSelection) {
+        lastSelection = state.rowSelection;
+        selectionPublishes += 1;
+      }
+    });
+
+    act(() => {
+      edit.deleteRows([tempIds[0]!, tempIds[1]!, "1", "2"]);
+    });
+    subscription.unsubscribe();
+
+    // The entry rows left the table, and the selection with them. The data
+    // rows are only marked - still in the grid, still selected.
+    expect(table.store.state.rowSelection).toEqual({ "1": true, "2": true });
+    expect(selectionPublishes).toBe(1);
+
+    // Select-all off - what the header box does - now empties the map.
+    // TanStack unticks only rows still in the model, so a stale temp id
+    // would survive this and keep the box indeterminate.
+    act(() => {
+      table.toggleAllRowsSelected(false);
+    });
+    expect(table.store.state.rowSelection).toEqual({});
+    expect(table.getIsSomeRowsSelected()).toBe(false);
+  });
+
+  it("cancelling a committed entry row drops its selection too", async () => {
+    const grid = renderBulkGrid();
+    const { edit, table } = grid.current;
+    const [tempId] = await commitThreeEntryRows(edit);
+    act(() => {
+      table.setRowSelection({ [tempId!]: true, "1": true });
+    });
+
+    act(() => {
+      edit.cancel(tempId!);
+    });
+
+    expect(table.store.state.rowSelection).toEqual({ "1": true });
+  });
+
+  it("saveDrafts drops saved deletions and saved entry rows from rowSelection, keeps edited rows", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit, table } = grid.current;
+    edit.begin({ rowId: "1", columnId: "name" });
+    edit.getForm("1")?.setFieldValue("name", "Anna Edited");
+    await expect(edit.commit("1")).resolves.toBe(true);
+    edit.deleteRow("2");
+    const tempId = edit.addRow({ name: "Ny", age: 30 });
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    act(() => {
+      table.setRowSelection({ "1": true, "2": true, [tempId]: true });
+    });
+
+    await act(async () => {
+      await expect(edit.saveDrafts()).resolves.toBe(true);
+    });
+
+    // Row 2 is being deleted by the consumer and the entry row comes back
+    // under its real id, so neither can stay selected. Row 1 is still the
+    // same record, edited - its selection is the user's.
+    expect(table.store.state.rowSelection).toEqual({ "1": true });
+  });
+
+  it("saveDrafts on the per-row path drops a deletion's selection once onRowDelete has it", async () => {
+    const onRowDelete = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onRowDelete });
+    const { edit, table } = grid.current;
+    edit.deleteRow("2");
+    act(() => {
+      table.setRowSelection({ "1": true, "2": true });
+    });
+
+    await act(async () => {
+      await expect(edit.saveDrafts()).resolves.toBe(true);
+    });
+
+    expect(onRowDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ rowId: "2" }),
+    );
+    expect(table.store.state.rowSelection).toEqual({ "1": true });
+  });
+
+  it("a rejected save keeps the marked rows selected along with their marks", async () => {
+    const onSaveDrafts = vi.fn().mockResolvedValue({ deleted: { "2": false } });
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit, table } = grid.current;
+    edit.deleteRow("2");
+    act(() => {
+      table.setRowSelection({ "2": true });
+    });
+
+    await act(async () => {
+      await expect(edit.saveDrafts()).resolves.toBe(false);
+    });
+
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
+    expect(table.store.state.rowSelection).toEqual({ "2": true });
+  });
+
   it("cancel during a pending commit leaves no ghost committed row", async () => {
     const grid = renderBulkGrid();
     const { edit } = grid.current;

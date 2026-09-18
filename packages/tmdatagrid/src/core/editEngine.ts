@@ -1252,8 +1252,44 @@ export function createEditEngine(
   /** Above zero, `publish` waits for the run holding it to end. */
   let holdDepth = 0;
 
+  // Ids the table's row selection has to let go of - see flushUnselect.
+  const pendingUnselect = new Set<string>();
+
+  /**
+   * Drops rows the engine took out of the table from `rowSelection`.
+   *
+   * TanStack never prunes that map itself: `toggleAllRowsSelected(false)`
+   * unticks only rows still in the model and `getIsSomeRowsSelected` counts
+   * every key. An id left behind keeps the header box indeterminate, flips
+   * "select all" back to selecting, and shows a consumer reading the keys a
+   * row that is gone. Two kinds of row leave through the engine: an entry
+   * row, discarded or saved - its temp id never comes back - and a marked
+   * row whose deletion the consumer has acted on. Run from `publish`, so a
+   * bulk delete or a save prunes in one selection update.
+   */
+  const flushUnselect = () => {
+    if (pendingUnselect.size === 0) return;
+    const rowIds = [...pendingUnselect];
+    pendingUnselect.clear();
+    const table = getContext().table;
+    const selection = table.store.state.rowSelection;
+    if (
+      !rowIds.some((rowId) =>
+        Object.prototype.hasOwnProperty.call(selection, rowId),
+      )
+    ) {
+      return;
+    }
+    table.setRowSelection((old) => {
+      const next = { ...old };
+      for (const rowId of rowIds) delete next[rowId];
+      return next;
+    });
+  };
+
   const publish = () => {
     if (holdDepth > 0) return;
+    flushUnselect();
     if (staleRows.size > 0) {
       for (const rowId of staleRows) {
         const entry = forms.get(rowId);
@@ -1406,6 +1442,9 @@ export function createEditEngine(
       if (working.committedRowIds.delete(rowId)) dirty.add("committedRowIds");
       if (working.committedValues.delete(rowId)) dirty.add("committedValues");
       if (isNew && working.newRows.delete(rowId)) dirty.add("newRows");
+      // An entry row leaves the table for good: discarded, or saved and
+      // coming back under the consumer's own id. Its selection goes with it.
+      if (isNew) pendingUnselect.add(rowId);
       if (working.active?.rowId === rowId) {
         working.active = null;
         dirty.add("active");
@@ -2034,7 +2073,12 @@ export function createEditEngine(
           }),
         ),
       );
-      for (const rowId of takeDeletedRowIds()) {
+      // The marks are consumed here whatever the consumer does with them,
+      // so the rows' selection goes at the same time - see flushUnselect.
+      const taken = takeDeletedRowIds();
+      for (const rowId of taken) pendingUnselect.add(rowId);
+      publish();
+      for (const rowId of taken) {
         const row = getRow(rowId);
         if (row !== undefined) {
           await getContext().onRowDelete?.({ rowId, row });
@@ -2119,6 +2163,9 @@ export function createEditEngine(
             continue;
           }
           if (working.deletedRowIds.delete(id)) deletionsChanged = true;
+          // The consumer has deleted the record; the row is on its way out
+          // of `data`, and its selection goes now - see flushUnselect.
+          pendingUnselect.add(id);
         }
         if (deletionsChanged) dirty.add("deletedRowIds");
       });
