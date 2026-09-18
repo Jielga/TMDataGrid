@@ -17,13 +17,20 @@ import type {
  */
 function useDraftCount(): number {
   const { edit } = useTMDataGridContext();
-  return useSelector(
-    edit.store,
-    (state) =>
-      state.committedRowIds.length +
+  return useSelector(edit.store, (state) => {
+    const deleted = new Set(state.deletedRowIds);
+    // An edited row that was then marked counts once: Save sends the
+    // deletion and leaves the edit behind.
+    const edited =
+      deleted.size === 0
+        ? state.committedRowIds.length
+        : state.committedRowIds.filter((rowId) => !deleted.has(rowId)).length;
+    return (
+      edited +
       state.newRows.filter((newRow) => newRow.committed).length +
-      state.deletedRowIds.length,
-  );
+      deleted.size
+    );
+  });
 }
 
 /**

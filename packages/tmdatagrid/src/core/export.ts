@@ -3,6 +3,7 @@ import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 import type { TMDataGridRangeBounds } from "./cellRange";
 import { getColumnLabel, isGeneratedColumn } from "./columnUtils";
+import { isRowMarkedDeleted } from "./deletedRows";
 
 /**
  * The byte order mark Excel looks for before it will read a file as UTF-8.
@@ -479,7 +480,9 @@ function leafRows(table: ErasedTable): Array<ErasedRow> {
   const walk = (list: ReadonlyArray<ErasedRow>) => {
     for (const row of list) {
       if (row.getIsGrouped()) walk(row.subRows);
-      else rows.push(row);
+      // A row marked for deletion under `editing.draft` is left out: the
+      // export is the data as the user means it, and they deleted that row.
+      else if (!isRowMarkedDeleted(table, row.id)) rows.push(row);
     }
   };
   walk(table.getSortedRowModel().rows);

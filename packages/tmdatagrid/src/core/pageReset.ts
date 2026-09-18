@@ -27,11 +27,16 @@ import { isFilterActive, isTMDataGridFilterValue } from "./filterOperators";
  * out once. From an effect the request for the stale page would leave first.
  */
 
-/** The state a server-side query is built from. */
+/**
+ * The state a query is built from, plus grouping: paging is suspended while
+ * a column is grouped, and the page it hands back on the way out was
+ * measured over the ungrouped rows before the group was made.
+ */
 export type TMDataGridQuerySlice =
   | "columnFilters"
   | "globalFilter"
-  | "sorting";
+  | "sorting"
+  | "grouping";
 
 /** What the reset reads and writes - the table, narrowed to that. */
 export type TMDataGridQueryTable = {
