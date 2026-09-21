@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.22
+
+### Patch Changes
+
+- [#119](https://github.com/Jielga/TMDataGrid/pull/119) [`5497b65`](https://github.com/Jielga/TMDataGrid/commit/5497b650196b265e4234568301009c435d367dbc) Thanks [@Psvensso](https://github.com/Psvensso)! - Fixed: an entry row rendered nothing in the cells it does not open, a display column or one with `meta.edit.enabled` off, both when first added and when a committed new row was reopened. They now render through the column's own `cell` renderer over the row as shown, as on a body row.
+
 ## 2.0.0-beta.21
 
 ### Minor Changes
