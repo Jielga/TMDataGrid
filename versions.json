@@ -10,13 +10,13 @@
     {
       "path": "next",
       "label": "next",
-      "version": "2.0.0-beta.21",
+      "version": "2.0.0-beta.22",
       "kind": "dev"
     },
     {
       "path": "v2.0",
-      "label": "2.0.0-beta.21",
-      "version": "2.0.0-beta.21",
+      "label": "2.0.0-beta.22",
+      "version": "2.0.0-beta.22",
       "kind": "prerelease"
     },
     {
