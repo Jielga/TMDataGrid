@@ -56,7 +56,7 @@ grouped columns to the front. Note that the kept column's data cells render as
 TanStack's grouped-cell placeholder - blank - with the value only on group
 rows, so it repeats what the tree lane already shows and cannot be typed into.
 To set the grouped field on a new row, seed it through `edit.addRow(values)` -
-see [Editing](/docs/editing#adding-and-deleting-rows).
+see [Editing](/docs/editing#adding-rows).
 
 ## Aggregation
 

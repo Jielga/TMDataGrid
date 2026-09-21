@@ -187,24 +187,23 @@ A refused value leaves the row open carrying its errors and the call resolves `f
 
 Source: `packages/tmdatagrid/src/core/editEngine.ts` (`begin`, `writeFields`).
 
-## MEDIUM A computed column frozen while a row is edited
+## MEDIUM Reading an open row's values off `row.original` outside a cell
 
-A held draft is displayed by the column that owns the field. A column computed
-from other fields - `accessorFn` or `display` - reads `row.original`, which is
-`data`, so it keeps showing the saved record while the values it derives from
-are being typed.
+Inside a `cell` renderer, `row.original` and `getValue()` are the row as
+shown: the open form's values while the row is edited, the committed draft
+after ✓, and `data` otherwise - a computed column follows the draft as it is
+typed, and a button in a cell sends the draft the user sees. Outside it, the
+row callbacks (`onRowClick`, `renderRowContextMenu`, `rowClassName`) and any
+code holding a row id see `data`, or the committed draft, and never an open
+form's values.
 
-Correct: read the drafted row from `edit.store` inside the cell renderer:
+Correct: reach the row as shown by id:
 
 ```tsx
-function useDraftedRow(rowId: string, original: Product): Product {
-  const { edit } = useTMDataGridContext();
-  const values = useSelector(edit.store, (state) => state.rows[rowId]?.values);
-  return (values as Product | undefined) ?? original;
-}
+const shown = grid.edit.getRowValues(row.id) ?? row.original;
 ```
 
-Source: `packages/tmdatagrid/docs/editing.md` (Draft lifetime).
+Source: `packages/tmdatagrid/docs/editing.md` (How a draft renders).
 
 ## MEDIUM Reading a commit's result as the saved value
 

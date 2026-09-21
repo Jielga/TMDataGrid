@@ -937,6 +937,86 @@ describe("cell editing", () => {
     );
   }
 
+  /**
+   * Cells an entry row never opens: an age through a renderer of its own with
+   * editing switched off, and a display column holding a button.
+   */
+  const plainCellColumns = (() => {
+    const helper = createTMDataGridColumnHelper<Employee>();
+    return helper.columns([
+      helper.accessor("name", { header: "Name" }),
+      helper.accessor("age", {
+        header: "Age",
+        meta: { type: "number", edit: { enabled: false } },
+        cell: ({ getValue }) => "age " + String(getValue()),
+      }),
+      helper.display({
+        id: "use",
+        header: "Use",
+        cell: ({ row }) => (
+          <button type="button">{"Use " + row.original.name}</button>
+        ),
+      }),
+    ]);
+  })();
+
+  it("renders the cells an entry row does not open through their own renderers", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(
+      <DraftGrid
+        mode="row"
+        columns={plainCellColumns}
+        newRowDefaults={entryDefaults}
+      />,
+    );
+    const entryRow = () => part("entry-row", { rowId: "__new__1" });
+
+    // Open: the editable cell holds an editor, the other two their content
+    // over the seed - as a body row in row mode shows them.
+    await user.click(screen.getByRole("button", { name: "add" }));
+    expect(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+    ).toBeInTheDocument();
+    expect(
+      within(entryRow()).queryByRole("textbox", { name: "Edit Age" }),
+    ).toBeNull();
+    expect(within(entryRow()).getByText("age 20")).toBeInTheDocument();
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use" }),
+    ).toBeInTheDocument();
+
+    // The cells outside the editors follow the form as it is typed.
+    await user.type(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+      "Ny Person",
+    );
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use Ny Person" }),
+    ).toBeInTheDocument();
+    await user.click(part("confirm-new-row", { rowId: "__new__1" }));
+
+    // Committed into the body, then reopened where it is double-clicked:
+    // back in the entry block, over the committed values, and the cells that
+    // take no editor still show and still follow the form.
+    const bodyRow = part("row", { rowId: "__new__1" });
+    await user.dblClick(bodyRow.querySelector('[data-column-id="name"]')!);
+    expect(entryRow()).toHaveAttribute("data-committed", "false");
+    expect(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+    ).toHaveValue("Ny Person");
+    expect(within(entryRow()).getByText("age 20")).toBeInTheDocument();
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use Ny Person" }),
+    ).toBeInTheDocument();
+    await user.type(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+      " Berg",
+    );
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use Ny Person Berg" }),
+    ).toBeInTheDocument();
+  });
+
   it("marks a parked draft with data-draft and clears it on save", async () => {
     const user = userEvent.setup();
     renderWithMantine(<DraftGrid onCommit={() => {}} />);

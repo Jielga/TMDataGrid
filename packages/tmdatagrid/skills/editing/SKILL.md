@@ -385,8 +385,9 @@ row it reaches.
 `deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
 [Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
 `edit.store` publishes each open or committed row's drafted values as
-`rows[rowId].values`, which is what a computed cell or a cross-row check reads
-- `useTMDataGridContext()` reaches the engine from inside a cell renderer.
+`rows[rowId].values`, which is what a cross-row check reads. A `cell`
+renderer needs no lookup: its `row.original` is already the row as shown, and
+`getRowValues(rowId)` is the same row for a handler with no cell context.
 Every member with its signature, the gates, `isColumnEditable`, `deactivate`,
 and the `edit.store` shape are in
 [references/editing-api.md](references/editing-api.md#the-edit-engine).
