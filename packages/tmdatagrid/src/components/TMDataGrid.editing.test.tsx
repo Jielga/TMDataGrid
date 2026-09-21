@@ -985,15 +985,19 @@ describe("cell editing", () => {
       within(entryRow()).getByRole("button", { name: "Use" }),
     ).toBeInTheDocument();
 
+    // The cells outside the editors follow the form as it is typed.
     await user.type(
       within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
       "Ny Person",
     );
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use Ny Person" }),
+    ).toBeInTheDocument();
     await user.click(part("confirm-new-row", { rowId: "__new__1" }));
 
     // Committed into the body, then reopened where it is double-clicked:
     // back in the entry block, over the committed values, and the cells that
-    // take no editor still show.
+    // take no editor still show and still follow the form.
     const bodyRow = part("row", { rowId: "__new__1" });
     await user.dblClick(bodyRow.querySelector('[data-column-id="name"]')!);
     expect(entryRow()).toHaveAttribute("data-committed", "false");
@@ -1003,6 +1007,13 @@ describe("cell editing", () => {
     expect(within(entryRow()).getByText("age 20")).toBeInTheDocument();
     expect(
       within(entryRow()).getByRole("button", { name: "Use Ny Person" }),
+    ).toBeInTheDocument();
+    await user.type(
+      within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
+      " Berg",
+    );
+    expect(
+      within(entryRow()).getByRole("button", { name: "Use Ny Person Berg" }),
     ).toBeInTheDocument();
   });
 

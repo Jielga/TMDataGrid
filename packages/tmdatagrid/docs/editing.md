@@ -291,7 +291,7 @@ A pathless issue from `rowValidators` has no cell to land on, so that tooltip is
 
 `edit.addRow()` opens an **entry row** in a sticky block under the header, so the row being typed into stays in view.
 Its cells are ordinary editors over a form seeded from `newRowDefaults`.
-A cell the row does not open, a display column or one with `meta.edit.enabled: false`, shows the column's own `cell` renderer over the values the row was opened with, as it does on a body row in row mode.
+A cell the row does not open, a display column or one with `meta.edit.enabled: false`, renders through the column's own `cell` renderer over the row as shown, following the form as it is typed, as it does on a body row.
 
 - Enter, or the lane's ✓, commits the row: `onRowAdd` receives it, or under `draft: true` it goes into the draft store and `saveDrafts` reports it in `created`
 - Escape, or ✕, discards it

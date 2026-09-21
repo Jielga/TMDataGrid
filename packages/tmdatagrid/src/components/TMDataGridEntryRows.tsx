@@ -16,6 +16,7 @@ import {
   isColumnEditableForRow,
   isControlColumn,
 } from "../core/columnUtils";
+import { draftCellContext } from "../core/draftCellContext";
 import { getEditFieldName, type TMDataGridEditApi } from "../core/editEngine";
 import { focusEditorContent } from "../core/editorFocus";
 import {
@@ -77,6 +78,16 @@ function EntryCell({
   });
   const editable =
     cell !== undefined && isEntryCellEditable(entryRow, column, edit);
+  // An open row's cells outside the editors follow the form as it is typed,
+  // as a body row's do: the column's renderer over a context reading the
+  // form's values - the whole row, so a computed cell repaints with any
+  // field. `undefined` for a committed row, whose values the entry table
+  // already holds as data, and for the lanes.
+  const draftValues = useSelector(edit.store, (state) =>
+    committed || isControlColumn(column.id)
+      ? undefined
+      : state.rows[entryRow.id]?.values,
+  );
   return (
     <div
       role="cell"
@@ -124,14 +135,19 @@ function EntryCell({
         // A value through the column's own renderer. Every cell of a row
         // entered and awaiting Save all, over the draft the entry table was
         // fed - and, while the row is open, every cell it does not open (a
-        // display column, `meta.edit.enabled` off), over the values the row
-        // was opened with, as a body row in row mode shows them. Blank was
-        // how a calculated column or a button cell vanished the moment a
+        // display column, `meta.edit.enabled` off), over the form as it is
+        // typed, as a body row in row mode shows them. Blank was how a
+        // calculated column or a button cell vanished the moment a
         // committed row was reopened. The generated lanes stay blank while
         // the row is open: a checkbox or a chevron there would act on the
         // entry table's own state, which reaches nothing.
         <span className={classes.cellContent}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          {flexRender(
+            cell.column.columnDef.cell,
+            draftValues !== undefined
+              ? draftCellContext(cell, draftValues)
+              : cell.getContext(),
+          )}
         </span>
       ) : null}
     </div>
@@ -254,13 +270,12 @@ export function TMDataGridEntryRows({
   });
 
   // What the rows render over. A committed row is data: its values are the
-  // draft store's, and the store keeps them standing through a reopen, so a
-  // reopened row's cells outside the editors show what was committed - the
-  // form is built with the seed as its defaults and the committed values
-  // written over it, so its `defaultValues` would show the seed. A row never
-  // committed has only that seed, frozen at addRow: the live values belong
-  // to the form, which the editors read directly, and this table provides
-  // row and cell identity plus what the cells it does not open render from.
+  // draft store's, which stand through a reopen. An open row's cells read
+  // the form itself - the editors directly, the rest through EntryCell's
+  // draft overlay - so its entry here gives the row an identity and a
+  // fallback: the committed values it was reopened from, else the seed
+  // frozen at addRow (the form's `defaultValues`, which a reopen keeps at
+  // the seed and writes the committed values over).
   const data = useMemo(
     () =>
       newRows.map(
