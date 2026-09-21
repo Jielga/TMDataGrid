@@ -45,10 +45,11 @@ function isEntryCellEditable(
 }
 
 /**
- * One cell of an entry row: the lane's controls, a value once the row is
- * committed, or an editor. The invalid marker subscribes here, per cell, as
- * a body cell's does - a refused ✓ paints the cells its issues name and
- * nothing else. No dirty marker: everything in an entry row is new.
+ * One cell of an entry row: the lane's controls, an editor for a cell the
+ * open row edits, or a value through the column's own renderer. The invalid
+ * marker subscribes here, per cell, as a body cell's does - a refused ✓
+ * paints the cells its issues name and nothing else. No dirty marker:
+ * everything in an entry row is new.
  */
 function EntryCell({
   entryRow,
@@ -108,16 +109,10 @@ function EntryCell({
         zIndex: layout.pinnedAt ? pinnedZ : undefined,
       }}
     >
-      {cell !== undefined && column.id === EDIT_COLUMN_ID ? (
+      {cell === undefined ? null : column.id === EDIT_COLUMN_ID ? (
         // The lane's cell - the entry row's controls.
         flexRender(cell.column.columnDef.cell, cell.getContext())
-      ) : committed && cell !== undefined ? (
-        // Entered, awaiting Save all: a value row through the columns' own
-        // renderers, over the draft the entry table was fed.
-        <span className={classes.cellContent}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </span>
-      ) : editable && cell !== undefined ? (
+      ) : !committed && editable ? (
         <TMDataGridCellEditor
           cell={cell}
           row={entryRow}
@@ -125,6 +120,19 @@ function EntryCell({
           onClose={() => {}}
           inEntryBlock
         />
+      ) : committed || !isControlColumn(column.id) ? (
+        // A value through the column's own renderer. Every cell of a row
+        // entered and awaiting Save all, over the draft the entry table was
+        // fed - and, while the row is open, every cell it does not open (a
+        // display column, `meta.edit.enabled` off), over the values the row
+        // was opened with, as a body row in row mode shows them. Blank was
+        // how a calculated column or a button cell vanished the moment a
+        // committed row was reopened. The generated lanes stay blank while
+        // the row is open: a checkbox or a chevron there would act on the
+        // entry table's own state, which reaches nothing.
+        <span className={classes.cellContent}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </span>
       ) : null}
     </div>
   );
@@ -245,18 +253,20 @@ export function TMDataGridEntryRows({
     focusEditorContent(editor);
   });
 
-  // Open (uncommitted) rows keep the seed values frozen at addRow - the live values
-  // belong to the forms, which the editors read directly, and this table only
-  // provides row and cell identity. A committed row's cells render values, and
-  // a committed row is data: its values come from the draft store, which is
-  // also what the row keeps while a reopen is undecided.
+  // What the rows render over. A committed row is data: its values are the
+  // draft store's, and the store keeps them standing through a reopen, so a
+  // reopened row's cells outside the editors show what was committed - the
+  // form is built with the seed as its defaults and the committed values
+  // written over it, so its `defaultValues` would show the seed. A row never
+  // committed has only that seed, frozen at addRow: the live values belong
+  // to the form, which the editors read directly, and this table provides
+  // row and cell identity plus what the cells it does not open render from.
   const data = useMemo(
     () =>
       newRows.map(
-        ({ tempId, committed }) =>
-          ((committed
-            ? committedValues[tempId]
-            : edit.getForm(tempId)?.options.defaultValues) ??
+        ({ tempId }) =>
+          (committedValues[tempId] ??
+            edit.getForm(tempId)?.options.defaultValues ??
             {}) as TMDataGridRowData,
       ),
     [newRows, committedValues, edit],

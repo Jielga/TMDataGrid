@@ -291,6 +291,7 @@ A pathless issue from `rowValidators` has no cell to land on, so that tooltip is
 
 `edit.addRow()` opens an **entry row** in a sticky block under the header, so the row being typed into stays in view.
 Its cells are ordinary editors over a form seeded from `newRowDefaults`.
+A cell the row does not open, a display column or one with `meta.edit.enabled: false`, shows the column's own `cell` renderer over the values the row was opened with, as it does on a body row in row mode.
 
 - Enter, or the lane's ✓, commits the row: `onRowAdd` receives it, or under `draft: true` it goes into the draft store and `saveDrafts` reports it in `created`
 - Escape, or ✕, discards it
@@ -441,19 +442,15 @@ An entry row's cells take the red corner, never the blue one.
 A validation message outlives the editor that found it: the cell keeps its red corner and the lane carries the text until that field's value changes.
 While an editor is open, the field's message shows in a tooltip on it, opened by focus and by hover.
 
-The draft is displayed by the column that owns the field.
-A column computed from other fields, with `accessorFn` or `display`, reads `row.original`, which is `data`, so it shows the saved record while the row is edited.
-To make a computed cell follow the draft, read the drafted row from `edit.store`:
+Inside a `cell` renderer, `row.original` and `getValue()` are the row as shown, in every data column: the open form's values while the row is edited, the committed draft after ✓, and `data` otherwise.
+A column computed from other fields follows the draft as it is typed, and a button in a cell sends the draft the user sees.
+A handler with no cell context, a toolbar action or a callback that received only an id, reaches the same row with `edit.getRowValues(rowId)`.
 
-```tsx
-function useDraftedRow(rowId: string, original: Product): Product {
-  const { edit } = useTMDataGridContext();
-  const values = useSelector(edit.store, (state) => state.rows[rowId]?.values);
-  return (values as Product | undefined) ?? original;
-}
+```demo
+file: editing/ActionCell.tsx
+hint: Double-click a row, change the salary, press Use: the button gets the draft, and data is untouched until Save.
+height: 320
 ```
-
-`useTMDataGridContext()` reaches the engine from inside a cell renderer, and the selector re-renders the cell as the draft changes.
 
 ## Styling pending rows
 

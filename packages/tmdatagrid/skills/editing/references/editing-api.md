@@ -72,6 +72,8 @@ path, which may be dotted.
 | `isColumnEditable` | `(column) => boolean` | The column's half alone, with no row in hand: it maps to a field, `editing.columns` lists it when that is set, and `meta.edit.enabled` is not `false`. |
 | `canDeleteRows` | `() => boolean` | Whether the delete control should be shown. |
 | `getForm` | `(rowId) => TMDataGridRowEditForm \| undefined` | The open row's live `FormApi`; `undefined` for a committed row. |
+| `getRowValues` | `(rowId) => TData \| undefined` | The row as shown: the open form's values, else the committed draft, else the `data` value. `undefined` for an unknown row. |
+| `getRows` | `() => ReadonlyArray<TMDataGridEditRowSnapshot>` | Every row as shown, from the core row model: drafts overlaid, entry rows appended, deletion-marked rows included and flagged `deleted`. |
 | `state` | `TMDataGridEditState` | Snapshot, for reads outside React. |
 | `store` | `Store<TMDataGridEditState>` | For `useSelector`. |
 
