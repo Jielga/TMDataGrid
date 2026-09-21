@@ -1,5 +1,12 @@
 # @jielga/tmdatagrid-xlsx
 
+## 2.0.0-beta.22
+
+### Patch Changes
+
+- Updated dependencies [[`5497b65`](https://github.com/Jielga/TMDataGrid/commit/5497b650196b265e4234568301009c435d367dbc)]:
+  - @jielga/tmdatagrid@2.0.0-beta.22
+
 ## 2.0.0-beta.21
 
 ### Patch Changes
