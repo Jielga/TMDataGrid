@@ -61,10 +61,11 @@ accessible name belongs to the element carrying the `grid` role.
 
 Body cells carry no `data-dg-part` - the coordinate pair already names them.
 
-Row state is a value, cell state is presence: `data-deleted`, `data-dirty`,
-`data-draft` and `data-new` are always on a body row as `"true"` or `"false"`,
-so select on the value (`[data-new="true"]`); `data-editing`, `data-dirty` and
-`data-invalid` on a cell are present only while they apply.
+State attributes are present only while they apply: `data-selected`,
+`data-new`, `data-invalid` and the rest are rendered as `"true"` while the
+state holds and omitted otherwise, so `[data-new]` and `[data-new="true"]`
+match the same rows, and the negative is `:not([data-new])` in CSS and
+`not.toHaveAttribute("data-new")` in a test.
 
 ## Parts
 

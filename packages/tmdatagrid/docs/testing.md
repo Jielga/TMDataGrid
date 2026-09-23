@@ -62,17 +62,16 @@ const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
 
 Body cells carry no `data-dg-part`; the coordinate pair identifies them.
 
-**Row state is a value, cell state is presence.** `data-deleted`, `data-dirty`,
-`data-draft` and `data-new` are always present on a body row, with the value
-`"true"` or `"false"`, and `data-committed` and `data-draft` on an entry row
-likewise. `[data-new]` therefore matches every row; select on the value:
+**State attributes are present only while they apply.** A boolean attribute
+such as `data-selected`, `data-new` or `data-invalid` is rendered with the
+value `"true"` while its state holds and omitted otherwise, so the bare
+attribute and the value match the same elements, and the negative is the
+absence:
 
 ```ts
-const drafts = orders.locator('[data-dg-part="row"][data-draft="true"]');
+const drafts = orders.locator('[data-dg-part="row"][data-draft]');
+await expect(row).not.toHaveAttribute("data-deleted");
 ```
-
-`data-editing`, `data-dirty` and `data-invalid` on a cell are present, with the
-value `"true"`, only while they apply.
 
 ## Parts
 

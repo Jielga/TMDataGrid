@@ -93,7 +93,7 @@ function EntryCell({
       role="cell"
       data-column-id={column.id}
       data-align={getColumnAlign(column)}
-      data-control-column={isControlColumn(column.id)}
+      data-control-column={isControlColumn(column.id) || undefined}
       data-invalid={isInvalid || undefined}
       // A committed row re-opens where it is double-clicked, the same
       // gesture a body cell answers - and, like a body cell, a cell that
@@ -313,10 +313,10 @@ export function TMDataGridEntryRows({
         data-dg-part="entry-row"
         data-row-id={entryRow.id}
         data-new
-        data-committed={committed}
+        data-committed={committed || undefined}
         // The same marker body rows carry once committed, so one selector
         // reaches everything parked in the draft store.
-        data-draft={committed}
+        data-draft={committed || undefined}
         className={classes.entryRow}
       >
         {orderedColumns.map((column) => (

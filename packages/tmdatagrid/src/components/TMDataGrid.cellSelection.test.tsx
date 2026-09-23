@@ -350,7 +350,7 @@ describe("cell selection", () => {
     await user.click(cellAt(0, 2));
     // Moving the cell is not selecting - the keyboard walks the grid freely.
     await user.keyboard("{ArrowDown}");
-    expect(bodyRows()[1]).toHaveAttribute("data-selected", "false");
+    expect(bodyRows()[1]).not.toHaveAttribute("data-selected");
 
     await user.keyboard(" ");
 
@@ -495,9 +495,9 @@ describe("cell selection - ranges", () => {
     // one. The stylesheet draws whichever sides these name.
     expect(cellAt(0, 2)).toHaveAttribute("data-edge-top", "true");
     expect(cellAt(0, 2)).toHaveAttribute("data-edge-left", "true");
-    expect(cellAt(0, 2)).toHaveAttribute("data-edge-bottom", "false");
+    expect(cellAt(0, 2)).not.toHaveAttribute("data-edge-bottom");
     expect(cellAt(1, 2)).toHaveAttribute("data-edge-left", "true");
-    expect(cellAt(1, 2)).toHaveAttribute("data-edge-top", "false");
+    expect(cellAt(1, 2)).not.toHaveAttribute("data-edge-top");
   });
 
   it("extends the block with Shift+click, from the anchor", async () => {

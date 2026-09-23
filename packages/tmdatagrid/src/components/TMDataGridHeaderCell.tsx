@@ -540,11 +540,11 @@ export function TMDataGridHeaderCell({
       // The same coordinate the body, summary and entry cells carry, so one
       // selector reaches a column's header and its cells alike.
       data-column-id={column.id}
-      data-active={isSorted || isFiltered}
+      data-active={isSorted || isFiltered || undefined}
       data-align={align}
       // A control lane is a fixed track, so it cannot take the cell padding the
       // scale grows for text. See isControlColumn.
-      data-control-column={isControlColumn(column.id)}
+      data-control-column={isControlColumn(column.id) || undefined}
       // Only meaningful on a sortable column: "none" announces that this
       // header sorts, which is wrong on one that does not.
       aria-sort={
@@ -639,12 +639,12 @@ export function TMDataGridHeaderCell({
           {canSort && (
             <ActionIcon
               className={`${classes.headerAction} ${classes.sortAction}`}
-              data-pinned-visible={isSorted}
+              data-pinned-visible={isSorted || undefined}
               // The arrow is the only sort indicator now that the title no
               // longer tints, so it takes the colour while the sort holds. On
               // an unsorted column it is only the hover affordance, and stays a
               // faded grey so the two are not confused.
-              data-sorted={isSorted}
+              data-sorted={isSorted || undefined}
               variant="subtle"
               color={isSorted ? undefined : "gray"}
               size="xs"
@@ -685,7 +685,7 @@ export function TMDataGridHeaderCell({
                   // Held visible for the right-click menu too: that one opens at
                   // the pointer and is portaled, so the hover that revealed the
                   // actions is lost the moment the pointer enters the dropdown.
-                  data-pinned-visible={menuOpened || contextMenuOpened}
+                  data-pinned-visible={menuOpened || contextMenuOpened || undefined}
                   variant="subtle"
                   color="gray"
                   size="xs"

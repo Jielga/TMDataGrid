@@ -271,7 +271,7 @@ export function TMDataGridHeaderFilterRow({
             aria-label={labels.filterOn(getColumnLabel(column))}
             data-dg-part="header-filter-cell"
             data-column-id={column.id}
-            data-control-column={isControlColumn(column.id)}
+            data-control-column={isControlColumn(column.id) || undefined}
             className={[
               classes.headerFilterCell,
               layout.isBoundary && layout.pinnedAt === "left"

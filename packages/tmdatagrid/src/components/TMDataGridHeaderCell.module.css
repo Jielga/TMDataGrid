@@ -90,11 +90,11 @@
 
 /* See the sort ActionIcon: an unsorted column's arrow is an invitation, not a
    state, so it sits back until the pointer is on it. */
-.sortAction[data-sorted="false"] {
+.sortAction:not([data-sorted]) {
   opacity: 0.55;
 }
 
-.sortAction[data-sorted="false"]:hover {
+.sortAction:not([data-sorted]):hover {
   opacity: 1;
 }
 

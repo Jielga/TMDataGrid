@@ -82,7 +82,7 @@ function GroupCell<TData extends RowData>({
         row.toggleExpanded();
       }}
     >
-      <span className={classes.chevron} data-expanded={expanded}>
+      <span className={classes.chevron} data-expanded={expanded || undefined}>
         <ChevronRightIcon size={16} stroke={1.6} />
       </span>
       <span className={classes.groupLabel}>{label}</span>

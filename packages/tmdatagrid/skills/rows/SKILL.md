@@ -211,8 +211,9 @@ are not striped.
 Rows carry `data-selected`, `data-selected-bg`, `data-highlighted`,
 `data-grouped`, `data-depth`, `data-context-menu` and `data-row-id`, so a
 stylesheet can target any of it without a callback. The boolean attributes are
-published on every row as `"true"` or `"false"`, so match the value
-(`[data-grouped="true"]`), not the bare attribute. Pick a `--row-bg` that
+present, with the value `"true"`, only while they apply - `data-grouped` only
+on group rows - so `[data-grouped]` and `[data-grouped="true"]` are
+equivalent. Pick a `--row-bg` that
 reads under both colour schemes - a `-0` Mantine shade is near-white and
 unreadable in dark mode; mix a mid shade into transparency instead.
 

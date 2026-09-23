@@ -90,8 +90,8 @@ would pass a row that looks real but is the wrong one. Group rows therefore:
   as `original`, so guard a callback reading `original` with
   `row.getIsGrouped()` and colour the group rows with `--dg-row-group-bg`
 - carry `data-grouped="true"` and `data-depth`, with `--dg-row-group-bg`
-  behind them. `data-grouped` is on every row, `"true"` or `"false"`, so match
-  the value rather than the bare attribute
+  behind them. `data-grouped` is present only on group rows, so
+  `[data-grouped]` and `[data-grouped="true"]` are equivalent
 
 A group row's checkbox selects every record under it at any depth, including
 records inside collapsed sub-groups, showing a tick once all are selected and a
@@ -273,7 +273,7 @@ Source: `packages/tmdatagrid/docs/grouping.md` (Server-side grids).
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything. `false` while grouped. |
 | `--dg-row-group-bg` | CSS variable | colour | Themed | Group row background. |
 | `--dg-summary-height` | CSS variable | length | From `size` | Height of the summary row. |
-| `data-grouped` · `data-depth` | Data attributes | – | – | `"true"` on group rows (published on every row), and the nesting level on every row. |
+| `data-grouped` · `data-depth` | Data attributes | – | – | `"true"` on group rows (absent on the rest), and the nesting level on every row. |
 
 See also: the `rows` skill for selection and the details lane, and the `data`
 skill for the pager grouping suspends.

@@ -463,7 +463,7 @@ Rows publish what they hold, for styling and for tests:
 | `data-deleted` | Body row | Marked for deletion |
 | `data-new` | Body row, entry row | An entered row, committed (body) or not (entry block) |
 
-A row attribute is published on every body row as `"true"` or `"false"`, so match the value, `[data-draft="true"]`, rather than the bare attribute, which matches every row.
+A row attribute is present, with the value `"true"`, only on the rows it applies to, so `[data-draft]` and `[data-draft="true"]` match the same rows.
 A cell's `data-dirty` is present only while the cell is dirty.
 
 The grid styles none of them beyond the corners, the strike-through and the new-row tint.

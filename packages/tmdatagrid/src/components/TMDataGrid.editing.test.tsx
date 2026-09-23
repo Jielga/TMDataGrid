@@ -818,10 +818,7 @@ describe("cell editing", () => {
     expect(adds.length).toBe(0);
     // Still an entry row - a refused add is not a decision - and the
     // pathless message rides the ✓'s tooltip, as it rides the Save's.
-    expect(part("entry-row", { rowId: "__new__1" })).toHaveAttribute(
-      "data-committed",
-      "false",
-    );
+    expect(part("entry-row", { rowId: "__new__1" })).not.toHaveAttribute("data-committed");
     await user.hover(part("confirm-new-row", { rowId: "__new__1" }));
     expect(await screen.findByText("Nobody is that old")).toBeInTheDocument();
   });
@@ -1000,7 +997,7 @@ describe("cell editing", () => {
     // take no editor still show and still follow the form.
     const bodyRow = part("row", { rowId: "__new__1" });
     await user.dblClick(bodyRow.querySelector('[data-column-id="name"]')!);
-    expect(entryRow()).toHaveAttribute("data-committed", "false");
+    expect(entryRow()).not.toHaveAttribute("data-committed");
     expect(
       within(entryRow()).getByRole("textbox", { name: "Edit Name" }),
     ).toHaveValue("Ny Person");
@@ -1021,9 +1018,9 @@ describe("cell editing", () => {
     const user = userEvent.setup();
     renderWithMantine(<DraftGrid onCommit={() => {}} />);
 
-    // Row attributes carry "true"/"false" rather than being dropped.
+    // Row attributes are present only while they apply.
     const row = () => part("row", { rowId: "1" });
-    expect(row()).toHaveAttribute("data-draft", "false");
+    expect(row()).not.toHaveAttribute("data-draft");
 
     await user.dblClick(cellAt(0, 0));
     await user.clear(screen.getByRole("textbox", { name: "Edit Name" }));
@@ -1035,7 +1032,7 @@ describe("cell editing", () => {
 
     await user.click(screen.getByRole("button", { name: "Save 1 row" }));
     await waitFor(() =>
-      expect(row()).toHaveAttribute("data-draft", "false"),
+      expect(row()).not.toHaveAttribute("data-draft"),
     );
   });
 
@@ -1149,7 +1146,7 @@ describe("cell editing", () => {
 
     expect(commits.length).toBe(0);
     expect(cellAt(0, 0)).toHaveTextContent("*Anna*");
-    expect(bodyRows()[0]).toHaveAttribute("data-dirty", "false");
+    expect(bodyRows()[0]).not.toHaveAttribute("data-dirty");
     expect(queryPart("row-state", { rowId: "1" })).not.toBeInTheDocument();
     expect(queryPart("delete-row", { rowId: "1" })).toBeInTheDocument();
   });
@@ -1216,7 +1213,7 @@ describe("cell editing", () => {
     // was typed.
     await user.dblClick(bodyRow().querySelector('[data-column-id="name"]')!);
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-committed", "false");
+    expect(entryRow).not.toHaveAttribute("data-committed");
     expect(entryRow.closest("[data-dg-entry-block]")).not.toBeNull();
     expect(
       within(entryRow).getByRole("textbox", { name: "Edit Name" }),
@@ -1340,7 +1337,7 @@ describe("cell editing", () => {
     // The editors come back over a form built from the committed values, so
     // the row reads exactly as it was left.
     const entryRow = part("entry-row", { rowId: "__new__1" });
-    expect(entryRow).toHaveAttribute("data-committed", "false");
+    expect(entryRow).not.toHaveAttribute("data-committed");
     expect(
       within(entryRow).getByRole("textbox", { name: "Edit Name" }),
     ).toHaveValue("Ny Person");
@@ -1663,10 +1660,7 @@ describe("cell editing", () => {
 
     // The undecided row is untouched: still open, still holding what was
     // typed, ready to be finished.
-    expect(part("entry-row", { rowId: "__new__1" })).toHaveAttribute(
-      "data-committed",
-      "false",
-    );
+    expect(part("entry-row", { rowId: "__new__1" })).not.toHaveAttribute("data-committed");
     expect(
       within(part("entry-row", { rowId: "__new__1" })).getByRole("textbox", {
         name: "Edit Name",

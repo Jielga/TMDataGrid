@@ -199,10 +199,7 @@ describe("row selection", () => {
       "data-control-column",
       "true",
     );
-    expect(within(firstRow).getAllByRole("cell")[1]).toHaveAttribute(
-      "data-control-column",
-      "false",
-    );
+    expect(within(firstRow).getAllByRole("cell")[1]).not.toHaveAttribute("data-control-column");
   });
 
   it("drops the checkbox column in row selection mode", () => {
@@ -753,10 +750,7 @@ describe("row details", () => {
     await user.click(screen.getByRole("button", { name: "Act on Maria" }));
 
     expect(part("details", { rowId: "3" })).toBeInTheDocument();
-    expect(part("row", { rowId: "3" })).toHaveAttribute(
-      "data-selected",
-      "false",
-    );
+    expect(part("row", { rowId: "3" })).not.toHaveAttribute("data-selected");
   });
 
   it("sits after the tree lane once something is grouped", async () => {
