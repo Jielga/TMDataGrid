@@ -114,10 +114,10 @@ so it does not fire `onRowClick`, cannot be highlighted, cannot be
 `rowStyle` and `rowClassName` are the exception: they are called for group rows too, with that same child's record as `original`.
 Guard a callback that reads `original` with `row.getIsGrouped()`, and set `--dg-row-group-bg` to colour the group rows themselves.
 
-`data-grouped` is published on every row, `"true"` on group rows and `"false"`
-on the rest, so match the value - `[data-grouped="true"]` - rather than the
-bare attribute. `data-depth` carries the nesting level, and
-`--dg-row-group-bg` sets a group row's background.
+`data-grouped` is present, with the value `"true"`, only on group rows, so
+`[data-grouped]` and `[data-grouped="true"]` are equivalent. `data-depth`
+carries the nesting level, and `--dg-row-group-bg` sets a group row's
+background.
 
 ## Grouping and pagination
 
@@ -161,5 +161,5 @@ server-side can set `enableGrouping: true` alongside `manualGrouping: true`. See
 | `getGroupDataRows` | Export | `(row) => Row[]` | – | Every record under a group row, at any depth. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything. `false` while grouped. |
 | `--dg-row-group-bg` | CSS variable | colour | Themed | Group row background. |
-| `data-grouped` | Data attribute | `"true" \| "false"` | – | `"true"` on group rows. Published on every row. |
+| `data-grouped` | Data attribute | `"true"` | – | `"true"` on group rows. Absent on the rest. |
 | `data-depth` | Data attribute | `number` | – | Nesting level, on every row. |

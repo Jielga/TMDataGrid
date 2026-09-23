@@ -51,7 +51,7 @@ function DetailsCell<TData extends RowData>({
         row.toggleExpanded();
       }}
     >
-      <span className={classes.chevron} data-expanded={expanded}>
+      <span className={classes.chevron} data-expanded={expanded || undefined}>
         <ChevronRightIcon size={16} stroke={1.6} />
       </span>
     </UnstyledButton>
@@ -106,7 +106,7 @@ function DetailsHeader<TData extends RowData>({
         )
       }
     >
-      <span className={classes.chevron} data-expanded={allExpanded}>
+      <span className={classes.chevron} data-expanded={allExpanded || undefined}>
         <ChevronRightIcon size={16} stroke={1.6} />
       </span>
     </UnstyledButton>

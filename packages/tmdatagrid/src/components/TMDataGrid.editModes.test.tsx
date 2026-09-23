@@ -185,7 +185,7 @@ describe("edit modes", () => {
               });
               // The form is gone: the grid never mutates `data`, so the cell
               // goes back to what `data` still says.
-              expect(rowOne()).toHaveAttribute("data-dirty", "false");
+              expect(rowOne()).not.toHaveAttribute("data-dirty");
             }
             return;
           }
@@ -193,15 +193,15 @@ describe("edit modes", () => {
           expect(onCommit).not.toHaveBeenCalled();
 
           if (outcome === "cancels") {
-            expect(rowOne()).toHaveAttribute("data-dirty", "false");
-            expect(rowOne()).toHaveAttribute("data-draft", "false");
+            expect(rowOne()).not.toHaveAttribute("data-dirty");
+            expect(rowOne()).not.toHaveAttribute("data-draft");
             expect(noEditor()).toBe(true);
             return;
           }
 
           // Undecided either way: the draft is held, and nothing is parked.
           expect(rowOne()).toHaveAttribute("data-dirty", "true");
-          expect(rowOne()).toHaveAttribute("data-draft", "false");
+          expect(rowOne()).not.toHaveAttribute("data-draft");
           if (draft) {
             expect(part("open-rows-note")).toHaveTextContent(
               "1 row still being edited",
@@ -315,7 +315,7 @@ describe("edit modes", () => {
     await clickAway(user);
 
     expect(onCommit).not.toHaveBeenCalled();
-    expect(rowOne()).toHaveAttribute("data-draft", "false");
+    expect(rowOne()).not.toHaveAttribute("data-draft");
     expect(part("open-rows-note")).toHaveTextContent("1 row still being edited");
     // The editor stays - a refused commit is not a decision - and the message
     // with it: the cell is marked, and the lane's ✓ carries the text as well.

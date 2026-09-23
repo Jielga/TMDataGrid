@@ -398,7 +398,7 @@ describe("per-row styling", () => {
     });
 
     const rows = bodyRows();
-    expect(rows[0]!.getAttribute("data-striped")).toBe("false");
+    expect(rows[0]!.getAttribute("data-striped")).toBeNull();
     expect(rows[1]!.getAttribute("data-striped")).toBe("true");
     expect(rows[0]!.className).toContain("vip");
     expect(rows[1]!.className).not.toContain("vip");

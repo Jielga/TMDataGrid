@@ -332,16 +332,16 @@ function TMDataGridBodyCell({
       // selectors also require `data-cell`, so they are unaffected.
       data-row-id={cell.row.id}
       data-column-id={cell.column.id}
-      data-focused={nav?.focused}
+      data-focused={nav?.focused || undefined}
       aria-selected={nav?.selected}
-      data-selected={nav?.selected}
+      data-selected={nav?.selected || undefined}
       // One attribute per side rather than a class per combination: the
       // stylesheet draws the outline edge by edge, and sixteen classes for the
       // sixteen corners of a rectangle is not a stylesheet anyone can read.
-      data-edge-top={nav?.edges?.top}
-      data-edge-bottom={nav?.edges?.bottom}
-      data-edge-left={nav?.edges?.left}
-      data-edge-right={nav?.edges?.right}
+      data-edge-top={nav?.edges?.top || undefined}
+      data-edge-bottom={nav?.edges?.bottom || undefined}
+      data-edge-left={nav?.edges?.left || undefined}
+      data-edge-right={nav?.edges?.right || undefined}
       // Bubbles, so focus landing on a control inside the cell counts as
       // landing on the cell - the ring follows the user into the checkbox
       // rather than being left behind on whichever cell they came from.
@@ -356,7 +356,7 @@ function TMDataGridBodyCell({
       data-align={getColumnAlign(cell.column)}
       // A control lane is a fixed track, so it cannot take the cell padding the
       // scale grows for text. See isControlColumn.
-      data-control-column={isControl}
+      data-control-column={isControl || undefined}
       onContextMenu={onContextMenu}
       className={[
         classes.bodyCell,
@@ -2674,7 +2674,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // The tree's own rows. `data-grouped` rather than a class, to
                   // match how the rest of the row's state is published - and so
                   // a consumer can restyle them without reaching into modules.
-                  data-grouped={isGroupRow}
+                  data-grouped={isGroupRow || undefined}
                   data-depth={row.depth}
                   // Which edge block the row sits in, for styling hooks.
                   data-pinned={pinnedAt}
@@ -2683,13 +2683,16 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // still hold ids from before the mode changed - TanStack never
                   // prunes it - and a row must not report itself selected in a
                   // mode where selecting is not a thing.
-                  data-selected={features.rowSelection && row.getIsSelected()}
+                  data-selected={
+                    (features.rowSelection && row.getIsSelected()) || undefined
+                  }
                   // Being selected is state; painting it is a display choice, so
                   // the two are separate attributes.
                   data-selected-bg={
-                    features.rowSelection &&
-                    features.showSelectedBackground &&
-                    row.getIsSelected()
+                    (features.rowSelection &&
+                      features.showSelectedBackground &&
+                      row.getIsSelected()) ||
+                    undefined
                   }
                   // The highlighted row is its own concept, so its own attribute
                   // pair - `data-highlighted` / `aria-current` against
@@ -2701,33 +2704,40 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // so a consumer styling or querying rows by it would cast far
                   // wider than they meant to.
                   data-highlighted={
-                    features.highlightRow && row.id === highlightedRowId
+                    (features.highlightRow && row.id === highlightedRowId) ||
+                    undefined
                   }
                   // Marked deleted under draft: struck through and inert
                   // until submitAll reports it, or the mark is toggled back.
                   data-deleted={
-                    deletedRowIds.length > 0 && deletedRowIds.includes(row.id)
+                    (deletedRowIds.length > 0 && deletedRowIds.includes(row.id)) ||
+                    undefined
                   }
                   // Carrying a dirty draft - the row-level face of the cells'
                   // own data-dirty markers, for row-scoped styling.
-                  data-dirty={editDirtyRowIdSet.has(row.id)}
+                  data-dirty={editDirtyRowIdSet.has(row.id) || undefined}
                   // Committed into the draft store, waiting for Save. A
                   // committed entry row is one too - it is in the body
                   // because it is committed - and carries `data-new` besides.
                   data-draft={
-                    editDraftRowIdSet.has(row.id) || newRowIdSet.has(row.id)
+                    editDraftRowIdSet.has(row.id) ||
+                    newRowIdSet.has(row.id) ||
+                    undefined
                   }
                   // An entered row not yet in `data`, committed into the draft
                   // store and sorted, filtered and grouped with the rest.
-                  data-new={newRowIdSet.has(row.id)}
+                  data-new={newRowIdSet.has(row.id) || undefined}
                   // The menu is anchored to the rowgroup, so Mantine's own
                   // `data-expanded` lands there rather than on a row. This is
                   // what says which row the open menu is about.
                   data-context-menu={
-                    contextMenuContent !== null &&
-                    contextMenuTarget?.rowId === row.id
+                    (contextMenuContent !== null &&
+                      contextMenuTarget?.rowId === row.id) ||
+                    undefined
                   }
-                  data-selects-on-click={selectsOnRowClick && !isGroupRow}
+                  data-selects-on-click={
+                    (selectsOnRowClick && !isGroupRow) || undefined
+                  }
                   aria-selected={
                     features.rowSelection ? row.getIsSelected() : undefined
                   }
@@ -2739,7 +2749,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                   // From the row's position in the whole view, so the stripes
                   // survive the virtualizer's moving window - see the prop.
                   data-striped={
-                    striped && viewIndex >= 0 ? viewIndex % 2 === 1 : undefined
+                    (striped && viewIndex >= 0 && viewIndex % 2 === 1) || undefined
                   }
                   className={[classes.bodyRow, rowClassNameFor(row)]
                     .filter(Boolean)
@@ -3122,7 +3132,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     role="cell"
                     data-column-id={header.column.id}
                     data-align={getColumnAlign(header.column)}
-                    data-control-column={isControlColumn(header.column.id)}
+                    data-control-column={
+                      isControlColumn(header.column.id) || undefined
+                    }
                     className={[
                       classes.summaryCell,
                       layout.isBoundary && layout.pinnedAt === "left"

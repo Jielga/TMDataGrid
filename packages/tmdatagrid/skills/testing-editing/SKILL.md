@@ -179,15 +179,12 @@ await grid.part("restore-row", { rowId: "42" }).click();
 
 ## Attribute values
 
-Row state is a value, cell state is presence:
-
-- `data-new`, `data-draft`, `data-dirty`, `data-deleted` on a body row, and
-  `data-committed`, `data-draft` on an entry row, are **always present** with
-  `"true"` or `"false"`. Select on the value: `[data-draft="true"]`.
-  `toHaveAttribute("data-new")` without a value passes on every row.
-- `data-editing`, `data-dirty`, `data-invalid` on a cell are present with
-  `"true"` only while they apply; `[data-invalid]` and
-  `[data-invalid="true"]` both work.
+A state attribute is present, with the value `"true"`, only while it applies:
+`data-new`, `data-draft`, `data-dirty`, `data-deleted` on a body row,
+`data-committed` on an entry row, `data-dirty`, `data-invalid`, `data-editing`
+on a cell. `[data-new]` and `[data-new="true"]` match the same rows,
+`toHaveAttribute("data-new")` and `toHaveAttribute("data-new", "true")` both
+hold, and the negative is `not.toHaveAttribute("data-new")`.
 
 ## Common mistakes
 
@@ -210,10 +207,11 @@ The app's `onRowAdd` may be async. `expectRowCount(1)` after narrowing retries
 until the row is in `data`; a `waitForTimeout` either wastes time or is too
 short on CI.
 
-### `[data-new]` or `toHaveAttribute("data-new")`
+### Asserting the negative with `"false"`
 
-Always present on body rows, `"true"` or `"false"`. Use `[data-new="true"]` and
-`toHaveAttribute("data-new", "true")`.
+`toHaveAttribute("data-new", "false")` never passes: a state that does not
+apply is an absent attribute, not `"false"`. Use
+`not.toHaveAttribute("data-new")`, and `:not([data-new])` in CSS.
 
 ### Asserting a deletion with `toHaveCount(0)`
 

@@ -105,13 +105,13 @@ it without a callback:
 | `data-selected` | Selected rows |
 | `data-selected-bg` | Selected rows that also take the background |
 | `data-highlighted` | The highlighted row |
-| `data-grouped` | Every row: `"true"` on group rows, `"false"` on the rest |
+| `data-grouped` | Group rows |
 | `data-depth` | Every row. The nesting level |
 | `data-context-menu` | The row whose context menu is open |
 | `data-row-id` | Every row. Its id, which [tests](/docs/testing) key off |
 
-The state attributes are published as `"true"` or `"false"`, so match the
-value; the bare attribute selector matches every row:
+The state attributes are present, with the value `"true"`, only on the rows
+they apply to, so the bare attribute and the value match the same rows:
 
 ```css
 [data-dg-part="row"][data-grouped="true"] {

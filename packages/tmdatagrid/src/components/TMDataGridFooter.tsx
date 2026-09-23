@@ -330,7 +330,7 @@ export function TMDataGridFooter({
       <Box
         data-dg-part="footer"
         className={footerClassName}
-        data-paging-suspended={!paging}
+        data-paging-suspended={!paging || undefined}
         {...others}
       >
         {/* The default render is the controls in order - which is what makes
