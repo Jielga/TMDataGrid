@@ -1,18 +1,18 @@
 ---
 name: testing-editing
 description: >
-  Test TMDataGrid editing flows from Playwright: adding a row through the
-  entry row, where its temporary id (__new__1) goes at commit and at save,
-  finding an added row when the grid does not know the id the app gave it,
-  asserting a failed validation on an entry row, cell and row edits, deletions,
-  and the draft store (data-new, data-draft, data-dirty, data-deleted,
-  row-state, save-all and data-draft-count). Load when writing or fixing a test
-  that adds, edits, deletes or saves rows, or when a locator for a new row
-  stops resolving after the row is committed.
+  Test TMDataGrid editing flows from Playwright: adding a row through the entry
+  row, where its temporary id (__new__1) goes at commit and at save, finding an
+  added row when the grid does not know the id the app gave it, asserting a
+  failed validation on an entry row, cell and row edits, deletions, and the
+  draft store (data-new, data-draft, data-dirty, data-deleted, row-state,
+  save-all and data-draft-count). Load when writing or fixing a test that adds,
+  edits, deletes or saves rows, or when a locator for a new row stops resolving
+  after the row is committed.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.22'
+  library_version: '2.0.0-beta.23'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'

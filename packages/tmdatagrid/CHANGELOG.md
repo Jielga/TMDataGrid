@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.23
+
+### Patch Changes
+
+- [`8932623`](https://github.com/Jielga/TMDataGrid/commit/893262395c89904d3603d73d6c0cafaf699a5ea5) Thanks [@Psvensso](https://github.com/Psvensso)! - Testing docs for editing flows: where an added row's temporary id goes at ✓ and at Save, how a test finds the row afterwards, and recipes for validation, cell and row edits, deletions and the draft store, with the matching page-object methods. The row state attributes are documented as always present with `"true"` / `"false"`. A new `testing-editing` skill carries the same.
+
 ## 2.0.0-beta.22
 
 ### Patch Changes
