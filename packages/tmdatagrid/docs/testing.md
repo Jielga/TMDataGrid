@@ -62,6 +62,18 @@ const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
 
 Body cells carry no `data-dg-part`; the coordinate pair identifies them.
 
+**Row state is a value, cell state is presence.** `data-deleted`, `data-dirty`,
+`data-draft` and `data-new` are always present on a body row, with the value
+`"true"` or `"false"`, and `data-committed` and `data-draft` on an entry row
+likewise. `[data-new]` therefore matches every row; select on the value:
+
+```ts
+const drafts = orders.locator('[data-dg-part="row"][data-draft="true"]');
+```
+
+`data-editing`, `data-dirty` and `data-invalid` on a cell are present, with the
+value `"true"`, only while they apply.
+
 ## Parts
 
 Row and column ids come from your data (`getRowId` and the column definitions),
@@ -264,6 +276,49 @@ export class DataGrid {
     await this.part("columns-toggle", { columnId }).click();
   }
 
+  /** The entry row opened by `edit.addRow()`; `data-row-id` is its temp id. */
+  entryRow(): Locator {
+    return this.part("entry-row");
+  }
+
+  /** Types into the built-in editors of an open row: an entry row, or a row
+   *  opened in row mode. */
+  async fillRow(rowId: string, values: Record<string, string>): Promise<void> {
+    for (const [columnId, value] of Object.entries(values)) {
+      await this.part("editor", { rowId, columnId })
+        .locator('[data-dg-part="editor-input"]')
+        .fill(value);
+    }
+  }
+
+  async commitEntryRow(rowId: string): Promise<void> {
+    await this.part("confirm-new-row", { rowId }).click();
+  }
+
+  /** Presses Save in `TMDataGrid.DraftActions` and waits for the store to empty. */
+  async saveDrafts(): Promise<void> {
+    await this.part("save-all").click();
+    await expect(this.part("save-all")).toHaveAttribute("data-draft-count", "0");
+  }
+
+  /** Finds a row the test added by a value unique to it, since the grid does
+   *  not know the id the app gave the row. Retries until the app has put the
+   *  row in `data`. */
+  async expectRowAdded(
+    uniqueValue: string,
+    cells: Record<string, string>,
+  ): Promise<void> {
+    await this.search(uniqueValue);
+    await this.expectRowCount(1);
+    const row = this.part("row");
+    for (const [columnId, text] of Object.entries(cells)) {
+      await expect(row.locator(`[data-column-id="${columnId}"]`)).toHaveText(
+        text,
+      );
+    }
+    await this.search("");
+  }
+
   async expectRowCount(count: number): Promise<void> {
     await expect(this.grid).toHaveAttribute(
       "data-dg-row-count",
@@ -290,6 +345,133 @@ test("filters to one employee", async ({ page }) => {
   );
 });
 ```
+
+## Editing
+
+### Adding a row
+
+[`edit.addRow()`](/docs/editing) opens an entry row, `data-dg-part="entry-row"`,
+keyed by a temporary id (`__new__1`, `__new__2`, …). Its editors are `editor`
+parts keyed by that id and the column. What ✓ does with the row depends on
+`editing.draft`:
+
+| Step | Without `draft` | With `draft: true` |
+| --- | --- | --- |
+| `addRow()` | `entry-row[data-row-id="__new__1"]` | Same |
+| ✓ fails validation | The entry row stays; the failing cells carry `data-invalid` | Same |
+| ✓ (`confirm-new-row`) | The entry row is removed and the temp id is gone. `onRowAdd` receives the values, and the row exists again only once your app puts it in `data`, under the id your `getRowId` returns | The row becomes a body row, still keyed by the temp id: `row[data-row-id="__new__1"][data-new="true"][data-draft="true"]`, with `row-state[data-state="new"]` in its lane and `save-all[data-draft-count]` counting it |
+| Save (`save-all`) | - | As ✓ without `draft`: the temp id is gone, and the row comes back through `data` under your id |
+
+The grid never learns which id your app gave the row, so once `onRowAdd` or
+`saveDrafts` has run, the row cannot be addressed by id. Find it by its content
+instead: narrow the grid to a value unique to the row, assert that one row is
+left, and read that row's cells. The row-count assertion is also the wait,
+since it retries until the app has put the row in `data`:
+
+```ts
+test("adds an employee", async ({ page }) => {
+  const grid = new DataGrid(page, "employees");
+  await page.goto("/employees");
+  await grid.expectSettled();
+
+  // The app's own button, calling edit.addRow()
+  await page.getByRole("button", { name: "Add row" }).click();
+  const tempId = (await grid.entryRow().getAttribute("data-row-id"))!;
+  await grid.fillRow(tempId, { name: "Nordkvist-4711", city: "Stockholm" });
+  await grid.commitEntryRow(tempId);
+
+  await expect(grid.entryRow()).toHaveCount(0);
+  await grid.expectRowAdded("Nordkvist-4711", {
+    name: "Nordkvist-4711",
+    city: "Stockholm",
+  });
+});
+```
+
+Use a value no other row has, such as a name with a run id in it, so that the
+search leaves one row. If the grid has no quick search, narrow with `filterBy`
+on a column instead.
+
+Under `draft: true` the temp id stays valid until Save, so the committed row is
+asserted directly, and the content-based check applies after the save:
+
+```ts
+await grid.commitEntryRow(tempId);
+const row = grid.part("row", { rowId: tempId });
+await expect(row).toHaveAttribute("data-new", "true");
+await expect(grid.part("row-state", { rowId: tempId })).toHaveAttribute(
+  "data-state",
+  "new",
+);
+await expect(grid.part("save-all")).toHaveAttribute("data-draft-count", "1");
+
+await grid.saveDrafts();
+await expect(row).toHaveCount(0);
+await grid.expectRowAdded("Nordkvist-4711", { city: "Stockholm" });
+```
+
+Under `newRowsSticky: true` the committed row stays in the entry block instead,
+as `entry-row[data-row-id="__new__1"][data-committed="true"]`, outside
+`data-dg-row-count`, until the save.
+
+A ✓ that fails validation keeps the entry row open, with `data-invalid` on the
+failing cells:
+
+```ts
+await grid.commitEntryRow(tempId);
+await expect(grid.entryRow()).toHaveCount(1);
+await expect(
+  grid.entryRow().locator('[data-column-id="email"]'),
+).toHaveAttribute("data-invalid", "true");
+```
+
+### Changing a row
+
+Without `draft`, a commit goes to `onCommit` and the grid keeps nothing of it, so
+the assertion is the cell's text once your app has applied the change. Under
+`draft: true` the change stays in the grid until Save, marked on the cell, the
+row and the lane:
+
+```ts
+const cell = grid.cell({ rowId: "42", columnId: "salary" });
+await cell.dblclick();
+await grid.fillRow("42", { salary: "52000" });
+await page.keyboard.press("Enter");
+
+// Without draft: the app applied it
+await expect(cell).toHaveText("52 000");
+
+// Under draft: the grid holds it
+await expect(cell).toHaveAttribute("data-dirty", "true");
+await expect(grid.part("row", { rowId: "42" })).toHaveAttribute("data-dirty", "true");
+await expect(grid.part("row-state", { rowId: "42" })).toHaveAttribute(
+  "data-state",
+  "edited",
+);
+```
+
+In row mode, `edit-row` opens the row, `save-row` commits it and `cancel-row`
+discards it; `fillRow` reaches the open row's editors the same way.
+
+### Deleting a row
+
+`delete-row` calls `onRowDelete` at once, or marks the row under `draft: true`:
+
+```ts
+const before = Number(await grid.grid.getAttribute("data-dg-row-count"));
+await grid.part("delete-row", { rowId: "42" }).click();
+
+// Without draft: the app removed it from data
+await grid.expectRowCount(before - 1);
+
+// Under draft: marked until Save, and Restore undoes the mark
+await expect(grid.part("row", { rowId: "42" })).toHaveAttribute("data-deleted", "true");
+await grid.part("restore-row", { rowId: "42" }).click();
+```
+
+Assert a deletion on `data-dg-row-count`, not on the row's element: a row
+outside the viewport has no element either, so `toHaveCount(0)` passes for it
+whether or not it was deleted.
 
 ## React Testing Library
 

@@ -33,6 +33,9 @@ The grid mints no `data-testid` of its own - that attribute belongs to the app,
 and Playwright's `testIdAttribute` is configurable. `@mantine/core` and
 `@tanstack/*` ship none either.
 
+Adding, changing and deleting rows, the draft store, and where a new row's
+temporary id goes at commit are in the `testing-editing` skill.
+
 ## Naming a grid
 
 Parts repeat across grids on a page. Name the grid, scope through it:
@@ -57,6 +60,11 @@ accessible name belongs to the element carrying the `grid` role.
 | Header cell | `columnheader` | `data-column-id`, `aria-sort` |
 
 Body cells carry no `data-dg-part` - the coordinate pair already names them.
+
+Row state is a value, cell state is presence: `data-deleted`, `data-dirty`,
+`data-draft` and `data-new` are always on a body row as `"true"` or `"false"`,
+so select on the value (`[data-new="true"]`); `data-editing`, `data-dirty` and
+`data-invalid` on a cell are present only while they apply.
 
 ## Parts
 
