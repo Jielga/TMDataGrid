@@ -123,6 +123,7 @@ type TMDataGridEditState = {
 | `TMDataGridDraftActions` | Export | The same component, for use outside the namespace. |
 | `EDIT_COLUMN_ID` | Export | `"__edit__"`, the generated edit lane's id. |
 | `clearedValueForType` | Export | `(type) => unknown` - what Delete writes per column type. |
+| `hasPendingEdits` | Export | `(state) => boolean` - unsaved work: an open row with a changed value, any entry row, the draft store, or a save in flight. `useSelector(grid.edit.store, hasPendingEdits)` for a navigation blocker; do not use `openRowIds.length`, which also counts committed rows and rows that are only open. |
 | `getEditFieldName` | Export | `(column) => string` - the data path a column's edits write to. |
 | `normalizeFieldValidate` | Export | `(validate) => validators` - a bare schema into Form's shape. |
 | `TMDataGridStringEditor` … `TMDataGridMultiSelectEditor` | Exports | The six built-in editors, for wrapping. |

@@ -7,6 +7,7 @@ import {
   firstErrorText,
   getEditFieldName,
   getOpenRowIds,
+  hasPendingEdits,
   normalizeFieldValidate,
   type TMDataGridEditCommitArgs,
   type TMDataGridEditState,
@@ -998,6 +999,58 @@ describe("the draft store", () => {
     // The pre-2.0 names carry the same arrays until they are removed.
     expect(args.rows).toBe(args.updated);
     expect(args.added).toBe(args.created);
+  });
+
+  it("hasPendingEdits follows every kind of unsaved work until the save lands", async () => {
+    let settle: (() => void) | undefined;
+    const onSaveDrafts = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            settle = resolve;
+          }),
+      );
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    // Opened is not pending; a moved value is; moving it back is not.
+    edit.begin({ rowId: "1", columnId: "name" });
+    expect(hasPendingEdits(edit.state)).toBe(false);
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    expect(hasPendingEdits(edit.state)).toBe(true);
+    edit.getForm("1")?.setFieldValue("name", "Anna");
+    expect(hasPendingEdits(edit.state)).toBe(false);
+
+    edit.getForm("1")?.setFieldValue("name", "Anna B");
+    await edit.commit("1");
+    expect(hasPendingEdits(edit.state)).toBe(true);
+
+    // A rejected save keeps the store.
+    await edit.saveDrafts().catch(() => undefined);
+    expect(hasPendingEdits(edit.state)).toBe(true);
+
+    // Pending while the save is in flight, clear once it resolves.
+    const saving = edit.saveDrafts();
+    expect(hasPendingEdits(edit.state)).toBe(true);
+    await vi.waitFor(() => {
+      expect(settle).toBeDefined();
+    });
+    settle?.();
+    await saving;
+    expect(hasPendingEdits(edit.state)).toBe(false);
+
+    edit.deleteRow("2");
+    expect(hasPendingEdits(edit.state)).toBe(true);
+    edit.restoreRow("2");
+    expect(hasPendingEdits(edit.state)).toBe(false);
+
+    // An entry row counts whatever it holds.
+    edit.addRow();
+    expect(hasPendingEdits(edit.state)).toBe(true);
+    edit.cancelAll();
+    expect(hasPendingEdits(edit.state)).toBe(false);
   });
 
   it("keeps the drafts a result reports as failed", async () => {

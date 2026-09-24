@@ -243,6 +243,43 @@ The full list is on [Components](/docs/components#tmdatagriddraftactions).
 `scrollToFirstOpenRow` takes "first" in display order, so the two need not name the same row.
 An entered row appears as its `tempId`; entry rows are always on screen in the entry block, so the scroll returns `true` without moving.
 
+### Unsaved changes
+
+`hasPendingEdits(state)` returns `true` while the grid holds anything that has not been saved:
+
+- an open row with a value that differs from its original
+- an entry row, open or committed
+- a committed row or a deletion mark in the draft store
+- a save in flight (`isSaving`)
+
+A row that is only opened, or whose values were changed back to the original, does not count.
+After a save, a row the save kept, or a row reopened with an error, still counts.
+
+The function is a selector over the edit state.
+With `useSelector`, the component re-renders only when the result changes:
+
+```tsx
+import { useSelector } from "@tanstack/react-store";
+import { hasPendingEdits } from "@jielga/tmdatagrid";
+
+const hasUnsaved = useSelector(grid.edit.store, hasPendingEdits);
+
+useEffect(() => {
+  if (!hasUnsaved) return;
+  const onBeforeUnload = (event: BeforeUnloadEvent) => {
+    event.preventDefault();
+  };
+  window.addEventListener("beforeunload", onBeforeUnload);
+  return () => {
+    window.removeEventListener("beforeunload", onBeforeUnload);
+  };
+}, [hasUnsaved]);
+```
+
+A router's navigation blocker can pass `hasUnsaved` in the same way, or call `hasPendingEdits(grid.edit.state)` when navigation starts.
+It works in every edit mode.
+Without `draft: true` the draft store stays empty, so only open rows count.
+
 ### How a committed row behaves
 
 A committed row holds no form: its values are data in the draft store.
@@ -579,6 +616,7 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `DraftActions` `renderActions` | Slot           | `({ state, actions, Controls }) => ReactNode`    | Built-in pair     | Replaces the buttons, and hands over their pieces. See [Components](/docs/components#tmdatagriddraftactions). |
 | `actions.scrollToFirstOpenRow` | Slot action    | `(align?) => boolean`                            | `align: "auto"`   | Scrolls to the first open row in display order. `false` when none could be reached.              |
 | `clearedValueForType`         | Export         | `(type) => unknown`                              | –                 | What Delete writes for each column type.                                                         |
+| `hasPendingEdits`             | Export         | `(state) => boolean`                             | –                 | Whether the grid holds unsaved work. See [Unsaved changes](#unsaved-changes).                     |
 | `--dg-entry-height`           | CSS variable   | length                                           | From `size`       | Height of the sticky entry block.                                                                |
 | `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of a committed new row, in the body or the entry block.                               |
 | `data-deleted`                | Data attribute | –                                                | –                 | On a row marked for deletion under `draft: true`.                                                |
