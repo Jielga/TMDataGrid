@@ -89,6 +89,7 @@ export {
 export {
   clearedValueForType,
   getEditFieldName,
+  hasPendingEdits,
   normalizeFieldValidate,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditApi,

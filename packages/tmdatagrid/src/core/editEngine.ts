@@ -279,6 +279,29 @@ export function getOpenRowIds(
   });
 }
 
+/**
+ * Whether the grid holds anything a navigation would lose: an open row with
+ * a moved value, an entry row, the draft store (edits, new rows, deletion
+ * marks), or a save still in flight.
+ *
+ * A pure selector over the edit state, so `useSelector(edit.store,
+ * hasPendingEdits)` re-renders only when the answer flips, and a navigation
+ * blocker can read `hasPendingEdits(edit.state)` at the moment it is asked.
+ * `isSaving` counts because the default per-row loop takes the deletion
+ * marks out of the store before its `onRowDelete` calls settle.
+ */
+export function hasPendingEdits(state: TMDataGridEditState): boolean {
+  return (
+    state.isSaving ||
+    state.committedRowIds.length > 0 ||
+    state.deletedRowIds.length > 0 ||
+    state.newRows.length > 0 ||
+    state.openRowIds.some(
+      (rowId) => (state.rows[rowId]?.dirtyFields.length ?? 0) > 0,
+    )
+  );
+}
+
 type ErasedRow = Row<TMDataGridFeatures, TMDataGridRowData>;
 type ErasedColumn = Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
 
