@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.0-beta.25
+
+### Minor Changes
+
+- [#125](https://github.com/Jielga/TMDataGrid/pull/125) [`5717fae`](https://github.com/Jielga/TMDataGrid/commit/5717fae9f5aac22f587f02780f5b77a8535abb61) Thanks [@Psvensso](https://github.com/Psvensso)! - New `hasPendingEdits(state)` export: `true` while the grid holds unsaved work (an open row with a changed value, an entry row, the draft store, or a save in flight). Use it as `useSelector(grid.edit.store, hasPendingEdits)` to block navigation.
+
 ## 2.0.0-beta.24
 
 ### Minor Changes
