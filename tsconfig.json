@@ -4,6 +4,7 @@
     { "path": "./packages/tmdatagrid" },
     { "path": "./packages/tmdatagrid-xlsx" },
     { "path": "./apps/docs" },
+    { "path": "./playwright" },
     { "path": "./tsconfig.node.json" }
   ]
 }

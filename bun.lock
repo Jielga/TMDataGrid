@@ -8,6 +8,7 @@
         "@changesets/changelog-github": "^0.7.0",
         "@changesets/cli": "^2.31.1",
         "@manypkg/get-packages": "^3.1.0",
+        "@playwright/test": "catalog:",
         "@tanstack/intent": "catalog:",
         "@testing-library/jest-dom": "catalog:",
         "@testing-library/react": "catalog:",
@@ -63,7 +64,7 @@
     },
     "packages/tmdatagrid": {
       "name": "@jielga/tmdatagrid",
-      "version": "2.0.0-beta.16",
+      "version": "2.0.0-beta.25",
       "dependencies": {
         "@tanstack/match-sorter-utils": "catalog:",
       },
@@ -112,7 +113,7 @@
     },
     "packages/tmdatagrid-xlsx": {
       "name": "@jielga/tmdatagrid-xlsx",
-      "version": "2.0.0-beta.16",
+      "version": "2.0.0-beta.25",
       "dependencies": {
         "exceljs": "catalog:",
       },
@@ -126,7 +127,7 @@
         "vitest": "catalog:",
       },
       "peerDependencies": {
-        "@jielga/tmdatagrid": "^2.0.0-beta.16",
+        "@jielga/tmdatagrid": "^2.0.0-beta.25",
       },
     },
   },
@@ -135,6 +136,7 @@
     "@mantine/code-highlight": "^9.4.1",
     "@mantine/core": "^9.4.0",
     "@mantine/hooks": "^9.4.1",
+    "@playwright/test": "^1.63.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tabler/icons-react": "^3.46.0",
     "@tanstack/intent": "0.3.6",
@@ -356,6 +358,8 @@
     "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.71.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-W4HvOHGzVLHcrmFu+bMrJlho+/yrlX5ZNdJZqGe8MEldkQG+RHYhxxad9P4jvWAYFmIqUA5i9DQ8QsJqSU9GIw=="],
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.71.0", "", { "os": "win32", "cpu": "x64" }, "sha512-D2kyEIPHk/G/wiZLnwTVC/sVst+T/lKldVOjAFpgTIBUAOlry72e5OiapDbDBF4LfJLkN5ypJb/8Eu6yJzkveQ=="],
+
+    "@playwright/test": ["@playwright/test@1.63.0", "", { "dependencies": { "playwright": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ=="],
 
     "@rolldown/binding-android-arm64": ["@rolldown/binding-android-arm64@1.1.5", "", { "os": "android", "cpu": "arm64" }, "sha512-lZg8fqIv2v7FF237bwMgzGZEJvGL79/s5knJ/i6FmsGF4XXlzccZ4jb+TrFIxtSSxFtIpdsgrPZeMk1I9AFcyQ=="],
 
@@ -1098,6 +1102,10 @@
     "picomatch": ["picomatch@4.0.5", "", {}, "sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A=="],
 
     "pify": ["pify@4.0.1", "", {}, "sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g=="],
+
+    "playwright": ["playwright@1.63.0", "", { "dependencies": { "playwright-core": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg=="],
+
+    "playwright-core": ["playwright-core@1.63.0", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg=="],
 
     "postcss": ["postcss@8.5.25", "", { "dependencies": { "nanoid": "^3.3.16", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw=="],
 

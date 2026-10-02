@@ -30,3 +30,8 @@ plans/
 
 # Local user feedback notes, never committed
 user-feedback/
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/

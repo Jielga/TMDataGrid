@@ -96,6 +96,7 @@ export function DemoBlock({ demo }: { demo: DemoBlockDemo }) {
         radius="sm"
         p="sm"
         h={demo.height ?? DEFAULT_DEMO_HEIGHT}
+        data-demo={demo.file}
         className={classes.live}
       >
         <Component />

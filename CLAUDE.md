@@ -23,6 +23,7 @@ All from the repository root.
 | --- | --- |
 | `bun run dev` | Docs site: docs, examples, playground |
 | `bun run test` | Vitest once, every workspace project (`test:watch` to iterate) |
+| `bun run test:e2e` | Playwright, Chromium: the docs-site specs and the component specs (`--project=docs` or `--project=components` for one of them) |
 | `bun run lint` | oxlint - types are **not** checked here |
 | `bun run check:skills` | `intent validate` over every package's `skills/*/SKILL.md` |
 | `bun run typecheck` | `tsc -b` over every project |
@@ -36,7 +37,8 @@ Run those before committing rather than discovering them at the hook.
 Run intent through `scripts/intent.mjs`, never `npx intent`.
 Two installed packages declare a bin by that name and the one that wins is an install-order accident; the wrong one crashes on startup.
 
-Playwright is expensive. Use it deliberately, not as a way to look around.
+Driving a browser by hand through the Playwright MCP tools is expensive.
+Use it deliberately, not as a way to look around; a spec under `playwright/` is the cheap way to check behaviour in a browser.
 
 ## The workspace
 
@@ -56,7 +58,7 @@ For the same reason a new published package added during a prerelease wave goes 
 `packages/tmdatagrid/src/index.ts` is the only entry point the package exposes.
 An export added there is public API: it needs docs and a changeset, and it cannot quietly change again.
 
-Nothing but the library and its `*.test.ts(x)` files may live under `packages/tmdatagrid/src/` - the test harness is `packages/tmdatagrid/test/gridHarness.tsx`, which keeps it out of the tarball and the declaration build.
+Nothing but the library and its `*.test.ts(x)` files may live under `packages/tmdatagrid/src/` - the test harness (`gridHarness.tsx`, `fixtures.tsx`), the Playwright gallery and the stories live in `packages/tmdatagrid/test/`, which keeps them out of the tarball and the declaration build.
 
 Peer dependencies stay external in `packages/tmdatagrid/vite.config.ts`.
 Bundling `react`, `@mantine/*` or `@tanstack/*` hands the consumer a second copy of the React runtime, the Mantine theme context or the TanStack feature registry, and each fails at runtime rather than at build time.
@@ -69,7 +71,7 @@ Styling is co-located CSS Modules (`Component.module.css`), not Emotion.
 
 TanStack Table v9 is beta and the grid uses its feature-registry API; check `useTMDataGrid.tsx` before assuming a v8 shape carries over.
 
-The React Compiler runs in both Vite configs but not under Vitest, so a component test proves the wiring, not the memoization.
+The React Compiler runs in both Vite configs and in the Playwright gallery but not under Vitest, so a jsdom component test proves the wiring, not the memoization; a Playwright spec sees the compiled output.
 
 The grid publishes `data-dg-part` plus `data-row-id` / `data-column-id`, and no `data-testid` of its own.
 Roles flip from `table`/`cell` to `grid`/`gridcell` when cell selection is on.
@@ -89,6 +91,17 @@ Two jsdom facts decide how a grid test has to be written:
 
 [demos.test.tsx](apps/docs/src/examples/demos.test.tsx) mounts every demo, fails on any `console.error`, and checks that every demo fence, topic link and docs link resolves.
 A broken demo or a dead link fails the suite, so run the tests after touching docs or examples, not just after touching code.
+
+Playwright covers what jsdom cannot, in Chromium, from `bun run test:e2e`; the config is [playwright.config.ts](playwright.config.ts).
+
+- [playwright/docs/](playwright/docs) drives the docs demos through the `DataGrid` page object in [DataGrid.ts](playwright/support/DataGrid.ts).
+  Every spec there is a template a consumer copies into their own suite, so it uses parts and coordinates, never text, and never counts row elements.
+  A demo is reached by `data-demo="<file>"` on its `DemoBlock`.
+- [playwright/components/](playwright/components) mounts stories from `packages/tmdatagrid/test/stories/` through the gallery in `packages/tmdatagrid/test/gallery/`.
+  `bun run --cwd packages/tmdatagrid gallery` serves the gallery alone; `?story=Grid/Default` mounts one story for a manual look.
+- The page object is embedded verbatim in [testing.md](packages/tmdatagrid/docs/testing.md) below a `<!-- source: playwright/support/DataGrid.ts -->` marker, and [testingPageObject.test.ts](apps/docs/src/docs/testingPageObject.test.ts) fails when the two drift.
+  Change the file, then paste it into the fence.
+- Both servers run on fixed ports with `--strictPort` (5273 for the docs site, 5274 for the gallery), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
 
 ## Docs and demos
 

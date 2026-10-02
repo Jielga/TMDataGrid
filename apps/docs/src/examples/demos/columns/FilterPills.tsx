@@ -17,7 +17,7 @@ export function FilterPills() {
     initialState: {
       columnFilters: [
         { id: "department", value: { operator: "isAnyOf", value: ["Sales"] } },
-        { id: "location", value: { operator: "contains", value: "Stock" } },
+        { id: "lastName", value: { operator: "contains", value: "son" } },
       ],
     },
   });

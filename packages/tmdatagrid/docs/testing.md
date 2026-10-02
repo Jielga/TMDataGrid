@@ -1,8 +1,8 @@
 # Testing
 
 The grid publishes a fixed set of roles, ARIA attributes and `data-*` hooks so
-that a consumer's suite can be written against structure rather than against
-copy or class names. Everything on this page is supported. Anything else in the
+that you can write tests against structure rather than against copy or class
+names. Everything on this page is supported. Anything else in the
 DOM is internal and may change without notice.
 
 > Renaming or dropping anything on this page is a breaking change, so it moves
@@ -46,7 +46,8 @@ the `grid` role.
 | --- | --- | --- |
 | Root | - | `data-dg-root`, `data-size` |
 | Grid | `table`, or `grid` under cell selection | `aria-rowcount`, `aria-colcount`, `aria-busy`, `data-dg-row-count` |
-| Header row | `row` | `aria-rowindex` |
+| Scroll container | - | `data-dg-scroll-container` |
+| Header row | `row` | `data-dg-header-row`, `aria-rowindex` |
 | Header cell | `columnheader` | `data-dg-part="header"`, `data-column-id`, `aria-sort`, `data-active` |
 | Body row | `row` | `data-dg-part="row"`, `data-row-id`, `aria-rowindex`, `data-selected`, `data-highlighted`, `data-grouped`, `data-depth`, `data-pinned`, `data-deleted`, `data-dirty`, `data-draft`, `data-new`, `data-striped` |
 | Body cell | `cell`, or `gridcell` under cell selection | `data-row-id`, `data-column-id`, `data-align`, `data-editing`, `data-dirty`, `data-invalid`, `data-focused`, `data-selected` |
@@ -57,20 +58,32 @@ the `grid` role.
 coordinates instead:
 
 ```ts
-const cell = orders.locator('[data-row-id="42"][data-column-id="total"]');
+const cell = orders.locator(
+  '[data-row-id="42"][data-column-id="total"]:not([data-dg-part])',
+);
 ```
 
 Body cells carry no `data-dg-part`; the coordinate pair identifies them.
+The `editor` part of an open cell carries the same pair, so `:not([data-dg-part])` keeps the locator on the cell while the cell is being edited.
+
+**The body scrolls inside the scroll container.** The element carrying
+`data-dg-scroll-container` is the one to scroll in a test, whether to load the
+next page of an infinite-scroll grid or to move the virtualizer without the api:
+
+```ts
+await orders.locator("[data-dg-scroll-container]").evaluate((element) => {
+  element.scrollTop = element.scrollHeight;
+});
+```
 
 **State attributes are present only while they apply.** A boolean attribute
 such as `data-selected`, `data-new` or `data-invalid` is rendered with the
-value `"true"` while its state holds and omitted otherwise, so the bare
-attribute and the value match the same elements, and the negative is the
-absence:
+value `"true"` while its state holds and omitted otherwise.
+`[data-new]` and `[data-new="true"]` match the same elements; to test the negative, assert that the attribute is absent:
 
 ```ts
 const drafts = orders.locator('[data-dg-part="row"][data-draft]');
-await expect(row).not.toHaveAttribute("data-deleted");
+await expect(drafts.first()).not.toHaveAttribute("data-deleted");
 ```
 
 ## Parts
@@ -92,8 +105,10 @@ so a part that repeats is addressed by adding the coordinate.
 | `filter-panel-close` | The surface's ✕; absent on a hand-placed panel |
 | `filter-add`, `filter-clear-all` | The panel's footer buttons |
 | `header-filter-row` | The header filter row, under `filters.inHeader` |
-| `filter-pills` | The active-filter pill group |
+| `filter-pills` | The active-filter pill group. `TMDataGridFilterPills` renders where you place it, inside or outside the root; outside, scope through its own container |
 | `menu-button` | The burger, `TMDataGrid.Menu` |
+| `menu-export`, `menu-export-selected` | `TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected`, in the menu dropdown |
+| `export-picker` | The export column picker, in a dialog. Holds `export-picker-search`, `export-picker-hint`, `export-column-all` with the count `export-picker-count`, and the buttons `export-picker-confirm` and `export-picker-cancel` |
 | `columns-panel`, `columns-search` | The column chooser panel, and the search box in the panel or in `TMDataGrid.Menu.Columns` |
 | `columns-toggle-all`, `columns-reset` | Show/hide all and Reset layout, in the panel or in the menu |
 | `footer` | The pager row |
@@ -129,12 +144,14 @@ so a part that repeats is addressed by adding the coordinate.
 
 | `data-dg-part` | What it is |
 | --- | --- |
-| `header` | A column header |
-| `header-sort`, `header-menu`, `header-filter` | Its three action buttons. `header-filter` is absent under `filters.inHeader`, where the control below is the indicator |
+| `header` | A column header. A click sorts a sortable column; `aria-sort` holds the result |
+| `header-sort`, `header-menu`, `header-filter` | Its three action buttons. `header-sort` and `header-menu` are hidden until the header is hovered or holds focus: sort through `header`, and hover `header` before clicking `header-menu`. `header-filter` is absent under `filters.inHeader`, where the control below is the indicator |
+| `header-resize` | The resize handle at the column's edge; present only when the column can resize. Drag it to resize, double-click it to fit the column to its content |
 | `header-filter-cell`, `header-filter-operator` | One column's header filter control and its operator button |
 | `filter-row` | One row of the filter panel |
-| `filter-pill` | One active-filter pill; its ✕ is the only button inside it |
+| `filter-pill` | One active-filter pill. Holds a label button and `filter-pill-remove`, its ✕ |
 | `columns-toggle` | The checkbox of one column, in the panel or in the menu |
+| `export-column` | The checkbox of one column in the export picker |
 
 ### Keyed by both
 
@@ -144,7 +161,8 @@ so a part that repeats is addressed by adding the coordinate.
 
 Within a filter row the three controls are `filter-column`,
 `filter-operator` and `filter-value` (or `filter-value-from` /
-`filter-value-to` for `between`).
+`filter-value-to` for `between`), and `filter-remove` is the row's ✕.
+None of them carries `data-column-id`; scope through the row.
 
 A column declaring `meta.filter.control` or `meta.edit.editor` renders your component
 in that slot, so `filter-value` and `editor-input` cover the built-ins only.
@@ -158,6 +176,19 @@ of several inputs the caret should land in.
 Every icon-only control also carries an `aria-label` drawn from `labels`. Those
 are translated, so they make brittle selectors. Prefer the parts above unless
 your grid runs in one language.
+
+## Portals
+
+These surfaces render in a portal at the end of `<body>`, outside the grid's root, so a locator scoped to the root does not reach them:
+
+- the dropdown of `TMDataGrid.Menu` - `page.getByRole("menu")`; holds `columns-toggle`, `columns-toggle-all`, `columns-reset`, `menu-export` and `menu-export-selected`
+- a column's menu, opened by `header-menu` or by a right click on the header - `page.getByRole("menu")`; its items (sort, filter, group, pin, hide) carry no part, so reach one by role and label, `menu.getByRole("menuitem", { name: "Group by Location" })`, and note that the label is translated
+- the `header-filter-operator` menu - `page.getByRole("menu")`
+- the export column picker - `page.getByRole("dialog")`; holds the `export-*` parts
+- the listbox of every `Select` or `MultiSelect` the grid renders: `page-size`, `filter-column`, `filter-operator`, and the `filter-value` of a boolean or select-type filter - the element named by the input's `aria-controls`; each option carries its value in `value`, a Mantine detail the page object below relies on
+
+One menu or dialog is open at a time, so the page-level locator is unambiguous.
+`filter-popup` and `filter-sidebar` render inside the root.
 
 ## Virtualization
 
@@ -188,7 +219,7 @@ await expect(orders.locator('[data-row-id="42"]').first()).toBeVisible();
 the scroll itself, `scrollToRow` moves the virtualizer:
 
 ```ts
-const found = grid.scrollToRow({ rowId: "42", align: "center" });
+const found = api.scrollToRow({ rowId: "42", align: "center" });
 ```
 
 It returns `false` when the row is not in the current view (filtered out, on
@@ -200,7 +231,7 @@ await page.evaluate(() => window.__ordersGrid.scrollToRow({ rowId: "42" }));
 ```
 
 which requires the app to expose the grid on `window`. Narrowing needs no such
-hook.
+hook, and scrolling the element carrying `data-dg-scroll-container` moves the virtualizer without it.
 
 ## Waiting
 
@@ -218,34 +249,60 @@ the assertion until the debounce lands.
 
 ## A page object
 
-A helper class wraps the parts:
+The class below is the one the grid's own Playwright suite runs against the demos on this site.
+Copy it as it is; it depends on `@playwright/test` and on the contract on this page only.
 
+<!-- source: playwright/support/DataGrid.ts -->
 ```ts
 import { type Locator, type Page, expect } from "@playwright/test";
 
 type PartKey = { rowId?: string; columnId?: string };
 
+/**
+ * A page object for one TMDataGrid, written against the grid's published
+ * test contract only: `data-dg-part`, `data-row-id` / `data-column-id`, roles
+ * and ARIA. It imports nothing but `@playwright/test`, so it can be copied
+ * into any app's suite as it is.
+ */
 export class DataGrid {
+  readonly page: Page;
   readonly root: Locator;
   readonly grid: Locator;
 
-  constructor(page: Page, testId: string) {
-    this.root = page.getByTestId(testId);
-    this.grid = this.root.getByRole("table");
+  /** `root` is the grid's root element, the one carrying `data-dg-root`. */
+  constructor(root: Locator) {
+    this.page = root.page();
+    this.root = root;
+    // Cell selection flips the role from `table` to `grid`.
+    this.grid = root.getByRole("table").or(root.getByRole("grid"));
+  }
+
+  /** The grid whose `<TMDataGrid data-testid>` is `testId`. */
+  static byTestId(page: Page, testId: string): DataGrid {
+    return new DataGrid(page.getByTestId(testId));
   }
 
   /** A named part, narrowed by row or column when the part repeats. */
   part(name: string, key: PartKey = {}): Locator {
-    const selector =
-      `[data-dg-part="${name}"]` +
-      (key.rowId === undefined ? "" : `[data-row-id="${key.rowId}"]`) +
-      (key.columnId === undefined ? "" : `[data-column-id="${key.columnId}"]`);
-    return this.root.locator(selector);
+    return this.root.locator(partSelector(name, key));
   }
 
+  /**
+   * A part inside the open `TMDataGrid.Menu` dropdown. The dropdown renders
+   * in a portal at the end of `<body>`, outside the grid's root, so it cannot
+   * be reached through `part()`.
+   */
+  menuPart(name: string, key: PartKey = {}): Locator {
+    return this.page.getByRole("menu").locator(partSelector(name, key));
+  }
+
+  /**
+   * A body cell by its coordinates. `:not([data-dg-part])` leaves out the
+   * `editor` part inside an open cell, which carries the same pair.
+   */
   cell({ rowId, columnId }: { rowId: string; columnId: string }): Locator {
     return this.root.locator(
-      `[data-row-id="${rowId}"][data-column-id="${columnId}"]`,
+      `[data-row-id="${rowId}"][data-column-id="${columnId}"]:not([data-dg-part])`,
     );
   }
 
@@ -253,10 +310,20 @@ export class DataGrid {
     await this.part("search").fill(text);
   }
 
+  /** Clicks a sortable header once: unsorted, ascending, descending. */
   async sortBy(columnId: string): Promise<void> {
-    await this.part("header-sort", { columnId }).click();
+    // The header, not its `header-sort` arrow: the arrow is display: none
+    // until the header is hovered, and a click on it also reaches the
+    // header's own sort handler, so it advances the sort two steps.
+    await this.part("header", { columnId }).click();
   }
 
+  /**
+   * Opens the filter panel and types `value` into the filter row of
+   * `columnId`, adding that row when there is none. Covers the built-in text
+   * and number inputs; a boolean or select-type filter renders a `Select` in
+   * `filter-value`, which takes `chooseOption` instead.
+   */
   async filterBy({
     columnId,
     value,
@@ -264,15 +331,78 @@ export class DataGrid {
     columnId: string;
     value: string;
   }): Promise<void> {
-    await this.part("filter-button").click();
-    await this.part("filter-row", { columnId })
-      .locator('[data-dg-part="filter-value"]')
-      .fill(value);
+    const panel = this.part("filter-panel");
+    if (!(await panel.isVisible())) {
+      await this.part("filter-button").click();
+    }
+    await expect(panel).toBeVisible();
+
+    const row = this.part("filter-row", { columnId });
+    // Opening the panel seeds a row on the first filterable column only. Any
+    // other column gets a row of its own: "Add filter" appends one on the next
+    // unused column, which is then pointed at `columnId`. A seeded row left
+    // without a value filters nothing.
+    if ((await row.count()) === 0) {
+      const rows = this.part("filter-row");
+      const before = await rows.count();
+      await this.part("filter-add").click();
+      await expect(rows).toHaveCount(before + 1);
+      // Re-pointing a row at the column it is already on would remove it.
+      if ((await row.count()) === 0) {
+        await this.chooseOption({
+          select: rows.last().locator('[data-dg-part="filter-column"]'),
+          value: columnId,
+        });
+      }
+    }
+    await row.locator('[data-dg-part="filter-value"]').fill(value);
   }
 
+  /** Shows or hides a column through the column items of `TMDataGrid.Menu`. */
   async toggleColumn(columnId: string): Promise<void> {
-    await this.part("menu-button").click();
-    await this.part("columns-toggle", { columnId }).click();
+    const toggle = this.menuPart("columns-toggle", { columnId });
+    if (!(await toggle.isVisible())) {
+      await this.part("menu-button").click();
+    }
+    await toggle.click();
+  }
+
+  /**
+   * Opens the column menu of `columnId` and returns it. The `header-menu`
+   * button shows only while its header is hovered, so the header is hovered
+   * first. The menu renders in a portal, and its items carry no part: reach
+   * them by role and label, `menu.getByRole("menuitem", { name: "Filter" })`.
+   */
+  async openColumnMenu(columnId: string): Promise<Locator> {
+    await this.part("header", { columnId }).hover();
+    await this.part("header-menu", { columnId }).click();
+    const menu = this.page.getByRole("menu");
+    await expect(menu).toBeVisible();
+    return menu;
+  }
+
+  /**
+   * Picks an option of a Mantine `Select` the grid renders (`page-size`,
+   * `filter-column`, `filter-operator`). Its listbox renders in a portal, so
+   * it is found through the input's `aria-controls`, and the option by its
+   * value: a column id or a page size, never a translated label.
+   */
+  async chooseOption({
+    select,
+    value,
+  }: {
+    select: Locator;
+    value: string;
+  }): Promise<void> {
+    await select.click();
+    await expect(select).toHaveAttribute("aria-expanded", "true");
+    const listboxId = await select.getAttribute("aria-controls");
+    if (listboxId === null) {
+      throw new Error("The select has no listbox: aria-controls is missing.");
+    }
+    await this.page
+      .locator(`[id="${listboxId}"] [role="option"][value="${value}"]`)
+      .click();
   }
 
   /** The entry row opened by `edit.addRow()`; `data-row-id` is its temp id. */
@@ -280,8 +410,10 @@ export class DataGrid {
     return this.part("entry-row");
   }
 
-  /** Types into the built-in editors of an open row: an entry row, or a row
-   *  opened in row mode. */
+  /**
+   * Types into the built-in editors of an open row: an entry row, or a row
+   * opened in row mode.
+   */
   async fillRow(rowId: string, values: Record<string, string>): Promise<void> {
     for (const [columnId, value] of Object.entries(values)) {
       await this.part("editor", { rowId, columnId })
@@ -297,12 +429,17 @@ export class DataGrid {
   /** Presses Save in `TMDataGrid.DraftActions` and waits for the store to empty. */
   async saveDrafts(): Promise<void> {
     await this.part("save-all").click();
-    await expect(this.part("save-all")).toHaveAttribute("data-draft-count", "0");
+    await expect(this.part("save-all")).toHaveAttribute(
+      "data-draft-count",
+      "0",
+    );
   }
 
-  /** Finds a row the test added by a value unique to it, since the grid does
-   *  not know the id the app gave the row. Retries until the app has put the
-   *  row in `data`. */
+  /**
+   * Finds a row the test added by a value unique to it, since the grid does
+   * not know the id the app gave the row. Retries until the app has put the
+   * row in `data`.
+   */
   async expectRowAdded(
     uniqueValue: string,
     cells: Record<string, string>,
@@ -311,9 +448,9 @@ export class DataGrid {
     await this.expectRowCount(1);
     const row = this.part("row");
     for (const [columnId, text] of Object.entries(cells)) {
-      await expect(row.locator(`[data-column-id="${columnId}"]`)).toHaveText(
-        text,
-      );
+      await expect(
+        row.locator(`[data-column-id="${columnId}"]:not([data-dg-part])`),
+      ).toHaveText(text);
     }
     await this.search("");
   }
@@ -329,12 +466,20 @@ export class DataGrid {
     await expect(this.grid).not.toHaveAttribute("aria-busy");
   }
 }
+
+function partSelector(name: string, key: PartKey): string {
+  return (
+    `[data-dg-part="${name}"]` +
+    (key.rowId === undefined ? "" : `[data-row-id="${key.rowId}"]`) +
+    (key.columnId === undefined ? "" : `[data-column-id="${key.columnId}"]`)
+  );
+}
 ```
 
 ```ts
 test("filters to one employee", async ({ page }) => {
-  const grid = new DataGrid(page, "employees");
   await page.goto("/employees");
+  const grid = DataGrid.byTestId(page, "employees");
   await grid.expectSettled();
 
   await grid.filterBy({ columnId: "lastName", value: "Nordkvist" });
@@ -344,6 +489,24 @@ test("filters to one employee", async ({ page }) => {
   );
 });
 ```
+
+## Recipes
+
+Each row names the parts a step uses and the attribute that proves it; `grid` is a `DataGrid`.
+
+| Interaction | Steps | Assertion |
+| --- | --- | --- |
+| Quick search | `grid.search("Cecilia")`; `search-clear` | `grid.expectRowCount(10)`, then the full count again |
+| Sort | `grid.sortBy("lastName")` once, then again | `aria-sort` on the `header` is `ascending`, then `descending` |
+| Filter | `grid.filterBy({ columnId, value })`; `filter-clear-all` | `grid.expectRowCount(n)`, then the full count again |
+| Remove a filter | `filter-remove` inside its `filter-row`, or `filter-pill-remove` inside its `filter-pill` | the `filter-pill` has count 0; the row count |
+| Hide a column | `grid.toggleColumn("location")`; `grid.menuPart("columns-reset")` | the `header` has count 0, then is visible again |
+| Page | `page-next`; `grid.chooseOption({ select: grid.part("page-size"), value: "50" })` | the `page-range` text changes and the first `row` has a new `data-row-id`; `grid.expectRowCount(50)` |
+| Select rows | `select-row` of a row; `select-all` | `data-selected="true"` on the `row`; `[data-dg-part="row"]:not([data-selected])` has count 0 |
+| Group | `grid.openColumnMenu("location")`, then the "Group by" item; `group-toggle` of a group row | rows carry `data-grouped`; `data-dg-row-count` grows when the group expands and shrinks when it collapses |
+| Load more | scroll `data-dg-scroll-container` to its `scrollHeight` | `data-dg-row-count` grows, then `grid.expectSettled()` |
+| Export | `menu-button`, then `menu-export` in the menu | `page.waitForEvent("download")` and `download.suggestedFilename()` |
+| Edit a cell | `grid.cell({ rowId, columnId }).dblclick()`, `grid.fillRow(rowId, { columnId: value })`, Enter | the cell's text; after Escape instead of Enter, the text is unchanged |
 
 ## Editing
 
@@ -369,8 +532,8 @@ since it retries until the app has put the row in `data`:
 
 ```ts
 test("adds an employee", async ({ page }) => {
-  const grid = new DataGrid(page, "employees");
   await page.goto("/employees");
+  const grid = DataGrid.byTestId(page, "employees");
   await grid.expectSettled();
 
   // The app's own button, calling edit.addRow()
@@ -414,13 +577,14 @@ as `entry-row[data-row-id="__new__1"][data-committed="true"]`, outside
 `data-dg-row-count`, until the save.
 
 A ✓ that fails validation keeps the entry row open, with `data-invalid` on the
-failing cells:
+failing cells. The cell and its open editor share the column id, so the
+selector leaves the editor out:
 
 ```ts
 await grid.commitEntryRow(tempId);
 await expect(grid.entryRow()).toHaveCount(1);
 await expect(
-  grid.entryRow().locator('[data-column-id="email"]'),
+  grid.entryRow().locator('[data-column-id="email"]:not([data-dg-part])'),
 ).toHaveAttribute("data-invalid", "true");
 ```
 
@@ -471,6 +635,96 @@ await grid.part("restore-row", { rowId: "42" }).click();
 Assert a deletion on `data-dg-row-count`, not on the row's element: a row
 outside the viewport has no element either, so `toHaveCount(0)` passes for it
 whether or not it was deleted.
+
+## Component tests
+
+Playwright 1.62 and later mount a component in a real browser through the `mount` fixture of `@playwright/test`.
+A `*.story.tsx` file exports one component per scenario, a gallery page served by your dev server renders a story by id, and the test drives the result with the same locators as a page test.
+What the gallery page must expose, and a React gallery of a few dozen lines, are in [Component testing](https://playwright.dev/docs/test-components).
+A real browser covers what jsdom cannot: virtualization, column resize and reorder, sticky pinned columns, and the clipboard.
+
+The project points `baseURL` at the gallery and starts its dev server:
+
+```ts
+projects: [
+  {
+    name: "components",
+    testDir: "tests/components",
+    use: {
+      baseURL: "http://localhost:5274/",
+      serviceWorkers: "block",
+      permissions: ["clipboard-read", "clipboard-write"],
+    },
+  },
+],
+webServer: [{ command: "npm run gallery", url: "http://localhost:5274/" }],
+```
+
+A story owns everything the grid needs.
+Render it inside `<MantineProvider env="test">`, in the gallery or in the story, which turns Mantine's transitions off.
+Put the grid in a flex column of fixed height with `flex: 1` and `minHeight: 0` on the grid itself, as on the [Styling](/docs/styling) page; a plain block container grows with the rows and nothing virtualizes.
+Expose the api on `window` in the story where a test needs `scrollToRow`:
+
+```tsx
+// Orders.story.tsx
+declare global {
+  interface Window {
+    __grid?: TMDataGridApi<Order>;
+  }
+}
+
+export const Virtualized = () => {
+  const grid = useTMDataGrid<Order>({
+    data: orders, // 5000 rows
+    columns,
+    getRowId: (row) => row.id,
+  });
+  useEffect(() => {
+    window.__grid = grid;
+  }, [grid]);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: 400 }}>
+      <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }} data-testid="orders">
+        <TMDataGrid.Table<Order> />
+      </TMDataGrid>
+    </div>
+  );
+};
+```
+
+`mount` returns the gallery root; the page object takes the grid's root inside it.
+The spec is typechecked apart from the story, so it declares `__grid` on `Window` as well:
+
+```ts
+test("reaches a row past the viewport", async ({ mount, page }) => {
+  const component = await mount("Orders/Virtualized");
+  const grid = new DataGrid(component.locator("[data-dg-root]"));
+  await grid.expectRowCount(5000);
+  await expect(grid.part("row", { rowId: "4500" })).toHaveCount(0);
+
+  const found = await page.evaluate(() => {
+    return window.__grid!.scrollToRow({ rowId: "4500", align: "center" });
+  });
+  expect(found).toBe(true);
+  await expect(grid.part("row", { rowId: "4500" })).toBeVisible();
+});
+```
+
+A story id is a string: `mount` accepts any id, and a renamed story fails at run time.
+To get completion and prop checking, register the ids in Playwright's `Stories` interface:
+
+```ts
+declare module "@playwright/test" {
+  interface Stories {
+    "Orders/Virtualized": typeof Virtualized;
+  }
+}
+```
+
+A clipboard test needs `cellSelection` on in the story and the `permissions` above in the project; it selects a range, presses `Control+C` and reads `navigator.clipboard.readText()` through `page.evaluate`.
+The copied text separates cells with a tab and rows with `\r\n`.
+
+The grid's own component suite is written this way: the stories, the gallery and the specs are in the [repository](https://github.com/Jielga/TMDataGrid/tree/main/playwright).
 
 ## React Testing Library
 
