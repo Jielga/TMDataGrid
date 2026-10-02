@@ -2,6 +2,8 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   MantineWrapper,
+  part,
+  queryPart,
   renderGrid,
   type TestRow,
 } from "../../test/gridHarness";
@@ -36,13 +38,9 @@ function renderTable(grid: ReturnType<typeof renderGrid>["result"]) {
   );
 }
 
-/** The resize divider, which carries no part of its own. */
+/** The resize handle of a resizable column. */
 function separator(container: HTMLElement, columnId: string) {
-  const element = container.querySelector<HTMLElement>(
-    `[role="columnheader"][data-column-id="${columnId}"] [class*="columnSeparator"]`,
-  );
-  expect(element).not.toBeNull();
-  return element as HTMLElement;
+  return part("header-resize", { columnId }, container);
 }
 
 /** The one element the whole layout hangs off. */
@@ -55,6 +53,20 @@ function gridElement(container: HTMLElement) {
 }
 
 describe("column resizing", () => {
+  it("marks the separator as a resize handle only where the column resizes", () => {
+    const { result: resizable } = renderGrid();
+    const { container: resizableContainer } = renderTable(resizable);
+    expect(
+      queryPart("header-resize", { columnId: "name" }, resizableContainer),
+    ).not.toBeNull();
+
+    const { result: fixed } = renderGrid({ enableColumnResizing: false });
+    const { container: fixedContainer } = renderTable(fixed);
+    expect(
+      queryPart("header-resize", { columnId: "name" }, fixedContainer),
+    ).toBeNull();
+  });
+
   it("starts the drag from the width the column is rendered with", () => {
     stubHeaderWidths({ name: 260 });
     const { result } = renderGrid();

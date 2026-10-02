@@ -86,6 +86,21 @@ describe("TMDataGrid.Menu", () => {
     ).toBeInTheDocument();
   });
 
+  it("states on the burger that it opened the menu, and which one", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+    const button = part("menu-button");
+
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    await user.click(button);
+
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(button).toHaveAttribute(
+      "aria-controls",
+      screen.getByRole("menu").id,
+    );
+  });
+
   it("lists one checkbox item per hideable column", async () => {
     const user = userEvent.setup();
     renderGridUi();

@@ -80,6 +80,13 @@ export function TMDataGridFilterPills<TData extends RowData>({
           const value = filter.value;
           // isFilterActive already vouched for the shape; this narrows it.
           if (!isTMDataGridFilterValue(value)) return null;
+          // Mantine types `removeButtonProps` as `CloseButtonProps`, which
+          // has no room for `data-*` in an object literal. Spread in from a
+          // typed value, they reach the button all the same.
+          const removeButtonParts: Record<`data-${string}`, string> = {
+            "data-dg-part": "filter-pill-remove",
+            "data-column-id": filter.id,
+          };
 
           return (
             <Pill
@@ -98,13 +105,11 @@ export function TMDataGridFilterPills<TData extends RowData>({
               // the tab order, because inside a `PillsInput` Backspace is the
               // way out. These pills stand on their own, so the ✕ has to be a
               // real button.
-              // No test id of its own: Mantine types these props as
-              // `CloseButtonProps`, which has no room for `data-*`. The pill
-              // carries one, and the ✕ is the only button inside it.
               removeButtonProps={{
                 "aria-label": labels.clearFilter(label),
                 "aria-hidden": false,
                 tabIndex: 0,
+                ...removeButtonParts,
               }}
             >
               <UnstyledButton

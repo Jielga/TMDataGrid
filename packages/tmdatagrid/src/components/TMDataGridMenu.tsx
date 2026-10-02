@@ -75,8 +75,11 @@ function TMDataGridMenuRoot({
       withinPortal
       {...menuProps}
     >
-      <Menu.Target>
-        <Tooltip label={triggerLabel} openDelay={400}>
+      {/* The Tooltip goes outside the Target. Inside it, the Target's
+          `aria-expanded` / `aria-controls` reach the Tooltip, which hands
+          unknown props to its own floating label, not to the button. */}
+      <Tooltip label={triggerLabel} openDelay={400}>
+        <Menu.Target>
           <ActionIcon
             variant="subtle"
             color="gray"
@@ -86,8 +89,8 @@ function TMDataGridMenuRoot({
           >
             {icon ?? <BurgerIcon size={18} stroke={1.6} />}
           </ActionIcon>
-        </Tooltip>
-      </Menu.Target>
+        </Menu.Target>
+      </Tooltip>
       <Menu.Dropdown>{children}</Menu.Dropdown>
     </Menu>
   );

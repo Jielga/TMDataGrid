@@ -5,6 +5,8 @@ import {
   erased,
   gridRowCount,
   header,
+  part,
+  queryPart,
   renderedRowIds,
   renderGrid,
   renderGridUi,
@@ -135,6 +137,20 @@ describe("filter pills", () => {
 
     expect(screen.queryByText("ID: 3")).not.toBeInTheDocument();
     expect(renderedRowIds().length).toBe(testRows.length);
+  });
+
+  it("clears a filter through the pill's filter-pill-remove part", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    await user.type(screen.getByLabelText("Value"), "3");
+    expect(gridRowCount()).toBe(1);
+
+    await user.click(part("filter-pill-remove", { columnId: "id" }));
+
+    expect(queryPart("filter-pill", { columnId: "id" })).not.toBeInTheDocument();
+    expect(gridRowCount()).toBe(testRows.length);
   });
 
   it("shows no pill for a filter that is not narrowing yet", async () => {
