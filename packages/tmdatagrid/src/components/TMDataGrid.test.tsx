@@ -543,7 +543,7 @@ describe("labels", () => {
     expect(screen.getByRole("button", { name: "Meny" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
     expect(
-      screen.getByRole("checkbox", { name: "Markera alla rader" }),
+      screen.getByRole("checkbox", { name: "Välj alla rader" }),
     ).toBeInTheDocument();
   });
 

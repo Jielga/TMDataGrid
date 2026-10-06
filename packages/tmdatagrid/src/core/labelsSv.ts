@@ -136,14 +136,14 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
         : `Välj kolumner att exportera för de ${selected} valda raderna`,
   exportPickerConfirm: "Exportera",
   exportPickerCancel: "Avbryt",
-  exportPickerSelectAll: "Markera alla",
+  exportPickerSelectAll: "Välj alla",
   exportPickerCount: (checked, total) => `${checked} av ${total}`,
   exportPickerHidden: "Dold",
 
   selectColumnLabel: "Kryssrutemarkering",
-  selectAllRows: "Markera alla rader",
-  selectRow: "Markera rad",
-  selectGroup: "Markera grupp",
+  selectAllRows: "Välj alla rader",
+  selectRow: "Välj rad",
+  selectGroup: "Välj grupp",
 
   detailsColumnLabel: "Detaljer",
   showDetails: "Visa detaljer",
