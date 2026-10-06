@@ -3,7 +3,8 @@
 Four things a user can change about the layout of the grid, and one button that
 resets them. All four write state that
 [persists](/docs/use-tm-data-grid#persist) together, so a grid comes back
-arranged the way it was left.
+arranged the way it was left. Each is also an item in the
+[column header menu](/docs/column-menu).
 
 ```demo
 file: columns/ColumnLayout.tsx
@@ -145,31 +146,6 @@ first cells appear in.
 consumer code; `container` is the grid's scroll container, or any ancestor of
 the column's cells.
 
-## The column menu
-
-Everything above is reachable from a column's menu, and
-`renderColumnMenuItems` on `TMDataGrid.Table` sets what is in it. It receives
-the items the grid would have rendered and returns the list to render:
-
-```tsx
-<TMDataGrid.Table<Employee>
-  renderColumnMenuItems={({ column, internalItems }) => [
-    ...internalItems,
-    <Menu.Divider key="stats-divider" />,
-    <Menu.Item key="stats" onClick={() => showStats(column.id)}>
-      Column statistics
-    </Menu.Item>,
-  ]}
-/>
-```
-
-`internalItems` is the built-in list in order, dividers included. Returning it
-unchanged gives the default menu, splicing around it extends the menu, and
-returning something else replaces it. An empty list removes the menu button.
-
-It runs for every column that has a menu, so branch on `column.id` for a
-per-column menu. A trailing divider is dropped automatically.
-
 ## Reset the layout
 
 `resetSettings()` from the hook clears visibility, order, pinning and widths in
@@ -193,7 +169,6 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `meta.flex` | Column meta | `number` | `1` | Share of the remaining width. |
 | `meta.autoSize` | Column meta | `boolean` | `false` | Autosize once, on the render the column's first cells appear in. |
 | `minSize` / `maxSize` / `size` | Column options | `number` | `80` / – / – | Width bounds, and the fixed width once one applies. |
-| `renderColumnMenuItems` | Table prop | `({ column, table, internalItems }) => ReactNode[]` | – | The column menu's contents. An empty list removes the button. |
 | `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
