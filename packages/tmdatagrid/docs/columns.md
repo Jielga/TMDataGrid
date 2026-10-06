@@ -8,6 +8,8 @@ it sorts all follow from `meta.type`.
 
 `createTMDataGridColumnHelper<TData>()` returns a TanStack column helper bound
 to the grid's feature set, so that `meta` and `filterFn` are correctly typed.
+The `meta.options` and `meta.edit.enabled` callbacks receive rows typed as
+`TData`, so `row.original` needs no cast.
 
 ```tsx
 const columnHelper = createTMDataGridColumnHelper<Employee>();
@@ -167,12 +169,10 @@ meta: {
 meta: { type: "select", options: "faceted" }
 
 // Computed. `row` is set when a cell editor asks and absent for the filter
-// panel, so row-dependent options can branch on it. `row.original` is
-// `unknown` here - cast it to the row type:
+// panel, so row-dependent options can branch on it:
 meta: {
   type: "select",
-  options: ({ row }) =>
-    row ? citiesFor((row.original as Employee).country) : allCities,
+  options: ({ row }) => (row ? citiesFor(row.original.country) : allCities),
 }
 ```
 
@@ -248,7 +248,8 @@ column can be placed in front of it.
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `createTMDataGridColumnHelper` | Export | `<TData>() => helper` | – | A TanStack column helper typed against the grid's features. |
+| `createTMDataGridColumnHelper` | Export | `<TData>() => TMDataGridColumnHelper<TData>` | – | A TanStack column helper typed against the grid's features, with `meta` callbacks typed against `TData`. |
+| `TMDataGridColumnHelper` | Type | – | – | The helper's type. |
 | `meta.label` | Column meta | `string` | Header or id | Name in menus and the columns panel. |
 | `meta.type` | Column meta | six types | `"string"` | What the values are; drives filters and editors. |
 | `meta.options` | Column meta | array \| `"faceted"` \| `(args) => …` | – | The choices of an option column. |

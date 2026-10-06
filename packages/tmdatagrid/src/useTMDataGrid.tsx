@@ -1,8 +1,12 @@
 import { useCreateStore, useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
 import {
+  type AccessorFn,
+  type AccessorFnColumnDef,
+  type AccessorKeyColumnDef,
   aggregationFns,
   type ColumnDef,
+  type ColumnHelper,
   columnFacetingFeature,
   columnFilteringFeature,
   columnGroupingFeature,
@@ -19,8 +23,13 @@ import {
   createFilteredRowModel,
   createGroupedRowModel,
   createPaginatedRowModel,
+  type DeepKeys,
+  type DeepValue,
+  type DisplayColumnDef,
   filterFns,
+  type GroupColumnDef,
   globalFilteringFeature,
+  type IdentifiedColumnDef,
   metaHelper,
   type Row,
   type RowData,
@@ -54,7 +63,7 @@ import {
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
   type TMDataGridSaveDraftsArgs,
-  type TMDataGridSaveDraftsResult,
+  type TMDataGridSaveDraftsResponse,
   type TMDataGridEditEngineContext,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
@@ -162,8 +171,11 @@ const PERSIST_DEBOUNCE_MS = 200;
  * `type` and `options` are read by both stages, so one declaration of each
  * feeds the filter panel and the cell editor, which is why they sit outside
  * both namespaces.
+ *
+ * `TData` types the row that `options` and `edit.enabled` callbacks receive.
+ * `createTMDataGridColumnHelper<TData>()` fills it in.
  */
-export type TMDataGridColumnMeta = {
+export type TMDataGridColumnMeta<TData extends RowData = TMDataGridRowData> = {
   /** Name shown in menus and the column manager. Falls back to a string header. */
   label?: string;
   /**
@@ -178,7 +190,7 @@ export type TMDataGridColumnMeta = {
    * function of the table, column and, for editors, the row. See
    * {@link TMDataGridOptionsSource}.
    */
-  options?: TMDataGridOptionsSource;
+  options?: TMDataGridOptionsSource<TData>;
   /** Share of the leftover width this column claims. Defaults to `1`. */
   flex?: number;
   align?: "left" | "right" | "center";
@@ -222,7 +234,7 @@ export type TMDataGridColumnMeta = {
    *
    * See {@link TMDataGridColumnEditOptions}.
    */
-  edit?: TMDataGridColumnEditOptions;
+  edit?: TMDataGridColumnEditOptions<TData>;
   /**
    * `false` leaves the column out of every export and out of Ctrl+C - for a
    * column of buttons, or one whose value means nothing outside the grid.
@@ -314,8 +326,57 @@ export type TMDataGridTable<TData extends RowData> = Table<
   TData
 >;
 
-export function createTMDataGridColumnHelper<TData extends RowData>() {
-  return createColumnHelper<TMDataGridFeatures, TData>();
+/** A column definition with `meta` typed against the row type. */
+type WithRowTypedMeta<TDef, TData extends RowData> = TDef extends unknown
+  ? Omit<TDef, "meta"> & { meta?: TMDataGridColumnMeta<TData> }
+  : never;
+
+/**
+ * TanStack's column helper with `meta` typed against `TData`, so the
+ * `meta.options` and `meta.edit.enabled` callbacks receive
+ * `Row<TMDataGridFeatures, TData>`.
+ */
+export type TMDataGridColumnHelper<TData extends RowData> = {
+  accessor: <
+    TAccessor extends AccessorFn<TData> | DeepKeys<TData>,
+    TValue extends TAccessor extends AccessorFn<TData, infer TReturn>
+      ? TReturn
+      : TAccessor extends DeepKeys<TData>
+        ? DeepValue<TData, TAccessor>
+        : never,
+  >(
+    accessor: TAccessor,
+    column: WithRowTypedMeta<
+      TAccessor extends AccessorFn<TData>
+        ? DisplayColumnDef<TMDataGridFeatures, TData, TValue>
+        : IdentifiedColumnDef<TMDataGridFeatures, TData, TValue>,
+      TData
+    >,
+  ) => TAccessor extends AccessorFn<TData>
+    ? AccessorFnColumnDef<TMDataGridFeatures, TData, TValue>
+    : AccessorKeyColumnDef<TMDataGridFeatures, TData, TValue>;
+  columns: ColumnHelper<TMDataGridFeatures, TData>["columns"];
+  display: (
+    column: WithRowTypedMeta<DisplayColumnDef<TMDataGridFeatures, TData>, TData>,
+  ) => DisplayColumnDef<TMDataGridFeatures, TData, unknown>;
+  group: (
+    column: WithRowTypedMeta<
+      GroupColumnDef<TMDataGridFeatures, TData, unknown>,
+      TData
+    >,
+  ) => GroupColumnDef<TMDataGridFeatures, TData, unknown>;
+};
+
+export function createTMDataGridColumnHelper<
+  TData extends RowData,
+>(): TMDataGridColumnHelper<TData> {
+  // Same runtime helper. The features object registers one meta type for
+  // every table, so the row-typed meta exists only in this signature; the
+  // grid calls the callbacks with the rows of the table they belong to.
+  return createColumnHelper<
+    TMDataGridFeatures,
+    TData
+  >() as unknown as TMDataGridColumnHelper<TData>;
 }
 
 /** What the `renderDetails` render prop is handed for an expanded row. */
@@ -681,14 +742,14 @@ export type TMDataGridEditingOptions<TData extends RowData> =
            *
            * Rows still open are not in the payload and stay open. Returning
            * nothing saves the whole store and throwing saves none of it;
-           * return a {@link TMDataGridSaveDraftsResult} to save part of it.
+           * return a {@link TMDataGridSaveDraftsResponse} to save part of it.
            */
           onSaveDrafts?: (
             args: TMDataGridSaveDraftsArgs<TData>,
           ) =>
             | void
-            | TMDataGridSaveDraftsResult
-            | Promise<void | TMDataGridSaveDraftsResult>;
+            | TMDataGridSaveDraftsResponse
+            | Promise<void | TMDataGridSaveDraftsResponse>;
           /**
            * Keep committed entry rows pinned in the sticky entry block until
            * the draft store is saved, out of the body's sort. Off by default:

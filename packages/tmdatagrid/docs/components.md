@@ -83,7 +83,7 @@ Pass the row type so the handlers are typed:
 | `onCellClick` · `onCellDoubleClick` · `onCellContextMenu` | `(args: TMDataGridCellEventArgs) => void` | – | Called on cell click, double-click and right-click. Receive `{ cell, row, column, event }`. See [Clicks and context menus](/docs/row-interaction). |
 | `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer` | – | Contents of a row's context menu. Receives `{ table, row, cell, close, internalItems }`. See [Context menus](/docs/row-interaction#context-menus). |
 | `rowContextMenuProps` | `Omit<MenuProps, "opened" \| "onChange" \| "children">` | – | Props passed to the Mantine `Menu` behind the context menu. |
-| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [The column menu](/docs/column-layout#the-column-menu). |
+| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer` | – | Contents of a column's menu. Returning an empty array leaves the column with no menu button. See [Column header menu](/docs/column-menu). |
 | `rowClassName` | `string \| (row) => string` | – | Class for a body row. See [Row styling](/docs/row-styling). |
 | `rowStyle` | `TMDataGridRowStyle \| (row) => TMDataGridRowStyle` | – | Inline style for a body row. Set `--row-bg` rather than `background`. See [Row styling](/docs/row-styling#set-the-row-background). |
 | `striped` | `boolean` | `false` | If set, every second row takes `--dg-row-striped-bg`. See [Striping](/docs/row-styling#striping). |
@@ -196,8 +196,8 @@ The slot argument carries the state, the operations and the built-in pieces:
 | `state.openRowIds` | `ReadonlyArray<string>` | The ids behind `openCount`, in the order the grid opened them. An entered row appears as its `tempId`. |
 | `state.isSubmitting` | `boolean` | `true` while any open row is submitting. Not the save; see `state.isSaving`. |
 | `state.isSaving` | `boolean` | `true` while `saveDrafts` is in flight, until the consumer's callbacks settle. The built-in Save shows it as its loading state. |
-| `actions.save` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone. |
-| `actions.commitAll` | `() => Promise<boolean>` | Submits every open row, committing the ones that validate. |
+| `actions.save` | `() => Promise<TMDataGridSaveDraftsResult>` | Sends the draft store - `edit.saveDrafts()`. Open rows are left alone. Resolves `{ ok, saved, kept, reopened }`. |
+| `actions.commitAll` | `() => Promise<TMDataGridCommitAllResult>` | Submits every open row, committing the ones that validate - `edit.commitAll()`. Resolves `{ ok, committed, open }`. |
 | `actions.discard` | `() => void` | Drops open form state and the draft store alike. |
 | `actions.scrollToRow` | `({ rowId, align? }) => boolean` | [`scrollToRow`](/docs/scrolling#scrolling-to-a-row), passed through. |
 | `actions.scrollToFirstOpenRow` | `(align?) => boolean` | Scrolls to the first open row in display order. `false` when none could be reached. |

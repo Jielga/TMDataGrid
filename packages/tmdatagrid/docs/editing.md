@@ -169,6 +169,23 @@ Column rules and `rowValidators` ran at commit on the same values, so they do no
 A row the table rules reject is reopened with its errors and left out of the save.
 On the per-row path, a row whose `onCommit` or `onRowAdd` rejects is reopened the same way.
 
+`saveDrafts()` resolves a `TMDataGridSaveDraftsResult`, `{ ok, saved, kept, reopened }`.
+Every id the save took from the draft store is in exactly one list: row ids for edits and deletions, temp ids for new rows, all kinds mixed.
+
+- `saved` - left the draft store; the consumer accepted it
+- `kept` - still in the draft store, still committed, and sent again by the next save; see [Saving part of the store](#saving-part-of-the-store)
+- `reopened` - out of the draft store and open again with an error: a table rule rejected it, or on the per-row path its `onCommit` or `onRowAdd` rejected
+- `ok` - `true` when `kept` and `reopened` are both empty
+
+On the per-row path a deletion always leaves the store, so it is reported in `saved`.
+An empty store resolves `{ ok: true, saved: [], kept: [], reopened: [] }` without calling the consumer.
+A call made while a save is in flight joins that save and resolves the same result.
+
+```tsx
+const result = await grid.edit.saveDrafts();
+if (!result.ok) notify(`${result.reopened.length} rows need attention`);
+```
+
 `TMDataGrid.DraftActions` renders the whole-grid controls: Save with the count of rows in the store, Discard, and a note counting the rows still open.
 Save is disabled while the store is empty, however much is being typed, and shows a loading state while the save is in flight.
 The toolbar is declarative: include the component yourself when the grid runs a draft store, or call `edit.saveDrafts()` from a control of your own.
@@ -195,7 +212,8 @@ onSaveDrafts: async ({ updated, created, deleted }) => {
 ```
 
 A kept row stays committed rather than reopening, so the next `saveDrafts()` retries it with the values it already holds.
-`saveDrafts()` resolves `false` when anything was kept.
+`saveDrafts()` reports every id `onSaveDrafts` returned as failed in `kept`, and every id it was sent when it threw, with `ok: false`.
+Without `onSaveDrafts`, a deletion whose `onRowDelete` throws keeps its mark and is reported in `kept` the same way.
 A kept row carries the same markers as every other draft and nothing more; see [Styling pending rows](#styling-pending-rows).
 
 ### Rows left open
@@ -203,7 +221,14 @@ A kept row carries the same markers as every other draft and nothing more; see [
 A row left open is neither lost nor sent.
 It keeps everything typed into it, stays open across a save, and joins the next save once it is committed.
 `edit.commitAll()` submits every open row at once; rows that fail validation stay open with their errors.
-"Commit everything, then save" is `commitAll()` followed by `saveDrafts()`.
+It resolves a `TMDataGridCommitAllResult`, `{ ok, committed, open }`: every row that was open at the call is in exactly one of the two lists, and `ok` is `true` when `open` is empty.
+"Commit everything, then save" is `commitAll()` followed by `saveDrafts()`:
+
+```tsx
+const { ok, open } = await grid.edit.commitAll();
+if (ok) await grid.edit.saveDrafts();
+else grid.scrollToRow({ rowId: open[0]! });
+```
 
 The note beside Save counts the open rows.
 On a long grid the open row may be far from the viewport, and because the grid is [virtualized](/docs/scrolling) it may have no element to scroll to.
@@ -388,13 +413,14 @@ Double-click, or the lane's pencil, reopens the row into the entry block, which 
 `edit.addRows(rows)` opens a batch of entry rows in one write, where a loop over `addRow` is one write per row.
 Each row is seeded over `newRowDefaults` like `addRow`.
 `{ commit: true }` submits the rows too: rows that validate are committed, and rows that fail stay open in the entry block with their errors.
-The result says which went which way, so the bad rows can be reported before anything is saved:
+The result, `{ ok, committed, open }`, says which went which way, so the bad rows can be reported before anything is saved.
+Every added row is in exactly one list, and `ok` is `true` when `open` is empty:
 
 ```tsx
-const { committed, open } = await grid.edit.addRows(parsedRows, {
+const { ok, open } = await grid.edit.addRows(parsedRows, {
   commit: true,
 });
-if (open.length > 0) notify(`${open.length} rows need attention`);
+if (!ok) notify(`${open.length} rows need attention`);
 await grid.edit.saveDrafts();
 ```
 
@@ -526,14 +552,14 @@ The built-in controls do everything through `edit`, which is public.
 | --- | --- |
 | `edit.begin({ rowId, columnId })` | Opens a row into form state. On a committed row, takes it back out of the draft store |
 | `edit.commit(rowId)` | Submits one row: into the draft store under `draft: true`, to `onCommit` otherwise. Resolves `false` if validation blocked it |
-| `edit.commitAll()` | Submits every open row. Resolves `false` when one stayed open |
-| `edit.saveDrafts()` | Sends the draft store. Open rows are left alone |
+| `edit.commitAll()` | Submits every open row. Resolves `{ ok, committed, open }` - the rows that committed and the rows still open; `ok` is `false` when one stayed open |
+| `edit.saveDrafts()` | Sends the draft store. Open rows are left alone. Resolves `{ ok, saved, kept, reopened }` - the ids that left the store, stayed in it for the next save, or reopened with an error; `ok` is `false` when anything was kept or reopened |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts - form state and the draft store alike |
 | `edit.setCellValue(rowId, columnId, value)` | Writes one cell and commits the row, with no editor. Resolves `false` if the cell takes no edit, or validation refused the value |
 | `edit.setRowValues(rowId, values)` | The same for several cells of one row, in one commit. All or nothing |
 | `edit.clearCell(rowId, columnId)` | Writes the type's empty value and commits it - what Delete does |
 | `edit.addRow(values?)` | Opens one entry row, seeded over `newRowDefaults` |
-| `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits the rows too - one publish for the lot under `draft: true` |
+| `edit.addRows(rows, options?)` | Opens a batch; `{ commit: true }` submits the rows too - one publish for the lot under `draft: true`. Resolves `{ ok, committed, open }` |
 | `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true`. Idempotent; discards an entry row; ignores an unknown id |
 | `edit.deleteRows(rowIds)` | `deleteRow` over a list in one call - safe to feed a selection as it stands |
 | `edit.restoreRow(rowId)` | Removes a row's deletion mark - what the lane's Restore calls |

@@ -1,4 +1,4 @@
-import type { Column, Row } from "@tanstack/react-table";
+import type { Column, Row, RowData } from "@tanstack/react-table";
 import type { TMDataGridRowData } from "../TMDataGridContext";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
@@ -17,17 +17,21 @@ export type TMDataGridOption = {
   group?: string;
 };
 
-export type TMDataGridOptionsArgs = {
-  table: TMDataGridTable<TMDataGridRowData>;
-  column: Column<TMDataGridFeatures, TMDataGridRowData, unknown>;
+/**
+ * What an options function is called with. `TData` is the row type of the
+ * column helper the column was declared with.
+ */
+export type TMDataGridOptionsArgs<TData extends RowData = TMDataGridRowData> = {
+  table: TMDataGridTable<TData>;
+  column: Column<TMDataGridFeatures, TData, unknown>;
   /** The row an editor is standing on. Absent when the filter panel asks. */
-  row?: Row<TMDataGridFeatures, TMDataGridRowData>;
+  row?: Row<TMDataGridFeatures, TData>;
   /**
    * Source to use when the column declares none. The filter panel passes
    * `"faceted"` so a select column with no `meta.options` still offers the
    * values that exist, rather than an empty dropdown.
    */
-  fallback?: TMDataGridOptionsSource;
+  fallback?: TMDataGridOptionsSource<TData>;
 };
 
 /**
@@ -40,10 +44,12 @@ export type TMDataGridOptionsArgs = {
  * | `"faceted"` | low-cardinality data columns: the distinct values present, via `getFacetedUniqueValues` |
  * | function | large or contextual sets - `row` is set when an editor asks, so options can depend on the record (city given country) |
  */
-export type TMDataGridOptionsSource =
+export type TMDataGridOptionsSource<TData extends RowData = TMDataGridRowData> =
   | ReadonlyArray<TMDataGridOption | string>
   | "faceted"
-  | ((args: TMDataGridOptionsArgs) => ReadonlyArray<TMDataGridOption | string>);
+  | ((
+      args: TMDataGridOptionsArgs<TData>,
+    ) => ReadonlyArray<TMDataGridOption | string>);
 
 /**
  * Columns already warned about, per grid - so a warning fires once and a

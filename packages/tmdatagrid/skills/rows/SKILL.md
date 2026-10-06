@@ -21,6 +21,7 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-selection.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-interaction.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/column-menu.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-styling.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-details.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-pinning.md'
@@ -186,6 +187,8 @@ array rather than a node:
 ```
 
 Returning an empty list leaves the column with no menu button at all.
+
+Source: `packages/tmdatagrid/docs/column-menu.md`.
 
 ## Row styling
 
