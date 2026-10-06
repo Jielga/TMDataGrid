@@ -76,6 +76,7 @@ one of the persisted `data` slices.
 | `debounce` | Search prop | `number` | `250` | Pause before the filter applies, in ms. `0` filters per keystroke. |
 | `w` | Search prop | `number \| string` | `220` | Input width. |
 | `quickSearchMode` | Option | `"fuzzy" \| "contains"` | `"fuzzy"` | How the search matches. |
+| `TMDataGridQuickSearchMode` | Type | `"fuzzy" \| "contains"` | – | The type of `quickSearchMode`. |
 | `enableMatchHighlighting` | Option | `boolean` | `false` | Mark the matched text in default-rendered cells. |
 | `enableGlobalFilter` | Table option | `boolean` | `true` | Also a column option. `false` removes the input, or one column's participation. |
 | `globalFilterFn` | Table option | filter fn | `fuzzy` | Overrides the matching, and the rank ordering with it. |

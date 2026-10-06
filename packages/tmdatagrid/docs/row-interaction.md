@@ -142,6 +142,7 @@ text is not selectable with the mouse in a grid that has one.
 | `onCellDoubleClick` | Table prop | `(args) => void` | – | Cell double-click. |
 | `onCellContextMenu` | Table prop | `(args) => void` | – | Cell right-click. |
 | `renderRowContextMenu` | Table prop | `({ table, row, cell, close, internalItems }) => ReactNode` | – | Contents of the row's context menu. `null` for no menu. |
+| `TMDataGridRowContextMenuArgs` | Type | `{ table, row, cell, close, internalItems }` | – | What `renderRowContextMenu` receives. |
 | `renderColumnMenuItems` | Table prop | `TMDataGridColumnMenuItemsRenderer` | – | Sets the column menu's contents. An empty list removes the menu button. See [Column header menu](/docs/column-menu). |
 | `rowContextMenuProps` | Table prop | `MenuProps` | – | Passed to the Mantine `Menu`. |
 | `TMDataGridCellEventArgs` | Export | type | – | The argument the three cell handlers receive. |

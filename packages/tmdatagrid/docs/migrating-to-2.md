@@ -138,6 +138,23 @@ meta: {
 
 Columns built without the helper keep the untyped row.
 
+## Replace un-exported helpers
+
+These names are internal to the grid and are no longer exported from `@jielga/tmdatagrid`.
+An import of one fails to compile:
+
+| Removed | Use instead |
+| --- | --- |
+| `getDefaultOperator` | `getColumnDefaultOperator(column)` |
+| `isColumnEditableForRow` | `edit.canEditCell(row, column)` |
+| `isColumnReorderable` | `getColumnCapabilities(column, features).canReorder` |
+| `measureColumnContentWidth` | `autosizeColumn` |
+| `tmDataGridFeatures` | The `TMDataGridFeatures` type |
+| `isSameCell`, `resolveCellMove`, `ResolveCellMoveArgs`, `TMDataGridCellCoords`, `TMDataGridCellNav` | No public replacement; internal to the grid. |
+| `boundsCellCount`, `boundsEdges`, `isWithinBounds` | No public replacement; internal to the grid. |
+| `getColumnFilterControl` | No public replacement; internal to the grid. |
+| `TMDataGridColumnLayout` | No public replacement; internal to the grid. |
+
 ## Behaviour changes
 
 - Under `editing.draft` without `onSaveDrafts`, a deletion whose `onRowDelete` throws keeps its deletion mark and is reported in `kept`.

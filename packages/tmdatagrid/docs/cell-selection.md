@@ -137,18 +137,58 @@ Ctrl+C writes numbers with the format's decimal mark, so what is pasted matches 
 
 Exporting every filtered row rather than the rectangle is `TMDataGrid.Menu.Export` and `useTMDataGridExport`, on [Export](/docs/export).
 
+### Export the range from your own code
+
+`resolveRangeBounds` turns `ui.state.cellRange` into the `bounds` that `buildExportData` takes: the rectangle as row and column indices, both ends included.
+The row indices count into the rows the body renders, from [`getDisplayedRows`](/docs/anatomy#which-rows-it-renders), and the column indices into the visible leaf columns in render order, start-pinned, center and end-pinned, the generated lanes included.
+It returns `null` when there is no range, and when a corner's row is filtered out or its column hidden.
+
+To export the selected range from a control of your own, pass the same rows to `buildExportData` and write the result in any format:
+
+```tsx
+const exportRange = async () => {
+  const { table, features, ui } = grid;
+  const rows = getDisplayedRows(table, features);
+  const columns = [
+    ...table.getStartVisibleLeafColumns(),
+    ...table.getCenterVisibleLeafColumns(),
+    ...table.getEndVisibleLeafColumns(),
+  ];
+  const bounds = resolveRangeBounds({
+    range: ui.state.cellRange,
+    rowIndexOf: (rowId) => rows.findIndex((row) => row.id === rowId),
+    columnIndexOf: (columnId) =>
+      columns.findIndex((column) => column.id === columnId),
+  });
+  if (bounds === null) return;
+
+  const data = buildExportData({ table, rows, bounds });
+  await writeExportFile(
+    data,
+    resolveExportOptions({ format: csvFormat(), fileName: "selection" }),
+  );
+};
+```
+
+`buildExportData` leaves out the generated lanes and every column with `meta.enableExport: false`, as the Export cells item does.
+Unlike the Export cells item, `resolveRangeBounds` does not fall back to the focused cell when there is no range.
+
 ## Reference
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"` | Turns the cell cursor, and the rectangle, on. |
+| `TMDataGridCellSelectionMode` | Type | – | – | The type of `cellSelection`. |
 | `onFocusedCellChange` | Callback | `(cell \| null) => void` | – | Follows the cursor. |
 | `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row of the Export cells item. See [Export](/docs/export). |
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |
 | `ui.state.cellRange` | UI state | `{ anchor, focus } \| null` | `null` | The rectangle's two corners. |
 | `ui.actions.setFocusedCell` · `setCellRange` | UI actions | – | – | Move either from your own code. |
 | `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
+| `TMDataGridClipboardTextOptions` | Type | `{ decimalComma?, escapeFormulas? }` | – | The options of `toClipboardText`. |
 | `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`. |
+| `resolveRangeBounds` | Export | `({ range, rowIndexOf, columnIndexOf }) => TMDataGridRangeBounds \| null` | – | The range as row and column indices, the `bounds` that `buildExportData` takes. `null` when a corner is filtered out or hidden. See [Export the range from your own code](#export-the-range-from-your-own-code). |
+| `ResolveRangeBoundsArgs` · `TMDataGridRangeBounds` | Types | – · `{ top, bottom, left, right }` | – | What `resolveRangeBounds` takes, and what it returns. |
 | `labels.copy` · `labels.exportCells` · `labels.includeHeaders` · `labels.cellCount` | Labels | – | – | The menu's strings. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |
 | `data-edge-top` · `-bottom` · `-left` · `-right` | Data attributes | – | – | On cells at the rectangle's border. |

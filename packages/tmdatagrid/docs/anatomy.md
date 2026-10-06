@@ -74,6 +74,16 @@ With pagination off (the default) rows come from
 pagination on they come from `getPaginatedRowModel()`, so a
 [`manualPagination`](/docs/server-side) grid renders exactly the page the server
 returned.
+While a column is grouped, paging is suspended and the body holds the group rows and the leaves of open groups.
+Rows [pinned](/docs/row-pinning) to an edge render in their own blocks, outside the body's list.
+
+`getDisplayedRows(table, features)` returns the rows the body renders, in render order: the current page when paging is active, every filtered and sorted row otherwise, with pinned rows left out.
+Use it for a renderer of your own, or for the rows that a cell range's `bounds` count into - see [Cell selection](/docs/cell-selection#export-the-range-from-your-own-code):
+
+```tsx
+const { table, features } = useTMDataGridContext();
+const rows = getDisplayedRows(table, features);
+```
 
 ## What the hook returns
 
@@ -99,4 +109,5 @@ stops updating.
 | `data-testid`                                                                        | Prop      | `string`                       | –       | Names the grid for tests.                            |
 | `aria-label` · `aria-labelledby`                                                     | Props     | `string`                       | –       | The grid's accessible name.                          |
 | `useTMDataGridContext`                                                               | Hook      | `() => TMDataGridContextValue` | –       | The grid, from inside any child.                     |
+| `getDisplayedRows`                                                                   | Export    | `(table, features) => Array<Row>` | –    | The rows the body renders: the current page when paging is active, pinned rows left out. |
 | `TMDataGridApi` · `TMDataGridTable` · `TMDataGridUiStore` · `TMDataGridFeatureFlags` | Exports   | types                          | –       | The hook's result and its parts.                     |

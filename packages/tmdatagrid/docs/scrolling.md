@@ -105,6 +105,7 @@ boundary and the pinned band is always on.
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height, in pixels. The virtualizer needs a number. |
 | `scrollToRow` | Hook return | `({ rowId, align? }) => boolean` | `align: "auto"` | Scrolls a row into view, mounted or not. Answers whether it could be reached. |
+| `TMDataGridScrollToRowArgs` | Type | `{ rowId, align? }` | – | What `scrollToRow` takes. |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | Table props | `() => void` | – | Fire once on arriving at that edge. |
 | `TMDataGridScrollAlign` | Export | `"start" \| "center" \| "end" \| "auto"` | – | The `align` argument. |
 | `--dg-header-shadow-color` | CSS variable | colour | Themed | The shadow under the sticky header. |

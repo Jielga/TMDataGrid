@@ -103,9 +103,12 @@ its `StorageType`.
 | `persist` | Option | `TMDataGridPersistence` | – | The whole configuration. Keep it referentially stable. |
 | `dataKey` | persist field | `string \| [string, DataSlice[]]` | – | Storage key for the data group. |
 | `settingsKey` | persist field | `string \| [string, SettingsSlice[]]` | – | Storage key for the settings group. |
+| `TMDataGridPersistKey` | Type | `string \| [string, slices]` | – | The type of `dataKey` and `settingsKey`. |
 | `storageMode` | persist field | `"localStorage" \| "sessionStorage"` | `"localStorage"` | Storage area. `"sessionStorage"` is per tab. |
+| `TMDataGridStorageMode` | Type | `"localStorage" \| "sessionStorage"` | – | The type of `storageMode`. |
 | `serialize` | persist field | `(value) => string` | `JSON.stringify` | Serializes a payload before storing. |
 | `deserialize` | persist field | `(value: string) => unknown` | `JSON.parse` | Parses a stored payload. |
 | `resetSettings` | Hook return | `() => void` | – | Back to a clean first visit, written through to storage. |
 | `DATA_STATE_SLICES` · `SETTINGS_STATE_SLICES` | Exports | `string[]` | – | The slice names of each group. |
+| `TMDataGridDataSlice` · `TMDataGridSettingsSlice` | Types | – | – | One slice name of each group. |
 | `PERSIST_PAYLOAD_VERSION` | Export | `number` | – | The stamp. A payload from another version is dropped. |

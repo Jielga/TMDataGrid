@@ -619,6 +619,7 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | ----------------------------- | -------------- | ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------ |
 | `editing`                     | Option         | `TMDataGridEditingOptions`                       | –                 | Turns editing on. One object holding both axes and every editing callback.                       |
 | `editing.mode`                | Member         | `"cell" \| "cellConfirm" \| "row"`               | –                 | Picks what counts as a commit and which controls trigger it.                                     |
+| `TMDataGridEditMode` | Type | `"cell" \| "cellConfirm" \| "row"` | – | The type of `editing.mode`. |
 | `editing.draft`               | Member         | `boolean`                                        | `false`           | Holds commits in the draft store for `edit.saveDrafts()` instead of sending them out.             |
 | `getRowId`                    | Table option   | `(row) => string`                                | –                 | Required once `editing` is set. Drafts are keyed by it.                                          |
 | `editing.columns`             | Member         | `ReadonlyArray<string>`                          | Every mapped column | The column ids that take edits. Gates before `meta.edit`, never past it.                       |
@@ -626,11 +627,15 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.rowValidators`       | Member         | TanStack Form validators                         | –                 | Form-level rules for the whole editing row. See [Editors](/docs/editors).                        |
 | `editing.tableValidators`     | Member         | `TMDataGridTableValidators`                      | –                 | Cross-row rules, handed the collection with every draft overlaid. See [Editors](/docs/editors#cross-row-rules). |
 | `editing.onCommit`            | Callback       | `({ rowId, value, original, changes, source }) => void \| Promise` | – | Applies one row's change. Reject to keep the draft.                                              |
+| `TMDataGridEditCommitArgs` · `TMDataGridEditChange` | Types | – | – | What `onCommit` receives, and one entry of its `changes`. |
 | `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | `draft: true` only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
+| `TMDataGridSaveOutcomes` | Type | `boolean \| Record<string, boolean>` | – | One bucket of what `onSaveDrafts` returns. `false` keeps an entry's draft; an id the map does not name counts as saved. |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps committed entry rows in the sticky entry block, out of the body's sort, until the save. |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |
+| `TMDataGridRowAddArgs` | Type | `{ tempId, value }` | – | What `onRowAdd` receives, and one entry of the `created` that `onSaveDrafts` receives. |
 | `editing.onRowDelete`         | Callback       | `({ rowId, row }) => void \| Promise`            | –                 | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too.                |
+| `TMDataGridRowDeleteArgs` | Type | `{ rowId, row }` | – | What `onRowDelete` receives. |
 | `meta.edit.enabled`           | Column meta    | `boolean \| (row) => boolean`                    | `true`            | Whether a column's cells edit.                                                                   |
 | `meta.edit.field`             | Column meta    | `string`                                         | The `accessorKey` | The data path an edit writes to.                                                                 |
 | `meta.edit.mapValue`          | Column meta    | `({ value, previous, row, column }) => unknown`  | –                 | Maps each value an editor writes. See [Editors](/docs/editors#mapping-the-value-as-it-is-typed). |
@@ -640,6 +645,9 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `actions.scrollToFirstOpenRow` | Slot action    | `(align?) => boolean`                            | `align: "auto"`   | Scrolls to the first open row in display order. `false` when none could be reached.              |
 | `clearedValueForType`         | Export         | `(type) => unknown`                              | –                 | What Delete writes for each column type.                                                         |
 | `hasPendingEdits`             | Export         | `(state) => boolean`                             | –                 | Whether the grid holds unsaved work. See [Unsaved changes](#unsaved-changes).                     |
+| `TMDataGridEditState` · `TMDataGridEditRowProjection` | Types | – | – | The value of `edit.state` and `edit.store`, and one open row's entry in its `rows`. |
+| `TMDataGridAddRowsOptions` · `TMDataGridAddRowsResult` | Types | `{ commit? }` · `{ ok, committed, open }` | – | What `edit.addRows` takes as its options, and what it resolves. |
+| `TMDataGridEditRowSnapshot` | Type | `{ rowId, value, isNew, deleted }` | – | One row of `edit.getRows()`. |
 | `--dg-entry-height`           | CSS variable   | length                                           | From `size`       | Height of the sticky entry block.                                                                |
 | `--dg-row-new-bg`             | CSS variable   | color                                            | Green tint        | Background of a committed new row, in the body or the entry block.                               |
 | `data-deleted`                | Data attribute | –                                                | –                 | On a row marked for deletion under `draft: true`.                                                |
