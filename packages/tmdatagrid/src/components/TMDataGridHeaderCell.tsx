@@ -651,7 +651,12 @@ export function TMDataGridHeaderCell({
               aria-label={labels.sortColumn(label)}
               data-dg-part="header-sort"
               data-column-id={column.id}
-              onClick={column.getToggleSortingHandler()}
+              // Stopped here: the header cell around it sorts on click too, and
+              // letting the click reach it would advance the sort twice.
+              onClick={(event) => {
+                event.stopPropagation();
+                column.getToggleSortingHandler()?.(event);
+              }}
             >
               {sortDirection ? (
                 <ArrowDownIcon size={14} stroke={1.6} />
@@ -720,6 +725,11 @@ export function TMDataGridHeaderCell({
           ]
             .filter(Boolean)
             .join(" ")}
+          // A part only where it is a handle: on a fixed-width column the
+          // separator is a plain divider, and a test that finds it would be
+          // dragging something that does nothing.
+          data-dg-part={canResize ? "header-resize" : undefined}
+          data-column-id={canResize ? column.id : undefined}
           // Keeps a drag that starts on the separator from being picked up by
           // the draggable header around it.
           draggable={false}

@@ -176,6 +176,16 @@ describe("sorting", () => {
     expect(ageHeader).toHaveAttribute("aria-sort", "descending");
   });
 
+  it("advances the sort one step per click on the sort arrow", async () => {
+    const user = userEvent.setup();
+    renderGridUi();
+
+    // The arrow sits inside the header, which sorts on click as well.
+    await user.click(part("header-sort", { columnId: "name" }));
+
+    expect(header("name")).toHaveAttribute("aria-sort", "ascending");
+  });
+
   it("does not advertise sorting on a grid that has it switched off", () => {
     renderGridUi({ enableSorting: false });
 
@@ -1046,10 +1056,11 @@ describe("testing contract", () => {
     const user = userEvent.setup();
     renderGridUi({ enablePagination: true, initialState: { pagination: { pageIndex: 0, pageSize: 5 } } });
 
+    // A numeric column sorts descending first.
     await user.click(part("header-sort", { columnId: "age" }));
     expect(header("age")).toHaveAttribute(
       "aria-sort",
-      "ascending",
+      "descending",
     );
 
     expect(part("page-range")).toHaveTextContent("1–5 of 12");

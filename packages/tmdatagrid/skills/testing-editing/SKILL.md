@@ -23,7 +23,8 @@ sources:
 # TMDataGrid - Testing editing
 
 Builds on the `testing` skill: parts are `[data-dg-part]`, coordinates are
-`[data-row-id]` / `[data-column-id]`, and `DataGrid` is its page object.
+`[data-row-id]` / `[data-column-id]`, and `DataGrid` is its page object, built
+with `DataGrid.byTestId(page, "orders")` or `new DataGrid(rootLocator)`.
 
 ## The life of an added row
 
@@ -54,7 +55,9 @@ async expectRowAdded(uniqueValue: string, cells: Record<string, string>) {
   await this.expectRowCount(1);     // retries until the app has put the row in data
   const row = this.part("row");     // exactly one body row now
   for (const [columnId, text] of Object.entries(cells)) {
-    await expect(row.locator(`[data-column-id="${columnId}"]`)).toHaveText(text);
+    await expect(
+      row.locator(`[data-column-id="${columnId}"]:not([data-dg-part])`),
+    ).toHaveText(text);
   }
   await this.search("");
 }
@@ -138,9 +141,13 @@ double-click puts it back in the entry block, still under the temp id; ✕
 ```ts
 await grid.commitEntryRow(tempId);
 await expect(grid.entryRow()).toHaveCount(1);           // still open
-await expect(grid.entryRow().locator('[data-column-id="email"]'))
-  .toHaveAttribute("data-invalid", "true");
+await expect(
+  grid.entryRow().locator('[data-column-id="email"]:not([data-dg-part])'),
+).toHaveAttribute("data-invalid", "true");
 ```
+
+The cell and the open `editor` inside it share the column id, so the selector
+leaves the editor out.
 
 ### Change a cell or a row
 
@@ -206,6 +213,13 @@ under `draft: true` does the temp id outlive ✓ - and only until Save.
 The app's `onRowAdd` may be async. `expectRowCount(1)` after narrowing retries
 until the row is in `data`; a `waitForTimeout` either wastes time or is too
 short on CI.
+
+### Matching the editor with a cell selector
+
+While a cell is open, `[data-row-id="42"][data-column-id="salary"]` matches
+the cell and the `editor` part inside it, and strict mode fails on the pair.
+`DataGrid.cell()` appends `:not([data-dg-part])`; a hand-written locator on a
+row's cells needs the same.
 
 ### Asserting the negative with `"false"`
 
