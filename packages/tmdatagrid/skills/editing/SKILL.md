@@ -143,7 +143,7 @@ committed, so the next `saveDrafts()` retries it.
 Every id the save took from the draft store is in exactly one list - row ids for edits and deletions, temp ids for new rows, all kinds mixed:
 
 - `saved` - left the draft store; the consumer accepted it
-- `kept` - still in the draft store, still committed, retried by the next save: an id `onSaveDrafts` returned as failed, or every id it was sent when it threw
+- `kept` - still in the draft store, still committed, retried by the next save: an id `onSaveDrafts` returned as failed, every id it was sent when it threw, or, without `onSaveDrafts`, a deletion whose `onRowDelete` threw
 - `reopened` - open again with an error: a table rule rejected it, or on the per-row path its `onCommit` / `onRowAdd` threw
 - `ok` - `true` when `kept` and `reopened` are both empty
 

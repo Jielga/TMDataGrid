@@ -213,6 +213,7 @@ onSaveDrafts: async ({ updated, created, deleted }) => {
 
 A kept row stays committed rather than reopening, so the next `saveDrafts()` retries it with the values it already holds.
 `saveDrafts()` reports every id `onSaveDrafts` returned as failed in `kept`, and every id it was sent when it threw, with `ok: false`.
+Without `onSaveDrafts`, a deletion whose `onRowDelete` throws keeps its mark and is reported in `kept` the same way.
 A kept row carries the same markers as every other draft and nothing more; see [Styling pending rows](#styling-pending-rows).
 
 ### Rows left open

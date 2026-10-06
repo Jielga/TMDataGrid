@@ -608,8 +608,9 @@ export type TMDataGridSaveDraftsResult = {
   saved: Array<string>;
   /**
    * Still in the draft store, still committed, and sent again by the next
-   * save: an id `onSaveDrafts` reported as failed, or every id it was sent
-   * when it threw.
+   * save: an id `onSaveDrafts` reported as failed, every id it was sent
+   * when it threw, or, without `onSaveDrafts`, a deletion whose
+   * `onRowDelete` threw.
    */
   kept: Array<string>;
   /**
@@ -743,7 +744,8 @@ export type TMDataGridEditApi<
    *
    * Resolves what happened to each id it sent: `saved` left the draft store,
    * `kept` is still in it, committed, for the next save - an id
-   * `onSaveDrafts` reported as failed, or every id when it threw - and
+   * `onSaveDrafts` reported as failed, every id when it threw, or a
+   * deletion whose per-row `onRowDelete` threw - and
    * `reopened` is open again with an error, because a table rule now
    * rejects it or its per-row `onCommit` / `onRowAdd` threw. `ok` is `true`
    * when nothing was kept or reopened, and an empty store resolves `ok` with
@@ -803,8 +805,9 @@ export type TMDataGridEditApi<
    * that validate commit, and rows that fail stay open in the entry block
    * carrying their errors, for the user to fix. The result says which went
    * which way - `committed` and `open` hold every added row, each in exactly
-   * one list, and `ok` is `true` when `open` is empty. Under `editing.draft` the rows validate together and land in
-   * the draft store in the same publish as the add - the grid renders once,
+   * one list, and `ok` is `true` when `open` is empty. Under
+   * `editing.draft` the rows validate together and land in the draft store
+   * in the same publish as the add - the grid renders once,
    * whatever the count. Without it each valid row goes out through
    * `onRowAdd`, one at a time and in order.
    */
@@ -2107,16 +2110,6 @@ export function createEditEngine(
     return context.onRowDelete !== undefined;
   };
 
-  /** The pending deletions, reported and cleared by `saveDrafts`. */
-  const takeDeletedRowIds = (): Array<string> => {
-    const deleted = [...working.deletedRowIds];
-    if (deleted.length > 0) {
-      working.deletedRowIds.clear();
-      touch("deletedRowIds");
-    }
-    return deleted;
-  };
-
   /** The draft store's rows, in the order the rows entered the grid. */
   const committedIds = (): Array<string> =>
     [...working.openRowIds].filter((rowId) => committed.has(rowId));
@@ -2253,25 +2246,32 @@ export function createEditEngine(
         if (outcome === "saved") saved.push(rowId);
         else if (outcome === "reopened") reopened.push(rowId);
       });
-      // The marks are consumed here whatever the consumer does with them,
-      // so the rows' selection and the edits held under the marks go at the
-      // same time - see flushRowState and saveDraftsInner's `ids`.
-      const taken = heldSync(() => {
-        const marked = takeDeletedRowIds();
-        for (const rowId of marked) {
+      // A mark leaves once its `onRowDelete` resolved, and the row's
+      // selection and the edit held under the mark go with it in one publish -
+      // see flushRowState and saveDraftsInner's `ids`. A throw keeps the mark
+      // for the next save, as a deletion `onSaveDrafts` refuses is kept.
+      const deletedOk: Array<string> = [];
+      for (const rowId of deletedIds) {
+        const row = getRow(rowId);
+        try {
+          if (row !== undefined) {
+            await getContext().onRowDelete?.({ rowId, row });
+          }
+          deletedOk.push(rowId);
+        } catch {
+          kept.push(rowId);
+        }
+      }
+      heldSync(() => {
+        let deletionsChanged = false;
+        for (const rowId of deletedOk) {
+          if (working.deletedRowIds.delete(rowId)) deletionsChanged = true;
           pendingLeft.add(rowId);
           if (committed.has(rowId)) forget(rowId);
         }
-        return marked;
+        if (deletionsChanged) dirty.add("deletedRowIds");
       });
-      for (const rowId of taken) {
-        const row = getRow(rowId);
-        if (row !== undefined) {
-          await getContext().onRowDelete?.({ rowId, row });
-        }
-      }
-      // Consumed whatever `onRowDelete` did with them - see above.
-      saved.push(...taken);
+      saved.push(...deletedOk);
       return report();
     }
 

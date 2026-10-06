@@ -1321,7 +1321,7 @@ describe("the draft store", () => {
     expect(edit.state.openRowIds).toEqual(["2", tempId]);
     expect(edit.state.rows[tempId]?.hasRowError).toBe(true);
 
-    // A deletion leaves the store whatever onRowDelete does with it.
+    // A deletion onRowDelete accepts leaves the store.
     clashes = false;
     edit.deleteRow("1");
     await expect(edit.saveDrafts()).resolves.toEqual({
@@ -3075,6 +3075,36 @@ describe("bulk deletes over the draft store", () => {
       expect.objectContaining({ rowId: "2" }),
     );
     expect(table.store.state.rowSelection).toEqual({ "1": true });
+  });
+
+  it("saveDrafts on the per-row path keeps a deletion whose onRowDelete throws", async () => {
+    const onRowDelete = vi.fn(({ rowId }: { rowId: string }) => {
+      if (rowId === "2") throw new Error("Server said no");
+    });
+    const grid = renderEditGrid({ mode: "row", draft: true, onRowDelete });
+    const { edit } = grid.current;
+    edit.deleteRow("1");
+    edit.deleteRow("2");
+
+    await act(async () => {
+      await expect(edit.saveDrafts()).resolves.toEqual({
+        ok: false,
+        saved: ["1"],
+        kept: ["2"],
+        reopened: [],
+      });
+    });
+
+    // The refused deletion keeps its mark, and the next save sends it again.
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
+    onRowDelete.mockImplementation(() => {});
+    await act(async () => {
+      await expect(edit.saveDrafts()).resolves.toMatchObject({
+        ok: true,
+        saved: ["2"],
+      });
+    });
+    expect(edit.state.deletedRowIds).toEqual([]);
   });
 
   it("a deletion mark makes the row read-only and unselectable until restored", async () => {
