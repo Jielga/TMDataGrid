@@ -15,7 +15,7 @@ import {
   TMDataGrid,
   useTMDataGrid,
   type TMDataGridSaveDraftsArgs,
-  type TMDataGridSaveDraftsResult,
+  type TMDataGridSaveDraftsResponse,
 } from "@jielga/tmdatagrid";
 import {
   DEPARTMENTS,
@@ -93,7 +93,7 @@ export function DraftEditing() {
       created,
       deleted,
     }: TMDataGridSaveDraftsArgs<Employee>): Promise<
-      TMDataGridSaveDraftsResult | undefined
+      TMDataGridSaveDraftsResponse | undefined
     > => {
       const call = (calls.current += 1);
       const startedAt = Date.now();

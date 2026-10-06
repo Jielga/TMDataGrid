@@ -148,10 +148,12 @@ const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0
 
 <Button type="submit" disabled={!canSubmit || hasOpenDraft}>Save</Button>
 // or commit and flush instead of blocking:
-await grid.edit.commitAll();
-const flushed = await grid.edit.saveDrafts();
-if (flushed) await form.handleSubmit();
+const committed = await grid.edit.commitAll();
+const flushed = committed.ok ? await grid.edit.saveDrafts() : undefined;
+if (flushed?.ok) await form.handleSubmit();
 ```
+
+Both results are objects, so test `.ok`: `if (await grid.edit.saveDrafts())` is always true.
 
 Source: `packages/tmdatagrid/docs/query-builder.md` (Which mode, Submitting).
 
@@ -207,14 +209,26 @@ Source: `packages/tmdatagrid/docs/editing.md` (How a draft renders).
 
 ## MEDIUM Reading a commit's result as the saved value
 
-`edit.commit(rowId)`, `edit.commitAll()` and `edit.saveDrafts()` resolve to a
-`boolean` saying whether everything landed, and resolve `false` when validation
-or a rejected save kept a row open. Ignoring the result reports a save that did
-not happen.
+`edit.commit(rowId)` resolves a `boolean`: `false` when validation or a rejected commit kept the row open.
+`edit.commitAll()` resolves `{ ok, committed, open }`, and `edit.saveDrafts()` resolves `{ ok, saved, kept, reopened }`.
+Each id is in exactly one list, and `ok` is `false` when any row stayed open, was kept in the draft store, or was reopened with an error.
+Ignoring the result reports a save that did not happen, and testing the object itself is always true.
+
+Wrong:
 
 ```tsx
-const saved = await grid.edit.saveDrafts();
-notifications.show({ message: saved ? "Saved" : "Some rows need attention" });
+if (await grid.edit.saveDrafts()) notifications.show({ message: "Saved" });
+```
+
+Correct:
+
+```tsx
+const { ok, kept, reopened } = await grid.edit.saveDrafts();
+notifications.show({
+  message: ok
+    ? "Saved"
+    : `${kept.length} rows not saved, ${reopened.length} rows need attention`,
+});
 ```
 
 Source: `packages/tmdatagrid/src/core/editEngine.ts` (`TMDataGridEditApi`).

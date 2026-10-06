@@ -14,6 +14,7 @@ export {
 } from "./components/TMDataGridGroupColumn";
 export {
   createTMDataGridColumnHelper,
+  type TMDataGridColumnHelper,
   openColumnFilter,
   tmDataGridFeatures,
   type TMDataGridApi,
@@ -96,10 +97,12 @@ export {
   type TMDataGridEditChange,
   type TMDataGridEditCommitArgs,
   type TMDataGridSaveDraftsArgs,
-  type TMDataGridSaveDraftsResult,
+  type TMDataGridSaveDraftsResponse,
   type TMDataGridSaveOutcomes,
   type TMDataGridAddRowsOptions,
   type TMDataGridAddRowsResult,
+  type TMDataGridCommitAllResult,
+  type TMDataGridSaveDraftsResult,
   type TMDataGridEditField,
   type TMDataGridEditMode,
   type TMDataGridEditorArgs,
