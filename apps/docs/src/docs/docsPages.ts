@@ -1,6 +1,7 @@
 import anatomyDoc from "@jielga/tmdatagrid/docs/anatomy.md?raw";
 import cellSelectionDoc from "@jielga/tmdatagrid/docs/cell-selection.md?raw";
 import columnLayoutDoc from "@jielga/tmdatagrid/docs/column-layout.md?raw";
+import columnMenuDoc from "@jielga/tmdatagrid/docs/column-menu.md?raw";
 import componentsDoc from "@jielga/tmdatagrid/docs/components.md?raw";
 import columnsDoc from "@jielga/tmdatagrid/docs/columns.md?raw";
 import editingDoc from "@jielga/tmdatagrid/docs/editing.md?raw";
@@ -44,8 +45,8 @@ export const DOCS_SECTIONS = [
   "Columns",
   "Rows",
   "Cells and editing",
-  "Data",
-  "Appearance",
+  "Toolbar and footer",
+  "Whole grid",
   "Recipes",
   "Reference",
 ] as const;
@@ -107,6 +108,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Visibility, pinning, ordering and size",
     description: "Arranging the columns",
     source: columnLayoutDoc,
+  },
+  {
+    id: "column-menu",
+    section: "Columns",
+    label: "Column header menu",
+    description: "The menu on every header, and your own items",
+    source: columnMenuDoc,
   },
 
   {
@@ -182,89 +190,89 @@ export const DOCS_PAGES: DocsPageEntry[] = [
   },
 
   {
-    id: "pagination",
-    section: "Data",
-    label: "Pagination",
-    description: "Three modes, and your own pager",
-    source: paginationDoc,
-  },
-  {
-    id: "quick-search",
-    section: "Data",
-    label: "Quick search",
-    description: "One box, fuzzy, with highlighting",
-    source: quickSearchDoc,
-  },
-  {
-    id: "export",
-    section: "Data",
-    label: "Export",
-    description: "Menu items, a hook, and the file formats",
-    source: exportDoc,
-  },
-  {
-    id: "xlsx",
-    section: "Data",
-    label: "Excel export (xlsx)",
-    description: "The @jielga/tmdatagrid-xlsx addon",
-    source: xlsxDoc,
-  },
-  {
-    id: "persistence",
-    section: "Data",
-    label: "Persistence",
-    description: "Layout and filters across reloads",
-    source: persistenceDoc,
-  },
-  {
-    id: "server-side",
-    section: "Data",
-    label: "Server-side data",
-    description: "Manual paging, sorting and filtering",
-    source: serverSideDoc,
-  },
-  {
-    id: "loading-and-empty",
-    section: "Data",
-    label: "Loading and empty states",
-    description: "The four ways to have nothing to show",
-    source: loadingAndEmptyDoc,
-  },
-  {
-    id: "scrolling",
-    section: "Data",
-    label: "Scrolling and virtualization",
-    description: "Overscan, row height and the edges",
-    source: scrollingDoc,
-  },
-
-  {
-    id: "styling",
-    section: "Appearance",
-    label: "Size, styling and theming",
-    description: "The scale, and every CSS variable",
-    source: stylingDoc,
-  },
-  {
     id: "toolbar",
-    section: "Appearance",
+    section: "Toolbar and footer",
     label: "Toolbar",
     description: "Composition, and buttons of your own",
     source: toolbarDoc,
   },
   {
     id: "menu",
-    section: "Appearance",
+    section: "Toolbar and footer",
     label: "Grid menu",
     description: "The burger, and the column chooser as menu items",
     source: menuDoc,
   },
   {
+    id: "quick-search",
+    section: "Toolbar and footer",
+    label: "Quick search",
+    description: "One box, fuzzy, with highlighting",
+    source: quickSearchDoc,
+  },
+  {
+    id: "pagination",
+    section: "Toolbar and footer",
+    label: "Pagination",
+    description: "Three modes, and your own pager",
+    source: paginationDoc,
+  },
+  {
+    id: "export",
+    section: "Toolbar and footer",
+    label: "Export",
+    description: "Menu items, a hook, and the file formats",
+    source: exportDoc,
+  },
+  {
+    id: "xlsx",
+    section: "Toolbar and footer",
+    label: "Excel export (xlsx)",
+    description: "The @jielga/tmdatagrid-xlsx addon",
+    source: xlsxDoc,
+  },
+
+  {
+    id: "styling",
+    section: "Whole grid",
+    label: "Size, styling and theming",
+    description: "The scale, and every CSS variable",
+    source: stylingDoc,
+  },
+  {
     id: "localization",
-    section: "Appearance",
+    section: "Whole grid",
     label: "Localization",
     description: "Every string, in any language",
     source: localizationDoc,
+  },
+  {
+    id: "scrolling",
+    section: "Whole grid",
+    label: "Scrolling and virtualization",
+    description: "Overscan, row height and the edges",
+    source: scrollingDoc,
+  },
+  {
+    id: "loading-and-empty",
+    section: "Whole grid",
+    label: "Loading and empty states",
+    description: "The four ways to have nothing to show",
+    source: loadingAndEmptyDoc,
+  },
+  {
+    id: "persistence",
+    section: "Whole grid",
+    label: "Persistence",
+    description: "Layout and filters across reloads",
+    source: persistenceDoc,
+  },
+  {
+    id: "server-side",
+    section: "Whole grid",
+    label: "Server-side data",
+    description: "Manual paging, sorting and filtering",
+    source: serverSideDoc,
   },
 
   {
