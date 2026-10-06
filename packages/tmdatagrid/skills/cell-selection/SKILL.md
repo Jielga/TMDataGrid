@@ -141,8 +141,7 @@ the format's decimal mark, so what is pasted matches what is exported.
 
 Exporting every filtered row rather than the rectangle is
 `TMDataGrid.Menu.Export`, `TMDataGrid.Menu.ExportSelected` and
-`useTMDataGridExport`, covered by the data skill. The `cellExport` Table prop is
-deprecated: it is converted and merged over `exportOptions` for this menu only.
+`useTMDataGridExport`, covered by the data skill.
 
 ## Common mistakes
 
@@ -223,7 +222,6 @@ Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 | `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`; the whole grid without. |
 | `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
 | `formatExportValue` | Export | `(value, options) => string` | – | One value, formatted as the text formats would. |
-| `cellExport` | Table prop | `TMDataGridCellExportOptions` | – | Deprecated; merged over `exportOptions` for the cell-range menu only. |
 | `isSameCell` · `resolveCellMove` | Exports | – | – | The cursor arithmetic, for a custom navigator. |
 | `resolveRangeBounds` · `isWithinBounds` · `boundsEdges` · `boundsCellCount` | Exports | – | – | The rectangle arithmetic. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |

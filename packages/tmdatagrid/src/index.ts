@@ -98,7 +98,6 @@ export {
   type TMDataGridSaveDraftsArgs,
   type TMDataGridSaveDraftsResult,
   type TMDataGridSaveOutcomes,
-  type TMDataGridEditCommitDraftsArgs,
   type TMDataGridAddRowsOptions,
   type TMDataGridAddRowsResult,
   type TMDataGridEditField,
@@ -218,17 +217,6 @@ export {
   type TMDataGridExportWriteOptions,
   type TMDataGridJsonFormatOptions,
   type TMDataGridTsvFormatOptions,
-  // Deprecated, gone in the next beta.
-  buildCellMatrix,
-  buildGridCellMatrix,
-  DEFAULT_CELL_EXPORT_OPTIONS,
-  downloadTextFile,
-  exportGridToCsv,
-  fromCellExportOptions,
-  toExcelCsv,
-  type BuildCellMatrixArgs,
-  type TMDataGridCellExportOptions,
-  type TMDataGridCellMatrix,
 } from "./core/export";
 export {
   areAllRowsExpanded,

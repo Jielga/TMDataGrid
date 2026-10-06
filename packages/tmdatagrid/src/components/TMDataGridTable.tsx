@@ -70,12 +70,10 @@ import {
 } from "../core/cellRange";
 import {
   buildExportData,
-  fromCellExportOptions,
   resolveExportOptions,
   toClipboardText,
   writeClipboardText,
   writeExportFile,
-  type TMDataGridCellExportOptions,
 } from "../core/export";
 import { autosizeColumn, hasMountedCells } from "../core/autosize";
 import {
@@ -681,13 +679,6 @@ export type TMDataGridTableProps<TData extends RowData> = {
    */
   rowContextMenuProps?: Omit<MenuProps, "opened" | "onChange" | "children">;
   /**
-   * @deprecated Set `exportOptions` on `useTMDataGrid` instead; it covers the
-   * cell-range menu and every other export alike. Until it goes, this is
-   * converted (`separator` and `decimalComma` become a `csvExcelFormat`) and
-   * merged over `exportOptions` for the cell-range menu only.
-   */
-  cellExport?: TMDataGridCellExportOptions;
-  /**
    * Called when the scroll approaches the last row - the infinite-scroll
    * hook-in. Append the next page to `data` and the virtualizer keeps its
    * position; fires once per row count, so a pending fetch is not asked
@@ -738,7 +729,6 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   renderRowContextMenu,
   renderColumnMenuItems,
   rowContextMenuProps,
-  cellExport,
   onReachEnd,
   reachEndThreshold = 10,
   "aria-label": ariaLabel,
@@ -1662,10 +1652,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
               column.columnDef.meta?.enableExport !== false,
           ).length;
 
-  const exportOptions = resolveExportOptions(
-    gridExportOptions,
-    cellExport && fromCellExportOptions(cellExport),
-  );
+  const exportOptions = resolveExportOptions(gridExportOptions);
   // Sticky across menus, the way a checkbox in a dialog is: a user who exports
   // with headers once almost always wants them the next time too.
   const [exportIncludesHeaders, setExportIncludesHeaders] = useState(
@@ -2708,7 +2695,7 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
                     undefined
                   }
                   // Marked deleted under draft: struck through and inert
-                  // until submitAll reports it, or the mark is toggled back.
+                  // until saveDrafts reports it, or the mark is toggled back.
                   data-deleted={
                     (deletedRowIds.length > 0 && deletedRowIds.includes(row.id)) ||
                     undefined

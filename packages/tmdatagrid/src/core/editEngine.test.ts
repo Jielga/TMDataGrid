@@ -409,7 +409,7 @@ describe("edit engine", () => {
 
     await expect(edit.commit("1")).resolves.toBe(true);
 
-    // Nothing reaches the consumer until submitAll; the row stays in the
+    // Nothing reaches the consumer until saveDrafts; the row stays in the
     // grid, dirty, as data rather than as a form, and the editor it was made
     // in closes.
     expect(onCommit).not.toHaveBeenCalled();
@@ -473,7 +473,7 @@ describe("edit engine", () => {
     }
   });
 
-  it("submitAll commits every dirty row through the per-row loop", async () => {
+  it("commitAll then saveDrafts commits every dirty row through the per-row loop", async () => {
     const onCommit = vi.fn();
     const grid = renderEditGrid({ mode: "row", draft: true, onCommit });
     const { edit } = grid.current;
@@ -482,20 +482,21 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     edit.getForm("2")?.setFieldValue("name", "Erik B");
 
-    await expect(edit.submitAll()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
 
     expect(onCommit).toHaveBeenCalledTimes(2);
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("submitAll with onCommitDrafts makes one consumer call for the lot", async () => {
+  it("saveDrafts with onSaveDrafts makes one consumer call for the lot", async () => {
     const onCommit = vi.fn();
-    const onCommitDrafts = vi.fn();
+    const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
       onCommit,
-      onCommitDrafts,
+      onSaveDrafts,
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -503,14 +504,15 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "age" });
     edit.getForm("2")?.setFieldValue("age", 42);
 
-    await expect(edit.submitAll()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
 
     expect(onCommit).not.toHaveBeenCalled();
-    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
-    const args = onCommitDrafts.mock.calls[0]?.[0] as {
-      rows: Array<TMDataGridEditCommitArgs<Person>>;
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<TMDataGridEditCommitArgs<Person>>;
     };
-    expect(args.rows.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
+    expect(args.updated.map((row) => row.rowId).sort()).toEqual(["1", "2"]);
     expect(edit.state.openRowIds).toEqual([]);
   });
 
@@ -518,7 +520,7 @@ describe("edit engine", () => {
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
-      onCommitDrafts: () => Promise.reject(new Error("no")),
+      onSaveDrafts: () => Promise.reject(new Error("no")),
     });
     const { edit } = grid.current;
     edit.begin({ rowId: "1", columnId: "name" });
@@ -526,7 +528,8 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     edit.getForm("2")?.setFieldValue("name", "Erik B");
 
-    await expect(edit.submitAll()).resolves.toBe(false);
+    await expect(edit.commitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(false);
 
     expect(edit.state.openRowIds).toEqual(["1", "2"]);
     expect(edit.state.committedValues["1"]?.name).toBe("Annika");
@@ -681,12 +684,12 @@ describe("edit engine", () => {
     expect(onRowDelete).not.toHaveBeenCalled();
   });
 
-  it("submitAll's draft payload carries rows, added and deleted together", async () => {
-    const onCommitDrafts = vi.fn();
+  it("the drafts payload carries updated, created and deleted together", async () => {
+    const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
-      onCommitDrafts,
+      onSaveDrafts,
       newRowDefaults: () => ({
         id: 0,
         name: "Ny",
@@ -700,23 +703,24 @@ describe("edit engine", () => {
     const tempId = edit.addRow();
     edit.deleteRow("2");
 
-    await expect(edit.submitAll()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
 
-    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
-    const args = onCommitDrafts.mock.calls[0]?.[0] as {
-      rows: Array<{ rowId: string }>;
-      added: Array<{ tempId: string; value: Person }>;
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      updated: Array<{ rowId: string }>;
+      created: Array<{ tempId: string; value: Person }>;
       deleted: Array<string>;
     };
-    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
-    expect(args.added.map((add) => add.tempId)).toEqual([tempId]);
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
+    expect(args.created.map((add) => add.tempId)).toEqual([tempId]);
     expect(args.deleted).toEqual(["2"]);
     expect(edit.state.openRowIds).toEqual([]);
     expect(edit.state.newRows).toEqual([]);
     expect(edit.state.deletedRowIds).toEqual([]);
   });
 
-  it("submitAll adds a confirmed entry row through onRowAdd on the per-row path", async () => {
+  it("saveDrafts adds a confirmed entry row through onRowAdd on the per-row path", async () => {
     const onRowAdd = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
@@ -734,7 +738,7 @@ describe("edit engine", () => {
     await expect(edit.commit(tempId)).resolves.toBe(true);
     expect(onRowAdd).not.toHaveBeenCalled();
 
-    await expect(edit.submitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
 
     // Confirming is not adding - the add happens here, at Save all.
     expect(onRowAdd).toHaveBeenCalledTimes(1);
@@ -746,12 +750,12 @@ describe("edit engine", () => {
     expect(edit.state.openRowIds).toEqual([]);
   });
 
-  it("submitAll carries a confirmed entry row in the drafts payload's added", async () => {
-    const onCommitDrafts = vi.fn();
+  it("saveDrafts carries a confirmed entry row in the drafts payload's created", async () => {
+    const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
-      onCommitDrafts,
+      onSaveDrafts,
       newRowDefaults: () => ({
         id: 0,
         name: "Ny",
@@ -763,23 +767,23 @@ describe("edit engine", () => {
     const tempId = edit.addRow();
     await expect(edit.commit(tempId)).resolves.toBe(true);
 
-    await expect(edit.submitAll()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toBe(true);
 
-    expect(onCommitDrafts).toHaveBeenCalledTimes(1);
-    const args = onCommitDrafts.mock.calls[0]?.[0] as {
-      added: Array<{ tempId: string; value: Person }>;
+    expect(onSaveDrafts).toHaveBeenCalledTimes(1);
+    const args = onSaveDrafts.mock.calls[0]?.[0] as {
+      created: Array<{ tempId: string; value: Person }>;
     };
-    expect(args.added.map((add) => add.tempId)).toEqual([tempId]);
-    expect(args.added[0]?.value.name).toBe("Ny");
+    expect(args.created.map((add) => add.tempId)).toEqual([tempId]);
+    expect(args.created[0]?.value.name).toBe("Ny");
     expect(edit.state.newRows).toEqual([]);
   });
 
   it("a write to a committed entry row is validated at the write, not at Save", async () => {
-    const onCommitDrafts = vi.fn();
+    const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
-      onCommitDrafts,
+      onSaveDrafts,
       rowValidators: {
         onSubmit: z.object({
           name: z.string().min(2, "Too short"),
@@ -807,8 +811,9 @@ describe("edit engine", () => {
     expect(edit.state.rows[tempId]?.errorFields).toContain("name");
     expect(edit.getForm(tempId)).toBeDefined();
 
-    await expect(edit.submitAll()).resolves.toBe(false);
-    expect(onCommitDrafts).not.toHaveBeenCalled();
+    await expect(edit.commitAll()).resolves.toBe(false);
+    await edit.saveDrafts();
+    expect(onSaveDrafts).not.toHaveBeenCalled();
   });
 
   it("cancel drops the draft without a consumer call", () => {
@@ -855,11 +860,11 @@ describe("edit engine", () => {
 
   it("cancelAll drops every draft, mark and entry in one motion", () => {
     const onCommit = vi.fn();
-    const onCommitDrafts = vi.fn();
+    const onSaveDrafts = vi.fn();
     const grid = renderEditGrid({
       mode: "row",
       draft: true,
-      onCommitDrafts,
+      onSaveDrafts,
       onCommit,
       onRowDelete: vi.fn(),
     });
@@ -879,7 +884,7 @@ describe("edit engine", () => {
     expect(edit.state.active).toBe(null);
     expect(edit.getForm("1")).toBe(undefined);
     expect(onCommit).not.toHaveBeenCalled();
-    expect(onCommitDrafts).not.toHaveBeenCalled();
+    expect(onSaveDrafts).not.toHaveBeenCalled();
   });
 
   it("canDeleteRows follows the handlers the mode can deliver to", () => {
@@ -894,7 +899,7 @@ describe("edit engine", () => {
       renderEditGrid({ mode: "row", draft: true }).current.edit.canDeleteRows(),
     ).toBe(false);
     expect(
-      renderEditGrid({ mode: "row", draft: true, onCommitDrafts: vi.fn() })
+      renderEditGrid({ mode: "row", draft: true, onSaveDrafts: vi.fn() })
         .current.edit.canDeleteRows(),
     ).toBe(true);
   });
@@ -962,9 +967,9 @@ describe("the draft store", () => {
     await expect(edit.saveDrafts()).resolves.toBe(true);
 
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
-      rows: Array<{ rowId: string }>;
+      updated: Array<{ rowId: string }>;
     };
-    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
     // The open row is untouched by the save: still open, still holding it.
     expect(edit.state.committedRowIds).toEqual([]);
     expect(edit.state.openRowIds).toEqual(["2"]);
@@ -990,15 +995,10 @@ describe("the draft store", () => {
       updated: Array<{ rowId: string }>;
       created: Array<{ tempId: string }>;
       deleted: Array<string>;
-      rows: Array<{ rowId: string }>;
-      added: Array<{ tempId: string }>;
     };
     expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
     expect(args.created.map((row) => row.tempId)).toEqual([tempId]);
     expect(args.deleted).toEqual(["2"]);
-    // The pre-2.0 names carry the same arrays until they are removed.
-    expect(args.rows).toBe(args.updated);
-    expect(args.added).toBe(args.created);
   });
 
   it("hasPendingEdits follows every kind of unsaved work until the save lands", async () => {
@@ -1257,9 +1257,9 @@ describe("the draft store", () => {
 
     await edit.saveDrafts();
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
-      rows: Array<{ rowId: string }>;
+      updated: Array<{ rowId: string }>;
     };
-    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
+    expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
   });
 
   it("validates a commit against the column rules with no editor mounted", async () => {
@@ -1317,9 +1317,9 @@ describe("the draft store", () => {
 
     await edit.saveDrafts();
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
-      added: Array<{ value: Person }>;
+      created: Array<{ value: Person }>;
     };
-    expect(args.added.map((add) => add.value.name)).toEqual([
+    expect(args.created.map((add) => add.value.name)).toEqual([
       "Giltig",
       "Ocksa giltig",
     ]);
@@ -1446,23 +1446,6 @@ describe("the draft store", () => {
     await expect(edit.saveDrafts()).resolves.toBe(true);
     expect(onSaveDrafts).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
-  });
-
-  it("the deprecated submitAll is commitAll then saveDrafts", async () => {
-    const onCommitDrafts = vi.fn();
-    // The deprecated callback name still reaches the engine, too.
-    const grid = renderEditGrid({ mode: "row", draft: true, onCommitDrafts });
-    const { edit } = grid.current;
-
-    edit.begin({ rowId: "1", columnId: "name" });
-    edit.getForm("1")?.setFieldValue("name", "Anna B");
-
-    // Never committed, yet submitAll saves it - that is what it always did.
-    await expect(edit.submitAll()).resolves.toBe(true);
-    const args = onCommitDrafts.mock.calls[0]?.[0] as {
-      rows: Array<{ rowId: string }>;
-    };
-    expect(args.rows.map((row) => row.rowId)).toEqual(["1"]);
   });
 
   it("commit drops the form and keeps the row as data", async () => {

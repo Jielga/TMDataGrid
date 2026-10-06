@@ -91,7 +91,6 @@ Pass the row type so the handlers are typed:
 | `onReachEnd` | `() => void` | – | Called as the scroll nears the last row, once per row count. Sorting and filtering must be server-side. See [Infinite scroll](/docs/server-side#infinite-scroll). |
 | `reachEndThreshold` | `number` | `10` | Rows before the end at which `onReachEnd` fires. |
 | `renderEmptyState` | `({ hasActiveFilters, table }) => ReactNode` | – | Replaces both built-in empty messages. See [Loading and empty states](/docs/loading-and-empty). |
-| `cellExport` | `TMDataGridCellExportOptions` | – | Deprecated. Set `exportOptions` on `useTMDataGrid` instead; until it goes, it is merged over that for the cell-range menu only. See [Export](/docs/export). |
 | `aria-label` · `aria-labelledby` | `string` | – | The grid's accessible name, announced on entry and matched by `getByRole("grid", { name })`. |
 
 Note that `onReachEnd` and `enablePagination` slice the same scroll: the pager caps the rows, so the end reached is the page's.
@@ -195,7 +194,6 @@ The slot argument carries the state, the operations and the built-in pieces:
 | `state.draftCount` | `number` | Rows in the draft store: committed edits, committed entry rows and deletion marks. This is what Save sends. |
 | `state.openCount` | `number` | Rows still open, so not part of the save. |
 | `state.openRowIds` | `ReadonlyArray<string>` | The ids behind `openCount`, in the order the grid opened them. An entered row appears as its `tempId`. |
-| `state.pendingCount` | `number` | **Deprecated.** Reads as `draftCount + openCount`. |
 | `state.isSubmitting` | `boolean` | `true` while any open row is submitting. Not the save; see `state.isSaving`. |
 | `state.isSaving` | `boolean` | `true` while `saveDrafts` is in flight, until the consumer's callbacks settle. The built-in Save shows it as its loading state. |
 | `actions.save` | `() => Promise<boolean>` | Sends the draft store. Open rows are left alone. |

@@ -78,14 +78,6 @@ export function useCompileTimeContracts() {
     data,
     columns,
     getRowId,
-    // @ts-expect-error -- same for the deprecated name.
-    editing: { mode: "cell", onCommitDrafts: async () => {} },
-  });
-
-  useTMDataGrid<Person>({
-    data,
-    columns,
-    getRowId,
     // @ts-expect-error -- entry rows only park under `draft: true`, so there
     // is nothing for them to stay sticky until.
     editing: { mode: "cell", newRowsSticky: true },

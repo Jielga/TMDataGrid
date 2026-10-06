@@ -3,8 +3,7 @@ import type { TMDataGridTable } from "../useTMDataGrid";
 
 /**
  * Which rows of a table carry a deletion mark, for readers that hold the
- * table and nothing else - `exportGrid`, `buildGridCellMatrix` and the
- * export data they build on. The marks live in the edit engine, which those
+ * table and nothing else - `exportGrid` and the export data it builds on. The marks live in the edit engine, which those
  * readers cannot reach; the hook registers the engine's answer per table
  * instead. A table built without the grid has no marks.
  */

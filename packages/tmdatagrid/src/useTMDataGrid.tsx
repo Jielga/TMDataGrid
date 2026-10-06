@@ -471,7 +471,7 @@ export type TMDataGridApi<TData extends RowData> = {
   ui: TMDataGridUiStore;
   /**
    * The edit engine - open forms, dirty/error projections, and the verbs
-   * (`begin`, `commit`, `cancel`, `submitAll`). `edit.getForm(rowId)` hands
+   * (`begin`, `commit`, `cancel`, `saveDrafts`). `edit.getForm(rowId)` hands
    * out the same TanStack Form the inline editors write through while a row
    * is open, so a drawer or detail panel can share a row's draft; a
    * committed row has no form until `begin` reopens it. Inert until
@@ -690,17 +690,6 @@ export type TMDataGridEditingOptions<TData extends RowData> =
             | TMDataGridSaveDraftsResult
             | Promise<void | TMDataGridSaveDraftsResult>;
           /**
-           * @deprecated Renamed to {@link onSaveDrafts} - it fires when the
-           * draft store is saved, not when a row commits into it. Still
-           * honoured; removed in a later beta.
-           */
-          onCommitDrafts?: (
-            args: TMDataGridSaveDraftsArgs<TData>,
-          ) =>
-            | void
-            | TMDataGridSaveDraftsResult
-            | Promise<void | TMDataGridSaveDraftsResult>;
-          /**
            * Keep committed entry rows pinned in the sticky entry block until
            * the draft store is saved, out of the body's sort. Off by default:
            * a committed row joins the body rows instead, sorted and filtered
@@ -715,8 +704,6 @@ export type TMDataGridEditingOptions<TData extends RowData> =
           draft?: false;
           /** Only `draft: true` has a store to save - see the other branch. */
           onSaveDrafts?: never;
-          /** @deprecated See {@link onSaveDrafts}. */
-          onCommitDrafts?: never;
           /** Parked entry rows exist only under `draft: true` - see there. */
           newRowsSticky?: never;
         }
@@ -1633,9 +1620,8 @@ export function useTMDataGrid<TData extends RowData>({
       editing?.isRowEditable as TMDataGridEditEngineContext["isRowEditable"],
     onEditCommit:
       editing?.onCommit as TMDataGridEditEngineContext["onEditCommit"],
-    // The deprecated name still works; the new one wins if both are set.
-    onSaveDrafts: (editing?.onSaveDrafts ??
-      editing?.onCommitDrafts) as TMDataGridEditEngineContext["onSaveDrafts"],
+    onSaveDrafts:
+      editing?.onSaveDrafts as TMDataGridEditEngineContext["onSaveDrafts"],
     newRowDefaults:
       editing?.newRowDefaults as TMDataGridEditEngineContext["newRowDefaults"],
     onRowAdd: editing?.onRowAdd as TMDataGridEditEngineContext["onRowAdd"],
@@ -1671,8 +1657,8 @@ export function useTMDataGrid<TData extends RowData>({
     engine.forgetMissingRows(tableRef.current.getCoreRowModel().rowsById);
   }, [shown.rows, editingOn, serverSideRows, engine]);
 
-  // Readers that hold the table and nothing else - `exportGrid`,
-  // `buildGridCellMatrix` - still leave a deletion-marked row out. Keyed on
+  // Readers that hold the table and nothing else - `exportGrid` - still
+  // leave a deletion-marked row out. Keyed on
   // the store, which every copy of the table shares, so once is enough.
   useEffect(
     () => registerDeletedRows(tableRef.current, engine.isRowDeleted),

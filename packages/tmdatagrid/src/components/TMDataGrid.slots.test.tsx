@@ -298,17 +298,17 @@ describe("DraftActions renderActions", () => {
     editing: { mode: "cell" as const, draft: true as const, onCommit: vi.fn() },
   };
 
-  it("hands over the pending count and the built-in buttons", () => {
+  it("hands over the draft count and the built-in buttons", () => {
     const seen: Array<number> = [];
 
     renderGridUi({
       ...editable,
       draftActionsProps: {
         renderActions: ({ state, Controls }) => {
-          seen.push(state.pendingCount);
+          seen.push(state.draftCount);
           return (
             <>
-              <span>Pending: {state.pendingCount}</span>
+              <span>Pending: {state.draftCount}</span>
               <Controls.Save />
             </>
           );

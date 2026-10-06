@@ -444,10 +444,6 @@ export type TMDataGridSaveDraftsArgs<TData extends RowData> = {
   created: Array<TMDataGridRowAddArgs<TData>>;
   /** Ids marked deleted while the drafts accumulated. */
   deleted: Array<string>;
-  /** @deprecated Renamed to {@link updated}. Removed in a later beta. */
-  rows: Array<TMDataGridEditCommitArgs<TData>>;
-  /** @deprecated Renamed to {@link created}. Removed in a later beta. */
-  added: Array<TMDataGridRowAddArgs<TData>>;
 };
 
 /**
@@ -484,13 +480,6 @@ function isSaved(
   if (typeof outcomes === "boolean") return outcomes;
   return outcomes[id] !== false;
 }
-
-/**
- * @deprecated Renamed to {@link TMDataGridSaveDraftsArgs} - the payload is
- * the draft store being saved, not a commit. Removed in a later beta.
- */
-export type TMDataGridEditCommitDraftsArgs<TData extends RowData> =
-  TMDataGridSaveDraftsArgs<TData>;
 
 /** What the engine reads fresh on every call - see `createEditEngine`. */
 export type TMDataGridEditEngineContext = {
@@ -685,11 +674,6 @@ export type TMDataGridEditApi<
    * open. `true` when everything landed; a rejected save keeps every draft.
    */
   saveDrafts: () => Promise<boolean>;
-  /**
-   * @deprecated Split into {@link commitAll} and {@link saveDrafts}, which is
-   * exactly what this now does. Removed in a later beta.
-   */
-  submitAll: () => Promise<boolean>;
   /** Writes the type's empty value into a cell and commits it - Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
   /**
@@ -2244,9 +2228,6 @@ export function createEditEngine(
           updated: collected,
           created: added,
           deleted,
-          // The pre-2.0 names, still filled - see TMDataGridSaveDraftsArgs.
-          rows: collected,
-          added,
         });
       } catch {
         return false;
@@ -2286,13 +2267,6 @@ export function createEditEngine(
       if (!savedAll) return false;
     }
     return allValid;
-  };
-
-  /** @deprecated The old one-shot save - `commitAll` then `saveDrafts`. */
-  const submitAll = async (): Promise<boolean> => {
-    const committedOk = await commitAll();
-    const savedOk = await saveDrafts();
-    return committedOk && savedOk;
   };
 
   /**
@@ -2471,7 +2445,6 @@ export function createEditEngine(
     cancelAll,
     commitAll,
     saveDrafts,
-    submitAll,
     clearCell,
     setCellValue,
     setRowValues,

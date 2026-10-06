@@ -361,8 +361,7 @@ while editing is off, and works under any mode, not only draft.
 ```
 
 `state` is
-`{ draftCount, openCount, openRowIds, pendingCount, isSubmitting, isSaving }` -
-`pendingCount` deprecated, reading as `draftCount + openCount`. `actions` is
+`{ draftCount, openCount, openRowIds, isSubmitting, isSaving }`. `actions` is
 `{ save, commitAll, discard, scrollToRow, scrollToFirstOpenRow }`, and
 `Controls` is `{ Save, Discard, OpenRowsNote }`.
 

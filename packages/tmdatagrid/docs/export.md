@@ -286,20 +286,6 @@ The search box and the picker share `columnsSearchPlaceholder` and `columnsNoMat
 A download is an anchor with an object URL, clicked; a jsdom test stubs `URL.createObjectURL` and `HTMLAnchorElement.prototype.click` to read the file back.
 See [Testing](/docs/testing).
 
-## Deprecated names
-
-The names below still work and go in the next beta.
-
-| Deprecated | Use instead |
-| --- | --- |
-| `cellExport` on `TMDataGrid.Table` | `exportOptions` on `useTMDataGrid`; `separator` and `decimalComma` become `csvExcelFormat({ separator, decimalComma })` |
-| `exportGridToCsv({ table, options })` | `exportGrid({ table, options })` |
-| `TMDataGridCellExportOptions` · `DEFAULT_CELL_EXPORT_OPTIONS` | `TMDataGridExportOptions` · `DEFAULT_EXPORT_OPTIONS` |
-| `buildCellMatrix` · `buildGridCellMatrix` · `TMDataGridCellMatrix` | `buildExportData` · `TMDataGridExportData` |
-| `toExcelCsv(matrix, { separator })` | `csvExcelFormat({ separator }).write(data, options)` |
-| `downloadTextFile` | `downloadFile` |
-| `labels.exportCsv` | `labels.exportCells` |
-
 ## Reference
 
 | Name | Kind | Type | Default | What it does |
