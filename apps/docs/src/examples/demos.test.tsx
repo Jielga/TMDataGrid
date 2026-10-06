@@ -1,4 +1,4 @@
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { findDemoFences } from "../docs/demoFence";
@@ -57,8 +57,9 @@ describe("example demos", () => {
     const { Component } = loadDemo(file);
     renderWithMantine(<Component />);
 
-    // Every demo renders a grid, and every grid renders its column headers.
-    expect(screen.getAllByRole("columnheader").length).toBeGreaterThan(0);
+    // Every demo renders a grid root; not every one renders a Table, so the
+    // root is what proves the mount got that far.
+    expect(document.querySelector("[data-dg-root]")).not.toBeNull();
     expect(errors).toEqual([]);
   });
 
