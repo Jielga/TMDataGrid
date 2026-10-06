@@ -157,7 +157,7 @@ Mantine `MenuProps` (defaults `position="bottom-end"`, `shadow="md"`,
 import { Menu } from "@mantine/core";
 
 <TMDataGrid.Menu>
-  <Menu.Item onClick={exportCsv}>Export CSV</Menu.Item>
+  <Menu.Item onClick={exportReport}>Export report</Menu.Item>
   <Menu.Divider />
   <Menu.Label>Columns</Menu.Label>
   <TMDataGrid.Menu.Columns />
@@ -184,7 +184,7 @@ A button of your own reads the grid from context, which returns
 
 ```tsx
 import {
-  exportGridToCsv,
+  exportGrid,
   getGridCapabilities,
   useTMDataGridContext,
 } from "@jielga/tmdatagrid";
@@ -196,7 +196,7 @@ function ExportButton() {
   if (!canFilterAny) return null;
 
   return (
-    <Button size={controlSize} onClick={() => exportGridToCsv({ table })}>
+    <Button size={controlSize} onClick={() => void exportGrid({ table })}>
       Export
     </Button>
   );

@@ -245,10 +245,6 @@ export for code outside a component; `buildExportData` is the step before the
 file. A format of your own is `{ id, extension, mimeType, write(data, { includeHeaders }) }`
 returning a string, a `Blob`, or a promise of either.
 
-Deprecated for one beta: `exportGridToCsv`, the `cellExport` Table prop,
-`TMDataGridCellExportOptions`, `buildCellMatrix` / `buildGridCellMatrix`,
-`toExcelCsv`, `downloadTextFile`, `labels.exportCsv`.
-
 Source: `packages/tmdatagrid/docs/export.md`.
 
 ## Common mistakes

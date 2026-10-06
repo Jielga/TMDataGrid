@@ -856,7 +856,7 @@ describe("cell editing", () => {
     mode = "cell",
     columns = editColumns,
     onCommit,
-    onCommitDrafts,
+    onSaveDrafts,
     onRowAdd,
     onRowDelete,
     newRowDefaults,
@@ -868,7 +868,7 @@ describe("cell editing", () => {
     mode?: "cell" | "cellConfirm" | "row";
     columns?: UseTMDataGridOptions<Employee>["columns"];
     onCommit?: (args: unknown) => void;
-    onCommitDrafts?: (args: unknown) => void;
+    onSaveDrafts?: (args: unknown) => void;
     onRowAdd?: (args: unknown) => void;
     onRowDelete?: () => void;
     newRowDefaults?: () => Employee;
@@ -886,7 +886,7 @@ describe("cell editing", () => {
         mode,
         draft: true,
         onCommit,
-        onCommitDrafts,
+        onSaveDrafts,
         onRowAdd,
         onRowDelete,
         newRowDefaults,
@@ -1563,7 +1563,7 @@ describe("cell editing", () => {
         editing: {
           mode: "cell",
           draft: true,
-          onCommitDrafts: (args) => void saves.push(args),
+          onSaveDrafts: (args) => void saves.push(args),
           newRowDefaults: () => ({ id: 0, name: "", age: 20, note: "" }),
         },
         selectionMode: "highlight",
@@ -1615,12 +1615,12 @@ describe("cell editing", () => {
     await user.click(screen.getByRole("button", { name: "Save 2 rows" }));
     await waitFor(() => expect(saves.length).toBe(1));
     const saved = saves[0] as {
-      rows: unknown[];
-      added: Array<{ value: { name: string } }>;
+      updated: unknown[];
+      created: Array<{ value: { name: string } }>;
       deleted: string[];
     };
-    expect(saved.rows).toEqual([]);
-    expect(saved.added.map((add) => add.value.name)).toEqual(["Ny Person"]);
+    expect(saved.updated).toEqual([]);
+    expect(saved.created.map((add) => add.value.name)).toEqual(["Ny Person"]);
     expect(saved.deleted).toEqual(["2"]);
     // The entered row is gone from the body and the mark is cleared.
     expect(queryPart("row", { rowId: "__new__1" })).not.toBeInTheDocument();
@@ -1630,11 +1630,11 @@ describe("cell editing", () => {
 
   it("leaves an entry row that was never OK'd out of the save, still open", async () => {
     const user = userEvent.setup();
-    const saves: Array<{ added: unknown[]; deleted: string[] }> = [];
+    const saves: Array<{ created: unknown[]; deleted: string[] }> = [];
     renderWithMantine(
       <DraftGrid
         newRowDefaults={entryDefaults}
-        onCommitDrafts={(args) => void saves.push(args as never)}
+        onSaveDrafts={(args) => void saves.push(args as never)}
       />,
     );
 
@@ -1655,7 +1655,7 @@ describe("cell editing", () => {
     expect(part("open-rows-note")).toHaveTextContent("1 row still being edited");
     await user.click(screen.getByRole("button", { name: "Save 1 row" }));
     await waitFor(() => expect(saves.length).toBe(1));
-    expect(saves[0]?.added).toEqual([]);
+    expect(saves[0]?.created).toEqual([]);
     expect(saves[0]?.deleted).toEqual(["2"]);
 
     // The undecided row is untouched: still open, still holding what was

@@ -647,11 +647,10 @@ export type TMDataGridClipboardTextOptions = {
  * header pasted into the middle of a sheet is a row of text where numbers
  * were expected.
  *
- * Also accepts an already-formatted string matrix, for callers of the
- * deprecated `buildCellMatrix`.
+ * Also accepts an already-formatted string matrix, written as is.
  */
 export function toClipboardText(
-  data: TMDataGridExportData | TMDataGridCellMatrix,
+  data: TMDataGridExportData | Array<Array<string>>,
   { decimalComma = true, escapeFormulas = true }: TMDataGridClipboardTextOptions = {},
 ): string {
   const lines = Array.isArray(data)
@@ -702,142 +701,4 @@ export function downloadFile({
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
-// ---------------------------------------------------------------------------
-// Deprecated surface, kept for one beta. Everything below maps onto the API
-// above and goes in the next prerelease.
-// ---------------------------------------------------------------------------
-
-/** @deprecated Use {@link TMDataGridExportData}; the matrix is text, the data holds values. */
-export type TMDataGridCellMatrix = Array<Array<string>>;
-
-/** @deprecated Use {@link TMDataGridExportOptions} with `csvExcelFormat({ separator, decimalComma })`. */
-export type TMDataGridCellExportOptions = {
-  /** CSV field separator. Defaults to `";"`. */
-  separator?: string;
-  /** Write numbers as `1,5` rather than `1.5`. Defaults to `true`. */
-  decimalComma?: boolean;
-  /** Column labels as the first row. Defaults to `true`. */
-  includeHeaders?: boolean;
-  /** Without extension. Defaults to `"export"`. */
-  fileName?: string;
-};
-
-/** @deprecated Use {@link DEFAULT_EXPORT_OPTIONS}. */
-export const DEFAULT_CELL_EXPORT_OPTIONS: Required<TMDataGridCellExportOptions> =
-  {
-    separator: ";",
-    decimalComma: true,
-    includeHeaders: true,
-    fileName: "export",
-  };
-
-/**
- * The old options as the new: separator and decimal mark become a
- * `csvExcelFormat`, the rest carries over. Shared by the deprecated
- * `cellExport` Table prop and {@link exportGridToCsv}.
- *
- * @deprecated Write {@link TMDataGridExportOptions} directly.
- */
-export function fromCellExportOptions(
-  options: TMDataGridCellExportOptions,
-): TMDataGridExportOptions {
-  const { separator, decimalComma, includeHeaders, fileName } = options;
-  return {
-    format:
-      separator !== undefined || decimalComma !== undefined
-        ? csvExcelFormat({ separator, decimalComma })
-        : undefined,
-    includeHeaders,
-    fileName,
-  };
-}
-
-function toMatrix(
-  data: TMDataGridExportData,
-  { includeHeaders, decimalComma }: { includeHeaders: boolean; decimalComma: boolean },
-): TMDataGridCellMatrix {
-  if (data.columnIds.length === 0) return [];
-  return textRows(
-    data,
-    { includeHeaders },
-    { decimalComma, escapeFormulas: false },
-  );
-}
-
-/** @deprecated Use {@link BuildExportDataArgs}. */
-export type BuildCellMatrixArgs = {
-  rows: ReadonlyArray<ErasedRow>;
-  /** Every visible column, in render order - the same list the bounds index into. */
-  columns: ReadonlyArray<ErasedColumn>;
-  bounds: TMDataGridRangeBounds;
-  includeHeaders: boolean;
-  decimalComma: boolean;
-};
-
-/** @deprecated Use {@link buildExportData} with `bounds`, and a format to write it. */
-export function buildCellMatrix({
-  rows,
-  columns,
-  bounds,
-  includeHeaders,
-  decimalComma,
-}: BuildCellMatrixArgs): TMDataGridCellMatrix {
-  const selectedColumns = columns
-    .slice(bounds.left, bounds.right + 1)
-    .filter(isExportedColumn);
-  const selectedRows = rows.slice(bounds.top, bounds.bottom + 1);
-  return toMatrix(collectExportData(selectedRows, selectedColumns), {
-    includeHeaders,
-    decimalComma,
-  });
-}
-
-/** @deprecated Use {@link buildExportData}. */
-export function buildGridCellMatrix<TData extends RowData>({
-  table,
-  includeHeaders = DEFAULT_CELL_EXPORT_OPTIONS.includeHeaders,
-  decimalComma = DEFAULT_CELL_EXPORT_OPTIONS.decimalComma,
-}: {
-  table: TMDataGridTable<TData>;
-  includeHeaders?: boolean;
-  decimalComma?: boolean;
-}): TMDataGridCellMatrix {
-  return toMatrix(buildExportData({ table }), { includeHeaders, decimalComma });
-}
-
-/** @deprecated Use {@link csvExcelFormat} - its `write` is this over export data. */
-export function toExcelCsv(
-  matrix: TMDataGridCellMatrix,
-  { separator }: { separator: string },
-): string {
-  return `${UTF8_BOM}sep=${separator}\r\n${toDelimited(matrix, separator)}\r\n`;
-}
-
-/** @deprecated Use {@link exportGrid}. */
-export function exportGridToCsv<TData extends RowData>({
-  table,
-  options,
-}: {
-  table: TMDataGridTable<TData>;
-  options?: TMDataGridCellExportOptions;
-}): void {
-  void exportGrid({
-    table,
-    options: options ? fromCellExportOptions(options) : undefined,
-  });
-}
-
-/** @deprecated Use {@link downloadFile}. */
-export function downloadTextFile({
-  fileName,
-  text,
-  mimeType = "text/csv;charset=utf-8",
-}: {
-  fileName: string;
-  text: string;
-  mimeType?: string;
-}): void {
-  downloadFile({ fileName, content: text, mimeType });
 }

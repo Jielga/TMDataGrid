@@ -101,14 +101,14 @@ function EditDiscardButton() {
   const { edit, labels } = useTMDataGridContext();
   // Discard drops everything the grid is holding, open rows included, so it
   // stays live while anything is uncommitted.
-  const pendingCount = useDraftCount() + useOpenCount();
+  const uncommittedCount = useDraftCount() + useOpenCount();
 
   return (
     <Button
       variant="subtle"
       color="gray"
       size="compact-sm"
-      disabled={pendingCount === 0}
+      disabled={uncommittedCount === 0}
       data-dg-part="discard-all"
       onClick={() => edit.cancelAll()}
     >
@@ -146,11 +146,6 @@ export type TMDataGridDraftActionsState = {
    * in display order, so it need not be `openRowIds[0]`.
    */
   openRowIds: ReadonlyArray<string>;
-  /**
-   * @deprecated Was "everything uncommitted", which Save no longer sends.
-   * Reads as `draftCount + openCount`; use whichever you meant.
-   */
-  pendingCount: number;
   /** Whether a submit is in flight - any open row is submitting. */
   isSubmitting: boolean;
   /** `true` while `saveDrafts` is in flight. */
@@ -261,7 +256,6 @@ export function TMDataGridDraftActions({
         draftCount,
         openCount: openRowIds.length,
         openRowIds,
-        pendingCount: draftCount + openRowIds.length,
         isSubmitting,
         isSaving,
       },

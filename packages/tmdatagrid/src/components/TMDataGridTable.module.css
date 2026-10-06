@@ -345,7 +345,7 @@
   padding: var(--mantine-spacing-xl);
 }
 
-/* Marked deleted under draft: struck through and inert until submitAll
+/* Marked deleted under draft: struck through and inert until saveDrafts
    reports it - a row about to go away must not keep taking edits. Interaction
    comes off the data cells, not the row: `pointer-events: none` on the row
    would also kill the edit lane's Restore, which is the one control the row

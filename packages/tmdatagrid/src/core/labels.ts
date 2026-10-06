@@ -149,8 +149,6 @@ export type TMDataGridLabels = {
   cellCount: (count: number) => string;
   copy: string;
   exportCells: string;
-  /** @deprecated Use `exportCells`. Read as its fallback for one beta. */
-  exportCsv?: string;
   includeHeaders: string;
 
   // Export
@@ -336,10 +334,6 @@ export function mergeLabels(
   return {
     ...TMDATAGRID_LABELS_EN,
     ...override,
-    exportCells:
-      override.exportCells ??
-      override.exportCsv ??
-      TMDATAGRID_LABELS_EN.exportCells,
     operators: {
       ...TMDATAGRID_LABELS_EN.operators,
       ...override.operators,

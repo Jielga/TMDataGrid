@@ -204,7 +204,6 @@ A row left open is neither lost nor sent.
 It keeps everything typed into it, stays open across a save, and joins the next save once it is committed.
 `edit.commitAll()` submits every open row at once; rows that fail validation stay open with their errors.
 "Commit everything, then save" is `commitAll()` followed by `saveDrafts()`.
-`edit.submitAll()` did both in one call and is **deprecated**; replace it with the half you meant.
 
 The note beside Save counts the open rows.
 On a long grid the open row may be far from the viewport, and because the grid is [virtualized](/docs/scrolling) it may have no element to scroll to.
@@ -529,7 +528,6 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.commit(rowId)` | Submits one row: into the draft store under `draft: true`, to `onCommit` otherwise. Resolves `false` if validation blocked it |
 | `edit.commitAll()` | Submits every open row. Resolves `false` when one stayed open |
 | `edit.saveDrafts()` | Sends the draft store. Open rows are left alone |
-| `edit.submitAll()` | **Deprecated** - `commitAll()` then `saveDrafts()` |
 | `edit.cancel(rowId)` / `edit.cancelAll()` | Drops drafts - form state and the draft store alike |
 | `edit.setCellValue(rowId, columnId, value)` | Writes one cell and commits the row, with no editor. Resolves `false` if the cell takes no edit, or validation refused the value |
 | `edit.setRowValues(rowId, values)` | The same for several cells of one row, in one commit. All or nothing |
@@ -603,7 +601,6 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.tableValidators`     | Member         | `TMDataGridTableValidators`                      | –                 | Cross-row rules, handed the collection with every draft overlaid. See [Editors](/docs/editors#cross-row-rules). |
 | `editing.onCommit`            | Callback       | `({ rowId, value, original, changes, source }) => void \| Promise` | – | Applies one row's change. Reject to keep the draft.                                              |
 | `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | `draft: true` only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
-| `editing.onCommitDrafts`      | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | **Deprecated** - renamed to `onSaveDrafts`. Still honoured.                                      |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps committed entry rows in the sticky entry block, out of the body's sort, until the save. |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |
 | `editing.onRowAdd`            | Callback       | `({ tempId, value }) => void \| Promise`         | –                 | Commits an added row.                                                                            |

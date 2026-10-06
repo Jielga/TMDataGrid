@@ -29,7 +29,6 @@ the type.
 | --- | --- | --- |
 | `editing.onCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
 | `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
-| `editing.onCommitDrafts` | `{ updated, created, deleted }` | **Deprecated** - renamed to `onSaveDrafts`. Still honoured; the new name wins if both are set. |
 | `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
 | `editing.onRowDelete` | `{ rowId, row }` | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too. |
 
@@ -60,7 +59,6 @@ path, which may be dotted.
 | `cancel` | `(rowId) => void` | Drops one draft. |
 | `cancelAll` | `() => void` | Drops every draft. |
 | `deactivate` | `() => void` | Closes the editor without touching the draft, as blur does under `"cellConfirm"`. |
-| `submitAll` | `() => Promise<boolean>` | **Deprecated** - `commitAll()` then `saveDrafts()`. |
 | `clearCell` | `(rowId, columnId) => Promise<boolean>` | What Delete does: writes the type's empty value and commits. |
 | `setCellValue` | `(rowId, columnId, value) => Promise<boolean>` | Writes one cell and commits the row, with no editor - toolbar actions and bulk fills. The row need not be mounted; a row inside a collapsed group takes the write. `value` is the stored value, so `meta.edit.mapValue` does not run and `meta.edit.validate` does. Under `draft: true` the row is committed into the draft store like any hand-made edit. `false` when the cell takes no edit, or when validation refused the value and left the row open with its errors. |
 | `setRowValues` | `(rowId, values) => Promise<boolean>` | `setCellValue` for several cells of one row in a single commit - one consumer call and one draft entry. Keys are column ids. All or nothing: if any named cell takes no edit, nothing is written and it resolves `false`. |
@@ -129,7 +127,7 @@ type TMDataGridEditState = {
 | `TMDataGridStringEditor` … `TMDataGridMultiSelectEditor` | Exports | The six built-in editors, for wrapping. |
 
 Types: `TMDataGridEditMode`, `TMDataGridEditApi`, `TMDataGridEditState`,
-`TMDataGridEditCommitArgs`, `TMDataGridEditCommitDraftsArgs`,
+`TMDataGridEditCommitArgs`, `TMDataGridSaveDraftsArgs`,
 `TMDataGridEditChange`, `TMDataGridEditorArgs`, `TMDataGridEditorComponent`,
 `TMDataGridEditField`, `TMDataGridEditRowProjection`, `TMDataGridFieldValidate`,
 `TMDataGridRowValidators`, `TMDataGridRowEditForm`, `TMDataGridRowAddArgs`,
