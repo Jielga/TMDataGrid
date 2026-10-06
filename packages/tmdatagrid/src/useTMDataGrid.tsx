@@ -63,7 +63,7 @@ import {
   type TMDataGridEditApi,
   type TMDataGridEditCommitArgs,
   type TMDataGridSaveDraftsArgs,
-  type TMDataGridSaveDraftsResult,
+  type TMDataGridSaveDraftsResponse,
   type TMDataGridEditEngineContext,
   type TMDataGridColumnEditOptions,
   type TMDataGridEditMode,
@@ -742,14 +742,14 @@ export type TMDataGridEditingOptions<TData extends RowData> =
            *
            * Rows still open are not in the payload and stay open. Returning
            * nothing saves the whole store and throwing saves none of it;
-           * return a {@link TMDataGridSaveDraftsResult} to save part of it.
+           * return a {@link TMDataGridSaveDraftsResponse} to save part of it.
            */
           onSaveDrafts?: (
             args: TMDataGridSaveDraftsArgs<TData>,
           ) =>
             | void
-            | TMDataGridSaveDraftsResult
-            | Promise<void | TMDataGridSaveDraftsResult>;
+            | TMDataGridSaveDraftsResponse
+            | Promise<void | TMDataGridSaveDraftsResponse>;
           /**
            * Keep committed entry rows pinned in the sticky entry block until
            * the draft store is saved, out of the body's sort. Off by default:

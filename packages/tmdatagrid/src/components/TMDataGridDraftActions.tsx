@@ -3,7 +3,11 @@ import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
 import type { ReactNode } from "react";
 import { useTMDataGridContext } from "../TMDataGridContext";
-import { getOpenRowIds } from "../core/editEngine";
+import {
+  getOpenRowIds,
+  type TMDataGridCommitAllResult,
+  type TMDataGridSaveDraftsResult,
+} from "../core/editEngine";
 import { getDisplayedRows } from "../core/rowSelection";
 import type {
   TMDataGridScrollAlign,
@@ -154,10 +158,18 @@ export type TMDataGridDraftActionsState = {
 
 /** What the edit chrome can do. */
 export type TMDataGridDraftActionsActions = {
-  /** Saves the draft store. Open rows are left alone. */
-  save: () => Promise<boolean>;
-  /** Submits every open row, committing the ones that validate. */
-  commitAll: () => Promise<boolean>;
+  /**
+   * Saves the draft store - `edit.saveDrafts()`. Open rows are left alone.
+   * Resolves which ids were saved, kept in the draft store for the next
+   * save, or reopened with an error; see {@link TMDataGridSaveDraftsResult}.
+   */
+  save: () => Promise<TMDataGridSaveDraftsResult>;
+  /**
+   * Submits every open row, committing the ones that validate -
+   * `edit.commitAll()`. Resolves which rows committed and which are still
+   * open; see {@link TMDataGridCommitAllResult}.
+   */
+  commitAll: () => Promise<TMDataGridCommitAllResult>;
   /** Drops everything - open form state and the draft store alike. */
   discard: () => void;
   /**
