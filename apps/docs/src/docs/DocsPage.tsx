@@ -34,7 +34,11 @@ const markdownComponents: Components = {
   // Mantine's Table gets the borders and spacing right, and gives
   // wide prop tables their own horizontal scroll.
   table: (props: ComponentPropsWithoutRef<"table">) => (
-    <Table.ScrollContainer minWidth={520} type="native">
+    <Table.ScrollContainer
+      minWidth={520}
+      type="native"
+      className={classes.tableBlock}
+    >
       <Table striped withTableBorder withColumnBorders {...props} />
     </Table.ScrollContainer>
   ),

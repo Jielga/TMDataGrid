@@ -14,6 +14,7 @@ import groupingDoc from "@jielga/tmdatagrid/docs/grouping.md?raw";
 import loadingAndEmptyDoc from "@jielga/tmdatagrid/docs/loading-and-empty.md?raw";
 import localizationDoc from "@jielga/tmdatagrid/docs/localization.md?raw";
 import menuDoc from "@jielga/tmdatagrid/docs/menu.md?raw";
+import migratingTo2Doc from "@jielga/tmdatagrid/docs/migrating-to-2.md?raw";
 import paginationDoc from "@jielga/tmdatagrid/docs/pagination.md?raw";
 import persistenceDoc from "@jielga/tmdatagrid/docs/persistence.md?raw";
 import portfolioRebalancerDoc from "@jielga/tmdatagrid/docs/portfolio-rebalancer.md?raw";
@@ -80,6 +81,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "Grid anatomy",
     description: "The hook, the parts, and what returns what",
     source: anatomyDoc,
+  },
+  {
+    id: "migrating-to-2",
+    section: "Start here",
+    label: "Migrating from the 2.0 beta",
+    description: "Every change from the beta to 2.0.0",
+    source: migratingTo2Doc,
   },
 
   {

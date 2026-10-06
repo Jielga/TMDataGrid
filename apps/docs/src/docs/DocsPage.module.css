@@ -95,6 +95,12 @@
   margin-block: var(--mantine-spacing-lg);
 }
 
+/* The same gap for a table: the scroll container wrapping it has no margin of
+   its own, so the paragraph after a table sat against its bottom border. */
+.tableBlock {
+  margin-block: var(--mantine-spacing-lg);
+}
+
 /* The `code` rule above is for an inline chip, and highlighted code is a `code`
    too - in a fence and in a demo's source panel alike. Both sit inside the
    `pre` the component renders, which is what separates them from an inline
