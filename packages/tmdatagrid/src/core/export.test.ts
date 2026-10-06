@@ -164,6 +164,19 @@ describe("the text formats", () => {
     );
   });
 
+  it("csvExcelFormat names its separator and quotes a value holding it", async () => {
+    const data: TMDataGridExportData = {
+      columnIds: ["name", "city"],
+      headers: ["Name", "City"],
+      rows: [["Lindqvist, Anna", "Malmö"]],
+    };
+    const text = await csvExcelFormat({ separator: "," }).write(data, {
+      includeHeaders: false,
+    });
+
+    expect(text).toBe('﻿sep=,\r\n"Lindqvist, Anna",Malmö\r\n');
+  });
+
   it("csvFormat writes RFC 4180 with a dot decimal and no directive", async () => {
     const text = await csvFormat().write(sample, { includeHeaders: false });
 
