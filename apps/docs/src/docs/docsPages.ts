@@ -1,4 +1,5 @@
 import anatomyDoc from "@jielga/tmdatagrid/docs/anatomy.md?raw";
+import cardViewDoc from "@jielga/tmdatagrid/docs/card-view.md?raw";
 import cellSelectionDoc from "@jielga/tmdatagrid/docs/cell-selection.md?raw";
 import columnLayoutDoc from "@jielga/tmdatagrid/docs/column-layout.md?raw";
 import componentsDoc from "@jielga/tmdatagrid/docs/components.md?raw";
@@ -287,6 +288,13 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     label: "A portfolio rebalancer",
     description: "Derived columns, and a rule spanning every row",
     source: portfolioRebalancerDoc,
+  },
+  {
+    id: "card-view",
+    section: "Recipes",
+    label: "A card view",
+    description: "The grid's state, rendered as cards",
+    source: cardViewDoc,
   },
 
   {
