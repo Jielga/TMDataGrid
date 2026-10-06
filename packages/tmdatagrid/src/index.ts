@@ -14,6 +14,7 @@ export {
 } from "./components/TMDataGridGroupColumn";
 export {
   createTMDataGridColumnHelper,
+  type TMDataGridColumnHelper,
   openColumnFilter,
   tmDataGridFeatures,
   type TMDataGridApi,
