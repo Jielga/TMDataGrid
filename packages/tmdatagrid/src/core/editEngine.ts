@@ -117,7 +117,8 @@ export type TMDataGridTableValidateArgs<
  * keys, no overlapping ranges, allocations summing to a total. Run at every
  * commit, after the row's own validators, and again per committed row during
  * `saveDrafts`, the only rules that run there - a committed row a later edit
- * invalidated is reopened with the error and the save resolves `false`.
+ * invalidated is reopened with the error, and the save reports it in
+ * `reopened`.
  *
  * Return nothing to pass, a message, or Form's `{ form, fields }` shape;
  * pathed issues land on the committing row's cells, pathless ones on the row.
@@ -462,7 +463,7 @@ export type TMDataGridSaveOutcomes = boolean | Record<string, boolean>;
  * with nothing beyond the state itself - a failed edit keeps `data-draft`,
  * a failed deletion keeps `data-deleted` - so the display is the consumer's.
  */
-export type TMDataGridSaveDraftsResult = {
+export type TMDataGridSaveDraftsResponse = {
   /** Keyed by `rowId`. */
   updated?: TMDataGridSaveOutcomes;
   /** Keyed by `tempId`. */
@@ -502,8 +503,8 @@ export type TMDataGridEditEngineContext = {
     args: TMDataGridSaveDraftsArgs<TMDataGridRowData>,
   ) =>
     | void
-    | TMDataGridSaveDraftsResult
-    | Promise<void | TMDataGridSaveDraftsResult>;
+    | TMDataGridSaveDraftsResponse
+    | Promise<void | TMDataGridSaveDraftsResponse>;
   /**
    * Seed values for `addRow`, under the values it is called with. A function
    * is called per added row.
@@ -563,6 +564,8 @@ export type TMDataGridAddRowsOptions = {
 
 /** What `edit.addRows` reports back. Every added row is in exactly one list. */
 export type TMDataGridAddRowsResult = {
+  /** `true` when every added row committed - `open` is empty. */
+  ok: boolean;
   /** Temp ids that committed - parked as drafts, or added outright. */
   committed: Array<string>;
   /**
@@ -571,6 +574,67 @@ export type TMDataGridAddRowsResult = {
    */
   open: Array<string>;
 };
+
+/**
+ * What `edit.commitAll` reports back. Every row that was open at the call is
+ * in exactly one list; ids are row ids, and temp ids for entry rows.
+ */
+export type TMDataGridCommitAllResult = {
+  /** `true` when every open row committed - `open` is empty. */
+  ok: boolean;
+  /**
+   * Rows whose `commit` resolved `true` - into the draft store under
+   * `editing.draft`, out to the consumer without it, or closed with nothing
+   * to save.
+   */
+  committed: Array<string>;
+  /**
+   * Rows still open, carrying their errors: validation failed, or without
+   * `editing.draft` the consumer's `onCommit` / `onRowAdd` threw.
+   */
+  open: Array<string>;
+};
+
+/**
+ * What `edit.saveDrafts` reports back. Ids are row ids, and temp ids for new
+ * rows; edits, new rows and deletions are mixed in each list. Every id the
+ * save took from the draft store is in exactly one list. Rows open at the
+ * call are not part of the save and are in none.
+ */
+export type TMDataGridSaveDraftsResult = {
+  /** `true` when nothing was kept or reopened. */
+  ok: boolean;
+  /** Left the draft store - the consumer accepted it. */
+  saved: Array<string>;
+  /**
+   * Still in the draft store, still committed, and sent again by the next
+   * save: an id `onSaveDrafts` reported as failed, or every id it was sent
+   * when it threw.
+   */
+  kept: Array<string>;
+  /**
+   * Out of the draft store and open again, carrying an error: a table rule
+   * now rejects the row, or, without `onSaveDrafts`, the row's own
+   * `onCommit` / `onRowAdd` threw.
+   */
+  reopened: Array<string>;
+};
+
+/**
+ * Splits ids by the `commit` each one got - the shape `addRows` and
+ * `commitAll` share. `results[index]` answers for `ids[index]`; order is kept.
+ */
+function splitCommitted(
+  ids: ReadonlyArray<string>,
+  results: ReadonlyArray<boolean>,
+): { ok: boolean; committed: Array<string>; open: Array<string> } {
+  const committed: Array<string> = [];
+  const open: Array<string> = [];
+  ids.forEach((id, index) => {
+    (results[index] ? committed : open).push(id);
+  });
+  return { ok: open.length === 0, committed, open };
+}
 
 /** One row of {@link TMDataGridEditApi.getRows}. */
 export type TMDataGridEditRowSnapshot<
@@ -661,19 +725,32 @@ export type TMDataGridEditApi<
    * Submits every open row, as if each had been OK'd: a row that validates
    * commits (into the draft store with `editing.draft` on, straight to the
    * consumer without it), a row that fails stays open with its errors.
-   * `true` when every row committed. Under `editing.draft` it sends nothing
-   * to the consumer by itself - that is `saveDrafts`.
+   * Under `editing.draft` it sends nothing to the consumer by itself - that
+   * is `saveDrafts`.
+   *
+   * Resolves which rows went which way: `committed` and `open` hold every
+   * row that was open at the call, each in exactly one list, and `ok` is
+   * `true` when `open` is empty. See {@link TMDataGridCommitAllResult}.
    */
-  commitAll: () => Promise<boolean>;
+  commitAll: () => Promise<TMDataGridCommitAllResult>;
   /**
    * Flushes the draft store: every committed edit, added row and deletion
    * mark reaches the consumer, through `onSaveDrafts` in one call when it is
    * set, or row by row through `onCommit` / `onRowAdd` / `onRowDelete`.
    *
    * Rows still open are left alone - they keep their form state and stay
-   * open. `true` when everything landed; a rejected save keeps every draft.
+   * open, and are in no list of the result.
+   *
+   * Resolves what happened to each id it sent: `saved` left the draft store,
+   * `kept` is still in it, committed, for the next save - an id
+   * `onSaveDrafts` reported as failed, or every id when it threw - and
+   * `reopened` is open again with an error, because a table rule now
+   * rejects it or its per-row `onCommit` / `onRowAdd` threw. `ok` is `true`
+   * when nothing was kept or reopened, and an empty store resolves `ok` with
+   * empty lists. A call while a save is in flight joins it and resolves the
+   * same result. See {@link TMDataGridSaveDraftsResult}.
    */
-  saveDrafts: () => Promise<boolean>;
+  saveDrafts: () => Promise<TMDataGridSaveDraftsResult>;
   /** Writes the type's empty value into a cell and commits it - Delete. */
   clearCell: (rowId: string, columnId: string) => Promise<boolean>;
   /**
@@ -725,7 +802,8 @@ export type TMDataGridEditApi<
    * `commit: true` submits the rows too, which is what an import wants: rows
    * that validate commit, and rows that fail stay open in the entry block
    * carrying their errors, for the user to fix. The result says which went
-   * which way. Under `editing.draft` the rows validate together and land in
+   * which way - `committed` and `open` hold every added row, each in exactly
+   * one list, and `ok` is `true` when `open` is empty. Under `editing.draft` the rows validate together and land in
    * the draft store in the same publish as the add - the grid renders once,
    * whatever the count. Without it each valid row goes out through
    * `onRowAdd`, one at a time and in order.
@@ -1935,7 +2013,9 @@ export function createEditEngine(
     // and once more per commit.
     held(async () => {
       const tempIds = rows.map((values) => openEntryRow(values));
-      if (options?.commit !== true) return { committed: [], open: tempIds };
+      if (options?.commit !== true) {
+        return { ok: tempIds.length === 0, committed: [], open: tempIds };
+      }
 
       // A row that fails validation stays open carrying its errors.
       //
@@ -1951,12 +2031,7 @@ export function createEditEngine(
       if (!getContext().draft) {
         for (const tempId of tempIds) results.push(await commit(tempId));
       }
-      const committed: Array<string> = [];
-      const open: Array<string> = [];
-      tempIds.forEach((tempId, index) => {
-        (results[index] ? committed : open).push(tempId);
-      });
-      return { committed, open };
+      return splitCommitted(tempIds, results);
     });
 
   const deleteRow = (rowId: string) => {
@@ -2046,25 +2121,25 @@ export function createEditEngine(
   const committedIds = (): Array<string> =>
     [...working.openRowIds].filter((rowId) => committed.has(rowId));
 
-  const commitAll = async (): Promise<boolean> => {
+  const commitAll = async (): Promise<TMDataGridCommitAllResult> => {
     // Every form there is - a row in the draft store holds none, so this is
     // the open rows and nothing else.
     const openIds = [...forms.keys()];
     const results = await held(() =>
       Promise.all(openIds.map((rowId) => commit(rowId))),
     );
-    return results.every(Boolean);
+    return splitCommitted(openIds, results);
   };
 
   /**
    * The in-flight save. A second call while `onSaveDrafts` awaits would
    * re-collect the same payload and send it again - a double-clicked Save
    * would create every pending entry row twice - so concurrent calls join
-   * this promise instead of starting a save of their own.
+   * this promise, and its result, instead of starting a save of their own.
    */
-  let saveInFlight: Promise<boolean> | null = null;
+  let saveInFlight: Promise<TMDataGridSaveDraftsResult> | null = null;
 
-  const saveDrafts = (): Promise<boolean> => {
+  const saveDrafts = (): Promise<TMDataGridSaveDraftsResult> => {
     if (saveInFlight !== null) return saveInFlight;
     saveInFlight = saveDraftsInner().finally(() => {
       saveInFlight = null;
@@ -2090,7 +2165,7 @@ export function createEditEngine(
     source: getContext().editMode,
   });
 
-  const saveDraftsInner = async (): Promise<boolean> => {
+  const saveDraftsInner = async (): Promise<TMDataGridSaveDraftsResult> => {
     const deletedIds = [...working.deletedRowIds];
     // A marked row's edit is not sent - the save deletes the row. The edit
     // stays under the mark for Restore and leaves with the row once the
@@ -2098,9 +2173,20 @@ export function createEditEngine(
     const ids = committedIds().filter(
       (rowId) => !working.deletedRowIds.has(rowId),
     );
+    // Every id the save takes out of the store lands in exactly one list,
+    // edits, new rows and deletions mixed, in the store's order.
+    const saved: Array<string> = [];
+    const kept: Array<string> = [];
+    const reopened: Array<string> = [];
+    const report = (): TMDataGridSaveDraftsResult => ({
+      ok: kept.length === 0 && reopened.length === 0,
+      saved,
+      kept,
+      reopened,
+    });
     // Nothing decided: open rows are not this verb's business, so a grid
     // mid-edit with an empty draft store saves cleanly and stays as it is.
-    if (ids.length === 0 && deletedIds.length === 0) return true;
+    if (ids.length === 0 && deletedIds.length === 0) return report();
 
     working.isSaving = true;
     touch("isSaving");
@@ -2124,9 +2210,9 @@ export function createEditEngine(
       // rows go out side by side, as one `onSaveDrafts` call would.
       const results = await held(() =>
         Promise.all(
-          ids.map(async (rowId) => {
+          ids.map(async (rowId): Promise<"saved" | "reopened" | null> => {
             const snapshot = committed.get(rowId);
-            if (snapshot === undefined) return true;
+            if (snapshot === undefined) return null;
             const invalid = await runTableValidators(
               snapshot.values,
               rowId,
@@ -2135,7 +2221,7 @@ export function createEditEngine(
             );
             if (isValidationError(invalid)) {
               demote(rowId, invalid);
-              return false;
+              return "reopened";
             }
             try {
               if (snapshot.isNew) {
@@ -2155,13 +2241,18 @@ export function createEditEngine(
                 rowId,
                 error instanceof Error ? error.message : String(error),
               );
-              return false;
+              return "reopened";
             }
             forget(rowId);
-            return true;
+            return "saved";
           }),
         ),
       );
+      ids.forEach((rowId, index) => {
+        const outcome = results[index];
+        if (outcome === "saved") saved.push(rowId);
+        else if (outcome === "reopened") reopened.push(rowId);
+      });
       // The marks are consumed here whatever the consumer does with them,
       // so the rows' selection and the edits held under the marks go at the
       // same time - see flushRowState and saveDraftsInner's `ids`.
@@ -2179,7 +2270,9 @@ export function createEditEngine(
           await getContext().onRowDelete?.({ rowId, row });
         }
       }
-      return results.every(Boolean);
+      // Consumed whatever `onRowDelete` did with them - see above.
+      saved.push(...taken);
+      return report();
     }
 
     // One consumer call for the lot. The valid rows travel together, and
@@ -2190,7 +2283,9 @@ export function createEditEngine(
     type AddArgs = TMDataGridRowAddArgs<TMDataGridRowData>;
     const collected: Array<CommitArgs> = [];
     const added: Array<AddArgs> = [];
-    let allValid = true;
+    // The rows sent, edits and new rows mixed in the store's order - the
+    // order the result reports them in.
+    const sent: Array<{ id: string; isNew: boolean }> = [];
     await held(async () => {
       const results = await Promise.all(
         ids.map((rowId) => {
@@ -2210,9 +2305,10 @@ export function createEditEngine(
         if (snapshot === undefined) return;
         if (isValidationError(results[index])) {
           demote(rowId, results[index]);
-          allValid = false;
+          reopened.push(rowId);
           return;
         }
+        sent.push({ id: rowId, isNew: snapshot.isNew });
         if (snapshot.isNew) {
           added.push({ tempId: rowId, value: snapshot.values });
         } else {
@@ -2222,38 +2318,40 @@ export function createEditEngine(
     });
     const deleted = deletedIds;
     if (collected.length > 0 || added.length > 0 || deleted.length > 0) {
-      let result: void | TMDataGridSaveDraftsResult;
+      let response: void | TMDataGridSaveDraftsResponse;
       try {
-        result = await getContext().onSaveDrafts?.({
+        response = await getContext().onSaveDrafts?.({
           updated: collected,
           created: added,
           deleted,
         });
       } catch {
-        return false;
+        // A thrown save keeps everything it was sent, for the next save.
+        kept.push(...sent.map((row) => row.id), ...deleted);
+        return report();
       }
 
-      // Nothing returned saves the lot. A result names what failed; those
+      // Nothing returned saves the lot. A response names what failed; those
       // keep their drafts, committed, so the next save retries them.
-      const outcomes = result ?? {};
-      let savedAll = true;
+      const outcomes = response ?? {};
 
       // The saved rows leave the store in one publish.
       heldSync(() => {
-        for (const args of collected) {
-          if (isSaved(outcomes.updated, args.rowId)) forget(args.rowId);
-          else savedAll = false;
-        }
-        for (const args of added) {
-          if (isSaved(outcomes.created, args.tempId)) forget(args.tempId);
-          else savedAll = false;
+        for (const { id, isNew } of sent) {
+          if (isSaved(isNew ? outcomes.created : outcomes.updated, id)) {
+            forget(id);
+            saved.push(id);
+          } else {
+            kept.push(id);
+          }
         }
         let deletionsChanged = false;
         for (const id of deleted) {
           if (!isSaved(outcomes.deleted, id)) {
-            savedAll = false;
+            kept.push(id);
             continue;
           }
+          saved.push(id);
           if (working.deletedRowIds.delete(id)) deletionsChanged = true;
           // The consumer has deleted the record; the row is on its way out
           // of `data`, and its selection goes now - see flushRowState. So
@@ -2263,10 +2361,8 @@ export function createEditEngine(
         }
         if (deletionsChanged) dirty.add("deletedRowIds");
       });
-
-      if (!savedAll) return false;
     }
-    return allValid;
+    return report();
   };
 
   /**

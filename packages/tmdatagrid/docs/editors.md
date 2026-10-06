@@ -218,7 +218,7 @@ The rules run at every commit, after the row's own validators, and again for
 every committed row during `saveDrafts`, where they are the only rules that
 run: column rules and `rowValidators` saw the same values at commit. A
 committed row that a later edit has invalidated is reopened with its errors,
-the valid rows are sent, and the save resolves `false`. Errors land on the
+the valid rows are sent, and the save reports it in `reopened`. Errors land on the
 committing row only; the row it clashes with is not marked.
 
 `rows` is unfiltered, so a rule sees the whole collection whatever the view

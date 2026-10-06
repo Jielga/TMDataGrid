@@ -482,8 +482,8 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     edit.getForm("2")?.setFieldValue("name", "Erik B");
 
-    await expect(edit.commitAll()).resolves.toBe(true);
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toMatchObject({ ok: true });
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onCommit).toHaveBeenCalledTimes(2);
     expect(edit.state.openRowIds).toEqual([]);
@@ -504,8 +504,8 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "age" });
     edit.getForm("2")?.setFieldValue("age", 42);
 
-    await expect(edit.commitAll()).resolves.toBe(true);
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toMatchObject({ ok: true });
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onCommit).not.toHaveBeenCalled();
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
@@ -528,8 +528,8 @@ describe("edit engine", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     edit.getForm("2")?.setFieldValue("name", "Erik B");
 
-    await expect(edit.commitAll()).resolves.toBe(true);
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.commitAll()).resolves.toMatchObject({ ok: true });
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     expect(edit.state.openRowIds).toEqual(["1", "2"]);
     expect(edit.state.committedValues["1"]?.name).toBe("Annika");
@@ -703,8 +703,8 @@ describe("edit engine", () => {
     const tempId = edit.addRow();
     edit.deleteRow("2");
 
-    await expect(edit.commitAll()).resolves.toBe(true);
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.commitAll()).resolves.toMatchObject({ ok: true });
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
@@ -738,7 +738,7 @@ describe("edit engine", () => {
     await expect(edit.commit(tempId)).resolves.toBe(true);
     expect(onRowAdd).not.toHaveBeenCalled();
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     // Confirming is not adding - the add happens here, at Save all.
     expect(onRowAdd).toHaveBeenCalledTimes(1);
@@ -767,7 +767,7 @@ describe("edit engine", () => {
     const tempId = edit.addRow();
     await expect(edit.commit(tempId)).resolves.toBe(true);
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
@@ -811,7 +811,7 @@ describe("edit engine", () => {
     expect(edit.state.rows[tempId]?.errorFields).toContain("name");
     expect(edit.getForm(tempId)).toBeDefined();
 
-    await expect(edit.commitAll()).resolves.toBe(false);
+    await expect(edit.commitAll()).resolves.toMatchObject({ ok: false });
     await edit.saveDrafts();
     expect(onSaveDrafts).not.toHaveBeenCalled();
   });
@@ -964,7 +964,7 @@ describe("the draft store", () => {
 
     expect(edit.state.committedRowIds).toEqual(["1"]);
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
       updated: Array<{ rowId: string }>;
@@ -1068,7 +1068,7 @@ describe("the draft store", () => {
     }
     expect(edit.state.committedRowIds).toEqual(["1", "2"]);
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     // Row 1 saved and is gone; row 2 stays committed, values intact, so the
     // next save retries it.
@@ -1093,7 +1093,7 @@ describe("the draft store", () => {
     await edit.commit(tempId);
     edit.deleteRow("2");
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
     expect(edit.state.deletedRowIds).toEqual(["2"]);
@@ -1113,7 +1113,7 @@ describe("the draft store", () => {
       await edit.commit(rowId);
     }
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
     expect(edit.state.committedRowIds).toEqual(["1", "2"]);
   });
 
@@ -1131,7 +1131,7 @@ describe("the draft store", () => {
     await edit.commit("1");
     edit.deleteRow("2");
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     expect(edit.state.committedRowIds).toEqual([]);
     expect(edit.state.deletedRowIds).toEqual([]);
   });
@@ -1155,8 +1155,14 @@ describe("the draft store", () => {
     await vi.waitFor(() => expect(onSaveDrafts).toHaveBeenCalled());
     resolveSave();
 
-    await expect(first).resolves.toBe(true);
-    await expect(second).resolves.toBe(true);
+    await expect(first).resolves.toEqual({
+      ok: true,
+      saved: ["1"],
+      kept: [],
+      reopened: [],
+    });
+    // The joined call gets the very same result.
+    expect(await second).toBe(await first);
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
     expect(edit.state.committedRowIds).toEqual([]);
   });
@@ -1179,7 +1185,7 @@ describe("the draft store", () => {
     expect(edit.state.isSaving).toBe(true);
 
     resolveSave();
-    await expect(saving).resolves.toBe(true);
+    await expect(saving).resolves.toMatchObject({ ok: true });
     expect(edit.state.isSaving).toBe(false);
   });
 
@@ -1200,7 +1206,7 @@ describe("the draft store", () => {
     expect(edit.state.isSaving).toBe(true);
 
     rejectSave(new Error("server said no"));
-    await expect(saving).resolves.toBe(false);
+    await expect(saving).resolves.toMatchObject({ ok: false });
     expect(edit.state.isSaving).toBe(false);
     // The refused rows keep their drafts, so the flag is the only thing the
     // failed save moved.
@@ -1215,7 +1221,7 @@ describe("the draft store", () => {
       seen.push(state.isSaving);
     });
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     subscription.unsubscribe();
 
     expect(seen).not.toContain(true);
@@ -1236,7 +1242,7 @@ describe("the draft store", () => {
     edit.begin({ rowId: "1", columnId: "name" });
     expect(edit.state.committedRowIds).toEqual([]);
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     expect(onSaveDrafts).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
   });
@@ -1251,7 +1257,11 @@ describe("the draft store", () => {
     edit.begin({ rowId: "2", columnId: "name" });
     edit.getForm("2")?.setFieldValue("name", "E"); // fails min(2)
 
-    await expect(edit.commitAll()).resolves.toBe(false);
+    await expect(edit.commitAll()).resolves.toEqual({
+      ok: false,
+      committed: ["1"],
+      open: ["2"],
+    });
     expect(edit.state.committedRowIds).toEqual(["1"]);
     expect(edit.state.rows["2"]?.errorFields).toContain("name");
 
@@ -1260,6 +1270,140 @@ describe("the draft store", () => {
       updated: Array<{ rowId: string }>;
     };
     expect(args.updated.map((row) => row.rowId)).toEqual(["1"]);
+  });
+
+  it("commitAll with no open row is ok with empty lists", async () => {
+    const grid = renderValidatedGrid({ onSaveDrafts: vi.fn() });
+    const { edit } = grid.current;
+
+    await expect(edit.commitAll()).resolves.toEqual({
+      ok: true,
+      committed: [],
+      open: [],
+    });
+  });
+
+  it("saveDrafts on the per-row path reports saved and reopened rows", async () => {
+    let clashes = false;
+    const onCommit = vi.fn(({ rowId }: { rowId: string }) => {
+      if (rowId === "2") throw new Error("Server said no");
+    });
+    const onRowAdd = vi.fn();
+    const onRowDelete = vi.fn();
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onCommit,
+      onRowAdd,
+      onRowDelete,
+      tableValidators: {
+        onSubmit: ({ value }: TMDataGridTableValidateArgs<Person>) =>
+          clashes && value.name === "Ny" ? "Duplicate name" : undefined,
+      },
+    });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Anna B");
+    await edit.setCellValue("2", "name", "Erik B");
+    const tempId = edit.addRow({ name: "Ny", age: 30 });
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    // The rule turns on the entry row only once it is in the store - a later
+    // edit elsewhere is what this stands in for.
+    clashes = true;
+
+    // Row 1 saves, row 2's onCommit throws, the entry row breaks the rule.
+    await expect(edit.saveDrafts()).resolves.toEqual({
+      ok: false,
+      saved: ["1"],
+      kept: [],
+      reopened: ["2", tempId],
+    });
+    expect(onRowAdd).not.toHaveBeenCalled();
+    expect(edit.state.openRowIds).toEqual(["2", tempId]);
+    expect(edit.state.rows[tempId]?.hasRowError).toBe(true);
+
+    // A deletion leaves the store whatever onRowDelete does with it.
+    clashes = false;
+    edit.deleteRow("1");
+    await expect(edit.saveDrafts()).resolves.toEqual({
+      ok: true,
+      saved: ["1"],
+      kept: [],
+      reopened: [],
+    });
+    expect(onRowDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("saveDrafts splits a partial onSaveDrafts outcome into saved and kept", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: ({ created }) => ({
+        updated: { "2": false },
+        created: { [created[1]!.tempId]: false },
+        deleted: false,
+      }),
+    });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Anna B");
+    await edit.setCellValue("2", "name", "Erik B");
+    const result = await edit.addRows(
+      [
+        { name: "Ny 1", age: 30 },
+        { name: "Ny 2", age: 31 },
+      ],
+      { commit: true },
+    );
+    const [first, second] = result.committed;
+    edit.deleteRow("1");
+
+    // Row 1 is marked, so its edit stays under the mark and only the
+    // deletion is sent.
+    await expect(edit.saveDrafts()).resolves.toEqual({
+      ok: false,
+      saved: [first],
+      kept: ["2", second, "1"],
+      reopened: [],
+    });
+    expect(edit.state.committedRowIds).toEqual(["1", "2"]);
+    expect(edit.state.newRows).toEqual([{ tempId: second, committed: true }]);
+    expect(edit.state.deletedRowIds).toEqual(["1"]);
+  });
+
+  it("saveDrafts keeps every sent id when onSaveDrafts throws", async () => {
+    const grid = renderEditGrid({
+      mode: "row",
+      draft: true,
+      onSaveDrafts: () => Promise.reject(new Error("offline")),
+    });
+    const { edit } = grid.current;
+    await edit.setCellValue("1", "name", "Anna B");
+    const tempId = edit.addRow({ name: "Ny", age: 30 });
+    await expect(edit.commit(tempId)).resolves.toBe(true);
+    edit.deleteRow("2");
+
+    await expect(edit.saveDrafts()).resolves.toEqual({
+      ok: false,
+      saved: [],
+      kept: ["1", tempId, "2"],
+      reopened: [],
+    });
+    expect(edit.state.committedRowIds).toEqual(["1"]);
+    expect(edit.state.newRows).toEqual([{ tempId, committed: true }]);
+    expect(edit.state.deletedRowIds).toEqual(["2"]);
+  });
+
+  it("saveDrafts with an empty store is ok with empty lists", async () => {
+    const onSaveDrafts = vi.fn();
+    const grid = renderEditGrid({ mode: "row", draft: true, onSaveDrafts });
+    const { edit } = grid.current;
+
+    await expect(edit.saveDrafts()).resolves.toEqual({
+      ok: true,
+      saved: [],
+      kept: [],
+      reopened: [],
+    });
+    expect(onSaveDrafts).not.toHaveBeenCalled();
   });
 
   it("validates a commit against the column rules with no editor mounted", async () => {
@@ -1289,6 +1433,7 @@ describe("the draft store", () => {
       { name: "Tva", age: 2 },
     ]);
 
+    expect(result.ok).toBe(false);
     expect(result.committed).toEqual([]);
     expect(result.open).toHaveLength(2);
     expect(edit.state.newRows.every((newRow) => !newRow.committed)).toBe(true);
@@ -1310,6 +1455,7 @@ describe("the draft store", () => {
       { commit: true },
     );
 
+    expect(result.ok).toBe(false);
     expect(result.committed).toHaveLength(2);
     expect(result.open).toHaveLength(1);
     expect(edit.getForm(result.open[0]!)?.state.values["name"]).toBe("X");
@@ -1341,6 +1487,7 @@ describe("the draft store", () => {
       { commit: true },
     );
 
+    expect(result.ok).toBe(true);
     expect(result.committed).toHaveLength(2);
     expect(onRowAdd).toHaveBeenCalledTimes(2);
     expect(edit.state.newRows).toEqual([]);
@@ -1388,7 +1535,7 @@ describe("the draft store", () => {
     );
     const publishes = vi.fn();
     const subscription = edit.store.subscribe(publishes);
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     subscription.unsubscribe();
 
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
@@ -1443,7 +1590,7 @@ describe("the draft store", () => {
     edit.begin({ rowId: "1", columnId: "name" });
     edit.getForm("1")?.setFieldValue("name", "Bara oppen");
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     expect(onSaveDrafts).not.toHaveBeenCalled();
     expect(edit.state.openRowIds).toEqual(["1"]);
   });
@@ -1490,7 +1637,7 @@ describe("the draft store", () => {
 
     form?.setFieldValue("age", 44);
     await expect(edit.commit("1")).resolves.toBe(true);
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     // Both edits, diffed against the data row rather than against the draft
     // the reopen started from.
@@ -1541,7 +1688,7 @@ describe("the draft store", () => {
     expect(rowRule).toHaveBeenCalled();
     const atCommit = [columnRule.mock.calls.length, rowRule.mock.calls.length];
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     // A committed row's values cannot have moved since it committed, so the
     // rules that judge the row alone would only say what they said then.
@@ -1580,7 +1727,7 @@ describe("the draft store", () => {
       await expect(edit.commit(rowId)).resolves.toBe(true);
     }
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     // Row 2 saved and left the store; row 1 is open again, carrying what the
     // rule said, which is what the user has to fix.
@@ -1610,7 +1757,7 @@ describe("the draft store", () => {
       await expect(edit.commit(rowId)).resolves.toBe(true);
     }
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     // The refused row is open with the message on it, the same answer a
     // rejected commit gets outside the draft store; the other one left.
@@ -1642,7 +1789,7 @@ describe("the draft store", () => {
     // The user takes the row back while the server is still deciding.
     edit.begin({ rowId: "1", columnId: "age" });
     reject(new Error("server said no"));
-    await expect(saving).resolves.toBe(false);
+    await expect(saving).resolves.toMatchObject({ ok: false });
 
     // The refusal lands on the form the reopen built, not on a snapshot that
     // is no longer there.
@@ -1778,7 +1925,7 @@ describe("the draft store", () => {
     await expect(edit.commit("1")).resolves.toBe(true);
     expect(edit.state.openRowIds).toEqual(["1", "2"]);
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
       updated: Array<{ rowId: string }>;
     };
@@ -1839,7 +1986,7 @@ describe("writing a cell from outside an editor", () => {
     expect(edit.state.committedValues["1"]?.name).toBe("Annika");
 
     // And it leaves the way every other draft does.
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
       updated: Array<TMDataGridEditCommitArgs<Person>>;
     };
@@ -1970,7 +2117,7 @@ describe("writing a cell from outside an editor", () => {
     ).resolves.toBe(true);
     expect(edit.state.rows["1"]?.dirtyFields).toEqual(["name", "age"]);
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onSaveDrafts).toHaveBeenCalledTimes(1);
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
@@ -2483,7 +2630,7 @@ describe("editing.tableValidators", () => {
     // what this stands in for.
     clashes = true;
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     // Nothing valid to send, and the row is open again with the rule's
     // answer on it - "committed" means validated, so a draft the rules now
@@ -2902,7 +3049,7 @@ describe("bulk deletes over the draft store", () => {
     });
 
     await act(async () => {
-      await expect(edit.saveDrafts()).resolves.toBe(true);
+      await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     });
 
     // Row 2 is being deleted by the consumer and the entry row comes back
@@ -2921,7 +3068,7 @@ describe("bulk deletes over the draft store", () => {
     });
 
     await act(async () => {
-      await expect(edit.saveDrafts()).resolves.toBe(true);
+      await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
     });
 
     expect(onRowDelete).toHaveBeenCalledWith(
@@ -2980,7 +3127,7 @@ describe("bulk deletes over the draft store", () => {
     await edit.setCellValue("1", "name", "Edited");
     edit.deleteRow("1");
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     const args = onSaveDrafts.mock.calls[0]?.[0] as {
       updated: Array<{ rowId: string }>;
@@ -2999,7 +3146,7 @@ describe("bulk deletes over the draft store", () => {
     await edit.setCellValue("1", "name", "Edited");
     edit.deleteRow("1");
 
-    await expect(edit.saveDrafts()).resolves.toBe(false);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: false });
 
     expect(edit.state.committedRowIds).toEqual(["1"]);
     expect(edit.state.deletedRowIds).toEqual(["1"]);
@@ -3015,7 +3162,7 @@ describe("bulk deletes over the draft store", () => {
     await edit.setCellValue("1", "name", "Edited");
     edit.deleteRow("1");
 
-    await expect(edit.saveDrafts()).resolves.toBe(true);
+    await expect(edit.saveDrafts()).resolves.toMatchObject({ ok: true });
 
     expect(onCommit).not.toHaveBeenCalled();
     expect(onRowDelete).toHaveBeenCalledWith(

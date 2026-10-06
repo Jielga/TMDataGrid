@@ -134,10 +134,22 @@ a list of row ids. Rows failing validation stay open either way.
 
 `onSaveDrafts` decides how much of the store is cleared: returning nothing
 saves everything, throwing saves nothing, and returning
-`{ updated, created, deleted }` saves everything except the ids reported
-`false`. Each key takes `false` for the whole bucket or a map of id to result;
-an unnamed id saved. A kept row stays committed, so the next `saveDrafts()`
-retries it, and `saveDrafts()` resolves `false` when anything was kept.
+`{ updated, created, deleted }` (a `TMDataGridSaveDraftsResponse`) saves
+everything except the ids reported `false`. Each key takes `false` for the
+whole bucket or a map of id to result; an unnamed id saved. A kept row stays
+committed, so the next `saveDrafts()` retries it.
+
+`saveDrafts()` resolves a `TMDataGridSaveDraftsResult`, `{ ok, saved, kept, reopened }`.
+Every id the save took from the draft store is in exactly one list - row ids for edits and deletions, temp ids for new rows, all kinds mixed:
+
+- `saved` - left the draft store; the consumer accepted it
+- `kept` - still in the draft store, still committed, retried by the next save: an id `onSaveDrafts` returned as failed, or every id it was sent when it threw
+- `reopened` - open again with an error: a table rule rejected it, or on the per-row path its `onCommit` / `onRowAdd` threw
+- `ok` - `true` when `kept` and `reopened` are both empty
+
+On the per-row path a deletion always leaves the store and is reported in `saved`.
+An empty store resolves `{ ok: true, saved: [], kept: [], reopened: [] }`.
+Rows still open are in no list.
 
 Rows carry `data-dirty` (values typed in), `data-draft` (committed, waiting for
 Save), `data-deleted` and `data-new` - a committed new row in the body, or an
@@ -234,7 +246,7 @@ appended, deletion-marked rows removed. Each row appears once. Same result
 vocabulary as `rowValidators`; errors land on the committing row. The rules
 re-run per committed row during `saveDrafts`, the only validation that runs
 there: a committed row a later edit invalidated is reopened with its errors
-and the save resolves `false`.
+and the save reports it in `reopened`.
 
 ```tsx
 tableValidators: {
@@ -264,7 +276,7 @@ key, so `addRow()` opens the `newRowDefaults` row and `addRow(values)` opens it
 with those fields filled in - pass a whole row to duplicate it. Enter, or the
 lane's ✓, commits the add through `editing.onRowAdd`; under `draft: true` it
 commits the row into the draft store, validated, and
-`saveDrafts` reports it in `added`. Escape, or ✕, discards the entry. An entry
+`saveDrafts` reports it in `created`. Escape, or ✕, discards the entry. An entry
 row never OK'd is not part of a save - it stays open.
 
 Under `draft: true` a committed entry row leaves the entry block and becomes a
@@ -305,13 +317,14 @@ const grid = useTMDataGrid({
 `edit.addRows(rows, options?)` opens a batch in one write. `{ commit: true }`
 submits each row as it lands - the import case: valid rows are committed,
 invalid ones stay open in the entry block with their errors, and the result
-(`{ committed, open }`) says which went which way. Column rules are enforced
-even though the rows never had an editor on screen, because the engine runs
-`meta.edit.validate` itself at commit.
+(`{ ok, committed, open }`) says which went which way; `ok` is `true` when
+`open` is empty. Column rules are enforced even though the rows never had an
+editor on screen, because the engine runs `meta.edit.validate` itself at
+commit.
 
 ```tsx
-const { committed, open } = await grid.edit.addRows(parsed, { commit: true });
-if (open.length > 0) notify(`${open.length} rows need attention`);
+const { ok, open } = await grid.edit.addRows(parsed, { commit: true });
+if (!ok) notify(`${open.length} rows need attention`);
 await grid.edit.saveDrafts();
 ```
 
@@ -364,6 +377,7 @@ while editing is off, and works under any mode, not only draft.
 `{ draftCount, openCount, openRowIds, isSubmitting, isSaving }`. `actions` is
 `{ save, commitAll, discard, scrollToRow, scrollToFirstOpenRow }`, and
 `Controls` is `{ Save, Discard, OpenRowsNote }`.
+`actions.save` and `actions.commitAll` resolve what `edit.saveDrafts()` and `edit.commitAll()` resolve.
 
 The grid is always virtualized, so an open row far down the list has no element
 to scroll to. `actions.scrollToFirstOpenRow(align?)` moves the virtualizer to
@@ -383,6 +397,8 @@ row it reaches.
 `setCellValue` / `setRowValues` / `clearCell`, `addRow` / `addRows` /
 `deleteRow`, `getForm`, and `store` for `useSelector` (an example is under
 [Submitting an outer form](#high-submitting-an-outer-form-while-the-grid-holds-a-draft)).
+`commitAll()` resolves a `TMDataGridCommitAllResult`, `{ ok, committed, open }`: every row open at the call is in exactly one list, and `ok` is `true` when `open` is empty.
+`commit(rowId)` alone resolves a plain boolean.
 `edit.store` publishes each open or committed row's drafted values as
 `rows[rowId].values`, which is what a cross-row check reads. A `cell`
 renderer needs no lookup: its `row.original` is already the row as shown, and

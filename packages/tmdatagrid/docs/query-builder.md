@@ -151,11 +151,15 @@ const hasOpenDraft = useSelector(grid.edit.store, (s) => s.openRowIds.length > 0
 </Button>
 ```
 
-The alternative is to flush instead of block. `await grid.edit.commitAll()`
-before `form.handleSubmit()` submits every open row through the normal
-`editing.onCommit` path, in every mode; with `draft: true` follow it with
-`grid.edit.saveDrafts()`. Rows that fail their own validation
-stay open, so the submit fails.
+The alternative is to flush instead of block.
+`await grid.edit.commitAll()` before `form.handleSubmit()` submits every open row through the normal `editing.onCommit` path, in every mode; with `draft: true` follow it with `grid.edit.saveDrafts()`.
+Both resolve `ok: false` when a row stayed open or was reopened with an error, so submit the form only on `ok`:
+
+```tsx
+const committed = await grid.edit.commitAll();
+const saved = committed.ok ? await grid.edit.saveDrafts() : undefined;
+if (saved?.ok) await form.handleSubmit();
+```
 
 Two constraints apply to a native `<form>` around a grid:
 
