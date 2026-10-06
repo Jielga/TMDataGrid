@@ -385,15 +385,16 @@ export type TMDataGridEditValueMap = (
  * `meta.type` and `meta.options` stay outside this namespace on purpose: one
  * declaration of each feeds the cell editor and the filter panel alike.
  */
-export type TMDataGridColumnEditOptions = {
+export type TMDataGridColumnEditOptions<
+  TData extends RowData = TMDataGridRowData,
+> = {
   /**
    * Whether this column's cells take edits, once `editMode` is on. `false`
    * switches the column off outright; a predicate decides per row. Defaults
    * to editable for any column that maps to a field - see {@link field}.
+   * `row` is typed by the column helper the column was declared with.
    */
-  enabled?:
-    | boolean
-    | ((row: Row<TMDataGridFeatures, TMDataGridRowData>) => boolean);
+  enabled?: boolean | ((row: Row<TMDataGridFeatures, TData>) => boolean);
   /**
    * The data path this column edits, when it is not the `accessorKey` - the
    * only way a column built on `accessorFn` becomes editable. Dot paths reach
