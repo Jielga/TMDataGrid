@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.0.1
+
+### Patch Changes
+
+- [#141](https://github.com/Jielga/TMDataGrid/pull/141) [`465cc39`](https://github.com/Jielga/TMDataGrid/commit/465cc39190441c6931d65ea460386cc87abbd5df) Thanks [@Psvensso](https://github.com/Psvensso)! - Skills: every public export is named in a skill; new migrating-to-2 skill; rendering rows without the Table.
+
 ## 2.0.0
 
 ### Major Changes
