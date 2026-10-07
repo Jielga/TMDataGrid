@@ -1,8 +1,8 @@
 ---
 name: migrating-to-2
 description: >
-  Upgrade code written against a 2.0.0-beta release of TMDataGrid to 2.0.0, as
-  a checklist to run over a codebase. Covers the edit.commitAll / saveDrafts /
+  Upgrade code written against a 2.0.0-beta release of TMDataGrid to 2.0.0, as a
+  checklist to run over a codebase. Covers the edit.commitAll / saveDrafts /
   addRows result objects and the silent `if (await saveDrafts())` trap, the
   onSaveDrafts return type renamed to TMDataGridSaveDraftsResponse, every
   removed name with its replacement (submitAll, onCommitDrafts, rows / added,
@@ -15,7 +15,7 @@ description: >
 metadata:
   type: lifecycle
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0'
+  library_version: '2.0.1'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/migrating-to-2.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/index.ts'
