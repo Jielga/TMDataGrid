@@ -1,6 +1,6 @@
 import { Checkbox } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
-import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
+import type { Row, RowData } from "@tanstack/react-table";
 import {
   useBodyControlTabIndex,
   useTMDataGridContext,
@@ -63,7 +63,7 @@ function SelectAllCheckbox<TData extends RowData>({
  * change - the same reason the rest of the chrome reads them. See
  * readFeatureFlags.
  */
-function SelectAllHeader<TData extends RowData>({
+export function SelectAllHeader<TData extends RowData>({
   table,
 }: {
   table: TMDataGridTable<TData>;
@@ -73,7 +73,7 @@ function SelectAllHeader<TData extends RowData>({
   return <SelectAllCheckbox table={table} />;
 }
 
-function SelectRowCheckbox<TData extends RowData>({
+export function SelectRowCheckbox<TData extends RowData>({
   row,
 }: {
   row: Row<TMDataGridFeatures, TData>;
@@ -153,47 +153,4 @@ function SelectRowCheckbox<TData extends RowData>({
       onClick={(event) => event.stopPropagation()}
     />
   );
-}
-
-/**
- * The generated checkbox column, prepended under
- * `selectionMode: "checkbox"` (the default) or `"checkboxAndHighlight"`.
- */
-export function createSelectColumn<TData extends RowData>(
-  label = "Checkbox selection",
-): ColumnDef<TMDataGridFeatures, TData, unknown> {
-  return {
-    id: SELECT_COLUMN_ID,
-    meta: {
-      label,
-      align: "center",
-      // Structurally the first column; it also anchors the left pinned lane, so
-      // no other column can be moved in front of it.
-      enableOrdering: false,
-    },
-    // A system lane: as wide as the control it holds and no wider. Fixed at
-    // every scale - the control does not grow with the font size, so neither
-    // should its track.
-    size: 36,
-    minSize: 36,
-    maxSize: 36,
-    enableResizing: false,
-    enableSorting: false,
-    enableColumnFilter: false,
-    enableGlobalFilter: false,
-    // Not a column the user chose, so not one they can switch off: hiding the
-    // lane would take the grid's only way to select a row with it, with the
-    // row-selection state left behind and no way back to it. Keeping it out of
-    // "Manage columns" follows from this - the panel lists what can be hidden.
-    enableHiding: false,
-    // Structurally pinned to the left; users shouldn't be able to move it.
-    enablePinning: false,
-    header: ({ table }) => <SelectAllHeader table={table} />,
-    cell: ({ row }) => <SelectRowCheckbox row={row} />,
-    // Every cell on a group row that is not the grouped column counts as
-    // aggregated, this lane included, and an aggregated cell with nothing
-    // declared renders blank. Without this the checkbox would disappear from
-    // exactly the rows that select a whole group. See renderCellContent.
-    aggregatedCell: ({ row }) => <SelectRowCheckbox row={row} />,
-  };
 }

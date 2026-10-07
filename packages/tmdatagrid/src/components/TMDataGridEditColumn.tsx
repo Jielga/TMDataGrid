@@ -1,6 +1,6 @@
 import { ActionIcon, Group, Loader, Tooltip } from "@mantine/core";
 import { useSelector } from "@tanstack/react-store";
-import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
+import type { Row, RowData } from "@tanstack/react-table";
 import classes from "./TMDataGridTable.module.css";
 import {
   useBodyControlTabIndex,
@@ -74,7 +74,7 @@ function RowStateIndicator({
  * useBodyControlTabIndex. The open row's save and cancel are the exception,
  * see where they are built.
  */
-function EditLaneCell<TData extends RowData>({
+export function EditLaneCell<TData extends RowData>({
   row,
 }: {
   row: Row<TMDataGridFeatures, TData>;
@@ -361,45 +361,4 @@ function EditLaneCell<TData extends RowData>({
       </Tooltip>
     </Group>
   );
-}
-
-/**
- * The generated edit lane, appended and pinned right - the row's Save at the
- * end of the row under `mode: "row"`, the state marker and revert under
- * `editing.draft`, mirroring the checkbox lane's build on the left.
- */
-export function createEditColumn<TData extends RowData>(
-  label = "Edit",
-  /** A draft lane holds three controls where the rest hold two. */
-  wide = false,
-): ColumnDef<TMDataGridFeatures, TData, unknown> {
-  const width = wide ? 88 : 64;
-  return {
-    id: EDIT_COLUMN_ID,
-    meta: {
-      label,
-      align: "center",
-      enableOrdering: false,
-    },
-    // Wide enough for the pair (or draft's trio) it holds while editing.
-    size: width,
-    minSize: width,
-    maxSize: width,
-    enableResizing: false,
-    enableSorting: false,
-    enableColumnFilter: false,
-    enableGlobalFilter: false,
-    // The row's Save, Cancel and Delete live here, so hiding the lane would
-    // strand an open row with no way to commit or discard it. Same rule as the
-    // checkbox lane: chrome the grid generates is not a user setting.
-    enableHiding: false,
-    // Structurally pinned to the right; not movable.
-    enablePinning: false,
-    header: () => null,
-    cell: ({ row }) => <EditLaneCell row={row} />,
-    // Group rows: same reasoning as the checkbox lane - without this the
-    // cell renders blank on aggregated rows, but here blank is also correct,
-    // so the aggregated cell renders the same (null for groups).
-    aggregatedCell: ({ row }) => <EditLaneCell row={row} />,
-  };
 }

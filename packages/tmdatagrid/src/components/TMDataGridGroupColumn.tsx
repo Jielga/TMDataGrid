@@ -3,40 +3,19 @@ import {
   useBodyControlTabIndex,
   useTMDataGridContext,
 } from "../TMDataGridContext";
-import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
+import type { Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import { shallow } from "@tanstack/store";
 import classes from "./TMDataGridGroupColumn.module.css";
 import { ChevronRightIcon } from "./icons";
 import { getColumnLabel } from "../core/columnUtils";
-import { getGroupDataRows } from "../core/grouping";
+import { formatGroupValue, getGroupDataRows } from "../core/grouping";
 import type { TMDataGridFeatures, TMDataGridTable } from "../useTMDataGrid";
 
 export const GROUP_COLUMN_ID = "__group__";
 
 /** Indent added per level of nesting, in px. */
 const INDENT_STEP = 16;
-
-/** Shown for a group whose value is empty - `String(null)` would read as "null". */
-const BLANK_GROUP_LABEL = "(Blank)";
-
-/**
- * How a grouping value is written into the tree cell.
- *
- * Deliberately not the grouped column's own `cell` renderer: that renderer is
- * written for a data row and is free to reach into `row.original`, which on a
- * group row is the first leaf's record rather than anything about the group.
- */
-export function formatGroupValue(
-  value: unknown,
-  blankLabel = BLANK_GROUP_LABEL,
-): string {
-  if (value === null || value === undefined || value === "") {
-    return blankLabel;
-  }
-  if (value instanceof Date) return value.toLocaleDateString();
-  return String(value);
-}
 
 /**
  * The tree cell: chevron, group value and leaf count, indented by depth.
@@ -46,7 +25,7 @@ export function formatGroupValue(
  * `row` identity survives an expand, so the React Compiler would cache the call
  * along with it and the chevron would never turn. See TMDataGridSelectColumn.
  */
-function GroupCell<TData extends RowData>({
+export function GroupCell<TData extends RowData>({
   row,
 }: {
   row: Row<TMDataGridFeatures, TData>;
@@ -99,7 +78,7 @@ function GroupCell<TData extends RowData>({
  * Names the columns currently grouped on, so the lane says what it is showing
  * rather than a static "Group".
  */
-function GroupHeader<TData extends RowData>({
+export function GroupHeader<TData extends RowData>({
   table,
 }: {
   table: TMDataGridTable<TData>;
@@ -116,47 +95,4 @@ function GroupHeader<TData extends RowData>({
       return column ? getColumnLabel(column) : columnId;
     })
     .join(" / ");
-}
-
-/**
- * The generated tree column, prepended whenever grouping is enabled and hidden
- * again while `grouping` is empty - see the visibility effect in
- * `useTMDataGrid`.
- *
- * It exists because TanStack ships no auto group column: `groupedColumnMode:
- * "remove"` takes the grouped column out of the grid, so something has to hold
- * the tree. Modelled on the checkbox column, which is generated the same way.
- *
- * Not groupable itself, and nothing had to be written to make that true -
- * `column.getCanGroup()` requires an `accessorFn`, which a display column has
- * no reason to have.
- */
-export function createGroupColumn<TData extends RowData>(
-  label = "Group",
-): ColumnDef<TMDataGridFeatures, TData, unknown> {
-  return {
-    id: GROUP_COLUMN_ID,
-    meta: {
-      label,
-      // Structurally the first column after the checkbox lane.
-      enableOrdering: false,
-    },
-    size: 260,
-    minSize: 180,
-    enableSorting: false,
-    enableColumnFilter: false,
-    enableGlobalFilter: false,
-    // Keeps it out of the columns panel and out of the header menu: its
-    // visibility is not the user's to set, it follows the grouping state.
-    enableHiding: false,
-    // Structurally pinned to the left; users shouldn't be able to move it.
-    enablePinning: false,
-    cell: ({ row }) => <GroupCell row={row} />,
-    // A group row has subRows, so every cell on it that is not the grouped
-    // column reports `getIsAggregated()` - this lane included. Without an
-    // `aggregatedCell` the body would take that as "nothing to summarise" and
-    // render the tree lane blank on exactly the rows it exists for.
-    aggregatedCell: ({ row }) => <GroupCell row={row} />,
-    header: ({ table }) => <GroupHeader table={table} />,
-  };
 }

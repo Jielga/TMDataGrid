@@ -19,3 +19,24 @@ export function getGroupDataRows<TData extends RowData>(
   if (row.subRows.length === 0) return [row];
   return row.getLeafRows().filter((leaf) => leaf.subRows.length === 0);
 }
+
+/** Shown for a group whose value is empty - `String(null)` would read as "null". */
+const BLANK_GROUP_LABEL = "(Blank)";
+
+/**
+ * How a grouping value is written into the tree cell.
+ *
+ * Deliberately not the grouped column's own `cell` renderer: that renderer is
+ * written for a data row and is free to reach into `row.original`, which on a
+ * group row is the first leaf's record rather than anything about the group.
+ */
+export function formatGroupValue(
+  value: unknown,
+  blankLabel = BLANK_GROUP_LABEL,
+): string {
+  if (value === null || value === undefined || value === "") {
+    return blankLabel;
+  }
+  if (value instanceof Date) return value.toLocaleDateString();
+  return String(value);
+}
