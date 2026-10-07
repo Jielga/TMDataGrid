@@ -4,16 +4,16 @@ description: >
   Write tests against TMDataGrid from a consuming app - Playwright or React
   Testing Library. Covers the data-dg-part contract, data-row-id/data-column-id
   coordinates, naming a grid with data-testid, the roles and ARIA the grid
-  publishes, the cell/gridcell role flip under cell selection, the surfaces
-  that render in a portal (the menu, the export picker, Select listboxes),
-  reaching rows past virtualization with data-dg-row-count, scrollToRow and
+  publishes, the cell/gridcell role flip under cell selection, the surfaces that
+  render in a portal (the menu, the export picker, Select listboxes), reaching
+  rows past virtualization with data-dg-row-count, scrollToRow and
   data-dg-scroll-container, waiting on aria-busy, and the DataGrid page object.
   Load when writing or fixing tests that drive a grid, or when a selector for a
   row, cell or control does not resolve.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.25'
+  library_version: '2.0.0'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
   - 'Jielga/TMDataGrid:playwright/support/DataGrid.ts'

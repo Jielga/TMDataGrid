@@ -1,5 +1,530 @@
 # @jielga/tmdatagrid
 
+## 2.0.0
+
+### Major Changes
+
+- [`238470c`](https://github.com/Jielga/TMDataGrid/commit/238470cf675000207b0061d760c93b2bee08a27f) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** The `"batch"` edit mode is now `"draft"`, reworked: a held draft
+  renders its value through the column's own `cell` renderer (in `cellConfirm`
+  too), an entered new row stays in the grid as a value row until Save all, and
+  the edit lane becomes the change indicator and per-row revert - a state icon
+  (new/edited/deleted) beside Revert, Restore or remove. Nothing reaches a
+  callback before `edit.submitAll()`: the lane's per-row save and
+  Delete-to-clear no longer commit under draft mode.
+
+  | Before                              | After                            |
+  | ----------------------------------- | -------------------------------- |
+  | `editing.mode: "batch"`             | `editing.mode: "draft"`          |
+  | `editing.onCommitBatch`             | `editing.onCommitDrafts`         |
+  | `TMDataGridEditCommitBatchArgs`     | `TMDataGridEditCommitDraftsArgs` |
+  | `edit.state.newRows[]` `{ tempId }` | `{ tempId, confirmed }`          |
+
+  New: `editing.newRowsSticky` (entered rows scroll by default), row
+  `data-dirty`, entry-row `data-new` / `data-confirmed`, parts `row-state` /
+  `revert-row`, `edit.state.rows[id].values`, labels `revertRow` /
+  `rowStateNew` / `rowStateEdited` / `rowStateDeleted`, `--dg-row-new-bg`.
+  The edit lane now appears under draft mode without `onCommitDrafts`.
+
+  Fixed: Restore on a deletion-marked row was unclickable in real browsers
+  (`pointer-events`).
+
+- [#44](https://github.com/Jielga/TMDataGrid/pull/44) [`feba241`](https://github.com/Jielga/TMDataGrid/commit/feba241aacb4fc1f5024dd5c5c309e815a337676) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** `editing.mode: "draft"` is removed. `editing` has two axes:
+  `mode` (`"cell" | "cellConfirm" | "row"`) picks what counts as a commit, and
+  `draft: true` parks commits in the draft store for `edit.saveDrafts()`.
+  Closes [#43](https://github.com/Jielga/TMDataGrid/issues/43).
+
+  - Migrate `{ mode: "draft" }` to `{ mode: "row", draft: true }` - or pair
+    `draft` with any other mode.
+  - `TMDataGridEditMode` narrows to the three modes, `TMDataGridFeatureFlags`
+    gains `editDraft`, and commit args never carry `source: "draft"`.
+  - Leaving a cell commits under `"cell"` (parks under `draft`), `"cellConfirm"`
+    no longer commits on Tab, and leaving an entry row never commits it.
+  - `TMDataGrid.EditActions` is renamed `TMDataGrid.DraftActions`, with the
+    `TMDataGridDraftActions*` exports renamed to match.
+  - Fixed: a row that fails validation on the way out keeps its error marks
+    until the failing value changes; `edit.state.rows[id].errorMessages`
+    carries the texts.
+
+- [`c662c8a`](https://github.com/Jielga/TMDataGrid/commit/c662c8a36e97bea7e47f58dea437555d1690df3f) Thanks [@Psvensso](https://github.com/Psvensso)! - The editing options of `useTMDataGrid` are namespaced under one `editing`
+  object, matching the 2.0 `meta.edit` column namespacing.
+
+  - `editMode: X` becomes `editing: { mode: X }`
+  - `onEditCommit` becomes `editing.onCommit`
+  - `onEditCommitBatch` becomes `editing.onCommitBatch`
+  - `rowValidators`, `isRowEditable`, `newRowDefaults`, `onRowAdd` and
+    `onRowDelete` keep their names and move inside `editing`
+  - `getRowId` stays top-level and is still required once `editing` is set
+
+  `TMDataGridEditingOptions` is now the type of the `editing` object itself.
+  `TMDataGridEditMode`, the `edit` engine and the feature flags are unchanged.
+
+- [#133](https://github.com/Jielga/TMDataGrid/pull/133) [`8cabb3d`](https://github.com/Jielga/TMDataGrid/commit/8cabb3d526e68343b2438dffa164294288e83f5e) Thanks [@Psvensso](https://github.com/Psvensso)! - Per-row results from the batch edit calls:
+
+  - `edit.commitAll()` resolves `{ ok, committed, open }`.
+  - `edit.saveDrafts()` resolves `{ ok, saved, kept, reopened }`; a check like `if (await grid.edit.saveDrafts())` is now always true - read `.ok`.
+  - `addRows`' result gains `ok`.
+  - The `onSaveDrafts` return type is renamed `TMDataGridSaveDraftsResponse`; `TMDataGridSaveDraftsResult` is now the type `saveDrafts()` resolves.
+  - Without `onSaveDrafts`, a deletion whose `onRowDelete` throws keeps its mark and is reported in `kept`; `saveDrafts()` no longer rejects and drops the mark.
+
+- [#37](https://github.com/Jielga/TMDataGrid/pull/37) [`d989de1`](https://github.com/Jielga/TMDataGrid/commit/d989de19e32435d2639c54c503a058d6f0ca1348) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** Draft mode gets a real draft store, and the verbs are split to
+  match: a row is _open_ (undecided form state) until it is committed, and only
+  committed rows are saved.
+
+  - `edit.commitAll()` submits every open row; `edit.saveDrafts()` sends the
+    draft store. `edit.submitAll()` is deprecated and now does both in turn -
+    what it always did in effect.
+  - `editing.onCommitDrafts` is renamed `editing.onSaveDrafts`. The old name is
+    still honoured; the new one wins if both are set.
+  - `edit.addRows(rows, { commit })` adds a batch in one write. `commit: true`
+    submits each row as it lands, which is the import case: valid rows commit,
+    invalid ones stay open carrying their errors, and the result says which went
+    which way.
+  - `newRows[].confirmed` is now `newRows[].committed`, and the entry row's
+    `data-confirmed` attribute is `data-committed`. `edit.state` gains
+    `committedRowIds`.
+  - `TMDataGridEditCommitDraftsArgs` is renamed `TMDataGridSaveDraftsArgs`, with
+    the old name kept as a deprecated alias.
+
+  Two behaviour changes to know about:
+
+  **Save no longer sweeps rows that were never OK'd.** It sends the draft store
+  and leaves open rows alone - they keep what was typed and stay open for the
+  next save. `EditActions` counts the draft store on Save and shows how many rows
+  are still open beside it. Enter in draft mode now commits the row instead of
+  only closing the editor, so the ordinary keyboard flow still fills the store.
+  Call `edit.commitAll()` before saving to get the old sweep.
+
+  **Column validation no longer depends on a mounted editor.** `meta.edit.validate`
+  ran on the editor, so a commit with no editor on screen - an import, a
+  programmatic commit, Delete-to-clear on a cell that was never opened - skipped
+  it and could write past the rule. The engine now runs the column rules itself
+  at commit. Existing grids may see commits refused that previously went through;
+  those were the rule being bypassed.
+
+- [#138](https://github.com/Jielga/TMDataGrid/pull/138) [`482db6c`](https://github.com/Jielga/TMDataGrid/commit/482db6c9ac93652333df89732d2c9e0232dc6cb3) Thanks [@Psvensso](https://github.com/Psvensso)! - These internal helpers are no longer exported: `isSameCell`, `resolveCellMove`, `ResolveCellMoveArgs`, `TMDataGridCellCoords`, `TMDataGridCellNav`, `boundsCellCount`, `boundsEdges`, `isWithinBounds`, `getDefaultOperator`, `getColumnFilterControl`, `isColumnEditableForRow`, `isColumnReorderable`, `measureColumnContentWidth`, `TMDataGridColumnLayout` and `tmDataGridFeatures` (the `TMDataGridFeatures` type stays).
+  The replacements are listed in the 2.0 migration guide.
+  Every remaining export is documented.
+
+- [#130](https://github.com/Jielga/TMDataGrid/pull/130) [`1dbfbd1`](https://github.com/Jielga/TMDataGrid/commit/1dbfbd1b8047dd6a5b5d246b4b7bbde1e03417f3) Thanks [@Psvensso](https://github.com/Psvensso)! - The deprecated API surface is removed:
+
+  - `cellExport` on `TMDataGrid.Table` - use `exportOptions` on `useTMDataGrid`.
+  - `exportGridToCsv` - use `exportGrid`.
+  - `TMDataGridCellExportOptions`, `DEFAULT_CELL_EXPORT_OPTIONS`, `fromCellExportOptions` - use `TMDataGridExportOptions` and `DEFAULT_EXPORT_OPTIONS`.
+  - `buildCellMatrix`, `buildGridCellMatrix`, `BuildCellMatrixArgs`, `TMDataGridCellMatrix` - use `buildExportData`, `BuildExportDataArgs` and `TMDataGridExportData`.
+  - `toExcelCsv` - use `csvExcelFormat`.
+  - `downloadTextFile` - use `downloadFile`.
+  - `labels.exportCsv` - use `labels.exportCells`.
+  - `editing.onCommitDrafts` - use `editing.onSaveDrafts`.
+  - `rows` and `added` in the `onSaveDrafts` payload - use `updated` and `created`.
+  - `TMDataGridEditCommitDraftsArgs` - use `TMDataGridSaveDraftsArgs`.
+  - `edit.submitAll()` - use `edit.commitAll()` then `edit.saveDrafts()`.
+  - `state.pendingCount` in `TMDataGrid.DraftActions` - use `state.draftCount` or `state.openCount`.
+
+- [#71](https://github.com/Jielga/TMDataGrid/pull/71) [`77b0819`](https://github.com/Jielga/TMDataGrid/commit/77b0819640f2f99e8a203ea4ad173a46c6459171) Thanks [@Psvensso](https://github.com/Psvensso)! - TanStack Table 9.2.4: the peer dependencies `@tanstack/react-table` and `@tanstack/table-core` move from `^9.0.0-beta.21` to `^9.2.4`, and column pinning follows TanStack's rename from physical to logical sides.
+
+  Upgrading:
+
+  - Install `@tanstack/react-table@^9.2.4` and `@tanstack/table-core@^9.2.4`. The `@tanstack/store` and `@tanstack/react-store` peers move to `^0.11.1`, the range table-core requires; a second store copy at 0.11.0 stops the grid from re-rendering on external atoms.
+  - `columnPinning` is `{ start, end }` instead of `{ left, right }`: in `initialState`, in a controlled `state.columnPinning` and its `onColumnPinningChange`, and wherever `table.store.state.columnPinning` is read.
+  - `column.pin("left" | "right")` is `column.pin("start" | "end")`, `column.getIsPinned()` returns `"start"`, `"end"` or `false`, and the table's `getLeft*` / `getRight*` methods are `getStart*` / `getEnd*`. TanStack lists every rename in `node_modules/@tanstack/table-core/skills/migrate-v8-to-v9/SKILL.md`, section 5.
+  - `getColumnRegion` returns `"start" | "center" | "end"`, and `TMDataGridColumnRegion` matches.
+  - Settings saved under `settingsKey` by 1.x with the old `left` / `right` keys are read and migrated; nothing to do.
+  - A custom `aggregationFn` on a column definition is now a `constructAggregationFn({ aggregate })` definition rather than a bare function. The named built-ins (`"sum"`, `"min"`, ...) and `TMDataGridAggregationName` are unchanged.
+  - The menu labels, the `data-pinned` cell attribute and the sticky CSS keep `left` / `right`: they name the physical side.
+
+- [#131](https://github.com/Jielga/TMDataGrid/pull/131) [`2e57099`](https://github.com/Jielga/TMDataGrid/commit/2e570991b9922bf84ac89e1090249ae359c4571e) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.options` and `meta.edit.enabled` callbacks receive rows typed as `TData` when the column is built with `createTMDataGridColumnHelper<TData>()`; `row.original` needs no cast. A callback annotated with the untyped row type no longer compiles there - drop the annotation. `TMDataGridColumnMeta`, `TMDataGridOptionsSource`, `TMDataGridOptionsArgs` and `TMDataGridColumnEditOptions` take an optional `TData`, and the helper type is exported as `TMDataGridColumnHelper`.
+
+- [#61](https://github.com/Jielga/TMDataGrid/pull/61) [`9425688`](https://github.com/Jielga/TMDataGrid/commit/9425688b76a34cdf3cca78715062a3e79630876d) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** The filter panel is no longer welded to `TMDataGrid.Table`. A new
+  `filters` option picks the surface:
+
+  - `surface: "popup"` (the default) floats the panel over the rows, as before.
+  - `surface: "sidebar"` puts it beside them, inside the grid frame. Starts open,
+    and takes `sidebarSide` and `sidebarWidth`.
+  - `surface: "none"` renders no panel and no `FilterButton`, leaving a
+    hand-placed `TMDataGrid.FilterPanel` as the only one on the page.
+  - `inHeader: true` adds a header row of per-column value controls, each with a
+    funnel button for its operator. Independent of `surface`. The column menu's
+    Filter item and the filtered-header funnel come off with it.
+
+  `TMDataGrid.FilterPanel` is now a plain block of controls with no title, no
+  close button and no open state - the popup and the sidebar own that chrome. It
+  takes `layout="row" | "stacked"`, and passes that through to every value
+  control.
+
+  What breaks:
+
+  - `TMDataGrid.FilterPanel` renders whenever it is mounted. It used to hide
+    itself unless `ui.state.filterPanelOpen`, so a hand-placed one now shows
+    permanently, and shows _alongside_ the popup unless you also set
+    `surface: "none"`.
+  - `filter-panel-close` moved out of `filter-panel`; it is now a child of
+    `filter-popup` / `filter-sidebar`. A test scoping the close button inside the
+    panel has to be re-pointed.
+  - `TMDataGridLabels` gained a required `filterOperatorFor`. A complete
+    translation typed as `TMDataGridLabels` no longer compiles until it is added;
+    `TMDataGridLabelsOverride` is unaffected.
+  - `TMDataGridApi` gained a required `filters`, and `TMDataGridFilterControlArgs`
+    a required `layout` - both break code that builds one of these by hand rather
+    than spreading, which in practice means test doubles.
+  - `ui.state.filterPanelColumnId` is now the panel's alone; the header row reads
+    the new `headerFilterColumnId`. The actions are `focusPanelFilter` and
+    `focusHeaderFilter`.
+
+  New exports: `TMDataGridFiltersOptions`, `TMDataGridFiltersSettings`,
+  `TMDataGridFilterSurface`, `TMDataGridFilterSidebarSide`,
+  `TMDataGridFilterControlLayout`, `TMDataGridFilterPanelLayout`,
+  `TMDataGridFilterPanelProps`, `TMDataGridFilterValueShape` and
+  `filterValueShape`.
+
+  Also fixed: a header group now spans the columns under it instead of sitting in
+  one track, and stacked header rows no longer pin to the same edge and paint
+  over each other.
+
+- [#22](https://github.com/Jielga/TMDataGrid/pull/22) [`b2110d4`](https://github.com/Jielga/TMDataGrid/commit/b2110d4a6b30e788b33755d4ce9e64847a920817) Thanks [@Psvensso](https://github.com/Psvensso)! - **Breaking.** Column meta groups its editing and filtering fields into two
+  namespaces, `meta.edit` and `meta.filter`, named after the `edit` engine and the
+  filter panel they configure. A new `meta.edit.mapValue` maps a value on its way
+  into the draft, and the deprecated `autoFocus` on the editor contract is gone.
+
+  Column meta had grown flat across four concerns at once, so a field name had to
+  carry its own stage: `editable` and `filterControl` sat beside `label` and
+  `align` with nothing but the prefix to say which part of the grid read them.
+  Grouping them puts what a column **is** at the top level and what a stage
+  **does** with it inside that stage's namespace, and it mirrors the runtime API,
+  where editing has been `edit.begin()` / `edit.commit()` / `edit.store` all along.
+
+  | Before                       | After                         |
+  | ---------------------------- | ----------------------------- |
+  | `meta.editable`              | `meta.edit.enabled`           |
+  | `meta.editField`             | `meta.edit.field`             |
+  | `meta.editor`                | `meta.edit.editor`            |
+  | `meta.validate`              | `meta.edit.validate`          |
+  | `meta.filterControl`         | `meta.filter.control`         |
+  | `meta.defaultFilterOperator` | `meta.filter.defaultOperator` |
+
+  ```tsx
+  // Before
+  meta: { type: "number", defaultFilterOperator: "between", editable: false }
+
+  // After
+  meta: {
+    type: "number",
+    filter: { defaultOperator: "between" },
+    edit: { enabled: false },
+  }
+  ```
+
+  `meta.type` and `meta.options` stay at the top level: one declaration of each
+  feeds the filter panel and the cell editor alike, and moving either into a
+  namespace would mean declaring it twice. Every old field is a compile error
+  after the upgrade, so `tsc` names each site to change.
+
+  **`meta.edit.mapValue`** maps every value an editor writes, before it reaches
+  the draft: uppercase a code, strip spaces from an IBAN, clamp a number into
+  range. It runs per write, so a text input maps per keystroke and a select per
+  pick, and what it returns is what the cell shows, what the validators judge and
+  what commits.
+
+  ```tsx
+  meta: {
+    edit: {
+      mapValue: ({ value }) =>
+        typeof value === "string" ? value.toUpperCase() : value,
+    },
+  }
+  ```
+
+  The map is applied in the editor host, around the field every editor writes
+  through, so one declaration covers the six built-in editors, a custom
+  `meta.edit.editor`, and the character that opened the editor when typing started
+  the edit. The value an editor opens with is deliberately not mapped, since that
+  would rewrite stored data nobody edited and swallow the select-all that lets the
+  first keystroke replace the value; neither is `edit.clearCell()`, which writes
+  the type's empty value through the form rather than through an editor. The
+  built-in string and number editors keep the caret where it was typed across a
+  mapped write, which a hand-rolled editor previously had to solve for itself.
+
+  **`TMDataGridEditorArgs.autoFocus` is removed**, as 1.1.1 said it would be. The
+  grid has placed the caret itself since then, so an editor that ignored the prop
+  already behaved correctly and one that honoured it loses nothing. A row opened
+  by `edit.addRow()` now gets the same treatment: its caret lands in the first
+  editable cell whether that cell holds a built-in editor or your own, which the
+  old `autoFocus` path only managed for the built-ins.
+
+  New exported types: `TMDataGridColumnEditOptions`, `TMDataGridColumnFilterOptions`,
+  `TMDataGridEditValueMap` and `TMDataGridEditValueMapArgs`. New exported readers:
+  `getColumnFilterControl` and `isColumnEditableForRow`.
+
+### Minor Changes
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`e36c7c7`](https://github.com/Jielga/TMDataGrid/commit/e36c7c7a39a1f0227ea3b248cdc131f1837bdf05) Thanks [@Psvensso](https://github.com/Psvensso)! - Programmatic edits and a column allowlist.
+
+  - `edit.setCellValue(rowId, columnId, value)` and `edit.setRowValues(rowId, values)` write through the edit engine, so a toolbar action or bulk fill lands in the draft store as a typed edit does - change markers, per-row revert and all. Rows need not be mounted. `meta.edit.validate` runs; `meta.edit.mapValue` does not, as with `clearCell`.
+  - `editing.columns` names the columns that take edits, instead of switching every other column off with `meta.edit.enabled: false`. Unset, every column mapping to a data path stays editable.
+  - `edit.isColumnEditable(column)` answers the column's half of the rule with no row in hand.
+  - `aggregateColumn` reads the filtered model's `flatRows`, so a tree built with `getSubRows` totals its children instead of only its roots. Flat and grouped grids are unchanged.
+  - The `number` editor no longer writes `NaN` when the text is not yet a number - partial input such as `-` or `1e` leaves the field empty and stays on screen.
+
+- [`e71f679`](https://github.com/Jielga/TMDataGrid/commit/e71f6799351ffd82f1138cff84b93e2b11671766) Thanks [@Psvensso](https://github.com/Psvensso)! - Under `editing.draft`, `edit.deleteRow` marks idempotently instead of toggling:
+  deleting a marked row again leaves it marked, and the new `edit.restoreRow(rowId)`
+  is the undo (the lane's Restore now calls it). A deletion mark is also refused
+  for ids the grid cannot save - an unknown id, or an entry row's temp id named
+  again after the entry was discarded - which used to inflate the Save count.
+
+  - New `edit.deleteRows(rowIds)` - `deleteRow` over a list in one call, safe to
+    feed a selection as it stands.
+  - A cancel or delete racing a pending commit no longer leaves a ghost id in
+    `committedRowIds`.
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`e1f413a`](https://github.com/Jielga/TMDataGrid/commit/e1f413ae0b71cda4bc16b5ddaa96cc071b312294) Thanks [@Psvensso](https://github.com/Psvensso)! - `editing.tableValidators` - cross-row validation.
+
+  - `onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`, where `rows` is the collection as it would stand if the commit landed: every draft overlaid, entry rows appended, deletion-marked rows removed.
+  - Same result vocabulary as `rowValidators`; pathed issues land on the committing row's cells, pathless ones on the row.
+  - Runs at every commit after the row's own validators, and again per parked row during `saveDrafts`, so a draft a later edit invalidated blocks the save.
+
+- [#110](https://github.com/Jielga/TMDataGrid/pull/110) [`f353e0d`](https://github.com/Jielga/TMDataGrid/commit/f353e0d070f92e76e72866784e9541869b2641c0) Thanks [@Psvensso](https://github.com/Psvensso)! - A committed row is data, not a form: a row that commits into the draft store drops its TanStack Form and is held as a snapshot of its values, so ten thousand imported rows cost a few megabytes instead of about eighty. Reopening a committed row - `begin`, `setCellValue`, `setRowValues`, `clearCell` - builds a fresh form seeded with the committed values. Closes [#81](https://github.com/Jielga/TMDataGrid/issues/81).
+
+  - **Breaking.** `edit.getForm(rowId)` returns `undefined` for a committed row. A drawer over one calls `begin` first.
+  - `saveDrafts` re-runs `editing.tableValidators` only; column rules and `rowValidators` ran at commit on the same values. A committed row that fails a table rule at Save, or whose `onCommit` / `onRowAdd` rejects on the per-row path, is reopened with the error instead of staying committed with errors on its form.
+
+- [#116](https://github.com/Jielga/TMDataGrid/pull/116) [`713d8fa`](https://github.com/Jielga/TMDataGrid/commit/713d8fa075d3c64b171e2b5dcfd9467bf5e68781) Thanks [@Psvensso](https://github.com/Psvensso)! - `edit.state.isSaving` is `true` while `saveDrafts` is in flight, and `TMDataGrid.DraftActions`' Save shows it as its loading state. `renderActions` receives it as `state.isSaving`. Part of [#89](https://github.com/Jielga/TMDataGrid/issues/89).
+
+- [#114](https://github.com/Jielga/TMDataGrid/pull/114) [`795b964`](https://github.com/Jielga/TMDataGrid/commit/795b964953f514a4e7d0cfd0fd98bb450479be3a) Thanks [@Psvensso](https://github.com/Psvensso)! - The edit engine and the table's own state now stay in step under `editing.draft`.
+
+  - A commit no longer resets the page index or collapses open details panels and groups. The grid sets TanStack's `autoResetPageIndex` and `autoResetExpanded` to `false` and resets the page on a query change itself: `resetPageOnQueryChange` now defaults to `true` on every grid and also covers grouping.
+  - A deletion-marked row is read-only and not selectable until restored: `begin`, `setCellValue`, `setRowValues` and `clearCell` refuse it, the keyboard cannot open it, its checkbox is disabled, select-all skips it, and the mark drops it from `rowSelection`. An editor open on the row is cancelled by the mark; a committed edit stays under it for Restore.
+  - `saveDrafts` sends a row that is edited and marked in `deleted` only, never in `updated` as well, and the per-row path no longer calls `onCommit` before `onRowDelete` for it. The Save count counts it once.
+  - A refetch that no longer returns a row drops that row's draft, open editor and deletion mark. Not under `manualPagination` or `manualFiltering`, where a missing row is on another page.
+  - A row the engine takes out of the table leaves `expanded` and `rowPinning` too, not only `rowSelection`.
+  - Export leaves deletion-marked rows out.
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`b6e2876`](https://github.com/Jielga/TMDataGrid/commit/b6e287645a1f89e2cb981551e263c9939950ffea) Thanks [@Psvensso](https://github.com/Psvensso)! - The body is one tab stop in each direction, bracketed by two `tab-guard` parts.
+  A control inside a body cell needs no `tabIndex` of its own.
+
+  - Inside a row, Tab walks its controls - the open editors, the buttons in its cells and the edit lane's save and cancel - and past the last one the cursor moves to the next row's first cell.
+  - **Breaking.** `useCellControlTabIndex` is removed. Drop the `tabIndex` it fed; nothing replaces it.
+  - Pressing a control inside a cell keeps the selected block instead of collapsing it to that cell.
+  - Scrolling a focused row into view accounts for the sticky header, the pinned rows and the summary row.
+
+- [#70](https://github.com/Jielga/TMDataGrid/pull/70) [`007c308`](https://github.com/Jielga/TMDataGrid/commit/007c30871d2000aa4cc35ec083ef518ba86f57df) Thanks [@Psvensso](https://github.com/Psvensso)! - Export.
+
+  - `TMDataGrid.Menu.Export` and `TMDataGrid.Menu.ExportSelected` - menu items downloading every filtered row, or the selected rows in grid order, in the grid's format. Props override the format, file name, headers and label per item.
+  - `useTMDataGridExport` - the export as click handlers (`exportAll`, `exportSelected`, `selectedCount`, `canExportSelected`) for a control of your own.
+  - `exportGrid`, `buildExportData`, `writeExportFile` - the same export from outside a component.
+  - Formats: `csvExcelFormat` (the default, as before), `csvFormat`, `tsvFormat`, `jsonFormat`; `TMDataGridExportFormat` for one of your own.
+  - `exportOptions` on `useTMDataGrid` - format, file name, header row and `columns` (`"visible"`, `"all"` or ids) for every export, the cell-range menu included.
+  - `columns="custom"` on the menu items opens a column picker: every exportable column, the visible ones ticked and the hidden ones marked, select all with a count, a search box from six columns, Export and Cancel. `ui.state.exportPicker`, `ui.actions.openExportPicker` / `closeExportPicker`, `getExportableColumns`.
+  - Column meta `enableExport` and `exportValue`.
+  - The text formats prefix a value that a spreadsheet would run as a formula; `escapeFormulas: false` on the format turns it off.
+  - `data-dg-part`: `menu-export`, `menu-export-selected`, `export-picker`, `export-picker-hint`, `export-picker-search`, `export-column`, `export-column-all`, `export-picker-count`, `export-picker-confirm`, `export-picker-cancel`.
+  - Labels: `exportAll`, `exportSelected(count)`, `exportPickerTitle(format)`, `exportPickerHint(selected)`, `exportPickerConfirm`, `exportPickerCancel`, `exportPickerSelectAll`, `exportPickerCount(checked, total)`, `exportPickerHidden`, `exportCells` (the cell-range item, was `exportCsv`).
+  - Deprecated, removed in the next beta: `cellExport` on `TMDataGrid.Table`, `exportGridToCsv`, `TMDataGridCellExportOptions`, `DEFAULT_CELL_EXPORT_OPTIONS`, `buildCellMatrix`, `buildGridCellMatrix`, `TMDataGridCellMatrix`, `toExcelCsv`, `downloadTextFile`, `labels.exportCsv`.
+  - New package `@jielga/tmdatagrid-xlsx`: `xlsxFormat()` writes an Excel workbook with typed cells, on exceljs.
+
+- [#65](https://github.com/Jielga/TMDataGrid/pull/65) [`8f69bef`](https://github.com/Jielga/TMDataGrid/commit/8f69befdb06b3c1c09be9b2150a471d84e00e06e) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.filter.operators` narrows the operators a column offers to a subset of
+  its type's, for columns backed by an endpoint that answers only some of them.
+  The panel dropdown and the header funnel show only those; a fresh filter opens
+  on the type's default when it is offered, else on the first offered operator.
+  New export `getColumnOperators(column)`.
+
+- [#56](https://github.com/Jielga/TMDataGrid/pull/56) [`fe68bb6`](https://github.com/Jielga/TMDataGrid/commit/fe68bb67ef28883c8a11880e902882adf068fc25) Thanks [@Psvensso](https://github.com/Psvensso)! - The grid menu.
+
+  - `TMDataGrid.Menu` - the toolbar burger, a Mantine `Menu` filled with your own items.
+  - `TMDataGrid.Menu.Columns`, `.ColumnToggles`, `.ShowHideAll`, `.ResetLayout` - the column chooser as menu items, for any Mantine `Menu` inside the grid.
+  - **Breaking.** `TMDataGrid.ColumnsButton` is gone; render `<TMDataGrid.Menu><TMDataGrid.Menu.Columns /></TMDataGrid.Menu>`. `TMDataGrid.ColumnsPanel` stays for hosts that are not a menu.
+  - **Breaking.** `ui.columnsPanelOpen`, `setColumnsPanelOpen` and `toggleColumnsPanel` are gone; the header menu's "Manage columns" is a submenu now, and its `internalItems` entry is a `Menu.Sub`.
+  - `data-dg-part`: `menu-button` added, `columns-button` dropped.
+  - Labels: `menuButton` added; `columnsReset` reads "Reset layout".
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`401dde9`](https://github.com/Jielga/TMDataGrid/commit/401dde9b4a0b83953409b160d3cd6f16f288cd2b) Thanks [@Psvensso](https://github.com/Psvensso)! - New: `edit.getRowValues(rowId)` and `edit.getRows()` - rows as shown, drafts overlaid, deletion marks and entry rows flagged rather than filtered. New type `TMDataGridEditRowSnapshot`.
+
+- [#54](https://github.com/Jielga/TMDataGrid/pull/54) [`36657fd`](https://github.com/Jielga/TMDataGrid/commit/36657fd69fc95af64938fa39e5a8e52f7d222c4c) Thanks [@Psvensso](https://github.com/Psvensso)! - Under `editing.draft`, committed drafts and committed new rows are the table's
+  rows: they sort, filter, group and aggregate on their draft values, and
+  `edit.getRows()` and `editing.tableValidators` read the same collection.
+  `editing.newRowsSticky` keeps committed new rows in the entry block instead.
+
+  - Body rows publish `data-new`; a committed new row is a `row` part, no longer
+    an `entry-row`, and `data-dg-entry-flow-block` is gone.
+  - New `TMDataGridEditState.committedValues` - the draft store's values, kept
+    across a reopen so the row holds its place.
+  - Row callbacks now receive the draft as `row.original`; a new row carries its
+    temp id.
+
+- [#42](https://github.com/Jielga/TMDataGrid/pull/42) [`3e0c861`](https://github.com/Jielga/TMDataGrid/commit/3e0c8618d5bf428e737f10a2220a3d402b1360e0) Thanks [@Psvensso](https://github.com/Psvensso)! - `onSaveDrafts` can save part of the draft store. Closes [#33](https://github.com/Jielga/TMDataGrid/issues/33).
+
+  - The payload keys are renamed: `rows` is now `updated`, `added` is now
+    `created`, `deleted` is unchanged. The old names are still filled and are
+    deprecated; they are removed in a later beta.
+  - Returning `{ updated, created, deleted }` from `onSaveDrafts` keeps the ids
+    reported `false` and clears the rest. Each key takes `false` for the whole
+    bucket or a map of id to result; an id the map does not name saved. A kept
+    row stays committed, so the next `saveDrafts()` retries it, and
+    `saveDrafts()` resolves `false` when anything was kept. Returning nothing
+    saves everything and throwing saves nothing, both unchanged.
+  - Body rows and entry rows carry `data-draft` while committed into the draft
+    store. `data-dirty` continues to mark any row with values typed in.
+  - `saveDrafts()` called while a save is in flight joins it instead of sending
+    the same payload again. Previously a double-clicked Save could create every
+    pending entry row twice.
+
+- [#49](https://github.com/Jielga/TMDataGrid/pull/49) [`001dd75`](https://github.com/Jielga/TMDataGrid/commit/001dd753a815f023dea65544d2af42f3255e55d9) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.DraftActions`' `renderActions` can take the user to a row that is
+  still open. Closes [#46](https://github.com/Jielga/TMDataGrid/issues/46).
+
+  - `state.openRowIds` is the ids behind `openCount`, in the order the grid
+    opened them.
+  - `actions.scrollToRow` is `grid.scrollToRow`, passed through.
+  - `actions.scrollToFirstOpenRow(align?)` scrolls to the first open row in
+    display order - which need not be `openRowIds[0]` - and answers whether one
+    was reached. An open entry row or a pinned open row answers `true` without
+    scrolling.
+
+  `Controls.OpenRowsNote` is unchanged: it is a label, not a button.
+
+  Docs: the `DraftActions` slot table listed neither `draftCount`, `openCount`,
+  `commitAll` nor `OpenRowsNote`, and `scrollerRef` was documented as the scroll
+  container element, which it has never been.
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`acd8b0c`](https://github.com/Jielga/TMDataGrid/commit/acd8b0cdc1adfd8682f16d07a488a5375826a2d0) Thanks [@Psvensso](https://github.com/Psvensso)! - Generated lanes are no longer user settings.
+
+  - The checkbox and edit lanes are `enableHiding: false`, like the other three.
+  - "Manage columns" lists only hideable columns; a column with
+    `enableHiding: false` is left out rather than shown disabled.
+  - Show/hide all writes only the columns it lists. It used
+    `table.toggleAllColumnsVisible`, which writes every leaf column: "show all"
+    published the tree column and "hide all" forced it visible.
+  - A column pinned right lands to the left of the edit lane.
+  - A stale `columnVisibility` entry for a generated lane - persisted before
+    this release, or passed in `initialState` - is dropped at mount and on
+    Reset layout, since nothing in the grid could bring the lane back.
+
+  New export: `keepGeneratedColumnsOutermost`, `isGeneratedColumn`.
+
+- [#125](https://github.com/Jielga/TMDataGrid/pull/125) [`5717fae`](https://github.com/Jielga/TMDataGrid/commit/5717fae9f5aac22f587f02780f5b77a8535abb61) Thanks [@Psvensso](https://github.com/Psvensso)! - New `hasPendingEdits(state)` export: `true` while the grid holds unsaved work (an open row with a changed value, an entry row, the draft store, or a save in flight). Use it as `useSelector(grid.edit.store, hasPendingEdits)` to block navigation.
+
+- [#59](https://github.com/Jielga/TMDataGrid/pull/59) [`1b375bb`](https://github.com/Jielga/TMDataGrid/commit/1b375bb782b97c32f9d31ab4f666f4cb33e1343c) Thanks [@Psvensso](https://github.com/Psvensso)! - Server-side ergonomics, from building the server-backed search recipe.
+
+  - Under `manualPagination` the grid takes itself back to the first page when the query changes - a column filter, the quick search or the sort - in the same event as the change, so one request goes out. A filter row with an empty value is not a query change. `resetPageOnQueryChange: false` switches it off.
+  - `activeColumnFilters(columnFilters | table)` returns the filters that narrow anything, with `value` typed as `TMDataGridFilterValue` instead of `unknown`.
+  - `Controls.PageNumber` renders "Page 3 of 200" for a `renderPagination` layout, with a `pageNumber` label. Not in the default footer.
+  - `SummaryCount` renders the matched count alone under `manualFiltering` or `manualPagination` without `meta.totalRowCount`. The fallback denominator was the current page, so a server-side grid read "25 / 25".
+  - The controlled-state sync no longer publishes the table store during the consumer's render, which React reported as "Cannot update a component (…) while rendering a different component (…)" on the first sort or filter of any grid owning a state slice. Subscribers to `table.store` are now notified in a microtask after that render pass - the same retiming applies to the grid's own grouping, persistence and resize-preview subscriptions.
+  - The last column's resize divider no longer hangs 5px past the last track, which put a permanent horizontal scrollbar under a grid whose columns fit.
+  - A column resolving `meta.options: "faceted"` under `manualFiltering` or `manualPagination` warns once: the distinct values of one page are not the distinct values of the result set.
+
+- [#123](https://github.com/Jielga/TMDataGrid/pull/123) [`8e20062`](https://github.com/Jielga/TMDataGrid/commit/8e20062936bf86cb8068548189b99e94c2546c70) Thanks [@Psvensso](https://github.com/Psvensso)! - Boolean state attributes are present only while they apply. `data-selected`, `data-highlighted`, `data-grouped`, `data-deleted`, `data-dirty`, `data-draft`, `data-new` and `data-striped` on a row, `data-committed` on an entry row, `data-focused` and `data-selected` on a cell, `data-active` on a header cell, and the grid's other boolean `data-*` attributes are rendered as `"true"` while the state holds and omitted otherwise, instead of always present as `"true"` or `"false"`. `[data-x="true"]` selectors and `toHaveAttribute("data-x", "true")` assertions keep working; a `[data-x="false"]` selector becomes `:not([data-x])` and `toHaveAttribute("data-x", "false")` becomes `not.toHaveAttribute("data-x")`.
+
+- [#37](https://github.com/Jielga/TMDataGrid/pull/37) [`d2741a6`](https://github.com/Jielga/TMDataGrid/commit/d2741a64252547cebce069f53299173118cd99f0) Thanks [@Psvensso](https://github.com/Psvensso)! - `edit.addRow` takes the values the entry row starts from.
+
+  `addRow(values)` overrides `editing.newRowDefaults` field by field, so one call
+  opens the default row and another opens it filled in - or duplicates an existing
+  row by passing it whole. `addRow()` is unchanged.
+
+- [#67](https://github.com/Jielga/TMDataGrid/pull/67) [`849bfa3`](https://github.com/Jielga/TMDataGrid/commit/849bfa3f1cdc2bd207e9e307ee9f68cc4b38a776) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.Toolbar`, `Spacer`, `Footer`, `FilterPanel`, `FilterPills` and
+  `ColumnsPanel` take Mantine's `BoxProps` - style props such as `mb`, `px` and
+  `hiddenFrom`, plus `className`, `style` and `mod` - set on their root element.
+  `TMDataGrid.Toolbar` gains `withBottomBorder`, a 1px line in the theme's
+  default border colour under the toolbar, off by default.
+  New types `TMDataGridToolbarProps` and `TMDataGridColumnsPanelProps`.
+
+### Patch Changes
+
+- [#128](https://github.com/Jielga/TMDataGrid/pull/128) [`1aee8da`](https://github.com/Jielga/TMDataGrid/commit/1aee8da22bfe7683a60f929f274fc4f26b5f3f1e) Thanks [@Psvensso](https://github.com/Psvensso)! - Docs: a card view recipe - the grid's state rendered as virtualized cards instead of `TMDataGrid.Table`.
+
+- [#70](https://github.com/Jielga/TMDataGrid/pull/70) [`a95b8c3`](https://github.com/Jielga/TMDataGrid/commit/a95b8c3d21c561d78082d0004969dffc7059f4c9) Thanks [@Psvensso](https://github.com/Psvensso)! - `TMDataGrid.Menu.Columns` and `TMDataGrid.ColumnsPanel` show their search box from six hideable columns.
+  `searchable` is `TMDataGridColumnSearchable` (`boolean | "auto"`), default `"auto"`; `true` keeps the box on a shorter list.
+
+- [#132](https://github.com/Jielga/TMDataGrid/pull/132) [`6720246`](https://github.com/Jielga/TMDataGrid/commit/672024616e36496026704c1ea3113e5a1c08aba3) Thanks [@Psvensso](https://github.com/Psvensso)! - Docs: a Column header menu page, and the docs sidebar grouped by grid part.
+
+- [#135](https://github.com/Jielga/TMDataGrid/pull/135) [`de9e8c1`](https://github.com/Jielga/TMDataGrid/commit/de9e8c11339e096170280b69ef9724657622eef7) Thanks [@Psvensso](https://github.com/Psvensso)! - Docs: a migration guide from the 2.0 beta to 2.0.0.
+
+- [#138](https://github.com/Jielga/TMDataGrid/pull/138) [`b680b1c`](https://github.com/Jielga/TMDataGrid/commit/b680b1ce1a1682fa96500d13192974b64da966df) Thanks [@Psvensso](https://github.com/Psvensso)! - Docs: Editing split into Editing, Draft store, and Adding and deleting rows.
+
+- [#40](https://github.com/Jielga/TMDataGrid/pull/40) [`dc3aac9`](https://github.com/Jielga/TMDataGrid/commit/dc3aac9816e0f03be4a1ade1062fbc4412faecca) Thanks [@Psvensso](https://github.com/Psvensso)! - Fixed: a controlled `state` slice built inline in the render body caused an
+  infinite render loop. TanStack compares `options.state` slices by identity on
+  every render; the grid now forwards the previous render's value for a slice
+  whose contents are unchanged.
+
+  - A controlled slice passed without its `onXChange` logs a console warning in
+    development. Without the callback the slice cannot change; use
+    `initialState` for a starting value.
+  - A controlled `columnVisibility` no longer hides the generated columns. The
+    tree column's entry is managed by the grid and follows `grouping`.
+  - The tree column's visibility entry is seeded into an external
+    `atoms.columnVisibility` at mount. Previously the tree column rendered empty
+    in an ungrouped grid when an atom owned the slice.
+  - A `state` key set to `undefined` is ignored instead of being written into
+    the table state.
+  - `Date` values in controlled state compare by time.
+
+- [`60f8292`](https://github.com/Jielga/TMDataGrid/commit/60f8292f3538594ad667339ed8f815192148a0c9) Thanks [@Psvensso](https://github.com/Psvensso)! - An entry row blocked by validation now shows it: the ✓ turns red with the message in its tooltip, as the Save does, and a cell a pathed issue names carries `data-invalid` and the red corner.
+
+- [#119](https://github.com/Jielga/TMDataGrid/pull/119) [`5497b65`](https://github.com/Jielga/TMDataGrid/commit/5497b650196b265e4234568301009c435d367dbc) Thanks [@Psvensso](https://github.com/Psvensso)! - Fixed: an entry row rendered nothing in the cells it does not open, a display column or one with `meta.edit.enabled` off, both when first added and when a committed new row was reopened. They now render through the column's own `cell` renderer over the row as shown, as on a body row.
+
+- [#73](https://github.com/Jielga/TMDataGrid/pull/73) [`f2d4fae`](https://github.com/Jielga/TMDataGrid/commit/f2d4faea1308b6916dfb484c7b3fb227238cb6b3) Thanks [@Psvensso](https://github.com/Psvensso)! - `edit.addRows(rows, { commit: true })` under `editing.draft` is one publish for the whole import: the rows are validated together and land in the draft store in the same render that shows them. Ten thousand rows take about a second; before, each row cost a render and a copy of the store, so the same import took minutes. `saveDrafts`, `commitAll`, `cancelAll` and `deleteRows` publish once for their batch the same way.
+
+  - The engine no longer registers its row forms with TanStack Form devtools - three `window` listeners per row, and a broadcast on every change of every row.
+
+- [`19e21e4`](https://github.com/Jielga/TMDataGrid/commit/19e21e4596c693264af0063870e768f94f06b2c6) Thanks [@Psvensso](https://github.com/Psvensso)! - The column toggles in the grid menu show a checkbox in both states, so an unchecked column no longer reads as a plain action next to your own items. Show/Hide All shows an indeterminate box, and says `aria-checked="mixed"`, when some columns are hidden.
+
+- [#69](https://github.com/Jielga/TMDataGrid/pull/69) [`3f17285`](https://github.com/Jielga/TMDataGrid/commit/3f17285e313333f0b383dec4f5a6e2a49f192e9a) Thanks [@Psvensso](https://github.com/Psvensso)! - The reference documentation ships in the package under `docs/`, importable as `@jielga/tmdatagrid/docs/<page>.md`.
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`acc190b`](https://github.com/Jielga/TMDataGrid/commit/acc190b169792f36e673453c3440c62071fe55e9) Thanks [@Psvensso](https://github.com/Psvensso)! - `--dg-radius` sets the frame's corner radius, defaulting to
+  `--mantine-radius-md`.
+
+  ```tsx
+  <TMDataGrid {...grid} style={{ "--dg-radius": 0 }} />
+  ```
+
+- [#56](https://github.com/Jielga/TMDataGrid/pull/56) [`f94f2a6`](https://github.com/Jielga/TMDataGrid/commit/f94f2a613bc28a83e92967b769ee545df2b9efc9) Thanks [@Psvensso](https://github.com/Psvensso)! - - `--row-bg` is painted over the theme body colour, so a translucent value no longer leaves pinned columns and pinned rows see-through.
+
+  - The summary row sits at the bottom edge when the rows do not fill the body.
+  - A cell's validation message shows in a tooltip on the editor instead of as text under the input.
+  - Under `mode: "cell"`, leaving a cell with a value the validators refuse keeps the editor open instead of closing it on the refused value.
+
+- [`0c5b921`](https://github.com/Jielga/TMDataGrid/commit/0c5b92175e6753b2ede924eb3348a23d0cdfe9ae) Thanks [@Psvensso](https://github.com/Psvensso)! - Column resizing is smooth again, and no longer jumps on mouse down.
+
+  - A drag starts from the width the column is rendered with, not its declared
+    `size`. The jump could also drop the divider onto a neighbouring header and
+    start a column move, which swallowed the mouse up and left the resize running
+    after the button was released.
+  - A running drag is painted on the grid's own column tracks instead of through
+    state, so nothing re-renders while the pointer moves.
+  - `columnResizeMode` now defaults to `"onEnd"`: the width reaches `columnSizing`
+    when the pointer is released. Set `"onChange"` to publish it on every move,
+    at the cost of a render of the grid for each one.
+
+- [#127](https://github.com/Jielga/TMDataGrid/pull/127) [`0651ba6`](https://github.com/Jielga/TMDataGrid/commit/0651ba69dc954e2976f300094fc95055e8e61c94) Thanks [@Psvensso](https://github.com/Psvensso)! - - Testing contract: `header-resize` on the column resize handle and `filter-pill-remove` on a filter pill's ✕. The Testing page now documents the portaled surfaces, `data-dg-scroll-container` and component tests with Playwright stories, and its `DataGrid` page object is the one the grid's own Playwright suite runs.
+
+  - Fix: one click on a header's sort arrow advanced the sort two steps.
+  - Fix: the `TMDataGrid.Menu` button now carries `aria-expanded` and `aria-controls`; the tooltip between it and the menu target swallowed them.
+
+- [`2e107ad`](https://github.com/Jielga/TMDataGrid/commit/2e107ad29899c89d3e3d26253b3b262d3345cd07) Thanks [@Psvensso](https://github.com/Psvensso)! - Column resizing, the cell range drag and the filter popup's click-away now work when the grid is rendered through a portal into a window opened with `window.open`.
+  Their listeners attach to the grid's own document and window rather than the global ones.
+
+  Focus checks, editor focus handling, select-column click detection and autosize measurement use the grid's own document and window as well, so they behave the same in a popup window as inline.
+
+- [#28](https://github.com/Jielga/TMDataGrid/pull/28) [`aa3aeac`](https://github.com/Jielga/TMDataGrid/commit/aa3aeac4b84fafed7b95072cccfb4f056741699d) Thanks [@Psvensso](https://github.com/Psvensso)! - `meta.autoSize` waits for the column's first cells.
+
+  It ran once on the mounting commit, so a grid whose rows are fetched had a
+  header and no cells to measure and the column kept that width. The
+  double-click gesture and the **Autosize column** menu item are unchanged.
+
+- [#112](https://github.com/Jielga/TMDataGrid/pull/112) [`2a7c318`](https://github.com/Jielga/TMDataGrid/commit/2a7c3189afd73658bf2442e59bdcc348c79a0268) Thanks [@Psvensso](https://github.com/Psvensso)! - A row the engine takes out of the table now leaves `rowSelection` with it: an entry row discarded by `deleteRow`, `deleteRows` or `cancel`, or saved by `saveDrafts`, and a marked row once its deletion is saved. A stale id used to keep the select-all box indeterminate and the selection non-empty after a bulk delete of selected rows.
+
+- [`cd5839d`](https://github.com/Jielga/TMDataGrid/commit/cd5839d0eb0e35c704173b29d8d3dc91631c20f2) Thanks [@Psvensso](https://github.com/Psvensso)! - The toolbar summary count no longer wraps - it stays on one line.
+
+- [`7fbb5d6`](https://github.com/Jielga/TMDataGrid/commit/7fbb5d6d9961e03dd5ea9e0d67c392d84e41b0fb) Thanks [@Psvensso](https://github.com/Psvensso)! - Committed entry rows under `editing.draft`:
+
+  - A cell that takes no edit (`meta.edit.enabled: false`, or a column with no field) no longer reopens the row on double-click, the same as a body cell.
+  - The row now gets the value-row padding, border and `--dg-row-new-bg` tint; the stylesheet still keyed on the old `data-confirmed` name.
+
+- [#53](https://github.com/Jielga/TMDataGrid/pull/53) [`7e472b1`](https://github.com/Jielga/TMDataGrid/commit/7e472b1b72635e416cb849364f35854047fb9db0) Thanks [@Psvensso](https://github.com/Psvensso)! - The cell focus ring no longer paints over a pinned column: a focused cell that is not pinned now scrolls under the pinned lanes, and a focused pinned cell keeps its ring above the row sliding past it.
+
+- [`7b9f309`](https://github.com/Jielga/TMDataGrid/commit/7b9f309276d284d716e47fefbe0c0f543e7b738c) Thanks [@Psvensso](https://github.com/Psvensso)! - Swedish labels: selecting is "Välj", not "Markera" - "Välj alla", "Välj alla rader", "Välj rad", "Välj grupp".
+
+- [`8932623`](https://github.com/Jielga/TMDataGrid/commit/893262395c89904d3603d73d6c0cafaf699a5ea5) Thanks [@Psvensso](https://github.com/Psvensso)! - Testing docs for editing flows: where an added row's temporary id goes at ✓ and at Save, how a test finds the row afterwards, and recipes for validation, cell and row edits, deletions and the draft store, with the matching page-object methods. A new `testing-editing` skill carries the same.
+
+- [#50](https://github.com/Jielga/TMDataGrid/pull/50) [`f2a5c6d`](https://github.com/Jielga/TMDataGrid/commit/f2a5c6d92c39c485def0dd59c39c5611390d1429) Thanks [@Psvensso](https://github.com/Psvensso)! - A live `size` (or `meta.rowHeight`) change now re-estimates virtualized row heights, so the scroll range follows the new density instead of keeping the old one.
+
 ## 2.0.0-beta.25
 
 ### Minor Changes
