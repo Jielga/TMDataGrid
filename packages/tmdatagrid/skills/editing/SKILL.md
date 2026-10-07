@@ -25,6 +25,7 @@ sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/adding-rows.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/query-builder.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editors.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/portfolio-rebalancer.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/editEngine.ts'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
 ---
@@ -259,6 +260,11 @@ tableValidators: {
 }
 ```
 
+Columns derived from the other rows (a weight as a share of the total) plus a
+table-wide rule (targets may not total more than 100%) are worked through in
+[references/editors-and-validation.md](references/editors-and-validation.md),
+from `packages/tmdatagrid/docs/portfolio-rebalancer.md`.
+
 `meta.edit.mapValue` rewrites a value instead of rejecting it: uppercase a code,
 strip spaces from an IBAN, clamp a number. It runs on every write an editor
 makes, so a text input maps per keystroke, and what it returns is what the
@@ -468,8 +474,9 @@ are in [references/common-mistakes.md](references/common-mistakes.md).
 ## References
 
 - [Editors and validation](references/editors-and-validation.md) - the editor
-  API, wrapping a built-in, what `mapValue` leaves alone, field and row
-  validators, server-side errors.
+  API, wrapping a built-in, what `mapValue` leaves alone, field, row and
+  cross-row validators, derived columns with a table-wide rule, server-side
+  errors.
 - [Editing API](references/editing-api.md) - every option, callback, column meta
   field, export, CSS variable and data attribute belonging to editing.
 - [Common mistakes](references/common-mistakes.md) - the failure modes above,

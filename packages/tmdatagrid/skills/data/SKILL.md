@@ -354,13 +354,17 @@ Source: `packages/tmdatagrid/docs/pagination.md` (Grouping suspends it).
 | `initialState.pagination` | Table option | `{ pageIndex, pageSize }` | `{ 0, 25 }` | Where paging starts. A `data` slice, so it persists. |
 | `onPaginationChange` | Table option | `OnChangeFn` | – | Controls the pagination state. |
 | `TMDataGrid.Footer` | Component | `pageSizeOptions`, `renderPagination`, Mantine `BoxProps` | `[10, 25, 50, 100]` | The footer bar. Renders nothing when paging is off. Style props set on the bar. |
-| `Footer` `renderPagination` | Slot | `({ state, actions, Controls }) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
-| `getTMDataGridPaginationApi` | Export | `(table) => { state, actions }` | – | The pager API, outside the Footer. |
+| `TMDataGridFooterProps` | Type | – | – | The props of `TMDataGrid.Footer`. |
+| `Footer` `renderPagination` | Slot | `(args: TMDataGridPaginationSlotArgs) => ReactNode` | Built-in pager | Replaces the pager, and hands over its pieces. |
+| `TMDataGridPaginationSlotArgs` | Type | `TMDataGridPaginationApi & { Controls }` | – | What `renderPagination` receives: `{ state, actions, Controls }`. |
+| `getTMDataGridPaginationApi` | Export | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | The pager API, outside the Footer. |
+| `TMDataGridPaginationApi` | Type | `{ state, actions }` | – | What `getTMDataGridPaginationApi` returns. |
 | `TMDataGridPaginationState` · `TMDataGridPaginationActions` · `TMDataGridPaginationControls` | Exports | types | – | The three parts of the slot argument. |
 | `isPagingActive` | Export | `(table, features) => boolean` | – | Whether the pager is slicing anything right now. |
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height in pixels. The virtualizer needs a number. |
 | `scrollToRow` | Hook return | `({ rowId, align? }) => boolean` | `align: "auto"` | Scrolls a row into view, mounted or not. |
+| `TMDataGridScrollToRowArgs` | Export | `{ rowId, align? }` | – | What `scrollToRow` takes. |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | Table props | `() => void` | – | Fire once on arriving at that edge. |
 | `TMDataGridScrollAlign` | Export | `"start" \| "center" \| "end" \| "auto"` | – | The `align` argument. |
 | `meta.loading` | Option | `boolean` | `false` | A fetch is in flight. Takes precedence over every empty message. |
@@ -371,6 +375,26 @@ Source: `packages/tmdatagrid/docs/pagination.md` (Grouping suspends it).
 | `TMDataGrid.SummaryCount` | Component | `children` replaces the text | – | Visible rows out of total. |
 | `--dg-header-shadow-color` | CSS variable | colour | Themed | The shadow under the sticky header. |
 | `--dg-sticky-edge-range` | CSS variable | length | `20px` | How far the pinned-lane band takes to fade in. |
+| `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row for every export of the grid. |
+| `meta.enableExport` | Column meta | `boolean` | `true` | `false` leaves the column out of every export and of Ctrl+C. |
+| `meta.exportValue` | Column meta | `TMDataGridExportValueGetter`: `({ value, row, column }) => unknown` | – | The value written in place of `row.getValue`. |
+| `TMDataGrid.Menu.Export` · `TMDataGrid.Menu.ExportSelected` | Components | `TMDataGridMenuExportProps` | – | Menu items: every filtered row, and the selected rows. `columns="custom"` opens the picker. |
+| `ui.state.exportPicker` | UI state | `TMDataGridExportPickerRequest \| null` | `null` | The column picker while open: `{ rows, options }`. |
+| `getExportableColumns` | Export | `(table) => Array<Column>` | – | Every column an export could take, hidden ones included. The list the picker shows. |
+| `useTMDataGridExport` | Hook | `(overrides?) => TMDataGridExportApi` | – | `exportAll`, `exportSelected`, `selectedCount`, `canExportSelected`. |
+| `exportGrid` | Export | `(args: ExportGridArgs) => Promise<void>` | – | Downloads the grid from outside a component. `ExportGridArgs` is `{ table, rows?, options? }`. |
+| `buildExportData` | Export | `(args: BuildExportDataArgs) => TMDataGridExportData` | – | The columns, labels and values a format writes. `BuildExportDataArgs` is `{ table, rows?, columns?, bounds? }`. |
+| `TMDataGridExportRows` · `TMDataGridExportColumns` | Types | `"all" \| "selected" \| rows` · `"visible" \| "all" \| ReadonlyArray<string>` | `"all"` · `"visible"` | Which rows and which columns an export takes. |
+| `writeExportFile` | Export | `(data, settings) => Promise<void>` | – | Writes export data in a format and downloads it. |
+| `downloadFile` | Export | `({ fileName, content, mimeType }) => void` | – | Downloads a string or a `Blob`. |
+| `csvExcelFormat` · `csvFormat` · `tsvFormat` · `jsonFormat` | Exports | `(options?) => TMDataGridExportFormat` | – | The built-in formats. |
+| `TMDataGridCsvFormatOptions` · `TMDataGridTsvFormatOptions` · `TMDataGridJsonFormatOptions` | Types | – | – | The options of `csvExcelFormat` and `csvFormat`, of `tsvFormat`, and of `jsonFormat`. |
+| `TMDataGridExportWriteOptions` | Type | `{ includeHeaders }` | – | The second argument of a format's `write`. |
+| `guardFormula` · `formatExportValue` | Exports | `(text) => string` · – | – | The formula guard and the text rule, for a format of your own. |
+| `resolveExportOptions` | Export | `(...overrides) => TMDataGridExportSettings` | – | The defaults with overrides folded over, `undefined` fields skipped. |
+| `countSelectedExportRows` | Export | `(table) => number` | – | How many rows `"selected"` would write. |
+| `DEFAULT_EXPORT_OPTIONS` | Constant | `TMDataGridExportSettings` | – | The defaults `exportOptions` merges over. |
+| `TMDataGridExportSettings` | Type | `Required<TMDataGridExportOptions>` | – | Export options with every field set. |
 
 See also: the `server-side` skill for `manualPagination` and `onReachEnd`, and
 the `grouping` skill for why the pager suspends.

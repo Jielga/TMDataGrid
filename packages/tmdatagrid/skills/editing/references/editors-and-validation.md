@@ -157,6 +157,10 @@ meta: {
 }
 ```
 
+The map receives `TMDataGridEditValueMapArgs`: `{ value, previous, row, column, table }`.
+Unlike `meta.edit.enabled`, its `row` is `Row<TMDataGridFeatures, TMDataGridRowData>`
+with or without the column helper.
+
 The grid applies it in the editor host, around the field every editor writes
 through, so it covers the six built-ins, a custom `meta.edit.editor`, and the
 type-to-edit seed character.
@@ -241,7 +245,8 @@ unedited value and cannot pass. Use `"row"`.
 ## Cross-row rules
 
 `editing.tableValidators` holds the rules that need the other rows. Its
-`onSubmit` / `onSubmitAsync` receive `{ value, rowId, isNew, rows }`:
+`onSubmit` / `onSubmitAsync` receive `TMDataGridTableValidateArgs`,
+`{ value, rowId, isNew, rows }`:
 `value` is the committing row as drafted, and `rows` is
 `Array<{ rowId, value }>` - the collection as it would stand if the commit
 landed, with every draft overlaid, entry rows appended and deletion-marked
@@ -269,6 +274,56 @@ The rules run at every commit - typed, ✓, `edit.setCellValue`, an entry
 row's - after the row's own validators, and again for every committed row during
 `saveDrafts`, the only rules that run there: a committed row that a later edit
 invalidated is reopened with its errors, and the save reports it in `reopened`.
+
+## Derived columns and a table-wide rule
+
+A column whose value depends on the other rows - a weight as a share of the
+total - cannot be an `accessorFn`, which is handed one row. Derive the whole
+collection with `useMemo` and pass the finished rows as `data`;
+`editing.onCommit` writes back to the source array, and the derived rows arrive
+on the next render. Under `mode: "cell"` with no draft store, every dependent
+column follows the commit.
+
+```tsx
+const positions = useMemo(() => {
+  const valued = holdings.map((h) => ({ ...h, marketValue: h.price * h.shares }));
+  const total = valued.reduce((sum, h) => sum + h.marketValue, 0);
+  return valued.map((h) => ({
+    ...h,
+    currentPct: (h.marketValue / total) * 100,
+    drift: h.targetPct - (h.marketValue / total) * 100,
+  }));
+}, [holdings]);
+```
+
+A rule over the whole collection, such as targets that may not total more than
+100%, is a `tableValidators` rule, while a bound on one cell (between 0 and 100)
+stays on `meta.edit.validate`. `editing.columns` keeps every other column
+read-only:
+
+```tsx
+editing: {
+  mode: "cell",
+  // Only the target weight takes edits; everything else is market data.
+  columns: ["targetPct"],
+  onCommit: ({ rowId, value }) =>
+    setHoldings((previous) =>
+      previous.map((h) => (h.id === rowId ? { ...h, targetPct: value.targetPct } : h)),
+    ),
+  tableValidators: {
+    // `rows` already holds the committing row's drafted value.
+    onSubmit: ({ rows }) => {
+      const total = rows.reduce((sum, r) => sum + Number(r.value.targetPct ?? 0), 0);
+      return total > 100.005
+        ? { fields: { targetPct: `Targets would total ${pct(total)}` } }
+        : undefined;
+    },
+  },
+}
+```
+
+Source: `packages/tmdatagrid/docs/portfolio-rebalancer.md`, and the demo
+`apps/docs/src/examples/demos/recipes/PortfolioRebalancer.tsx`.
 
 ## Server-side errors
 

@@ -6,7 +6,7 @@ Reference for the `rows` skill.
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `selectionMode` | Option | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a row click does. |
+| `selectionMode` | Option | `TMDataGridSelectionMode`: `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a row click does. |
 | `enableRowSelection` | Table option | `boolean \| ((row) => boolean)` | `true` | `false` removes the checkbox column and row-click selection. |
 | `enableMultiRowSelection` | Table option | `boolean` | `true` | `false` limits the selection to one row and drops group checkboxes. |
 | `showSelectedBackground` | Option | `boolean` | Follows the mode | Whether selected rows take a background tint. |
@@ -14,7 +14,8 @@ Reference for the `rows` skill.
 | `onHighlightedRowChange` | Callback | `(rowId: string \| null) => void` | – | Fires when the highlight moves. |
 | `SELECT_COLUMN_ID` | Export | `"__select__"` | – | Id of the generated checkbox column. |
 | `getSelectableRowIds` | Export | `(table) => string[]` | – | Ids the header checkbox would select. |
-| `resolveRowSelectionClick` | Export | `(args) => ResolvedRowSelection` | – | The desktop-list click rules, for a custom surface. |
+| `resolveRowSelectionClick` | Export | `(args: ResolveRowSelectionClickArgs) => ResolvedRowSelection` | – | The desktop-list click rules, for a custom surface. |
+| `ResolveRowSelectionClickArgs` · `TMDataGridRowClickModifiers` | Types | `{ rows, rowId, anchorRowId, modifiers, selection }` · `{ toggle, extend }` | – | What `resolveRowSelectionClick` takes, and its `modifiers`. |
 | `getDisplayedRows` | Export | `(table) => Row[]` | – | The rows currently on screen, paging respected. |
 | `isPagingActive` | Export | `(table) => boolean` | – | Whether a pager is in play. |
 
@@ -31,11 +32,13 @@ All are props of `TMDataGrid.Table`, not hook options.
 | `onCellClick` | `(args) => void` | Cell click. `args` is `TMDataGridCellEventArgs`. |
 | `onCellDoubleClick` | `(args) => void` | Cell double-click. |
 | `onCellContextMenu` | `(args) => void` | Cell right-click. |
-| `renderRowContextMenu` | `({ table, row, cell, close, internalItems }) => ReactNode` | Contents of the row's context menu. `null` for no menu. Reading `internalItems` hands the composition over. |
-| `renderColumnMenuItems` | `({ column, table, internalItems }) => ReactNode[]` | Contents of a column's menu. An empty list removes the button. |
+| `renderRowContextMenu` | `TMDataGridRowContextMenuRenderer`: `(args: TMDataGridRowContextMenuArgs) => ReactNode` | Contents of the row's context menu. `null` for no menu. Reading `internalItems` hands the composition over. |
+| `renderColumnMenuItems` | `TMDataGridColumnMenuItemsRenderer`: `(args: TMDataGridColumnMenuItemsArgs) => ReactNode[]` | Contents of a column's menu. An empty list removes the button. |
 | `rowContextMenuProps` | `MenuProps` | Passed to the Mantine `Menu` unchanged, apart from its open state. |
 
-`TMDataGridCellEventArgs` is `{ cell, row, column, event }`. The context-menu
+`TMDataGridCellEventArgs` is `{ cell, row, column, event }`.
+`TMDataGridRowContextMenuArgs` is `{ table, row, cell, close, internalItems }`,
+and `TMDataGridColumnMenuItemsArgs` is `{ column, table, internalItems }`. The context-menu
 slot's `cell` is `null` only when a custom cell renderer stopped the
 event. One `Menu` serves the whole body rather than one per row: a closed
 Mantine `Popover` still runs its hooks on every render, and the virtualized body
@@ -76,13 +79,14 @@ Row data attributes:
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `renderDetails` | Option | `({ row, table }) => ReactNode` | – | Contents of the panel. Setting it adds the lane. |
+| `renderDetails` | Option | `TMDataGridDetailsRenderer`: `(args: TMDataGridDetailsArgs) => ReactNode` | – | Contents of the panel. Setting it adds the lane. `TMDataGridDetailsArgs` is `{ row, table }`. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A `data` slice, so it persists. |
 | `autoResetExpanded` | Table option | `boolean` | `true` | `false` keeps panels open when `data` changes. |
 | `DETAILS_COLUMN_ID` | Export | `"__details__"` | – | Id of the generated chevron column. |
 | `resolveExpandAll` | Export | `(args) => ExpandedState` | – | Expand or collapse every group, or every panel, but not both. |
 | `areAllRowsExpanded` | Export | `(args) => boolean` | – | Whether every row of one target is open. |
+| `TMDataGridExpandAllArgs` · `TMDataGridExpandTarget` | Types | `{ rows, expanded, target }` · `"groups" \| "details"` | – | What `areAllRowsExpanded` takes (`resolveExpandAll` also takes `expand`), and its `target`. |
 | `data-dg-part="details"` | Data attribute | – | – | The panel element, carrying the row's `data-row-id`. |
 
 One `expanded` state opens two unrelated things - a group row into its children,
