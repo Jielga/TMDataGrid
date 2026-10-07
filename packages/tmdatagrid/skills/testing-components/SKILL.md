@@ -3,16 +3,16 @@ name: testing-components
 description: >
   Test a TMDataGrid in a real browser with Playwright component tests: the
   stories-and-gallery model of Playwright 1.62+, the mount fixture, how a story
-  wraps the grid (MantineProvider env="test", a fixed-size container, the api
-  on window for scrollToRow), and the browser-only behaviour worth testing
-  there - virtualization, column resize through header-resize, column reorder
-  by drag, sticky pinned columns, the clipboard. Load when setting up or
-  writing Playwright component tests for a grid, or when a jsdom test cannot
-  observe layout, scrolling or drag.
+  wraps the grid (MantineProvider env="test", a fixed-size container, the api on
+  window for scrollToRow), and the browser-only behaviour worth testing there -
+  virtualization, column resize through header-resize, column reorder by drag,
+  sticky pinned columns, the clipboard. Load when setting up or writing
+  Playwright component tests for a grid, or when a jsdom test cannot observe
+  layout, scrolling or drag.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.0.0-beta.25'
+  library_version: '2.0.0'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/test/gallery/main.tsx'
