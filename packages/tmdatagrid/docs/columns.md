@@ -263,6 +263,7 @@ column can be placed in front of it.
 | `meta.edit` | Column meta | `TMDataGridColumnEditOptions` | – | How the column edits: `enabled`, `field`, `editor`, `validate`, `mapValue`. |
 | `resolveColumnOptions` | Export | `({ table, column, row? }) => options` | – | Normalises all three `meta.options` forms. |
 | `optionsToComboboxData` | Export | `(options) => ComboboxData` | – | Options as Mantine `Select` data. |
-| `getColumnLabel` · `getColumnType` · `isControlColumn` | Exports | `(column) => …` | – | How the built-in controls read a column. |
+| `getColumnLabel` · `getColumnType` | Exports | `(column) => …` | – | How the built-in controls read a column. |
+| `isControlColumn` | Export | `(columnId) => boolean` | – | Whether a column id is one of the generated control lanes: checkbox, details, edit or row number. |
 | `isGeneratedColumn` | Export | `(columnId) => boolean` | – | Whether the grid generated the column - the four control lanes plus the tree column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | `string` | – | Ids of the five generated lanes. |

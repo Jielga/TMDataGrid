@@ -292,7 +292,7 @@ asks for it.
 
 They are structural: fixed width, no column menu, and they cannot be sorted,
 filtered, resized, re-pinned or moved. The checkbox lane anchors the left pinned
-region, so no column can be placed in front of it. `isControlColumn(column)`
+region, so no column can be placed in front of it. `isControlColumn(columnId)`
 identifies them.
 
 ## Common mistakes
