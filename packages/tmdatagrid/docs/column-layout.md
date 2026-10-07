@@ -172,8 +172,11 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
+| `MoveColumnArgs` · `ColumnStepArgs` | Types | – | – | What `moveColumn` takes, and what `moveColumnByStep` and `getStepTargetColumn` take. |
+| `TMDataGridDropSide` | Type | `"before" \| "after"` | – | The `side` of `MoveColumnArgs`: which edge of the target column the moved column lands on. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
 | `keepGeneratedColumnsOutermost` | Export | `(columnPinning) => ColumnPinningState` | – | Puts the generated lanes back on the outside of both pinned lanes. The grid runs it after every pin. |
-| `getColumnRegion` | Export | `(column) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
+| `getColumnRegion` | Export | `(columnPinning, columnId) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
+| `TMDataGridColumnRegion` | Type | `"start" \| "center" \| "end"` | – | What `getColumnRegion` returns. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | – | – | The column chooser, as menu items and as plain controls. See [Grid menu](/docs/menu). |

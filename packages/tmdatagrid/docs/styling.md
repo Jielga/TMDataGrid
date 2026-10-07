@@ -50,7 +50,7 @@ The wrapper components - `Toolbar`, `Spacer`, `Footer`, `FilterPanel`, `FilterPi
 | `--dg-row-height` | From `size` | Row height. Prefer `meta.rowHeight` - the virtualizer needs the number. |
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-summary-height` | From `size` | [Summary row](/docs/summary-row) height |
-| `--dg-entry-height` | From `size` | The sticky [entry block](/docs/editing#adding-rows) |
+| `--dg-entry-height` | From `size` | The sticky [entry block](/docs/adding-rows#adding-rows) |
 | `--dg-font-size` | From `size` | Cell and header font size |
 | `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are excluded: they are fixed 36px tracks that centre their control. |
 | `--dg-radius` | `--mantine-radius-md` | The frame's corner radius. `0` squares the grid off. The root clips its overflow, so the header and the last row follow it. |
@@ -71,7 +71,7 @@ reads in each - `light-dark()` works in your own value too.
 | `--dg-row-highlight-bg` | Themed | The highlighted row |
 | `--dg-row-striped-bg` | Themed | Every second row under `striped` |
 | `--dg-row-group-bg` | Themed | [Group](/docs/grouping) rows |
-| `--dg-row-new-bg` | Green tint | New rows entered into the [draft store](/docs/editing#the-draft-store) |
+| `--dg-row-new-bg` | Green tint | New rows entered into the [draft store](/docs/draft-store) |
 | `--dg-match-highlight-bg` | Themed yellow | [Marked](/docs/quick-search#match-highlighting) text |
 | `--dg-header-shadow-color` | Themed | The shadow under the sticky header |
 

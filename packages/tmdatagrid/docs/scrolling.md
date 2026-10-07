@@ -62,7 +62,7 @@ out has no scrolling.
 
 While the draft store is running, `TMDataGrid.DraftActions` hands its
 `renderActions` slot an `actions.scrollToFirstOpenRow(align?)` that goes to the
-first row [left open](/docs/editing#the-draft-store), without your having to
+first row [left open](/docs/draft-store), without your having to
 track the ids.
 
 ## Edge callbacks
@@ -105,6 +105,7 @@ boundary and the pinned band is always on.
 | `overscan` | Option | `number` | `6` | Rows kept mounted beyond each edge of the viewport. |
 | `meta.rowHeight` | Option | `number` | From `size` | Row height, in pixels. The virtualizer needs a number. |
 | `scrollToRow` | Hook return | `({ rowId, align? }) => boolean` | `align: "auto"` | Scrolls a row into view, mounted or not. Answers whether it could be reached. |
+| `TMDataGridScrollToRowArgs` | Type | `{ rowId, align? }` | – | What `scrollToRow` takes. |
 | `onScrollToTop` · `onScrollToBottom` · `onScrollToLeft` · `onScrollToRight` | Table props | `() => void` | – | Fire once on arriving at that edge. |
 | `TMDataGridScrollAlign` | Export | `"start" \| "center" \| "end" \| "auto"` | – | The `align` argument. |
 | `--dg-header-shadow-color` | CSS variable | colour | Themed | The shadow under the sticky header. |

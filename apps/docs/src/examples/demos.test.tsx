@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { findDemoFences } from "../docs/demoFence";
 import { extractHeadings } from "../docs/headings";
 import { DOCS_PAGES } from "../docs/docsPages";
+import libraryIndexSource from "../../../../packages/tmdatagrid/src/index.ts?raw";
 import { renderWithMantine } from "../test/renderWithMantine";
 import { listDemoFiles, loadDemo, loadSharedSource } from "./demoRegistry";
 
@@ -34,6 +35,40 @@ function docsFences(): Array<{
 afterEach(cleanup);
 
 const demoFiles = listDemoFiles();
+
+/** The library's own docs pages, `packages/tmdatagrid/docs/*.md`. */
+const libraryDocs = Object.values(
+  import.meta.glob<string>("../../../../packages/tmdatagrid/docs/*.md", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }),
+);
+
+/** Every name `packages/tmdatagrid/src/index.ts` exports, values and types. */
+function publicExportNames(source: string): Array<string> {
+  // A star export hides its names from this list, so it is refused outright.
+  if (/^export\s+(?:type\s+)?\*/m.test(source)) {
+    throw new Error("index.ts uses `export *`; list its names explicitly");
+  }
+  const names = new Set<string>();
+  for (const [, list] of source.matchAll(
+    /^export\s+(?:type\s+)?\{([^}]*)\}/gm,
+  )) {
+    for (const raw of list.split(",")) {
+      const entry = raw.trim().replace(/^type\s+/, "");
+      if (entry === "") continue;
+      // `a as b` exports `b`.
+      names.add(entry.split(/\s+as\s+/).at(-1)!.trim());
+    }
+  }
+  for (const [, name] of source.matchAll(
+    /^export\s+(?:declare\s+)?(?:const|let|function|class|type|interface|enum)\s+(\w+)/gm,
+  )) {
+    names.add(name);
+  }
+  return [...names];
+}
 
 describe("example demos", () => {
   const errors: Array<string> = [];
@@ -82,6 +117,21 @@ describe("example demos", () => {
 });
 
 describe("docs pages", () => {
+  it("every public export is named on a docs page", () => {
+    const names = publicExportNames(libraryIndexSource);
+    expect(names.length).toBeGreaterThan(0);
+    // An export no page names is public API nobody can find. The migration
+    // guide does not count: it names what is gone, and a type it names only
+    // to say it was renamed has no page of its own.
+    const pages = libraryDocs.filter(
+      (doc) => !doc.startsWith("# Migrating from the 2.0 beta"),
+    );
+    const undocumented = names.filter(
+      (name) => !pages.some((doc) => new RegExp(`\\b${name}\\b`).test(doc)),
+    );
+    expect(undocumented).toEqual([]);
+  });
+
   it("every demo file is shown on some page", () => {
     const referenced = new Set(docsFences().map((fence) => fence.file));
     // A demo nothing links to is a demo nobody sees.

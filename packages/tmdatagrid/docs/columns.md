@@ -79,6 +79,7 @@ the derived rows to a validator that reads them all.
 `meta` carries what a TanStack column definition has no field for. What the
 column is sits at the top level; what the filter panel and the edit engine do
 with it sits in the `filter` and `edit` namespaces.
+Its type is `TMDataGridColumnMeta`.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -250,9 +251,13 @@ column can be placed in front of it.
 | --- | --- | --- | --- | --- |
 | `createTMDataGridColumnHelper` | Export | `<TData>() => TMDataGridColumnHelper<TData>` | – | A TanStack column helper typed against the grid's features, with `meta` callbacks typed against `TData`. |
 | `TMDataGridColumnHelper` | Type | – | – | The helper's type. |
+| `TMDataGridColumnMeta` | Type | – | – | The type of `meta`. Typed against the row when the column is declared with `createTMDataGridColumnHelper`. |
+| `TMDataGridRowData` | Type | `Record<string, unknown>` | – | The row type where none is given: the default `TData` of the column meta types, and the rows `useTMDataGridContext` returns. |
 | `meta.label` | Column meta | `string` | Header or id | Name in menus and the columns panel. |
 | `meta.type` | Column meta | six types | `"string"` | What the values are; drives filters and editors. |
+| `TMDataGridColumnType` | Type | – | – | The six values of `meta.type`. |
 | `meta.options` | Column meta | array \| `"faceted"` \| `(args) => …` | – | The choices of an option column. |
+| `TMDataGridOptionsArgs` | Type | – | – | What a `meta.options` function receives: `{ table, column, row? }`. `row` is absent when the filter panel asks. |
 | `meta.align` | Column meta | `"left" \| "right" \| "center"` | `"left"` | Header and cell alignment. |
 | `meta.filter` | Column meta | `TMDataGridColumnFilterOptions` | – | How the column filters: `defaultOperator`, `control`. |
 | `meta.edit` | Column meta | `TMDataGridColumnEditOptions` | – | How the column edits: `enabled`, `field`, `editor`, `validate`, `mapValue`. |

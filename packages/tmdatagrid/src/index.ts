@@ -16,7 +16,6 @@ export {
   createTMDataGridColumnHelper,
   type TMDataGridColumnHelper,
   openColumnFilter,
-  tmDataGridFeatures,
   type TMDataGridApi,
   type TMDataGridColumnMeta,
   type TMDataGridDetailsArgs,
@@ -61,7 +60,6 @@ export {
   FILTER_OPERATOR_LABELS,
   filterValueShape,
   formatFilterLabel,
-  getDefaultOperator,
   getOperatorsForType,
   isFilterActive,
   operatorNeedsValue,
@@ -156,12 +154,9 @@ export {
 export { TMDATAGRID_LABELS_SV } from "./core/labelsSv";
 export {
   getColumnDefaultOperator,
-  getColumnFilterControl,
   getColumnOperators,
   getColumnLabel,
   getColumnType,
-  isColumnEditableForRow,
-  isColumnReorderable,
   isControlColumn,
   isGeneratedColumn,
   type TMDataGridColumnSearchable,
@@ -171,18 +166,11 @@ export {
   aggregateColumn,
   type TMDataGridAggregationName,
 } from "./core/summary";
-export { autosizeColumn, measureColumnContentWidth } from "./core/autosize";
+export { autosizeColumn } from "./core/autosize";
 export {
-  isSameCell,
-  resolveCellMove,
-  type ResolveCellMoveArgs,
-  type TMDataGridCellCoords,
   type TMDataGridCellPosition,
 } from "./core/cellNavigation";
 export {
-  boundsCellCount,
-  boundsEdges,
-  isWithinBounds,
   resolveRangeBounds,
   type ResolveRangeBoundsArgs,
   type TMDataGridCellRange,
@@ -275,8 +263,6 @@ export {
 } from "./core/persistence";
 export type {
   TMDataGridCellEventArgs,
-  TMDataGridCellNav,
-  TMDataGridColumnLayout,
   TMDataGridRowContextMenuArgs,
   TMDataGridRowContextMenuRenderer,
   TMDataGridRowStyle,

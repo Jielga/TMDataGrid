@@ -482,10 +482,9 @@ Source: `packages/tmdatagrid/docs/columns.md` (Columns derived from the other ro
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
-| `getColumnRegion` | Export | `(column) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
-| `isColumnReorderable` | Export | `(column, features) => boolean` | – | Whether this column may move at all. |
+| `getColumnRegion` | Export | `(columnPinning, columnId) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
+| `getColumnCapabilities(column, features).canReorder` | Export | `boolean` | – | Whether this column may move at all. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
-| `measureColumnContentWidth` | Export | `(args) => number` | – | The measurement behind it. |
 | `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
 | `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | ids | – | The generated lanes. |
 | `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | `searchable` · Mantine `BoxProps` | – | The column chooser, as menu items and as plain controls. Style props set on the panel. |

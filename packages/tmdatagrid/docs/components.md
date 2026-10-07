@@ -59,6 +59,7 @@ The value carries every field `useTMDataGrid` returns, plus three resolved from 
 ## TMDataGrid
 
 The root element.
+Its props type is `TMDataGridProps`.
 It provides the grid to every part through context, and takes every field `useTMDataGrid` returns alongside these props:
 
 | Prop | Type | Default | Description |
@@ -288,14 +289,22 @@ Every control takes the same argument object, `TMDataGridFilterControlArgs`:
 | `useTMDataGrid` | Hook | `(options) => TMDataGridApi` | – | Creates the table, UI store and edit engine. |
 | `useTMDataGridContext` | Hook | `() => TMDataGridContextValue` | – | The grid, from inside any part. Throws outside `TMDataGrid`. |
 | `TMDataGrid` | Component | – | – | The root element. Provides the grid through context. |
+| `TMDataGridProps` | Type | – | – | The props of `TMDataGrid`: the fields of `TMDataGridApi`, plus `children`, `size`, `className`, `style`, `id` and `data-testid`. |
 | `TMDataGrid.Table` | Component | – | – | Header, virtualized body and filter panel. |
+| `TMDataGridTableProps` | Type | – | – | The props of `TMDataGrid.Table`. |
 | `TMDataGrid.Toolbar` · `.Spacer` | Components | – | – | The toolbar row, and the gap that pushes items right. |
+| `TMDataGridToolbarProps` | Type | – | – | The props of `TMDataGrid.Toolbar`. |
 | `TMDataGrid.Search` | Component | – | – | Quick search input. Also `TMDataGridSearch`. |
+| `TMDataGridSearchProps` | Type | – | – | The props of `TMDataGrid.Search`. |
 | `TMDataGrid.FilterButton` · `.FilterPanel` | Components | – | – | The filter UI. Props on [Filtering](/docs/filtering). |
 | `TMDataGrid.Menu` · `.ColumnsPanel` | Components | – | – | The burger menu, and the column chooser as plain controls. |
+| `TMDataGridColumnsPanelProps` · `TMDataGridColumnSearchable` | Types | – | – | The props of `TMDataGrid.ColumnsPanel`, and the type of the `searchable` prop it shares with `TMDataGrid.Menu.Columns`. |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Components | – | – | Fetch spinner, and the row count. |
 | `TMDataGrid.DraftActions` | Component | – | – | Save and Discard. Also `TMDataGridDraftActions`. |
+| `TMDataGridDraftActionsProps` | Type | – | – | The props of `TMDataGrid.DraftActions`. |
+| `TMDataGridDraftActionsState` · `TMDataGridDraftActionsActions` · `TMDataGridDraftActionsControls` | Types | – | – | The `state`, `actions` and `Controls` of `TMDataGridDraftActionsSlotArgs`. |
 | `TMDataGrid.Footer` | Component | – | – | The pager bar. |
+| `TMDataGridFooterProps` | Type | – | – | The props of `TMDataGrid.Footer`. |
 | `TMDataGrid.FilterPills` | Component | – | – | Active filters as pills. Also `TMDataGridFilterPills`. Props on [Filtering](/docs/filtering). |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control. See [Filtering](/docs/filtering#opencolumnfilter). |
 | `getTMDataGridPaginationApi` | Function | `(table, isPaging?) => TMDataGridPaginationApi` | `isPaging`: `true` | Paging state and actions for a pager of your own. |

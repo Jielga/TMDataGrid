@@ -119,6 +119,7 @@ selected and a dash while only some are. Only the records are written to
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `selectionMode` | Option | `"checkbox" \| "row" \| "checkboxAndHighlight" \| "highlight"` | `"checkbox"` | What selecting looks like and what a row click does. |
+| `TMDataGridSelectionMode` | Type | – | – | The type of `selectionMode`. |
 | `enableRowSelection` | Table option | `boolean \| (row) => boolean` | `true` | `false` removes the checkbox column and row-click selection. |
 | `enableMultiRowSelection` | Table option | `boolean` | `true` | `false` limits the selection to one row and drops group checkboxes. |
 | `showSelectedBackground` | Option | `boolean` | Follows the mode | Whether selected rows take a background tint. |
@@ -127,6 +128,7 @@ selected and a dash while only some are. Only the records are written to
 | `SELECT_COLUMN_ID` | Export | `"__select__"` | – | Id of the generated checkbox column. |
 | `getSelectableRowIds` | Export | `(table) => string[]` | – | Ids the header checkbox would select. |
 | `resolveRowSelectionClick` | Export | `(args) => ResolvedRowSelection` | – | The desktop-list click rules, for a custom surface. |
+| `ResolveRowSelectionClickArgs` · `TMDataGridRowClickModifiers` | Types | – | – | What `resolveRowSelectionClick` takes, and its `modifiers`: `{ toggle, extend }`. |
 | `--dg-row-selected-bg` | CSS variable | colour | `--mantine-primary-color-light` | Selected row background. |
 | `--dg-row-highlight-bg` | CSS variable | colour | Themed | Highlighted row background. |
 | `data-selected` | Data attribute | – | – | On every selected row. |

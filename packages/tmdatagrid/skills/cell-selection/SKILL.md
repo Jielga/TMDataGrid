@@ -222,8 +222,7 @@ Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 | `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`; the whole grid without. |
 | `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
 | `formatExportValue` | Export | `(value, options) => string` | – | One value, formatted as the text formats would. |
-| `isSameCell` · `resolveCellMove` | Exports | – | – | The cursor arithmetic, for a custom navigator. |
-| `resolveRangeBounds` · `isWithinBounds` · `boundsEdges` · `boundsCellCount` | Exports | – | – | The rectangle arithmetic. |
+| `resolveRangeBounds` | Export | `({ range, rowIndexOf, columnIndexOf }) => TMDataGridRangeBounds \| null` | – | The range as row and column indices - the `bounds` for `buildExportData`, over `getDisplayedRows`. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |
 | `data-edge-top` · `-bottom` · `-left` · `-right` | Data attributes | – | – | On cells at the rectangle's border. |
 

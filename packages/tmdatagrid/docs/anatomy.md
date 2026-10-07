@@ -40,7 +40,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.Menu` · `.ColumnsPanel`             | The burger menu, and the column chooser                                      | [Grid menu](/docs/menu)                               |
 | `TMDataGrid.Spacer`                             | Pushes following toolbar items right                                         | [Toolbar](/docs/toolbar)                              |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty states](/docs/loading-and-empty)   |
-| `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/editing#the-draft-store)                |
+| `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/draft-store)                |
 
 `FilterPills` is the exception: it takes the grid as an `api` prop and can be
 rendered outside `TMDataGrid`, since an active-filter strip often sits above
@@ -74,6 +74,22 @@ With pagination off (the default) rows come from
 pagination on they come from `getPaginatedRowModel()`, so a
 [`manualPagination`](/docs/server-side) grid renders exactly the page the server
 returned.
+While a column is grouped, paging is suspended and the body holds the group rows and the leaves of open groups.
+Rows [pinned](/docs/row-pinning) to an edge render in their own blocks, outside the body's list.
+
+`getDisplayedRows(table, features)` returns the rows the body renders, in render order: the current page when paging is active, every filtered and sorted row otherwise, with pinned rows left out.
+Use it for a renderer of your own, or for the rows that a cell range's `bounds` count into - see [Cell selection](/docs/cell-selection#export-the-range-from-your-own-code).
+In a component, call it inside a selector with a shallow compare, so the rows follow sorting, filtering and paging:
+
+```tsx
+import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
+
+const { table, features } = useTMDataGridContext();
+const rows = useSelector(table.store, () => getDisplayedRows(table, features), {
+  compare: shallow,
+});
+```
 
 ## What the hook returns
 
@@ -99,4 +115,5 @@ stops updating.
 | `data-testid`                                                                        | Prop      | `string`                       | –       | Names the grid for tests.                            |
 | `aria-label` · `aria-labelledby`                                                     | Props     | `string`                       | –       | The grid's accessible name.                          |
 | `useTMDataGridContext`                                                               | Hook      | `() => TMDataGridContextValue` | –       | The grid, from inside any child.                     |
+| `getDisplayedRows`                                                                   | Export    | `(table, features) => Array<Row>` | –    | The rows the body renders: the current page when paging is active, pinned rows left out. |
 | `TMDataGridApi` · `TMDataGridTable` · `TMDataGridUiStore` · `TMDataGridFeatureFlags` | Exports   | types                          | –       | The hook's result and its parts.                     |

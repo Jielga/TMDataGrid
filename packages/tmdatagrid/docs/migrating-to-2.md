@@ -1,6 +1,6 @@
 # Migrating from the 2.0 beta
 
-2.0.0 removes every name deprecated during the 2.0 beta and changes what three edit calls resolve.
+2.0.0 removes every name deprecated during the 2.0 beta, stops exporting a set of internal helpers, and changes what three edit calls resolve.
 This page lists each change and the code that replaces it, from any `2.0.0-beta` release.
 
 ## Read the batch edit results
@@ -28,7 +28,7 @@ else notify(`${kept.length + reopened.length} rows need attention`);
 
 Each list holds row ids, and temp ids for new rows.
 `ok` is `true` when `open` is empty, or, for `saveDrafts()`, when `kept` and `reopened` are both empty.
-See [Saving the store](/docs/editing#saving-the-store) for what each list means.
+See [Saving the store](/docs/draft-store#saving-the-store) for what each list means.
 
 The `actions.save` and `actions.commitAll` that `TMDataGrid.DraftActions` passes to a custom slot resolve the same objects.
 
@@ -137,6 +137,23 @@ meta: {
 ```
 
 Columns built without the helper keep the untyped row.
+
+## Replace un-exported helpers
+
+These names are internal to the grid and are no longer exported from `@jielga/tmdatagrid`.
+An import of one fails to compile:
+
+| Removed | Use instead |
+| --- | --- |
+| `getDefaultOperator` | `getColumnDefaultOperator(column)` |
+| `isColumnEditableForRow` | `edit.canEditCell(row, column)` |
+| `isColumnReorderable` | `getColumnCapabilities(column, features).canReorder` |
+| `measureColumnContentWidth` | `autosizeColumn` |
+| `tmDataGridFeatures` | The `TMDataGridFeatures` type |
+| `isSameCell`, `resolveCellMove`, `ResolveCellMoveArgs`, `TMDataGridCellCoords`, `TMDataGridCellNav` | No public replacement; internal to the grid. |
+| `boundsCellCount`, `boundsEdges`, `isWithinBounds` | No public replacement; internal to the grid. |
+| `getColumnFilterControl` | No public replacement; internal to the grid. |
+| `TMDataGridColumnLayout` | No public replacement; internal to the grid. |
 
 ## Behaviour changes
 

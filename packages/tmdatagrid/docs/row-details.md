@@ -104,10 +104,12 @@ Group rows have no panel. Expanding one opens its children.
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `renderDetails` | Option | `({ row, table }) => ReactNode` | – | Contents of the panel. Setting it adds the lane. |
+| `TMDataGridDetailsArgs` | Type | `{ row, table }` | – | What `renderDetails` receives. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A data slice, so it persists. |
 | `autoResetExpanded` | Table option | `boolean` | `false` | `true` closes the panels when the `data` array changes. Off by default, so a draft commit keeps them open. |
 | `DETAILS_COLUMN_ID` | Export | `"__details__"` | – | Id of the generated chevron column. |
 | `resolveExpandAll` | Export | `(args) => ExpandedState` | – | Expand or collapse every group, or every panel, but not both. |
 | `areAllRowsExpanded` | Export | `(args) => boolean` | – | Whether every row of one target is open. |
+| `TMDataGridExpandAllArgs` · `TMDataGridExpandTarget` | Types | – | – | What `resolveExpandAll` and `areAllRowsExpanded` take, and its `target`: `"groups"` or `"details"`. |
 | `data-dg-part="details"` | Data attribute | – | – | The panel element, carrying the row's `data-row-id`. |

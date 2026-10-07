@@ -21,6 +21,8 @@ metadata:
   library_version: '2.0.0-beta.25'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/draft-store.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/adding-rows.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/query-builder.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editors.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/editEngine.ts'

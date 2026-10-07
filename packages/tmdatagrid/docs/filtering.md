@@ -343,16 +343,20 @@ header control - the header cell stays, empty.
 | `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"` | `"row"` | The panel of filter rows, as a plain block. |
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button toggling the surface, with an active count. Seeds a filter row only when the panel is empty. |
 | `TMDataGrid.FilterPills` | Component | takes `api` | – | Active filters as removable pills, renderable anywhere. |
+| `TMDataGridFilterPillsProps` | Type | – | – | The props of `TMDataGrid.FilterPills`. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Sends the user to a column's filter control, seeding an empty filter. |
 | `TMDataGridFilterControlArgs` | Type | `layout: "row" \| "stacked" \| "header"` | – | What a value control is handed, `layout` saying how much room it has. |
+| `TMDataGridFilterControlLayout` | Type | `"row" \| "stacked" \| "header"` | – | The type of `layout` on `TMDataGridFilterControlArgs`. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
 | `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
+| `TMDataGridColumnFilter` | Type | `{ id, value }` | – | One entry of `columnFilters`, typed. What `activeColumnFilters` returns a list of. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `getColumnOperators` · `getColumnDefaultOperator` | Exports | `(column) => operators` · `(column) => operator` | – | The list one column offers after `meta.filter.operators`, and the operator a fresh filter on it opens on. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |
 | `TMDataGridFilterValueInput` | Export | component | – | The default value control, for falling back to. |
 | `formatFilterLabel` | Export | `({ label, type, filter }) => string` | – | The one-line description used on the pills. |
 | `emptyValueForOperator` · `operatorNeedsValue` · `operatorTakesArrayValue` · `operatorTakesRangeValue` · `filterValueShape` | Exports | – | – | What shape of value an operator expects. |
+| `TMDataGridFilterValueShape` | Type | `"scalar" \| "set" \| "range"` | – | What `filterValueShape` returns for an operator. |
 | `TMDataGridFiltersOptions` · `TMDataGridFiltersSettings` · `TMDataGridFilterSurface` · `TMDataGridFilterSidebarSide` | Types | – | – | The `filters` option, and the resolved form of it on `api.filters`. |
 | `TMDataGridFilterPanelProps` · `TMDataGridFilterPanelLayout` | Types | – | – | For wrapping `TMDataGrid.FilterPanel` in a component of your own. |
 | `DgRangeSliderFilter` · `DgDateRangeFilter` · `DgAutocompleteFilter` · `DgTriStateFilter` | Exports | components | – | The four ready-made controls. |
