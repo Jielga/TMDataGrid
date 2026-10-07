@@ -304,6 +304,7 @@ See [Testing](/docs/testing).
 | `exportGrid` | Function | `({ table, rows?, options? }) => Promise<void>` | – | Downloads the grid from outside a component. |
 | `ExportGridArgs` | Type | `{ table, rows?, options? }` | – | What `exportGrid` takes. |
 | `buildExportData` | Function | `({ table, rows?, columns?, bounds? }) => TMDataGridExportData` | – | The columns, labels and values a format writes. |
+| `BuildExportDataArgs` | Type | `{ table, rows?, columns?, bounds? }` | – | What `buildExportData` takes. |
 | `TMDataGridExportColumns` | Type | `"visible" \| "all" \| ReadonlyArray<string>` | – | Which columns an export takes. Generated lanes and `meta.enableExport: false` columns are never taken. |
 | `writeExportFile` | Function | `(data, settings) => Promise<void>` | – | Writes export data in a format and downloads it. |
 | `csvExcelFormat` · `csvFormat` · `tsvFormat` · `jsonFormat` | Functions | `(options?) => TMDataGridExportFormat` | – | The built-in formats. |

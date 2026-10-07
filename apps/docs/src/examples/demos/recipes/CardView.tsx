@@ -17,6 +17,7 @@ import {
   IconSortDescending,
 } from "@tabler/icons-react";
 import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
 import { flexRender, type Row } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useState } from "react";
@@ -24,9 +25,11 @@ import {
   activeColumnFilters,
   createTMDataGridColumnHelper,
   getColumnLabel,
+  getDisplayedRows,
   isGeneratedColumn,
   TMDataGrid,
   useTMDataGrid,
+  type TMDataGridFeatureFlags,
   type TMDataGridFeatures,
   type TMDataGridTable,
 } from "@jielga/tmdatagrid";
@@ -127,7 +130,7 @@ export function CardView() {
         </Box>
       )}
 
-      <CardList table={grid.table} />
+      <CardList table={grid.table} features={grid.features} />
     </TMDataGrid>
   );
 }
@@ -174,15 +177,21 @@ function SortControl({ table }: { table: TMDataGridTable<Employee> }) {
   );
 }
 
-function CardList({ table }: { table: TMDataGridTable<Employee> }) {
-  // The filtered and sorted rows. Read inside a selector, not as a bare
-  // method call: the table identity never changes, so the React Compiler
-  // would cache a bare call and the list would stop following filters and
-  // sorting. TanStack memoizes the row model, so the identity only changes
-  // when the rows do.
+function CardList({
+  table,
+  features,
+}: {
+  table: TMDataGridTable<Employee>;
+  features: TMDataGridFeatureFlags;
+}) {
+  // The rows the Table would render: filtered, sorted, paged when paging is
+  // on. Read inside a selector, not as a bare call: the table identity never
+  // changes, so the React Compiler would cache a bare call and the list would
+  // stop following filters and sorting.
   const rows = useSelector(
     table.store,
-    () => table.getPrePaginatedRowModel().rows,
+    () => getDisplayedRows(table, features),
+    { compare: shallow },
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);

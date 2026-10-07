@@ -120,10 +120,14 @@ describe("docs pages", () => {
   it("every public export is named on a docs page", () => {
     const names = publicExportNames(libraryIndexSource);
     expect(names.length).toBeGreaterThan(0);
-    // An export no page names is public API nobody can find.
+    // An export no page names is public API nobody can find. The migration
+    // guide does not count: it names what is gone, and a type it names only
+    // to say it was renamed has no page of its own.
+    const pages = libraryDocs.filter(
+      (doc) => !doc.startsWith("# Migrating from the 2.0 beta"),
+    );
     const undocumented = names.filter(
-      (name) =>
-        !libraryDocs.some((doc) => new RegExp(`\\b${name}\\b`).test(doc)),
+      (name) => !pages.some((doc) => new RegExp(`\\b${name}\\b`).test(doc)),
     );
     expect(undocumented).toEqual([]);
   });

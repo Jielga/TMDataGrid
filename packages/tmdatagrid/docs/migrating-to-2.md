@@ -1,6 +1,6 @@
 # Migrating from the 2.0 beta
 
-2.0.0 removes every name deprecated during the 2.0 beta and changes what three edit calls resolve.
+2.0.0 removes every name deprecated during the 2.0 beta, stops exporting a set of internal helpers, and changes what three edit calls resolve.
 This page lists each change and the code that replaces it, from any `2.0.0-beta` release.
 
 ## Read the batch edit results

@@ -252,6 +252,7 @@ column can be placed in front of it.
 | `createTMDataGridColumnHelper` | Export | `<TData>() => TMDataGridColumnHelper<TData>` | – | A TanStack column helper typed against the grid's features, with `meta` callbacks typed against `TData`. |
 | `TMDataGridColumnHelper` | Type | – | – | The helper's type. |
 | `TMDataGridColumnMeta` | Type | – | – | The type of `meta`. Typed against the row when the column is declared with `createTMDataGridColumnHelper`. |
+| `TMDataGridRowData` | Type | `Record<string, unknown>` | – | The row type where none is given: the default `TData` of the column meta types, and the rows `useTMDataGridContext` returns. |
 | `meta.label` | Column meta | `string` | Header or id | Name in menus and the columns panel. |
 | `meta.type` | Column meta | six types | `"string"` | What the values are; drives filters and editors. |
 | `TMDataGridColumnType` | Type | – | – | The six values of `meta.type`. |

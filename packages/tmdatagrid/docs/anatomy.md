@@ -78,11 +78,17 @@ While a column is grouped, paging is suspended and the body holds the group rows
 Rows [pinned](/docs/row-pinning) to an edge render in their own blocks, outside the body's list.
 
 `getDisplayedRows(table, features)` returns the rows the body renders, in render order: the current page when paging is active, every filtered and sorted row otherwise, with pinned rows left out.
-Use it for a renderer of your own, or for the rows that a cell range's `bounds` count into - see [Cell selection](/docs/cell-selection#export-the-range-from-your-own-code):
+Use it for a renderer of your own, or for the rows that a cell range's `bounds` count into - see [Cell selection](/docs/cell-selection#export-the-range-from-your-own-code).
+In a component, call it inside a selector with a shallow compare, so the rows follow sorting, filtering and paging:
 
 ```tsx
+import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
+
 const { table, features } = useTMDataGridContext();
-const rows = getDisplayedRows(table, features);
+const rows = useSelector(table.store, () => getDisplayedRows(table, features), {
+  compare: shallow,
+});
 ```
 
 ## What the hook returns

@@ -47,17 +47,17 @@ The demo replaces the header's sorting with a `Select` that calls `table.setSort
 
 ## Read the rows
 
-Read the row model inside `useSelector(table.store, …)`:
+[`getDisplayedRows`](/docs/anatomy#which-rows-it-renders) returns the rows the Table would render: filtered, sorted, and the current page when paging is on.
+Call it inside `useSelector(table.store, …)` with a shallow compare:
 
 ```tsx
-const rows = useSelector(table.store, () => table.getPrePaginatedRowModel().rows);
+const rows = useSelector(table.store, () => getDisplayedRows(table, features), {
+  compare: shallow,
+});
 ```
 
-The table identity never changes, so the React Compiler caches a bare `table.getPrePaginatedRowModel()` call and the list stops following filters and sorting.
-TanStack memoizes the row model, so the selector returns a new array only when the filtered and sorted rows change.
-
-`getPrePaginatedRowModel()` returns every filtered and sorted row.
-With `enablePagination` set, read `getPaginatedRowModel()` instead.
+The table identity never changes, so the React Compiler caches a bare call and the list stops following filters and sorting.
+The shallow compare re-renders the list only when the rows change.
 
 ## Virtualize lines of cards
 

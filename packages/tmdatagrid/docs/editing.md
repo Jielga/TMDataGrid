@@ -563,6 +563,8 @@ The built-in controls do everything through `edit`, which is public.
 | `edit.deleteRow(rowId)` | Deletes a row, or marks it deleted under `draft: true`. Idempotent; discards an entry row; ignores an unknown id |
 | `edit.deleteRows(rowIds)` | `deleteRow` over a list in one call - safe to feed a selection as it stands |
 | `edit.restoreRow(rowId)` | Removes a row's deletion mark - what the lane's Restore calls |
+| `edit.canEditCell(row, column)` | Whether a cell may open an editor: the column takes edits and the row does too |
+| `edit.canEditRow(row)` | Whether a row takes edits at all - what shows the edit lane's pencil |
 | `edit.isColumnEditable(column)` | Whether a column takes edits at all, with no row in hand |
 | `edit.getForm(rowId)` | The open row's live `FormApi`; `undefined` for a committed row |
 | `edit.getRowValues(rowId)` | The row as shown: its draft where one is held, else the `data` value. `undefined` for an unknown row |
@@ -629,6 +631,8 @@ Both resolve `false` when the cell takes no edit - no such row or column, `editi
 | `editing.onCommit`            | Callback       | `({ rowId, value, original, changes, source }) => void \| Promise` | – | Applies one row's change. Reject to keep the draft.                                              |
 | `TMDataGridEditCommitArgs` · `TMDataGridEditChange` | Types | – | – | What `onCommit` receives, and one entry of its `changes`. |
 | `editing.onSaveDrafts`        | Callback       | `({ updated, created, deleted }) => void \| Result \| Promise` | –  | `draft: true` only. One call for the whole draft store. See [Saving part of the store](#saving-part-of-the-store). |
+| `TMDataGridSaveDraftsArgs` | Type | `{ updated, created, deleted }` | – | What `onSaveDrafts` receives. |
+| `TMDataGridSaveDraftsResponse` | Type | `{ updated?, created?, deleted? }` | – | What `onSaveDrafts` may return to save part of the store. See [Saving part of the store](#saving-part-of-the-store). |
 | `TMDataGridSaveOutcomes` | Type | `boolean \| Record<string, boolean>` | – | One bucket of what `onSaveDrafts` returns. `false` keeps an entry's draft; an id the map does not name counts as saved. |
 | `editing.newRowsSticky`       | Member         | `boolean`                                        | `false`           | `draft: true` only. Keeps committed entry rows in the sticky entry block, out of the body's sort, until the save. |
 | `editing.newRowDefaults`      | Member         | `TData \| () => TData`                           | –                 | Seeds the entry row's form.                                                                      |

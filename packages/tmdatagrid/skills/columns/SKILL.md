@@ -482,7 +482,7 @@ Source: `packages/tmdatagrid/docs/columns.md` (Columns derived from the other ro
 | `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
 | `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
 | `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
-| `getColumnRegion` | Export | `(column) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
+| `getColumnRegion` | Export | `(columnPinning, columnId) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
 | `getColumnCapabilities(column, features).canReorder` | Export | `boolean` | – | Whether this column may move at all. |
 | `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
 | `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
