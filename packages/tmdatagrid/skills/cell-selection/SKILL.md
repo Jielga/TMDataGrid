@@ -213,16 +213,18 @@ Source: `packages/tmdatagrid/docs/cell-selection.md` (Copy and export).
 
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
-| `cellSelection` | Option | `"none" \| "single" \| "range"` | `"none"`, or `"single"` under `editing` | Turns the cursor, and the rectangle, on. |
+| `cellSelection` | Option | `TMDataGridCellSelectionMode`: `"none" \| "single" \| "range"` | `"none"`, or `"single"` under `editing` | Turns the cursor, and the rectangle, on. |
 | `onFocusedCellChange` | Callback | `(cell \| null) => void` | – | Follows the cursor. |
 | `exportOptions` | Option | `TMDataGridExportOptions` | `DEFAULT_EXPORT_OPTIONS` | Format, file name and header row of the Export cells item. |
 | `ui.state.focusedCell` | UI state | `{ rowId, columnId } \| null` | `null` | The cursor. |
 | `ui.state.cellRange` | UI state | `{ anchor, focus } \| null` | `null` | The rectangle's two corners. |
 | `ui.actions.setFocusedCell` · `setCellRange` | UI actions | – | – | Move either from your own code. |
 | `buildExportData` | Export | `({ table, rows, bounds }) => TMDataGridExportData` | – | The rectangle's values, with `bounds`; the whole grid without. |
-| `toClipboardText` · `writeClipboardText` | Exports | – | – | The pieces behind Ctrl+C. |
+| `toClipboardText` · `writeClipboardText` | Exports | `(data, options?) => string` · `(text) => Promise<boolean>` | – | The pieces behind Ctrl+C: the tab-separated text, and the write that reports whether it landed. |
+| `TMDataGridClipboardTextOptions` | Type | `{ decimalComma?, escapeFormulas? }` | `true` · `true` | The options of `toClipboardText`. |
 | `formatExportValue` | Export | `(value, options) => string` | – | One value, formatted as the text formats would. |
 | `resolveRangeBounds` | Export | `({ range, rowIndexOf, columnIndexOf }) => TMDataGridRangeBounds \| null` | – | The range as row and column indices - the `bounds` for `buildExportData`, over `getDisplayedRows`. |
+| `ResolveRangeBoundsArgs` · `TMDataGridRangeBounds` | Types | – · `{ top, bottom, left, right }` | – | What `resolveRangeBounds` takes, and what it returns. |
 | `data-focused` | Data attribute | – | – | On the focused cell. |
 | `data-edge-top` · `-bottom` · `-left` · `-right` | Data attributes | – | – | On cells at the rectangle's border. |
 

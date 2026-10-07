@@ -45,6 +45,12 @@ const libraryDocs = Object.values(
   }),
 );
 
+/** The library's skills, `packages/tmdatagrid/skills/**\/*.md`, by path. */
+const librarySkills = import.meta.glob<string>(
+  "../../../../packages/tmdatagrid/skills/**/*.md",
+  { query: "?raw", import: "default", eager: true },
+);
+
 /** Every name `packages/tmdatagrid/src/index.ts` exports, values and types. */
 function publicExportNames(source: string): Array<string> {
   // A star export hides its names from this list, so it is refused outright.
@@ -130,6 +136,21 @@ describe("docs pages", () => {
       (name) => !pages.some((doc) => new RegExp(`\\b${name}\\b`).test(doc)),
     );
     expect(undocumented).toEqual([]);
+  });
+
+  it("every public export is named in a skill", () => {
+    const names = publicExportNames(libraryIndexSource);
+    expect(names.length).toBeGreaterThan(0);
+    // The skills are what a coding agent loads; an export none of them names
+    // is one the agent cannot find. As with the pages, the migration skill
+    // does not count: it names what is gone and what replaced it.
+    const skills = Object.entries(librarySkills)
+      .filter(([path]) => !path.includes("/skills/migrating-to-2/"))
+      .map(([, source]) => source);
+    const missing = names.filter(
+      (name) => !skills.some((doc) => new RegExp(`\\b${name}\\b`).test(doc)),
+    );
+    expect(missing).toEqual([]);
   });
 
   it("every demo file is shown on some page", () => {

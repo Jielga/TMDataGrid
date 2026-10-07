@@ -17,6 +17,7 @@ metadata:
   library_version: '2.0.0'
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/use-tm-data-grid.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/persistence.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/persistence.ts'
 ---
@@ -30,6 +31,8 @@ const grid = useTMDataGrid<TData>(options);
 // { table, ui, edit, features, labels, resetSettings, scrollToRow }
 ```
 
+The signature is
+`useTMDataGrid<TData>(options: UseTMDataGridOptions<TData>): TMDataGridApi<TData>`.
 Spread the result onto `TMDataGrid`.
 
 ## Options
@@ -124,9 +127,9 @@ changes. Separate keys let one group be cleared without touching the other.
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `dataKey` | `string \| [string, DataSlice[]]` | – | Storage key for the data group. |
-| `settingsKey` | `string \| [string, SettingsSlice[]]` | – | Storage key for the settings group. |
-| `storageMode` | `"localStorage" \| "sessionStorage"` | `"localStorage"` | Storage area. |
+| `dataKey` | `TMDataGridPersistKey<TMDataGridDataSlice>`: `string \| [string, DataSlice[]]` | – | Storage key for the data group. |
+| `settingsKey` | `TMDataGridPersistKey<TMDataGridSettingsSlice>`: `string \| [string, SettingsSlice[]]` | – | Storage key for the settings group. |
+| `storageMode` | `TMDataGridStorageMode`: `"localStorage" \| "sessionStorage"` | `"localStorage"` | Storage area. `"sessionStorage"` is per tab. |
 | `serialize` | `(value) => string` | `JSON.stringify` | Serializes before storing. |
 | `deserialize` | `(value: string) => unknown` | `JSON.parse` | Parses a stored payload. |
 
@@ -168,7 +171,8 @@ survives the data changing under it the way the column layout does. `expanded` i
 a data slice for the opposite reason.
 
 `DATA_STATE_SLICES` and `SETTINGS_STATE_SLICES` export the same values. Slice
-names are typed per group, so only valid names are accepted.
+names are typed per group, `TMDataGridDataSlice` and `TMDataGridSettingsSlice`,
+so only valid names are accepted.
 
 Restoring happens once on mount through `initialState`. Writing is a subscription
 to the table store, so state changed directly through the table API is persisted
@@ -176,12 +180,20 @@ too. Only selected slices are read back, and unrecognised keys are ignored. All
 storage access is guarded - if storage is unavailable, disabled or full,
 persistence is skipped rather than throwing.
 
+A payload from another version is dropped whole, not migrated. Payloads carry
+the exported `PERSIST_PAYLOAD_VERSION`; anything else, including everything
+written by a 0.x build, is discarded. Restored state is realigned against the
+columns that exist: entries naming a column removed between deploys are
+dropped.
+
+Source: `packages/tmdatagrid/docs/persistence.md` (Behaviour).
+
 ## Return value
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `table` | `Table<TMDataGridFeatures, TData>` | The TanStack table instance. |
-| `ui` | `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
+| `ui` | `TMDataGridUiStore`: `Store<TMDataGridUiState, TMDataGridUiActions>` | State of the filter and column panels. |
 | `edit` | `TMDataGridEditApi` | The edit engine, inert until `editing` is set. See the `editing` skill. |
 | `features` | `TMDataGridFeatureFlags` | Table-level feature switches, re-read on each render. |
 | `labels` | `TMDataGridLabels` | The resolved label set, overrides merged over English. |

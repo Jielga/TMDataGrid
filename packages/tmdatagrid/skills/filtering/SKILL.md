@@ -424,20 +424,26 @@ Source: `packages/tmdatagrid/docs/quick-search.md` (Fuzzy by default).
 | `meta.filter.defaultOperator` | Column meta | `TMDataGridFilterOperator` | The type's default, else the first offered | The operator a fresh filter opens on. |
 | `meta.filter.control` | Column meta | `TMDataGridFilterControlComponent` | By type and operator | Replaces the value control. Module scope. |
 | `filterFn` | Column option | name or fn | `"tmDataGrid"` | Custom matching for one column. |
-| `quickSearchMode` | Option | `"fuzzy" \| "contains"` | `"fuzzy"` | How the quick search matches. |
+| `quickSearchMode` | Option | `TMDataGridQuickSearchMode`: `"fuzzy" \| "contains"` | `"fuzzy"` | How the quick search matches. |
 | `enableMatchHighlighting` | Option | `boolean` | `false` | Mark matched text in default-rendered cells. |
 | `enableGlobalFilter` | Table option | `boolean` | `true` | Also a column option. Removes the input, or one column's participation. |
 | `globalFilterFn` | Table option | filter fn | fuzzy | Overrides the matching, and the ranking with it. |
 | `TMDataGrid.FilterPanel` | Component | `layout: "row" \| "stacked"`, Mantine `BoxProps` | `"row"` | The panel of filter rows, as a plain block. Style props set on it. |
+| `TMDataGridFilterPanelProps` · `TMDataGridFilterPanelLayout` | Types | – · `"row" \| "stacked"` | – | The props of `TMDataGrid.FilterPanel`, and the type of its `layout`. For wrapping the panel in a component of your own. |
 | `filters` | Table option | `TMDataGridFiltersOptions` | `{ surface: "popup" }` | Which surface holds the filter controls. |
-| `TMDataGridFilterControlArgs.layout` | Type | `"row" \| "stacked" \| "header"` | – | How much room a value control has, and whether it names itself. |
-| `filterValueShape` | Export | `(operator) => "scalar" \| "set" \| "range"` | – | Which shape an operator's value takes. |
+| `TMDataGridFiltersSettings` | Type | `Required<TMDataGridFiltersOptions>` | – | The `filters` option with its defaults filled in, as `api.filters`. |
+| `TMDataGridFilterSurface` · `TMDataGridFilterSidebarSide` | Types | `"popup" \| "sidebar" \| "none"` · `"left" \| "right"` | – | The types of `filters.surface` and `filters.sidebarSide`. |
+| `TMDataGridFilterControlArgs.layout` | Type | `TMDataGridFilterControlLayout` | – | How much room a value control has, and whether it names itself. |
+| `TMDataGridFilterControlLayout` | Type | `"row" \| "stacked" \| "header"` | – | The type of `layout` on `TMDataGridFilterControlArgs`. `"header"` is the cell of the `inHeader` row. |
+| `filterValueShape` | Export | `(operator) => TMDataGridFilterValueShape` | – | Which shape an operator's value takes. |
+| `TMDataGridFilterValueShape` | Type | `"scalar" \| "set" \| "range"` | – | What `filterValueShape` returns. |
 | `TMDataGrid.FilterButton` | Component | – | – | Toolbar button opening the panel, with an active count. |
 | `TMDataGrid.FilterPills` | Component | `api`, `size`, `showClearAll`, `onPillClick`, Mantine `BoxProps` | – | Active filters as removable pills, renderable anywhere. Style props set on the wrapper. |
 | `TMDataGrid.Search` | Component | `placeholder`, `debounce` (`250`), `w` (`220`) | – | The debounced quick-search input. |
 | `openColumnFilter` | Export | `(api, columnId) => void` | – | Opens the panel on a column. |
 | `isFilterActive` | Export | `(value) => boolean` | – | Whether a filter value narrows anything. |
-| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<{ id, value }>` | – | The filters in the grid's own value shape that narrow anything, typed. |
+| `activeColumnFilters` | Export | `(columnFilters \| table) => Array<TMDataGridColumnFilter>` | – | The filters in the grid's own value shape that narrow anything, typed. |
+| `TMDataGridColumnFilter` | Type | `{ id, value }` | – | One entry of `columnFilters`, with `value` typed as `TMDataGridFilterValue`. |
 | `getOperatorsForType` | Export | `(type) => operators` | – | The operator list a type offers. |
 | `getColumnOperators` · `getColumnDefaultOperator` | Exports | `(column) => operators` · `(column) => operator` | – | One column's list after `meta.filter.operators`, and the operator a fresh filter on it opens on. |
 | `FILTER_OPERATOR_LABELS` | Export | record | – | The label shown for each operator. |

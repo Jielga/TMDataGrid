@@ -93,23 +93,9 @@ What the column **is** stays flat; what the filter panel and the edit engine do
 with it sits in their namespaces. `type` and `options` are read by both stages,
 which is why they are in neither.
 
-`meta.filter`:
-
-| Field | Type | Default | What it does |
-| --- | --- | --- | --- |
-| `operators` | `readonly TMDataGridFilterOperator[]` | The type's list | The operators this column offers, a subset of its type's. For a backend that answers only some. |
-| `defaultOperator` | `TMDataGridFilterOperator` | The type's default, else the first offered | The operator a fresh filter on this column starts with. |
-| `control` | `TMDataGridFilterControlComponent` | By `meta.type` | Replaces the value control in this column's filter row. Module scope. |
-
-`meta.edit`:
-
-| Field | Type | Default | What it does |
-| --- | --- | --- | --- |
-| `enabled` | `boolean \| ((row) => boolean)` | editable where a field maps | Whether this column's cells edit. |
-| `field` | `string` | The `accessorKey` | The data path an edit writes to. The only way an `accessorFn` column edits. |
-| `editor` | `TMDataGridEditorComponent` | By `meta.type` | Replaces the cell editor. Module scope. |
-| `validate` | `TMDataGridFieldValidate` | – | Field-level validation. A bare schema means `onChange`. |
-| `mapValue` | `TMDataGridEditValueMap` | – | Maps each value an editor writes, on every keystroke. |
+`meta.filter` holds `operators`, `defaultOperator` and `control`; `meta.edit`
+holds `enabled`, `field`, `editor`, `validate` and `mapValue`. Their fields are
+in [references/columns-api.md](references/columns-api.md).
 
 ```tsx
 meta: {
@@ -118,6 +104,14 @@ meta: {
   edit: { enabled: (row) => !row.original.locked },
 }
 ```
+
+The type of `meta` is `TMDataGridColumnMeta<TData>`. On a column declared with
+`createTMDataGridColumnHelper<TData>()`, the `row` that a `meta.options`
+function and a `meta.edit.enabled` function receive is
+`Row<TMDataGridFeatures, TData>`, so `row.original` needs no cast and no
+annotation. A column written without the helper keeps the untyped row,
+`Row<TMDataGridFeatures, TMDataGridRowData>`, where `row.original` is
+`Record<string, unknown>`.
 
 `enableOrdering` lives in `meta` because column ordering is the one feature
 TanStack defines no column option for. `meta.edit` only acts once `editing` is
@@ -140,6 +134,28 @@ columnHelper.accessor("department", {
 
 Dates travel as ISO `YYYY-MM-DD` strings and booleans as `"true"` / `"false"`,
 so the filter model stays plain JSON whatever the type.
+
+### meta.options
+
+`meta.options` is a list of `TMDataGridOption`s
+(`{ value, label?, color?, disabled?, group? }`) or bare strings, `"faceted"`
+for the distinct values in the data, or a function of `TMDataGridOptionsArgs`
+(`{ table, column, row? }`). `row` is set when a cell editor asks and absent for
+the filter panel:
+
+```tsx
+meta: {
+  type: "select",
+  options: ({ row }) => (row ? citiesFor(row.original.country) : allCities),
+}
+```
+
+`resolveColumnOptions({ table, column, row? })` normalises all three forms into
+`Array<TMDataGridOption>` for a custom control, and `optionsToComboboxData`
+turns that list into Mantine `Select` / `MultiSelect` data. A select column with
+no options still filters, on the faceted values.
+
+Source: `packages/tmdatagrid/docs/columns.md` (Options).
 
 ## Sizing
 
@@ -276,7 +292,7 @@ asks for it.
 
 They are structural: fixed width, no column menu, and they cannot be sorted,
 filtered, resized, re-pinned or moved. The checkbox lane anchors the left pinned
-region, so no column can be placed in front of it. `isControlColumn(column)`
+region, so no column can be placed in front of it. `isControlColumn(columnId)`
 identifies them.
 
 ## Common mistakes
@@ -466,28 +482,11 @@ columnHelper.accessor("pctOfTotal", { header: "Share" });
 
 Source: `packages/tmdatagrid/docs/columns.md` (Columns derived from the other rows).
 
-## Reference
+## References
 
-| Name | Kind | Type | Default | What it does |
-| --- | --- | --- | --- | --- |
-| `createTMDataGridColumnHelper` | Export | `<TData>() => helper` | – | The typed column helper. |
-| `minSize` / `maxSize` / `size` | Column options | `number` | `80` / – / – | Width bounds, and the fixed width once one applies. |
-| `enableSorting` · `enableColumnFilter` · `enableHiding` · `enablePinning` · `enableResizing` · `enableGrouping` | Column options | `boolean` | `true` | Per-column switches, each removing its interface. |
-| `enableColumnOrdering` | Option | `boolean` | `true` | Header dragging and the move menu items. Grid-defined. |
-| `enableMultiSort` · `maxMultiSortColCount` · `isMultiSortEvent` | Table options | – | Shift held | Multi-column sorting. |
-| `sortFn` | Column option | name or `(rowA, rowB, columnId) => number` | `"auto"` | The comparator for one column. Not v8's `sortingFn`. |
-| `initialState.columnOrder` · `.columnPinning` · `.columnVisibility` · `.columnSizing` | Table options | – | – | Layout at mount. Settings slices, persisted under `settingsKey`. |
-| `initialState.sorting` | Table option | `Array<{ id, desc }>` | `[]` | Sort at mount. A data slice, persisted under `dataKey`. |
-| `resetSettings` | Hook return | `() => void` | – | Clears visibility, order, pinning and widths. |
-| `moveColumn` | Export | `({ table, columnId, targetId, side }) => void` | – | Moves a column beside another. |
-| `moveColumnByStep` | Export | `({ table, columnId, direction }) => void` | – | Moves it one place. |
-| `getStepTargetColumn` | Export | `(args) => Column \| null` | – | What a step would swap with, or `null` at a region edge. |
-| `getColumnRegion` | Export | `(columnPinning, columnId) => "start" \| "center" \| "end"` | – | Which pinned region a column is in. |
-| `getColumnCapabilities(column, features).canReorder` | Export | `boolean` | – | Whether this column may move at all. |
-| `autosizeColumn` | Export | `({ table, columnId, container }) => void` | – | Fits a column to its mounted content. |
-| `getColumnLabel` · `getColumnType` · `getColumnDefaultOperator` · `isControlColumn` | Exports | – | – | What the built-in controls read off a column. |
-| `SELECT_COLUMN_ID` · `GROUP_COLUMN_ID` · `DETAILS_COLUMN_ID` · `EDIT_COLUMN_ID` · `ROW_NUMBER_COLUMN_ID` | Exports | ids | – | The generated lanes. |
-| `TMDataGrid.Menu.Columns` · `TMDataGrid.ColumnsPanel` | Components | `searchable` · Mantine `BoxProps` | – | The column chooser, as menu items and as plain controls. Style props set on the panel. |
+- [Columns API](references/columns-api.md) - every column option, column meta
+  field, export and type belonging to defining, sizing, hiding, pinning,
+  ordering and sorting columns.
 
 See also: the `filtering` skill for operators and filter controls, the `editing`
 skill for the editing meta fields, and the `grouping` skill for what grouping

@@ -28,7 +28,7 @@ the type.
 | Name | Argument | What it does |
 | --- | --- | --- |
 | `editing.onCommit` | `{ rowId, value, original, changes, source }` | Applies one row's change. Reject to keep the draft and show the error. |
-| `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. May return a `TMDataGridSaveDraftsResponse` naming the ids that failed; they stay in the draft store. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
+| `editing.onSaveDrafts` | `{ updated, created, deleted }` | `draft: true` only. One call for the whole draft store. May return a `TMDataGridSaveDraftsResponse` naming the ids that failed; they stay in the draft store. Each of its buckets is a `TMDataGridSaveOutcomes`: `boolean \| Record<string, boolean>`, where `false` keeps an entry's draft and an id the map does not name counts as saved. Without it, `saveDrafts` loops `editing.onCommit`, `editing.onRowAdd` and `editing.onRowDelete`. |
 | `editing.onRowAdd` | `{ tempId, value }` | Commits an entry row. Mint the real id here. |
 | `editing.onRowDelete` | `{ rowId, row }` | Deletes a row. Shows the trash; under `draft: true`, `onSaveDrafts` shows it too. |
 
@@ -63,7 +63,7 @@ path, which may be dotted.
 | `setCellValue` | `(rowId, columnId, value) => Promise<boolean>` | Writes one cell and commits the row, with no editor - toolbar actions and bulk fills. The row need not be mounted; a row inside a collapsed group takes the write. `value` is the stored value, so `meta.edit.mapValue` does not run and `meta.edit.validate` does. Under `draft: true` the row is committed into the draft store like any hand-made edit. `false` when the cell takes no edit, or when validation refused the value and left the row open with its errors. |
 | `setRowValues` | `(rowId, values) => Promise<boolean>` | `setCellValue` for several cells of one row in a single commit - one consumer call and one draft entry. Keys are column ids. All or nothing: if any named cell takes no edit, nothing is written and it resolves `false`. |
 | `addRow` | `(values?) => string` | Opens an entry row, returns its `tempId`. `values` overrides `editing.newRowDefaults` key by key for that row; with no argument the row is `newRowDefaults` alone. |
-| `addRows` | `(rows, options?) => Promise<TMDataGridAddRowsResult>` | Opens a batch in one write, each row seeded as `addRow` seeds. `{ commit: true }` submits each as it lands - valid rows commit, invalid ones stay open with their errors. Resolves `{ ok, committed, open }`; `ok` is `false` when a row stayed open. |
+| `addRows` | `(rows, options?: TMDataGridAddRowsOptions) => Promise<TMDataGridAddRowsResult>` | Opens a batch in one write, each row seeded as `addRow` seeds. `{ commit: true }` submits each as it lands - valid rows commit, invalid ones stay open with their errors. Resolves `{ ok, committed, open }`; `ok` is `false` when a row stayed open. |
 | `deleteRow` | `(rowId) => void` | `editing.onRowDelete`, or a deletion mark under `draft: true`. Idempotent: a second call leaves the row marked; `restoreRow` is the undo. |
 | `canEditCell` | `(row, column) => boolean` | The check the built-in controls use. Both halves: the column's and the row's. |
 | `canEditRow` | `(row) => boolean` | The pencil's gate. |
@@ -131,7 +131,9 @@ Types: `TMDataGridEditMode`, `TMDataGridEditApi`, `TMDataGridEditState`,
 `TMDataGridEditChange`, `TMDataGridEditorArgs`, `TMDataGridEditorComponent`,
 `TMDataGridEditField`, `TMDataGridEditRowProjection`, `TMDataGridFieldValidate`,
 `TMDataGridRowValidators`, `TMDataGridRowEditForm`, `TMDataGridRowAddArgs`,
-`TMDataGridRowDeleteArgs`, `TMDataGridEditingOptions`.
+`TMDataGridRowDeleteArgs`, `TMDataGridEditingOptions`,
+`TMDataGridSaveOutcomes`, `TMDataGridAddRowsOptions`,
+`TMDataGridEditValueMapArgs`, `TMDataGridTableValidateArgs`.
 
 ## The edit lane
 

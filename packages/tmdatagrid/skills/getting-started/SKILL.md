@@ -5,9 +5,11 @@ description: >
   Mantine. Covers useTMDataGrid, the TMDataGrid root, context, the component
   catalog (Table, Footer, Toolbar, Spacer, SummaryCount, Search,
   LoadingIndicator, DraftActions, FilterButton, Menu, FilterPanel, FilterPills,
-  ColumnsPanel), the size scale and the bounded-height layout requirement. Load
-  when adding a grid, choosing which parts to render, or when rows do not
-  appear.
+  ColumnsPanel) with their props types, the size scale, the bounded-height
+  layout requirement, and rendering rows without TMDataGrid.Table through
+  getDisplayedRows (a card view). Load when adding a grid, choosing which parts
+  to render, replacing the Table with a renderer of your own, or when rows do
+  not appear.
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
@@ -15,6 +17,8 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/getting-started.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/anatomy.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/components.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/card-view.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGrid.tsx'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/sizes.ts'
 ---
@@ -131,6 +135,7 @@ TanStack ships state and APIs for both but no `enable` option.
 | Configure the hook, or persist state | `options` |
 | Theme, size, compose the toolbar, translate | `appearance` |
 | Write tests against a grid | `testing` |
+| Upgrade code written against a 2.0 beta | `migrating-to-2` |
 
 ## Layout
 
@@ -156,7 +161,7 @@ flex column.
 | `TMDataGrid.Toolbar` | `children` | Flex row above the grid. |
 | `TMDataGrid.Spacer` | - | Pushes later toolbar items right. |
 | `TMDataGrid.SummaryCount` | `children` | Visible rows out of total. |
-| `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. |
+| `TMDataGrid.Search` | `placeholder`, `debounce` (default `250`), `w` (default `220`) | Quick search over every column, debounced into `globalFilter`. Renders nothing under `enableGlobalFilter: false`. Also exported as `TMDataGridSearch`. |
 | `TMDataGrid.LoadingIndicator` | - | Small spinner while `meta.loading` is `true` and rows stay on screen. |
 | `TMDataGrid.DraftActions` | `renderActions` | Save with the pending count, and Discard. Renders nothing while editing is off - see the `editing` skill. |
 | `TMDataGrid.FilterButton` | - | Toggles the filter surface, seeding a filter row on the first filterable column. Renders nothing if no column is filterable, or under `filters.surface: "none"`. |
@@ -164,6 +169,29 @@ flex column.
 | `TMDataGrid.FilterPanel` | `layout` (`"row"` \| `"stacked"`, default `"row"`) | Filter rows over "Add filter" / "Clear all", as a plain block. Rendered by `.Table` inside the popup and the sidebar; place it yourself under `filters.surface: "none"`. See the `filtering` skill. |
 | `TMDataGrid.ColumnsPanel` | - | The column chooser as plain controls, for a Popover or a Drawer. |
 | `TMDataGrid.FilterPills` | `api`, `size` (default `"sm"`), `showClearAll` (default `true`), `onPillClick(columnId)`, `className` | One pill per active filter, ✕ to clear it. Takes the api as a prop, so it can be rendered outside the grid. Also exported as `TMDataGridFilterPills`. |
+
+Each component's props type is exported, for wrapping a part in a component of
+your own:
+
+| Component | Props type |
+| --- | --- |
+| `TMDataGrid` | `TMDataGridProps<TData>`: the fields of `TMDataGridApi<TData>`, plus `children`, `size`, `className`, `style`, `id` and `data-testid` |
+| `TMDataGrid.Table` | `TMDataGridTableProps<TData>` |
+| `TMDataGrid.Toolbar` | `TMDataGridToolbarProps`: `children`, `withBottomBorder` (default `false`), Mantine `BoxProps` |
+| `TMDataGrid.Search` · `TMDataGridSearch` | `TMDataGridSearchProps` |
+| `TMDataGrid.Footer` | `TMDataGridFooterProps` |
+| `TMDataGrid.Menu` | `TMDataGridMenuProps`: `children`, `icon`, `label`, Mantine `MenuProps` |
+| `TMDataGrid.Menu.Columns` | `TMDataGridMenuColumnsProps`: `searchable` |
+| `TMDataGrid.Menu.Export` · `.ExportSelected` | `TMDataGridMenuExportProps`: per-item `exportOptions` overrides, `columns` (which also takes `"custom"`), `label` |
+| `TMDataGrid.ColumnsPanel` | `TMDataGridColumnsPanelProps`: `searchable`, Mantine `BoxProps` |
+| `TMDataGrid.FilterPanel` | `TMDataGridFilterPanelProps`: `layout`, Mantine `BoxProps` |
+| `TMDataGrid.FilterPills` · `TMDataGridFilterPills` | `TMDataGridFilterPillsProps<TData>` |
+| `TMDataGrid.DraftActions` · `TMDataGridDraftActions` | `TMDataGridDraftActionsProps`: `renderActions` |
+
+`renderActions` on `TMDataGrid.DraftActions` receives
+`TMDataGridDraftActionsSlotArgs`, `{ state, actions, Controls }`, typed
+`TMDataGridDraftActionsState`, `TMDataGridDraftActionsActions` and
+`TMDataGridDraftActionsControls`. The fields are in the `editing` skill.
 
 Pass the row type so `onRowClick` stays typed:
 
@@ -248,6 +276,76 @@ padding, and selects the size of the Mantine controls the grid renders.
 The virtualizer needs row height as a number, so it cannot come from CSS alone.
 `SIZE_ROW_HEIGHT` is the exported source of these values and the stylesheet
 mirrors them. Set `meta.rowHeight` for a height outside the scale.
+
+## Render rows without TMDataGrid.Table
+
+To show the rows as something other than a table - cards, a list - keep
+`useTMDataGrid` and `<TMDataGrid>`, and replace `TMDataGrid.Table` with a
+renderer of your own. `TMDataGrid` renders no rows itself, and every other part
+works without the Table, so the toolbar stays. Search, filters, sorting, column
+visibility and row selection write the same table state the grid would.
+
+```tsx
+const grid = useTMDataGrid({
+  data,
+  columns,
+  getRowId: (row) => String(row.id),
+  // The popup and the sidebar belong to TMDataGrid.Table.
+  filters: { surface: "none" },
+});
+
+<TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
+  <TMDataGrid.Toolbar>
+    <TMDataGrid.Search />
+    <TMDataGrid.SummaryCount />
+    <TMDataGrid.Menu>
+      <TMDataGrid.Menu.Columns />
+    </TMDataGrid.Menu>
+  </TMDataGrid.Toolbar>
+  <TMDataGrid.FilterPanel layout="stacked" />
+  <CardList table={grid.table} features={grid.features} />
+</TMDataGrid>;
+```
+
+Read the rows with `getDisplayedRows(table, features)`: the rows the Table
+would render, in render order - filtered, sorted, the current page when paging
+is active, pinned rows left out. Call it inside a selector with a shallow
+compare:
+
+```tsx
+import { useSelector } from "@tanstack/react-store";
+import { shallow } from "@tanstack/store";
+import { getDisplayedRows } from "@jielga/tmdatagrid";
+
+const rows = useSelector(table.store, () => getDisplayedRows(table, features), {
+  compare: shallow,
+});
+```
+
+The table identity never changes, so the React Compiler caches a bare
+`getDisplayedRows(table, features)` call and the list stops following filters
+and sorting. The shallow compare re-renders the list only when the rows change.
+Read `row.getVisibleCells()` the same way, inside
+`useSelector(table.store, () => row.getVisibleCells())`, and skip the generated
+columns with `isGeneratedColumn(cell.column.id)` - the checkbox column is among
+the visible cells while row selection is on. Render each value through the
+column's own renderer: `flexRender(cell.column.columnDef.cell, cell.getContext())`.
+
+The following belong to `TMDataGrid.Table` and are not available without it:
+
+- the header, with click-to-sort, resizing, dragging and the column menus -
+  sort from a control of your own with `table.setSorting`
+- the filter popup and sidebar - set `filters: { surface: "none" }` and place
+  `TMDataGrid.FilterPanel` yourself
+- row details, row pinning, cell selection and editing in cells
+- `scrollToRow`, which returns `false` while no Table is mounted
+
+Virtualize the list yourself, for example with `useVirtualizer` from
+`@tanstack/react-virtual`.
+
+Source: `packages/tmdatagrid/docs/card-view.md`,
+`packages/tmdatagrid/docs/anatomy.md` (Which rows it renders), and the demo
+`apps/docs/src/examples/demos/recipes/CardView.tsx`.
 
 ## Helpers
 
