@@ -27,7 +27,7 @@ export const SEARCH_ALIASES: ReadonlyArray<SearchAlias> = [
   { terms: ["column width", "resize", "resizing", "resizable"], pageId: "column-layout", hash: "sizing" },
   { terms: ["master detail", "expandable row", "sub panel"], pageId: "row-details" },
   { terms: ["conditional formatting", "cell class rules", "colour by value", "color by value"], pageId: "row-styling" },
-  { terms: ["batch edit", "edit buffer", "unsaved changes", "pending changes"], pageId: "editing", hash: "the-draft-store" },
+  { terms: ["batch edit", "edit buffer", "unsaved changes", "pending changes"], pageId: "draft-store" },
   { terms: ["read only", "readonly", "non editable", "disable editing"], pageId: "columns", hash: "metaedit" },
   { terms: ["fill down", "fill handle", "paste"], pageId: "cell-selection", hash: "keys-and-keyboard-shortcuts" },
   { terms: ["autosize", "auto fit", "best fit"], pageId: "column-layout", hash: "autosizing" },

@@ -28,7 +28,7 @@ else notify(`${kept.length + reopened.length} rows need attention`);
 
 Each list holds row ids, and temp ids for new rows.
 `ok` is `true` when `open` is empty, or, for `saveDrafts()`, when `kept` and `reopened` are both empty.
-See [Saving the store](/docs/editing#saving-the-store) for what each list means.
+See [Saving the store](/docs/draft-store#saving-the-store) for what each list means.
 
 The `actions.save` and `actions.commitAll` that `TMDataGrid.DraftActions` passes to a custom slot resolve the same objects.
 

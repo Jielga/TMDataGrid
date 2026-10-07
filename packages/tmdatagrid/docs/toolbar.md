@@ -56,7 +56,7 @@ It defaults to `false`.
 | `TMDataGrid.SummaryCount` | Visible rows out of total, or the count alone where there is no total to compare it against |
 | `TMDataGrid.LoadingIndicator` | A spinner while `meta.loading` |
 | `TMDataGrid.Spacer` | Pushes what follows to the right |
-| `TMDataGridDraftActions` | Save and Discard for the [draft store](/docs/editing#the-draft-store) |
+| `TMDataGridDraftActions` | Save and Discard for the [draft store](/docs/draft-store) |
 
 Each renders nothing when its feature is off, so a read-only grid needs no
 conditionals in the toolbar: `FilterButton` under `enableColumnFilters: false`

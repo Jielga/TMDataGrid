@@ -62,7 +62,7 @@ out has no scrolling.
 
 While the draft store is running, `TMDataGrid.DraftActions` hands its
 `renderActions` slot an `actions.scrollToFirstOpenRow(align?)` that goes to the
-first row [left open](/docs/editing#the-draft-store), without your having to
+first row [left open](/docs/draft-store), without your having to
 track the ids.
 
 ## Edge callbacks

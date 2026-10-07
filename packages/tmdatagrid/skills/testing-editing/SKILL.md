@@ -16,6 +16,7 @@ metadata:
 sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/draft-store.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridEntryRows.tsx'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridEditColumn.tsx'
 ---

@@ -40,7 +40,7 @@ Every component below reads the grid from context and must be rendered inside
 | `TMDataGrid.Menu` · `.ColumnsPanel`             | The burger menu, and the column chooser                                      | [Grid menu](/docs/menu)                               |
 | `TMDataGrid.Spacer`                             | Pushes following toolbar items right                                         | [Toolbar](/docs/toolbar)                              |
 | `TMDataGrid.LoadingIndicator` · `.SummaryCount` | Fetch spinner, and the row count                                             | [Loading and empty states](/docs/loading-and-empty)   |
-| `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/editing#the-draft-store)                |
+| `TMDataGrid.DraftActions`                        | Save and Discard for pending edits. Also exported as `TMDataGridDraftActions` | [Editing](/docs/draft-store)                |
 
 `FilterPills` is the exception: it takes the grid as an `api` prop and can be
 rendered outside `TMDataGrid`, since an active-filter strip often sits above

@@ -5,7 +5,7 @@ import { expect, test } from "../support/test";
 test("an added row is a draft until Save", async ({ page }) => {
   // The Add row button renders in the demo, outside the grid.
   const demo = await openDemo(page, {
-    route: "/docs/editing",
+    route: "/docs/draft-store",
     file: "editing/DraftEditing.tsx",
   });
   const grid = new DataGrid(demo.locator("[data-dg-root]"));
@@ -40,7 +40,7 @@ test("an added row is a draft until Save", async ({ page }) => {
 
 test("a changed row is marked until Save", async ({ page }) => {
   const demo = await openDemo(page, {
-    route: "/docs/editing",
+    route: "/docs/draft-store",
     file: "editing/DraftEditing.tsx",
   });
   const grid = new DataGrid(demo.locator("[data-dg-root]"));
@@ -65,7 +65,7 @@ test("a deleted row is marked until Save, and Restore undoes it", async ({
   page,
 }) => {
   const demo = await openDemo(page, {
-    route: "/docs/editing",
+    route: "/docs/draft-store",
     file: "editing/DraftEditing.tsx",
   });
   const grid = new DataGrid(demo.locator("[data-dg-root]"));

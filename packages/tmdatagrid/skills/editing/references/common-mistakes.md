@@ -241,7 +241,7 @@ Under `draft: true` it only toggles a deletion mark, so nothing is removed until
 no such callback, in the per-row `editing.onRowDelete` loop. A confirmation
 placed inside `editing.onRowDelete` therefore guards the save, not the trash.
 
-Source: `packages/tmdatagrid/docs/editing.md` (Adding and deleting rows).
+Source: `packages/tmdatagrid/docs/adding-rows.md`.
 
 ## MEDIUM A custom editor that binds no invalid state
 
