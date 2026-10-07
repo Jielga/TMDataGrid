@@ -57,6 +57,7 @@ export type TMDataGridProps<TData extends RowData> = TMDataGridApi<TData> & {
 };
 
 // Documented on the `TMDataGrid` export below.
+// oxlint-disable-next-line react/only-export-components -- exported as the Object.assign compound `TMDataGrid`, which the rule cannot see as a component
 function TMDataGridRoot<TData extends RowData>({
   table,
   ui,

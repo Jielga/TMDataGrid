@@ -3,7 +3,7 @@ import {
   useBodyControlTabIndex,
   useTMDataGridContext,
 } from "../TMDataGridContext";
-import type { ColumnDef, Row, RowData } from "@tanstack/react-table";
+import type { Row, RowData } from "@tanstack/react-table";
 import { useSelector } from "@tanstack/react-store";
 import classes from "./TMDataGridDetailsColumn.module.css";
 import { ChevronRightIcon } from "./icons";
@@ -20,7 +20,7 @@ export const DETAILS_COLUMN_ID = "__details__";
  * expand, so the React Compiler would cache the call along with it and the
  * chevron would never turn. Same reason the select checkbox subscribes.
  */
-function DetailsCell<TData extends RowData>({
+export function DetailsCell<TData extends RowData>({
   row,
 }: {
   row: Row<TMDataGridFeatures, TData>;
@@ -67,7 +67,7 @@ function DetailsCell<TData extends RowData>({
  * so it would unfold every group as well. Only the data rows are touched here;
  * whatever the tree was showing, it goes on showing. See resolveExpandAll.
  */
-function DetailsHeader<TData extends RowData>({
+export function DetailsHeader<TData extends RowData>({
   table,
 }: {
   table: TMDataGridTable<TData>;
@@ -111,50 +111,4 @@ function DetailsHeader<TData extends RowData>({
       </span>
     </UnstyledButton>
   );
-}
-
-/**
- * The generated details lane, prepended whenever `renderDetails` is set.
- *
- * Structural, like the checkbox and tree columns: fixed width, pinned to the
- * left after both of them, not hideable, not movable and not resizable. Moving
- * or hiding the toggle would leave rows with panels that cannot be opened.
- *
- * Last of the three because it acts on a single record.
- *
- * A second toggle elsewhere is supported: `row.toggleExpanded()` is the entire
- * interface, and this lane is only the control the grid ships.
- */
-export function createDetailsColumn<TData extends RowData>(
-  label = "Details",
-): ColumnDef<TMDataGridFeatures, TData, unknown> {
-  return {
-    id: DETAILS_COLUMN_ID,
-    meta: {
-      label,
-      align: "center",
-      // Structurally the last of the generated lanes.
-      enableOrdering: false,
-    },
-    // A system lane: as wide as the control it holds and no wider. Fixed at
-    // every scale - the control does not grow with the font size, so neither
-    // should its track.
-    size: 36,
-    minSize: 36,
-    maxSize: 36,
-    enableResizing: false,
-    enableSorting: false,
-    enableColumnFilter: false,
-    enableGlobalFilter: false,
-    // Its visibility is not the user's to set: hiding it would strand every
-    // panel behind a control that is no longer there.
-    enableHiding: false,
-    // Structurally pinned to the left; users shouldn't be able to move it.
-    enablePinning: false,
-    header: ({ table }) => <DetailsHeader table={table} />,
-    cell: ({ row }) => <DetailsCell row={row} />,
-    // Deliberately no `aggregatedCell`: on a group row every cell outside the
-    // grouped column counts as aggregated, and blank is the right answer here -
-    // groups expand into their rows, not into a panel.
-  };
 }

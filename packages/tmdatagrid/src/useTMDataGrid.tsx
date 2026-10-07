@@ -134,22 +134,16 @@ import {
   type TMDataGridExportSettings,
   type TMDataGridExportValueGetter,
 } from "./core/export";
-import {
-  createSelectColumn,
-  SELECT_COLUMN_ID,
-} from "./components/TMDataGridSelectColumn";
-import {
-  createGroupColumn,
-  GROUP_COLUMN_ID,
-} from "./components/TMDataGridGroupColumn";
+import { SELECT_COLUMN_ID } from "./components/TMDataGridSelectColumn";
+import { GROUP_COLUMN_ID } from "./components/TMDataGridGroupColumn";
+import { DETAILS_COLUMN_ID } from "./components/TMDataGridDetailsColumn";
+import { EDIT_COLUMN_ID } from "./components/TMDataGridEditColumn";
 import {
   createDetailsColumn,
-  DETAILS_COLUMN_ID,
-} from "./components/TMDataGridDetailsColumn";
-import {
   createEditColumn,
-  EDIT_COLUMN_ID,
-} from "./components/TMDataGridEditColumn";
+  createGroupColumn,
+  createSelectColumn,
+} from "./components/generatedColumns";
 import {
   createRowNumberColumn,
   ROW_NUMBER_COLUMN_ID,

@@ -25,6 +25,7 @@ sources:
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/loading-and-empty.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/export.md'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridFooter.tsx'
+  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/pagination.ts'
   - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/export.ts'
 ---
 
