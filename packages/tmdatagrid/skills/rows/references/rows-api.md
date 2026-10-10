@@ -81,8 +81,9 @@ Row data attributes:
 | --- | --- | --- | --- | --- |
 | `renderDetails` | Option | `TMDataGridDetailsRenderer`: `(args: TMDataGridDetailsArgs) => ReactNode` | – | Contents of the panel. Setting it adds the lane. `TMDataGridDetailsArgs` is `{ row, table }`. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
+| `detailsColumnPosition` | Option | `"left" \| "right"` | `"left"` | Which edge the lane is pinned to. `"right"` places it after every column, inside the edit lane. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A `data` slice, so it persists. |
-| `autoResetExpanded` | Table option | `boolean` | `true` | `false` keeps panels open when `data` changes. |
+| `autoResetExpanded` | Table option | `boolean` | `false` | `true` closes the panels when the `data` array changes. Off by default, so a draft commit keeps them open. |
 | `DETAILS_COLUMN_ID` | Export | `"__details__"` | – | Id of the generated chevron column. |
 | `resolveExpandAll` | Export | `(args) => ExpandedState` | – | Expand or collapse every group, or every panel, but not both. |
 | `areAllRowsExpanded` | Export | `(args) => boolean` | – | Whether every row of one target is open. |
@@ -119,4 +120,5 @@ table.setExpanded(
 | `ROW_NUMBER_COLUMN_ID` | Export | `"__rowNumber__"` | – | Id of the generated number gutter. |
 
 Lane order, left to right: row number, checkbox, tree, details, your columns,
-edit.
+edit. Under `detailsColumnPosition: "right"`, details sits between your columns
+and edit.

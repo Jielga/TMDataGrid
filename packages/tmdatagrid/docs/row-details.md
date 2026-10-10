@@ -26,13 +26,21 @@ scrollbar accurate for rows that open off screen.
 
 ## The details lane
 
-Setting `renderDetails` prepends a generated chevron column,
-`DETAILS_COLUMN_ID` (`"__details__"`), pinned to the left after the checkbox
-and tree columns - `[checkbox, tree, details, …]`.
+Setting `renderDetails` adds a generated chevron column, `DETAILS_COLUMN_ID`
+(`"__details__"`). By default it is pinned to the left after the checkbox and
+tree columns - `[checkbox, tree, details, …]`. To pin it to the right edge
+instead, after every column of yours and inside the edit lane, set
+`detailsColumnPosition: "right"`:
 
-It is a system lane: as wide as the chevron it holds, with no resize handle and
-no column menu, and it cannot be hidden, moved, resized or unpinned. Its header
-is a control rather than a title, expanding and collapsing every panel at once.
+```demo
+file: rows/DetailsPanelRight.tsx
+hint: The chevron sits at the end of each row, and the header control at the end of the header.
+```
+
+On either edge it is a system lane: as wide as the chevron it holds, with no
+resize handle and no column menu, and it cannot be hidden, moved, resized or
+unpinned. Its header is a control rather than a title, expanding and collapsing
+every panel at once.
 
 Group rows get no chevron: they expand into their children from the tree lane.
 
@@ -106,6 +114,7 @@ Group rows have no panel. Expanding one opens its children.
 | `renderDetails` | Option | `({ row, table }) => ReactNode` | – | Contents of the panel. Setting it adds the lane. |
 | `TMDataGridDetailsArgs` | Type | `{ row, table }` | – | What `renderDetails` receives. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
+| `detailsColumnPosition` | Option | `"left" \| "right"` | `"left"` | Which edge the lane is pinned to. `"right"` places it after every column, inside the edit lane. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A data slice, so it persists. |
 | `autoResetExpanded` | Table option | `boolean` | `false` | `true` closes the panels when the `data` array changes. Off by default, so a draft commit keeps them open. |
 | `DETAILS_COLUMN_ID` | Export | `"__details__"` | – | Id of the generated chevron column. |

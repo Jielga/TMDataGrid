@@ -9,7 +9,8 @@ description: >
   onCellDoubleClick / onCellContextMenu, the renderRowContextMenu slot with its
   internalItems handback, renderColumnMenuItems and rowContextMenuProps, per-row
   styling with rowStyle, rowClassName, striped and the --row-bg rule, the row
-  details panel through renderDetails and DETAILS_COLUMN_ID, row pinning with
+  details panel through renderDetails, detailsColumnPosition and
+  DETAILS_COLUMN_ID, row pinning with
   enableRowPinning and row.pin, and the row-number gutter through
   enableRowNumbers. Load when selecting rows, reacting to a click, opening a
   detail panel, colouring rows by their data, pinning rows to an edge, or
@@ -235,8 +236,9 @@ const grid = useTMDataGrid({
 Each panel is measured, so heights need not be uniform.
 `renderDetailsEstHeight` (default `160`) is what the virtualizer assumes for one
 it has not measured yet. A generated chevron column, `DETAILS_COLUMN_ID`, is
-prepended and pinned left after the checkbox and tree lanes; it cannot be
-hidden, moved, resized or unpinned, and its header opens and closes every panel.
+pinned left after the checkbox and tree lanes, or right, inside the edit lane,
+under `detailsColumnPosition: "right"`; it cannot be hidden, moved, resized or
+unpinned, and its header opens and closes every panel.
 
 Which rows are open is TanStack's own `expanded` state, so anything can open
 one - `row.toggleExpanded()` from a menu item, `initialState.expanded`,
