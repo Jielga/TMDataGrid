@@ -46,6 +46,7 @@ rather than forwarded to TanStack.
 | `enableMatchHighlighting` | `boolean` | `false` | Cells mark the matched text while a contains-family filter or the quick search is active. Defined by the grid, see [Quick search](/docs/quick-search#match-highlighting). |
 | `renderDetails` | `({ row, table }) => ReactNode` | – | Panel rendered under an expanded row, spanning every column. Setting it turns row details on and adds the pinned chevron lane. Defined by the grid, see [Row details](/docs/row-details). |
 | `renderDetailsEstHeight` | `number` | `160` | What the virtualizer assumes for a panel it has not measured yet. Panels are measured once mounted, so an approximation is enough. |
+| `detailsColumnPosition` | `"left" \| "right"` | `"left"` | Which edge the details lane is pinned to. `"right"` places it after every column, inside the edit lane. Defined by the grid, see [Row details](/docs/row-details). |
 | `cellSelection` | `"none" \| "single" \| "range"` | `"none"` | Cell cursor and, under `"range"`, a selectable rectangle with Ctrl+C and CSV export. Defined by the grid, see [Cell selection](/docs/cell-selection). |
 | `onFocusedCellChange` | `(cell: TMDataGridCellPosition \| null) => void` | – | Called whenever the focused cell moves, by key, click or `setFocusedCell`. |
 | `overscan` | `number` | `6` | Rows the virtualizer keeps mounted above and below the viewport. Raise it if fast scrolling flashes blank rows, lower it when rows are expensive to render. |
@@ -63,7 +64,8 @@ rather than forwarded to TanStack.
 | Slice | Default |
 | --- | --- |
 | `pagination` | `{ pageIndex: 0, pageSize: 25 }`. Inert until pagination is enabled |
-| `columnPinning.start` | The checkbox, tree and details columns, followed by any columns you provide |
+| `columnPinning.start` | The row number, checkbox, tree and details columns, followed by any columns you provide. The details column moves to `end` under `detailsColumnPosition: "right"` |
+| `columnPinning.end` | Any columns you provide, then the details column under `detailsColumnPosition: "right"`, then the edit column |
 | `globalFilterFn` | `"tmDataGridFuzzy"`, the fuzzy matcher behind `quickSearchMode`. `"includesString"` under `quickSearchMode: "contains"` |
 
 ### Controlled state
@@ -359,3 +361,4 @@ to off; ordering, like the options around it, defaults to on.
 | `enableMatchHighlighting: true` | Table | Opt-in: cells mark the matched text while a contains-family filter or the quick search is active. See [Quick search](/docs/quick-search#match-highlighting) |
 | `enableGrouping: false` | Table, column | Group by and Ungroup menu items. See [Grouping](/docs/grouping) |
 | `renderDetails` | Table | Opt-in: adds the details lane, and an expanded row opens a panel underneath it. See [Row details](/docs/row-details) |
+| `detailsColumnPosition: "right"` | Table | The details lane on the right edge, inside the edit lane, instead of the left. See [Row details](/docs/row-details) |

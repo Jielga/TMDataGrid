@@ -280,14 +280,15 @@ browser's own menu comes up there instead.
 
 The grid prepends and appends lanes of its own, in this order: row number,
 checkbox, tree, details, your columns, edit. Each appears only when its feature
-asks for it.
+asks for it. Under `detailsColumnPosition: "right"`, details sits between your
+columns and edit.
 
 | Lane | Id | Appears when |
 | --- | --- | --- |
 | Row number | `ROW_NUMBER_COLUMN_ID` | `enableRowNumbers: true` |
 | Checkbox | `SELECT_COLUMN_ID` | Selection is on and the mode has checkboxes |
 | Tree | `GROUP_COLUMN_ID` | A column is grouped |
-| Details | `DETAILS_COLUMN_ID` | `renderDetails` is set |
+| Details | `DETAILS_COLUMN_ID` | `renderDetails` is set; on the left by default, on the right under `detailsColumnPosition: "right"` |
 | Edit | `EDIT_COLUMN_ID` | Row mode, `editing.draft`, or `editing.onRowDelete` |
 
 They are structural: fixed width, no column menu, and they cannot be sorted,

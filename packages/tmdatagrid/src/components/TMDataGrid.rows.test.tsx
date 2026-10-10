@@ -25,6 +25,7 @@ import {
 } from "../../test/gridHarness";
 import { getColumnCapabilities } from "../core/capabilities";
 import { DETAILS_COLUMN_ID } from "./TMDataGridDetailsColumn";
+import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { TMDataGrid } from "./TMDataGrid";
@@ -674,6 +675,25 @@ describe("row details", () => {
       canResize: false,
       canSort: false,
     });
+  });
+
+  it("pins the lane to the right edge, inside the edit lane, when asked", () => {
+    const api = renderGrid({
+      renderDetails,
+      detailsColumnPosition: "right",
+      editing: { mode: "row" },
+      // A snapshot saved while the lane was on the left pins nothing there now.
+      initialState: { columnPinning: { start: [DETAILS_COLUMN_ID], end: [] } },
+    }).result.current;
+
+    expect(api.table.store.state.columnPinning).toEqual({
+      start: [SELECT_COLUMN_ID, GROUP_COLUMN_ID],
+      end: [DETAILS_COLUMN_ID, EDIT_COLUMN_ID],
+    });
+    expect(visibleColumnIds(api).slice(-2)).toEqual([
+      DETAILS_COLUMN_ID,
+      EDIT_COLUMN_ID,
+    ]);
   });
 
   it("opens the panel inside the expanded row, and only that one", async () => {

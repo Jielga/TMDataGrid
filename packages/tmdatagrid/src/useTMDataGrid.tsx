@@ -12,6 +12,7 @@ import {
   columnGroupingFeature,
   columnOrderingFeature,
   columnPinningFeature,
+  type ColumnPinningState,
   columnResizingFeature,
   columnSizingFeature,
   columnVisibilityFeature,
@@ -77,7 +78,11 @@ import {
   type TMDataGridColumnType,
   tmDataGridFilterFn,
 } from "./core/filterOperators";
-import { getColumnDefaultOperator, isControlColumn } from "./core/columnUtils";
+import {
+  getColumnDefaultOperator,
+  isControlColumn,
+  isGeneratedColumn,
+} from "./core/columnUtils";
 import type { TMDataGridColumnFilterOptions } from "./core/filterControls";
 import {
   resolveFilterOptions,
@@ -1051,6 +1056,16 @@ export type UseTMDataGridOptions<TData extends RowData> = Omit<
    */
   renderDetailsEstHeight?: number;
   /**
+   * Which edge the details lane sits on. Defaults to `"left"`.
+   *
+   * `"left"` pins the chevron after the row number, checkbox and tree lanes,
+   * before every column of yours. `"right"` pins it after every column of
+   * yours, inside the edit lane, so the chevron closes the row the way an
+   * accordion's does. On either edge it stays a structural lane: the user
+   * cannot move, hide or unpin it.
+   */
+  detailsColumnPosition?: "left" | "right";
+  /**
    * Rows the virtualizer keeps mounted above and below the viewport. Defaults
    * to 6.
    *
@@ -1149,6 +1164,7 @@ export function useTMDataGrid<TData extends RowData>({
   editing,
   renderDetails,
   renderDetailsEstHeight = DEFAULT_DETAILS_EST_HEIGHT,
+  detailsColumnPosition = "left",
   overscan = DEFAULT_OVERSCAN,
   ...options
 }: UseTMDataGridOptions<TData>): TMDataGridApi<TData> {
@@ -1250,6 +1266,35 @@ export function useTMDataGrid<TData extends RowData>({
   // rest hold two - it gets the wider track.
   const editWideLane = editDraft;
 
+  // The generated lanes are structurally pinned, outermost first on each edge,
+  // and re-applied on top of anything restored: a snapshot cannot unpin one,
+  // and a snapshot taken before `detailsColumnPosition` changed cannot pin the
+  // details lane to the edge it has since left.
+  const structuralPinning = (
+    restored: Partial<ColumnPinningState> | undefined,
+  ): ColumnPinningState => {
+    const own = (ids: string[] | undefined) =>
+      (ids ?? []).filter((id) => !isGeneratedColumn(id));
+    const lane = (enabled: boolean, id: string) =>
+      enabled && pinningEnabled ? [id] : [];
+    const detailsOn = (edge: "left" | "right") =>
+      detailsColumnEnabled && detailsColumnPosition === edge;
+    return {
+      start: [
+        ...lane(rowNumbersEnabled, ROW_NUMBER_COLUMN_ID),
+        ...lane(selectColumnEnabled, SELECT_COLUMN_ID),
+        ...lane(groupColumnEnabled, GROUP_COLUMN_ID),
+        ...lane(detailsOn("left"), DETAILS_COLUMN_ID),
+        ...own(restored?.start),
+      ],
+      end: [
+        ...own(restored?.end),
+        ...lane(detailsOn("right"), DETAILS_COLUMN_ID),
+        ...lane(editColumnEnabled, EDIT_COLUMN_ID),
+      ],
+    };
+  };
+
   const columns = useMemo(() => {
     const base = withTMDataGridDefaults<TData>(
       options.columns as ReadonlyArray<TMDataGridColumnDef<TData>>,
@@ -1262,8 +1307,12 @@ export function useTMDataGrid<TData extends RowData>({
     //
     // The order is the order they are pinned in, and it follows what each one
     // is about: tick a row, find it in the tree the user grouped it into, then
-    // open it. The details chevron sits last because it acts on the record the
-    // lanes to its left have narrowed down to.
+    // open it. The details chevron sits innermost on whichever edge it was
+    // given - last of the left lanes, or first of the right ones - because it
+    // acts on the record the lanes outside it have narrowed down to.
+    const detailsColumn = detailsColumnEnabled
+      ? [createDetailsColumn<TData>(detailsColumnLabel)]
+      : [];
     return [
       // The gutter sits outside everything, the way a spreadsheet's does.
       ...(rowNumbersEnabled
@@ -1273,10 +1322,9 @@ export function useTMDataGrid<TData extends RowData>({
         ? [createSelectColumn<TData>(selectColumnLabel)]
         : []),
       ...(groupColumnEnabled ? [createGroupColumn<TData>(groupColumnLabel)] : []),
-      ...(detailsColumnEnabled
-        ? [createDetailsColumn<TData>(detailsColumnLabel)]
-        : []),
+      ...(detailsColumnPosition === "left" ? detailsColumn : []),
       ...base,
+      ...(detailsColumnPosition === "right" ? detailsColumn : []),
       // Last and pinned right - the row's Save belongs at the end of the row.
       ...(editColumnEnabled
         ? [createEditColumn<TData>(editColumnLabel, editWideLane)]
@@ -1287,6 +1335,7 @@ export function useTMDataGrid<TData extends RowData>({
     rowNumbersEnabled,
     selectColumnEnabled,
     detailsColumnEnabled,
+    detailsColumnPosition,
     groupColumnEnabled,
     editColumnEnabled,
     editWideLane,
@@ -1619,37 +1668,14 @@ export function useTMDataGrid<TData extends RowData>({
           ? { [GROUP_COLUMN_ID]: initialGrouping.length > 0 }
           : {}),
       },
-      columnPinning: {
-        // The generated columns are structurally pinned, so they are re-applied
-        // on top of anything restored from storage.
-        start: [
-          ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
-          ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
-          ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
-          ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
-          ...(
-            persistedState.columnPinning?.start ??
-            options.initialState?.columnPinning?.start ??
-            []
-          ).filter(
-            (id) =>
-              id !== ROW_NUMBER_COLUMN_ID &&
-              id !== SELECT_COLUMN_ID &&
-              id !== DETAILS_COLUMN_ID &&
-              id !== GROUP_COLUMN_ID,
-          ),
-        ],
-        // The edit lane mirrors the generated columns on the left: structurally
-        // pinned, outermost, re-applied over anything restored.
-        end: [
-          ...(
-            persistedState.columnPinning?.end ??
-            options.initialState?.columnPinning?.end ??
-            []
-          ).filter((id) => id !== EDIT_COLUMN_ID),
-          ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),
-        ],
-      },
+      columnPinning: structuralPinning({
+        start:
+          persistedState.columnPinning?.start ??
+          options.initialState?.columnPinning?.start,
+        end:
+          persistedState.columnPinning?.end ??
+          options.initialState?.columnPinning?.end,
+      }),
       pagination: {
         pageIndex: 0,
         pageSize: 25,
@@ -1964,27 +1990,7 @@ export function useTMDataGrid<TData extends RowData>({
     });
     table.setColumnSizing({ ...initial?.columnSizing });
     table.setColumnOrder([...(initial?.columnOrder ?? [])]);
-    table.setColumnPinning({
-      start: [
-        ...(rowNumbersEnabled && pinningEnabled ? [ROW_NUMBER_COLUMN_ID] : []),
-        ...(selectColumnEnabled && pinningEnabled ? [SELECT_COLUMN_ID] : []),
-        ...(groupColumnEnabled && pinningEnabled ? [GROUP_COLUMN_ID] : []),
-        ...(detailsColumnEnabled && pinningEnabled ? [DETAILS_COLUMN_ID] : []),
-        ...(initial?.columnPinning?.start ?? []).filter(
-          (id) =>
-            id !== ROW_NUMBER_COLUMN_ID &&
-            id !== SELECT_COLUMN_ID &&
-            id !== DETAILS_COLUMN_ID &&
-            id !== GROUP_COLUMN_ID,
-        ),
-      ],
-      end: [
-        ...(initial?.columnPinning?.end ?? []).filter(
-          (id) => id !== EDIT_COLUMN_ID,
-        ),
-        ...(editColumnEnabled && pinningEnabled ? [EDIT_COLUMN_ID] : []),
-      ],
-    });
+    table.setColumnPinning(structuralPinning(initial?.columnPinning));
   };
   const resetSettings = useCallback(() => resetSettingsRef.current(), []);
 

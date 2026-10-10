@@ -100,13 +100,15 @@ export function createGroupColumn<TData extends RowData>(
 }
 
 /**
- * The generated details lane, prepended whenever `renderDetails` is set.
+ * The generated details lane, added whenever `renderDetails` is set.
  *
  * Structural, like the checkbox and tree columns: fixed width, pinned to the
- * left after both of them, not hideable, not movable and not resizable. Moving
- * or hiding the toggle would leave rows with panels that cannot be opened.
+ * edge `detailsColumnPosition` names, not hideable, not movable and not
+ * resizable. Moving or hiding the toggle would leave rows with panels that
+ * cannot be opened.
  *
- * Last of the three because it acts on a single record.
+ * Innermost on its edge - last of the left lanes, or first of the right ones,
+ * inside the edit lane - because it acts on a single record.
  *
  * A second toggle elsewhere is supported: `row.toggleExpanded()` is the entire
  * interface, and this lane is only the control the grid ships.
@@ -119,7 +121,7 @@ export function createDetailsColumn<TData extends RowData>(
     meta: {
       label,
       align: "center",
-      // Structurally the last of the generated lanes.
+      // Structurally the innermost of the generated lanes.
       enableOrdering: false,
     },
     // A system lane: as wide as the control it holds and no wider. Fixed at
@@ -135,7 +137,7 @@ export function createDetailsColumn<TData extends RowData>(
     // Its visibility is not the user's to set: hiding it would strand every
     // panel behind a control that is no longer there.
     enableHiding: false,
-    // Structurally pinned to the left; users shouldn't be able to move it.
+    // Structurally pinned to its edge; users shouldn't be able to move it.
     enablePinning: false,
     header: ({ table }) => <DetailsHeader table={table} />,
     cell: ({ row }) => <DetailsCell row={row} />,
