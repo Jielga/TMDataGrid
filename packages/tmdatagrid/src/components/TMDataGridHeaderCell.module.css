@@ -7,7 +7,7 @@
   min-width: 0;
   min-height: var(--dg-header-height);
   font-weight: 600;
-  font-size: var(--dg-font-size);
+  font-size: var(--dg-header-font-size);
   background-color: var(--mantine-color-body);
   border-bottom: 1px solid var(--mantine-color-default-border);
   user-select: none;

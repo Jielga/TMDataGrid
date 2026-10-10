@@ -51,7 +51,8 @@ The wrapper components - `Toolbar`, `Spacer`, `Footer`, `FilterPanel`, `FilterPi
 | `--dg-header-height` | From `size` | Header row height |
 | `--dg-summary-height` | From `size` | [Summary row](/docs/summary-row) height |
 | `--dg-entry-height` | From `size` | The sticky [entry block](/docs/adding-rows#adding-rows) |
-| `--dg-font-size` | From `size` | Cell and header font size |
+| `--dg-font-size` | From `size` | Cell font size. The header follows it unless `--dg-header-font-size` is set. |
+| `--dg-header-font-size` | `--dg-font-size` | Header font size |
 | `--dg-padding` | From `size` | Horizontal cell padding. The generated lanes are excluded: they are fixed 36px tracks that centre their control. |
 | `--dg-radius` | `--mantine-radius-md` | The frame's corner radius. `0` squares the grid off. The root clips its overflow, so the header and the last row follow it. |
 

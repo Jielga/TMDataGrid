@@ -10,6 +10,7 @@ export function Styling() {
   const [accent, setAccent] = useState<(typeof ACCENTS)[number]>("grape");
   const [roomy, setRoomy] = useState(false);
   const [square, setSquare] = useState(false);
+  const [bigHeader, setBigHeader] = useState(false);
 
   const grid = useTMDataGrid({
     data: EMPLOYEES,
@@ -52,6 +53,12 @@ export function Styling() {
           checked={square}
           onChange={(event) => setSquare(event.currentTarget.checked)}
         />
+        <Switch
+          size="xs"
+          label="Bigger header text"
+          checked={bigHeader}
+          onChange={(event) => setBigHeader(event.currentTarget.checked)}
+        />
       </Group>
 
       <TMDataGrid
@@ -69,6 +76,11 @@ export function Styling() {
           // The frame's own radius. The root clips its overflow, so the header
           // and the last row follow the corner it is given.
           "--dg-radius": square ? "0" : "var(--mantine-radius-md)",
+          // The header's own text size. `var(--dg-font-size)` is the default:
+          // the header follows the cells until given a size of its own.
+          "--dg-header-font-size": bigHeader
+            ? "var(--mantine-font-size-md)"
+            : "var(--dg-font-size)",
         }}
       >
         <TMDataGrid.Toolbar>
