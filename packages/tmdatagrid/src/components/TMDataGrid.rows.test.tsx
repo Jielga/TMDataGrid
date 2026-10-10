@@ -692,6 +692,39 @@ describe("row details", () => {
     ).toBe(true);
   });
 
+  it("leaves a group row expandable whatever getRowCanExpand says of its record", () => {
+    renderGridUi({
+      renderDetails,
+      // Row 1 is the first record under Stockholm - the one TanStack builds
+      // the group row on.
+      getRowCanExpand: (row) => row.original.id !== 1,
+      enableGrouping: true,
+      initialState: { grouping: ["city"] },
+    });
+    const before = gridRowCount();
+
+    fireEvent.click(part("group-toggle", { rowId: "city:Stockholm" }));
+
+    expect(gridRowCount()).toBe(before + 4);
+    // The record itself still has no panel to open.
+    expect(queryPart("details-toggle", { rowId: "1" })).not.toBeInTheDocument();
+    expect(part("details-toggle", { rowId: "4" })).toBeInTheDocument();
+  });
+
+  it("skips a row getRowCanExpand turns down in expand-all", () => {
+    renderGridUi({
+      renderDetails,
+      getRowCanExpand: (row) => row.original.id !== 1,
+    });
+
+    fireEvent.click(detailsToggle());
+
+    expect(queryPart("details", { rowId: "1" })).not.toBeInTheDocument();
+    expect(part("details", { rowId: "2" })).toBeInTheDocument();
+    // Every row that can open is open, so the header reads "all".
+    expect(detailsToggle()).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("pins the lane last of the generated ones, and lets no one move it", () => {
     const api = renderGrid({ renderDetails }).result.current;
 

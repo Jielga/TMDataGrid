@@ -44,6 +44,20 @@ every panel at once.
 
 Group rows get no chevron: they expand into their children from the tree lane.
 
+To give only some rows a panel, set `getRowCanExpand`:
+
+```tsx
+const grid = useTMDataGrid({
+  data,
+  columns,
+  renderDetails: ({ row }) => <Notes notes={row.original.notes} />,
+  getRowCanExpand: (row) => row.original.notes.length > 0,
+});
+```
+
+A row it turns down gets no chevron, and the header control skips it.
+It never applies to a group row.
+
 ## Opening a row from elsewhere
 
 Which rows are open is TanStack's own `expanded` state, so anything can open
@@ -113,6 +127,7 @@ Group rows have no panel. Expanding one opens its children.
 | --- | --- | --- | --- | --- |
 | `renderDetails` | Option | `({ row, table }) => ReactNode` | – | Contents of the panel. Setting it adds the lane. |
 | `TMDataGridDetailsArgs` | Type | `{ row, table }` | – | What `renderDetails` receives. |
+| `getRowCanExpand` | Table option | `(row) => boolean` | – | Determines which data rows have a panel. If not set, every data row has one. Group rows always expand. |
 | `renderDetailsEstHeight` | Option | `number` | `160` | Height the virtualizer assumes for an unmeasured panel. |
 | `detailsColumnPosition` | Option | `"left" \| "right"` | `"left"` | Which edge the lane is pinned to. `"right"` places it after every column, inside the edit lane. |
 | `initialState.expanded` | Table option | `ExpandedState` | `{}` | Rows open at mount. A data slice, so it persists. |

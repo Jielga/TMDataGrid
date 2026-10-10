@@ -159,6 +159,33 @@ describe("deletion-marked rows", () => {
     expect(part("select-row", { rowId: "3" })).toBeEnabled();
   });
 
+  it("count as out of a group's selection once marked", () => {
+    const api = renderDraftGrid({
+      enableGrouping: true,
+      initialState: { grouping: ["city"] },
+    });
+    // Stockholm holds rows 1, 4, 7 and 10.
+    act(() => {
+      for (const id of ["1", "4", "7"]) api.table.getRow(id).toggleSelected(true);
+    });
+    const groupBox = () =>
+      part("select-row", { rowId: "city:Stockholm" }) as HTMLInputElement;
+    expect(groupBox().indeterminate).toBe(true);
+
+    act(() => {
+      api.edit.deleteRow("10");
+    });
+    // Every selectable leaf is selected now.
+    expect(groupBox().indeterminate).toBe(false);
+    expect(groupBox().checked).toBe(true);
+
+    act(() => {
+      api.edit.restoreRow("10");
+    });
+    expect(groupBox().checked).toBe(false);
+    expect(groupBox().indeterminate).toBe(true);
+  });
+
   it("cannot be opened from the keyboard", () => {
     const api = renderDraftGrid();
     act(() => {

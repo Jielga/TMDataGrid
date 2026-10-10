@@ -90,6 +90,7 @@ import {
   type TMDataGridFiltersSettings,
 } from "./core/filterSurface";
 import {
+  columnCanQuickSearch,
   createFuzzyRankedSortedRowModel,
   fuzzyGlobalFilterFn,
   type TMDataGridQuickSearchMode,
@@ -1083,19 +1084,6 @@ type TMDataGridColumnDef<TData extends RowData> = ColumnDef<
 >;
 
 /**
- * Point every column at the operator-dispatching filter function, and take
- * grouping's aggregation defaults back off, unless the column opted into its
- * own. Anything the consumer set wins - it is spread over these.
- *
- * The aggregation pair needs explaining. TanStack's grouping feature hands
- * every column `aggregationFn: "auto"` and an `aggregatedCell` that stringifies
- * whatever comes out, so merely registering the feature would have every
- * numeric column silently sum itself and every date column show a range the
- * moment anything is grouped. That is a summary table, and "group by" is not a
- * request for one. Cleared here, so a grouped grid is a tree until a column
- * says otherwise - `aggregationFn: "sum"` on the column that wants it.
- */
-/**
  * Drops the control lanes' entries from a visibility map.
  *
  * They are all `enableHiding: false`, but TanStack applies `columnVisibility`
@@ -1115,6 +1103,19 @@ function withoutControlColumnVisibility(
   return scrubbed;
 }
 
+/**
+ * Point every column at the operator-dispatching filter function, and take
+ * the aggregation defaults back off, unless the column opted into its own.
+ * Anything the consumer set wins - it is spread over these.
+ *
+ * The aggregation pair needs explaining. TanStack's row aggregation feature
+ * hands every column `aggregationFn: "auto"` and an `aggregatedCell` that
+ * stringifies whatever comes out, so merely registering the feature would have
+ * every numeric column silently sum itself and every date column show a range
+ * the moment anything is grouped. That is a summary table, and "group by" is
+ * not a request for one. Cleared here, so a grouped grid is a tree until a
+ * column says otherwise - `aggregationFn: "sum"` on the column that wants it.
+ */
 function withTMDataGridDefaults<TData extends RowData>(
   columns: ReadonlyArray<TMDataGridColumnDef<TData>>,
 ): Array<TMDataGridColumnDef<TData>> {
@@ -1477,6 +1478,11 @@ export function useTMDataGrid<TData extends RowData>({
     edit.store,
     (state) => state.committedValues,
   );
+  // Subscribed for the re-render alone - the selection predicate below reads
+  // the marks live. TanStack 9.2 caches a group row's "all / some selected"
+  // on the predicate's identity, and only a render hands it a new one; without
+  // this a mark would leave the group's checkbox on its old answer.
+  useSelector(edit.store, (state) => state.deletedRowIds);
   const newRowsSticky = features.editNewRowsSticky;
   const editCreatedIds = useSelector(
     edit.store,
@@ -1578,6 +1584,9 @@ export function useTMDataGrid<TData extends RowData>({
       options.quickSearchMode === "contains"
         ? "includesString"
         : "tmDataGridFuzzy",
+    // Which columns the quick search reads - TanStack's rule, computed once
+    // per data change instead of once per call. See columnCanQuickSearch.
+    getColumnCanGlobalFilter: columnCanQuickSearch,
     // Grouping by a column takes it out of the grid, the way AG Grid does it:
     // its values have moved into the tree column, so leaving it in place would
     // show every row the same value it was grouped under. Overridable - pass
@@ -1621,11 +1630,17 @@ export function useTMDataGrid<TData extends RowData>({
     getRowId: shownGetRowId,
     // Row details ride on `expanded`, the same state the tree uses - but a data
     // row answers `getCanExpand()` false, since TanStack's fallback is
-    // `subRows.length > 0`. `() => true` is the right answer for a group row
-    // too, so nothing here has to tell the two apart, and a consumer passing
-    // their own predicate still wins.
-    ...(renderDetails !== undefined
-      ? { getRowCanExpand: options.getRowCanExpand ?? (() => true) }
+    // `subRows.length > 0`, so under `renderDetails` every row can expand.
+    // A consumer's own predicate decides the data rows, never a group row:
+    // TanStack builds a group row on its first child's record, and since 9.2
+    // `toggleExpanded` refuses a row that cannot expand - so a predicate
+    // rejecting that record would leave the group's chevron dead.
+    ...(renderDetails !== undefined || options.getRowCanExpand !== undefined
+      ? {
+          getRowCanExpand: (row: Row<TMDataGridFeatures, TData>) =>
+            row.getIsGrouped() ||
+            (options.getRowCanExpand?.(row) ?? true),
+        }
       : {}),
     // Always a predicate, never the passthrough: TanStack defaults the option
     // to `true` once the feature is registered, and the grid's default is off.

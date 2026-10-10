@@ -5,6 +5,7 @@ import {
 } from "@tanstack/match-sorter-utils";
 import {
   createSortedRowModel,
+  type Column,
   type Row,
   type RowData,
   type RowModel,
@@ -21,6 +22,57 @@ export type TMDataGridQuickSearchMode = "fuzzy" | "contains";
  * explicit `globalFilterFn` override switches the ordering off with it.
  */
 export const FUZZY_FILTER_FN_NAME = "tmDataGridFuzzy";
+
+/**
+ * Which columns the quick search reads, per core row model: the answer only
+ * changes with the data, and the model's identity changes with the data.
+ */
+const searchableColumns = new WeakMap<object, Map<string, boolean>>();
+
+/**
+ * The grid's `getColumnCanGlobalFilter`: TanStack's own rule - a column takes
+ * part when its first non-empty value is a string or a number, or when it
+ * says `enableGlobalFilter: true` - computed once per data change.
+ *
+ * TanStack's default scans the rows for that first value on every call,
+ * building every cell of every row it passes, and the grid asks on every
+ * header render. A column empty in every row therefore cost a full scan per
+ * header per render. Here the scan reads values only, and its answer is kept
+ * until the data changes.
+ */
+export function columnCanQuickSearch<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+  TValue,
+>(column: Column<TFeatures, TData, TValue>): boolean {
+  const { enableGlobalFilter } = column.columnDef as {
+    enableGlobalFilter?: boolean;
+  };
+  if (enableGlobalFilter === true) return true;
+  // A display column has no value to search.
+  if (!column.accessorFn) return false;
+  // Off the table as a plain record, for the same generic-features reason as
+  // the options read in isRankingActive.
+  const model = (
+    column.table as unknown as { getCoreRowModel: () => RowModel<TFeatures, TData> }
+  ).getCoreRowModel();
+  let byColumn = searchableColumns.get(model);
+  if (byColumn === undefined) {
+    byColumn = new Map();
+    searchableColumns.set(model, byColumn);
+  }
+  const known = byColumn.get(column.id);
+  if (known !== undefined) return known;
+  let searchable = false;
+  for (const row of model.flatRows) {
+    const value = row.getValue(column.id);
+    if (value == null) continue;
+    searchable = typeof value === "string" || typeof value === "number";
+    break;
+  }
+  byColumn.set(column.id, searchable);
+  return searchable;
+}
 
 /** What {@link fuzzyGlobalFilterFn} records per column via `addMeta`. */
 type FuzzyFilterMeta = { fuzzyRank: RankingInfo };

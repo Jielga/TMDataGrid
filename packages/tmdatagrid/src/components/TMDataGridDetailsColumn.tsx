@@ -33,6 +33,9 @@ export function DetailsCell<TData extends RowData>({
   // `showsDetails`. Their cells are aggregated, so this lane is already blank
   // on them; the guard is what makes that a decision rather than a side effect.
   if (row.getIsGrouped()) return null;
+  // A record the consumer's `getRowCanExpand` turns down has no panel, and
+  // TanStack refuses to expand it - a chevron here would do nothing.
+  if (!row.getCanExpand()) return null;
 
   return (
     <UnstyledButton

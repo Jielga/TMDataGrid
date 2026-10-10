@@ -1,6 +1,10 @@
 import { act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderGrid, type TestRow } from "../../test/gridHarness";
+import {
+  renderGrid,
+  testColumns,
+  type TestRow,
+} from "../../test/gridHarness";
 
 /**
  * Names chosen so one needle separates the ranking tiers: against "sven",
@@ -81,5 +85,65 @@ describe("fuzzy quick search", () => {
     act(() => grid.result.current.table.setGlobalFilter("sven"));
 
     expect(names(grid)).toEqual(["Asvenna", "Svensson", "Sven"]);
+  });
+});
+
+describe("which columns the quick search reads", () => {
+  type NoteRow = TestRow & { note: string | null };
+  const noteRows = (notes: Array<string | null>): Array<NoteRow> =>
+    notes.map((note, index) => ({
+      id: index + 1,
+      name: `Name ${index + 1}`,
+      age: 30,
+      city: "Lund",
+      note,
+    }));
+  const noteColumns = [
+    ...testColumns,
+    { accessorKey: "note", header: "Note" },
+    { id: "actions", header: "", cell: () => null },
+  ];
+  const canSearch = (grid: ReturnType<typeof renderGrid>, id: string) =>
+    grid.result.current.table.getColumn(id)?.getCanGlobalFilter();
+
+  it("reads a column by its first non-empty value", () => {
+    const grid = renderGrid({
+      data: noteRows([null, null, "late"]),
+      columns: noteColumns,
+    } as never);
+
+    expect(canSearch(grid, "note")).toBe(true);
+    expect(canSearch(grid, "name")).toBe(true);
+    expect(canSearch(grid, "actions")).toBe(false);
+  });
+
+  it("skips a column empty in every row until the data fills it", () => {
+    const grid = renderGrid({
+      data: noteRows([null, null]),
+      columns: noteColumns,
+    } as never);
+    expect(canSearch(grid, "note")).toBe(false);
+
+    grid.rerender();
+    act(() => {
+      grid.result.current.table.setOptions((previous) => ({
+        ...previous,
+        data: noteRows([null, "filled"]),
+      }));
+    });
+
+    expect(canSearch(grid, "note")).toBe(true);
+  });
+
+  it("reads any column that sets enableGlobalFilter: true", () => {
+    const grid = renderGrid({
+      data: noteRows([null]),
+      columns: [
+        ...testColumns,
+        { accessorKey: "note", header: "Note", enableGlobalFilter: true },
+      ],
+    } as never);
+
+    expect(canSearch(grid, "note")).toBe(true);
   });
 });
