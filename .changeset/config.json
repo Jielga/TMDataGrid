@@ -16,6 +16,9 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  },
   "ignore": [],
   "privatePackages": {
     "version": false,
