@@ -310,7 +310,11 @@ export class DataGrid {
     await this.part("search").fill(text);
   }
 
-  /** Clicks a sortable header once: unsorted, ascending, descending. */
+  /**
+   * Clicks a sortable header once. Each click steps the sort: off, first
+   * direction, the other direction, off. The first direction is ascending for
+   * text and descending for numbers, unless the column sets `sortDescFirst`.
+   */
   async sortBy(columnId: string): Promise<void> {
     // The header, not its `header-sort` arrow: the arrow is display: none
     // until the header is hovered, and a click on it also reaches the
