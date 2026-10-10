@@ -36,7 +36,7 @@ rather than forwarded to TanStack.
 | `enableSorting` | `boolean` | `true` | Enables sorting for the table. |
 | `enableColumnFilters` | `boolean` | `true` | Enables filtering for the table. |
 | `enableHiding` | `boolean` | `true` | Enables column visibility for the table. |
-| `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. |
+| `enableColumnPinning` | `boolean` | `true` | Enables pinning for the table. `false` removes the pin menu items; the generated lanes stay pinned. |
 | `enableColumnResizing` | `boolean` | `true` | Enables resizing for the table. |
 | `enableColumnOrdering` | `boolean` | `true` | Enables header dragging and the move menu items. Defined by the grid, see [Column layout](/docs/column-layout#ordering). |
 | `enablePagination` | `boolean` | `false` | Enables client-side paging and the `Footer` pager. Implied by `manualPagination`. Defined by the grid, see [Pagination](/docs/pagination). |

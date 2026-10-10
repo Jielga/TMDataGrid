@@ -49,3 +49,31 @@ test("holds pinned columns in place while the body scrolls sideways", async ({
     await header("id").evaluate((element) => getComputedStyle(element).position),
   ).toBe("sticky");
 });
+
+test("keeps the generated lanes pinned, with the edge band, when column pinning is off", async ({
+  mount,
+}) => {
+  const component = await mount("Grid/PinningOff");
+  const container = component.locator("[data-dg-scroll-container]");
+  // DETAILS_COLUMN_ID: the innermost generated lane, so it carries the band.
+  const details = component.locator(
+    '[data-dg-part="header"][data-column-id="__details__"]',
+  );
+  const before = await boxOf(details);
+
+  await container.evaluate((element) => {
+    element.scrollLeft = 300;
+  });
+  await expect
+    .poll(() => container.evaluate((element) => element.scrollLeft))
+    .toBe(300);
+
+  expect((await boxOf(details)).x).toBe(before.x);
+  await expect
+    .poll(() =>
+      details.evaluate((element) =>
+        Number(getComputedStyle(element, "::after").opacity),
+      ),
+    )
+    .toBe(1);
+});

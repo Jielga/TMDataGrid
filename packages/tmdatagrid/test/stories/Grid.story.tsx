@@ -141,6 +141,25 @@ export function Pinned() {
   );
 }
 
+/** No user pinning, but the generated lanes still hold the left edge. */
+export function PinningOff() {
+  const grid = useTMDataGrid<PinnedRow>({
+    data: PINNED_ROWS,
+    columns: pinnedColumns,
+    getRowId: (row) => String(row.id),
+    enableColumnPinning: false,
+    renderDetails: ({ row }) => <div>Details for {row.original.id}</div>,
+  });
+
+  return (
+    <Frame width={720}>
+      <TMDataGrid {...grid} style={{ flex: 1, minHeight: 0 }}>
+        <TMDataGrid.Table<PinnedRow> />
+      </TMDataGrid>
+    </Frame>
+  );
+}
+
 export function CellSelection() {
   return (
     <Frame>

@@ -160,7 +160,7 @@ const { resetSettings } = useTMDataGrid({ data, columns });
 | Name | Kind | Type | Default | What it does |
 | --- | --- | --- | --- | --- |
 | `enableHiding` | Table option | `boolean` | `true` | Also a column option. `false` removes hiding entirely. |
-| `enableColumnPinning` | Table option | `boolean` | `true` | `false` removes the pin menu items. |
+| `enableColumnPinning` | Table option | `boolean` | `true` | `false` removes the pin menu items. The generated lanes stay pinned. |
 | `enablePinning` | Column option | `boolean` | `true` | `false` for one column. |
 | `enableColumnOrdering` | Option | `boolean` | `true` | Header dragging and the move menu items. Grid-defined. |
 | `meta.enableOrdering` | Column meta | `boolean` | `true` | `false` keeps one column where it is. |

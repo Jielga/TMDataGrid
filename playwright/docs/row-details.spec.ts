@@ -56,3 +56,17 @@ test('the lane sits at the right edge under detailsColumnPosition: "right"', asy
   await grid.part("details-toggle", { rowId: "1" }).click();
   await expect(grid.part("details", { rowId: "1" })).toBeVisible();
 });
+
+test("grouping a details grid renders group rows without a panel lane", async ({
+  page,
+}) => {
+  const grid = await openDemoGrid(page, {
+    route: "/docs/row-details",
+    file: "rows/DetailsPanel.tsx",
+  });
+  const menu = await grid.openColumnMenu("department");
+  await menu.getByRole("menuitem", { name: "Group by Department" }).click();
+
+  const groupRows = grid.root.locator('[data-dg-part="row"][data-grouped]');
+  await expect(groupRows.first()).toBeVisible();
+});

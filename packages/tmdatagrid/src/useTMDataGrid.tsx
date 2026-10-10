@@ -1238,7 +1238,6 @@ export function useTMDataGrid<TData extends RowData>({
     ],
   );
 
-  const pinningEnabled = options.enableColumnPinning !== false;
   const selectColumnEnabled = features.selectColumn;
   const groupColumnEnabled = features.grouping;
   // The lane that opens the panels. Nothing to switch on: a grid with no
@@ -1270,13 +1269,15 @@ export function useTMDataGrid<TData extends RowData>({
   // and re-applied on top of anything restored: a snapshot cannot unpin one,
   // and a snapshot taken before `detailsColumnPosition` changed cannot pin the
   // details lane to the edge it has since left.
+  //
+  // Not gated on `enableColumnPinning`: that switch takes pinning away from the
+  // user, not from the grid's own lanes, which hold the edges either way.
   const structuralPinning = (
     restored: Partial<ColumnPinningState> | undefined,
   ): ColumnPinningState => {
     const own = (ids: string[] | undefined) =>
       (ids ?? []).filter((id) => !isGeneratedColumn(id));
-    const lane = (enabled: boolean, id: string) =>
-      enabled && pinningEnabled ? [id] : [];
+    const lane = (enabled: boolean, id: string) => (enabled ? [id] : []);
     const detailsOn = (edge: "left" | "right") =>
       detailsColumnEnabled && detailsColumnPosition === edge;
     return {
