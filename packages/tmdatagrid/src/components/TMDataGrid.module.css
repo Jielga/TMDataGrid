@@ -51,6 +51,11 @@
   --dg-header-height: 44px;
   --dg-font-size: var(--mantine-font-size-sm);
   --dg-padding: 10px;
+  /* The header's font size. Resolved on the root, so it follows whatever
+     `--dg-font-size` the scale or an override gives the cells, until set on
+     its own:
+     <TMDataGrid style={{ "--dg-header-font-size": "var(--mantine-font-size-md)" }} /> */
+  --dg-header-font-size: var(--dg-font-size);
   /* Background of a selected row, when `showSelectedBackground` is on. Override
      it on the grid:
      <TMDataGrid style={{ "--dg-row-selected-bg": "var(--mantine-color-blue-0)" }} /> */

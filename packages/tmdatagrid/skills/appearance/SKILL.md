@@ -67,6 +67,8 @@ provider.
 
 **Metrics:** `--dg-row-height`, `--dg-header-height`, `--dg-summary-height`,
 `--dg-entry-height`, `--dg-font-size`, `--dg-padding`. All default from `size`.
+`--dg-header-font-size` defaults to `--dg-font-size`; set it to give the header
+a text size of its own.
 The generated lanes are excluded from padding: they are fixed 36px tracks that
 centre their control.
 
