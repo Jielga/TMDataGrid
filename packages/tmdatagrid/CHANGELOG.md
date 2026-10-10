@@ -1,5 +1,14 @@
 # @jielga/tmdatagrid
 
+## 2.1.1
+
+### Patch Changes
+
+- [`82d3dc0`](https://github.com/Jielga/TMDataGrid/commit/82d3dc0292889bcfc1d68cca1b9837dd9ed40858) Thanks [@Psvensso](https://github.com/Psvensso)! - A group row leaves a column without `aggregationFn` or `aggregatedCell` blank again, instead of calling the column's `cell` with an `undefined` value.
+  A column that wants content on group rows without aggregating declares `aggregatedCell`.
+
+- [`5105ccd`](https://github.com/Jielga/TMDataGrid/commit/5105ccd266e084e77674a38c3cb1a58355b752ab) Thanks [@Psvensso](https://github.com/Psvensso)! - The generated lanes (row number, checkbox, tree, details, edit) stay pinned, with their edge shadow, under `enableColumnPinning: false`.
+
 ## 2.1.0
 
 ### Minor Changes
