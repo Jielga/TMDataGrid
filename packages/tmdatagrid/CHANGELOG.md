@@ -1,5 +1,13 @@
 # @jielga/tmdatagrid
 
+## 2.1.0
+
+### Minor Changes
+
+- [#143](https://github.com/Jielga/TMDataGrid/pull/143) [`be5b0ee`](https://github.com/Jielga/TMDataGrid/commit/be5b0eebe8a1776f3e1066fd7dc86f4d12887ca5) Thanks [@Psvensso](https://github.com/Psvensso)! - `detailsColumnPosition: "left" | "right"` places the row details chevron lane on either edge of the grid. Defaults to `"left"`, the previous placement.
+
+- [#145](https://github.com/Jielga/TMDataGrid/pull/145) [`5b7e05d`](https://github.com/Jielga/TMDataGrid/commit/5b7e05d1609c491c2d536ace7b8287ad7d9d0f22) Thanks [@Psvensso](https://github.com/Psvensso)! - `--dg-header-font-size` sets the header font size on its own. Defaults to `--dg-font-size`, so `size` still moves header and cells together.
+
 ## 2.0.1
 
 ### Patch Changes
