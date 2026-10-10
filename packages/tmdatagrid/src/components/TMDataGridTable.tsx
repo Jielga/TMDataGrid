@@ -1531,6 +1531,24 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
   const trailingGuardRef = useRef<HTMLDivElement>(null);
   const guardHopRef = useRef(false);
 
+  /**
+   * Keeps both guards at the scrollport's top-left corner as the body scrolls.
+   *
+   * A guard is out of flow, so left alone it sits at the top of the scrolled
+   * content. Tab from outside focuses it without `preventScroll`, and the
+   * browser then scrolls the body back to the top to show it - which unmounts
+   * the cursor row the guard is about to hand the focus to, and drops the
+   * focus on `<body>`. A guard already inside the scrollport is never
+   * scrolled to. Written straight to the style, so a scroll costs no render.
+   */
+  const placeTabGuards = (container: HTMLElement) => {
+    for (const guard of [leadingGuardRef.current, trailingGuardRef.current]) {
+      if (guard === null) continue;
+      guard.style.top = `${container.scrollTop}px`;
+      guard.style.left = `${container.scrollLeft}px`;
+    }
+  };
+
   // O(n) per keystroke and per render while a cell is focused. Fine at any row
   // count a grid actually holds, and the alternative - an id→index map rebuilt
   // whenever sorting, filtering or grouping changes - costs more than it saves.
@@ -2448,8 +2466,9 @@ export function TMDataGridTable<TData extends RowData = TMDataGridRowData>({
    * zoom, where a "fully scrolled" position can land at 799.5 of 800.
    */
   const handleScroll =
-    contextMenuTarget || hasEdgeCallbacks
+    contextMenuTarget || hasEdgeCallbacks || cellSelection
       ? (event: UIEvent<HTMLDivElement>) => {
+          if (cellSelection) placeTabGuards(event.currentTarget);
           if (contextMenuTarget) closeContextMenu();
           if (!hasEdgeCallbacks) return;
           const el = event.currentTarget;
