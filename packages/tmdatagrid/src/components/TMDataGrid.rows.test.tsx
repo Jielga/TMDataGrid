@@ -29,7 +29,11 @@ import { EDIT_COLUMN_ID } from "./TMDataGridEditColumn";
 import { GROUP_COLUMN_ID } from "./TMDataGridGroupColumn";
 import { SELECT_COLUMN_ID } from "./TMDataGridSelectColumn";
 import { TMDataGrid } from "./TMDataGrid";
-import { useTMDataGrid, type TMDataGridDetailsArgs } from "../useTMDataGrid";
+import {
+  createTMDataGridColumnHelper,
+  useTMDataGrid,
+  type TMDataGridDetailsArgs,
+} from "../useTMDataGrid";
 
 /**
  * Row-level behaviour: pinning, selection, the context menu, the pager,
@@ -479,7 +483,45 @@ describe("grouping", () => {
     expect(renderedColumn(2)).toEqual(["", "", ""]);
     expect(renderedColumn(4)).toEqual(["", "", ""]);
   });
+
+  it("never hands a column's renderer a group row it cannot aggregate", async () => {
+    const user = userEvent.setup();
+    // A renderer that formats what it gets, as a real one does. On a group
+    // row the value is undefined, so reaching it at all would throw.
+    const columns = groupingHelper.columns([
+      groupingHelper.accessor("name", { header: "Name" }),
+      groupingHelper.accessor("age", {
+        header: "Age",
+        cell: (info) => info.getValue().toFixed(1),
+      }),
+      groupingHelper.accessor("id", {
+        header: "ID",
+        aggregationFn: "sum",
+        cell: (info) => info.getValue().toFixed(1),
+      }),
+      groupingHelper.accessor("city", { header: "City" }),
+    ]);
+    renderGridUi({
+      columns,
+      renderDetails: ({ row }) => row.original.name.toUpperCase(),
+    });
+
+    await clickMenuItem(user, "City", "Group by City");
+
+    // Body cells carry no part; the coordinate pair is their address.
+    const groupCell = (columnId: string) =>
+      document.querySelector(
+        `[data-row-id="city:Stockholm"][data-column-id="${columnId}"]:not([data-dg-part])`,
+      );
+    expect(groupCell("age")).toHaveTextContent(/^$/);
+    // A column told how to aggregate still renders, over the aggregate:
+    // ids 1, 4, 7 and 10 live in Stockholm.
+    expect(groupCell("id")).toHaveTextContent("22.0");
+    expect(groupCell(DETAILS_COLUMN_ID)).toHaveTextContent(/^$/);
+  });
 });
+
+const groupingHelper = createTMDataGridColumnHelper<TestRow>();
 
 describe("grouping - rendering stays in step", () => {
   /** Header ids in render order. */

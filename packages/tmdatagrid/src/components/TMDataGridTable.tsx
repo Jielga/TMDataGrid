@@ -159,9 +159,9 @@ function keepColumnInView({
  * | ---- | ------- |
  * | On a data row | the column's `cell`, as always |
  * | Placeholder - a grouped column other than this row's own | nothing |
- * | Aggregated, column declares `aggregatedCell` | that |
- * | Aggregated, column declares an `aggregationFn` | the column's `cell`, over the aggregate |
- * | Aggregated, column declares neither | nothing |
+ * | Group summary, column declares `aggregatedCell` | that |
+ * | Group summary, column declares an `aggregationFn` | the column's `cell`, over the aggregate |
+ * | Group summary, column declares neither | nothing |
  *
  * That last row is the one worth spelling out. Without an aggregation function
  * `getValue()` is `undefined` on a group row, so the column's own renderer
@@ -174,15 +174,29 @@ function renderCellContent(
   cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>,
 ) {
   if (cell.getIsPlaceholder()) return null;
-  if (!cell.getIsAggregated()) {
+  if (!isGroupSummaryCell(cell)) {
     return flexRender(cell.column.columnDef.cell, cell.getContext());
   }
-  const { aggregatedCell, aggregationFn } = cell.column.columnDef;
+  const { aggregatedCell } = cell.column.columnDef;
   if (aggregatedCell !== undefined) {
     return flexRender(aggregatedCell, cell.getContext());
   }
-  if (aggregationFn === undefined) return null;
+  if (!cell.getIsAggregated()) return null;
   return flexRender(cell.column.columnDef.cell, cell.getContext());
+}
+
+/**
+ * A cell on a group row in any column but the one the row groups by - the
+ * cells that summarise the group rather than show a record.
+ *
+ * Not `cell.getIsAggregated()`: since TanStack Table 9.2 that is true only
+ * when the column has an aggregation function, so it cannot tell a group
+ * row's blank cell from a data row's cell.
+ */
+function isGroupSummaryCell(
+  cell: Cell<TMDataGridFeatures, TMDataGridRowData, unknown>,
+): boolean {
+  return cell.row.getIsGrouped() && !cell.getIsGrouped();
 }
 
 /**
@@ -401,7 +415,7 @@ function TMDataGridBodyCell({
               draftValues !== undefined &&
               contentOverride === undefined &&
               !cell.getIsPlaceholder() &&
-              !cell.getIsAggregated()
+              !isGroupSummaryCell(cell)
                 ? draftCellContext(cell, draftValues)
                 : undefined;
             // Highlighting reproduces the *default* renderer, value then
@@ -412,7 +426,7 @@ function TMDataGridBodyCell({
               highlightNeedles !== undefined &&
               contentOverride === undefined &&
               !cell.getIsPlaceholder() &&
-              !cell.getIsAggregated() &&
+              !isGroupSummaryCell(cell) &&
               cell.column.columnDef.cell === table.getDefaultColumnDef().cell
             ) {
               const value =

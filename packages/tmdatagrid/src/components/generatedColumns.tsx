@@ -48,8 +48,8 @@ export function createSelectColumn<TData extends RowData>(
     enablePinning: false,
     header: ({ table }) => <SelectAllHeader table={table} />,
     cell: ({ row }) => <SelectRowCheckbox row={row} />,
-    // Every cell on a group row that is not the grouped column counts as
-    // aggregated, this lane included, and an aggregated cell with nothing
+    // Every cell on a group row that is not the grouped column is a group
+    // summary cell, this lane included, and a summary cell with nothing
     // declared renders blank. Without this the checkbox would disappear from
     // exactly the rows that select a whole group. See renderCellContent.
     aggregatedCell: ({ row }) => <SelectRowCheckbox row={row} />,
@@ -90,10 +90,10 @@ export function createGroupColumn<TData extends RowData>(
     // Structurally pinned to the left; users shouldn't be able to move it.
     enablePinning: false,
     cell: ({ row }) => <GroupCell row={row} />,
-    // A group row has subRows, so every cell on it that is not the grouped
-    // column reports `getIsAggregated()` - this lane included. Without an
-    // `aggregatedCell` the body would take that as "nothing to summarise" and
-    // render the tree lane blank on exactly the rows it exists for.
+    // Every cell on a group row that is not the grouped column is a group
+    // summary cell - this lane included. Without an `aggregatedCell` the body
+    // would take that as "nothing to summarise" and render the tree lane
+    // blank on exactly the rows it exists for. See renderCellContent.
     aggregatedCell: ({ row }) => <GroupCell row={row} />,
     header: ({ table }) => <GroupHeader table={table} />,
   };
@@ -142,7 +142,7 @@ export function createDetailsColumn<TData extends RowData>(
     header: ({ table }) => <DetailsHeader table={table} />,
     cell: ({ row }) => <DetailsCell row={row} />,
     // Deliberately no `aggregatedCell`: on a group row every cell outside the
-    // grouped column counts as aggregated, and blank is the right answer here -
+    // grouped column is a summary cell, and blank is the right answer here -
     // groups expand into their rows, not into a panel.
   };
 }
@@ -182,7 +182,7 @@ export function createEditColumn<TData extends RowData>(
     header: () => null,
     cell: ({ row }) => <EditLaneCell row={row} />,
     // Group rows: same reasoning as the checkbox lane - without this the
-    // cell renders blank on aggregated rows, but here blank is also correct,
+    // cell renders blank on group rows, but here blank is also correct,
     // so the aggregated cell renders the same (null for groups).
     aggregatedCell: ({ row }) => <EditLaneCell row={row} />,
   };

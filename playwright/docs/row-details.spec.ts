@@ -57,7 +57,7 @@ test('the lane sits at the right edge under detailsColumnPosition: "right"', asy
   await expect(grid.part("details", { rowId: "1" })).toBeVisible();
 });
 
-test("grouping a details grid renders group rows without a panel lane", async ({
+test("grouping a details grid renders its group rows", async ({
   page,
 }) => {
   const grid = await openDemoGrid(page, {
