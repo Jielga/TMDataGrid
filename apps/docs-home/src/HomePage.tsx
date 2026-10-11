@@ -1,4 +1,13 @@
-import { Anchor, Button, Card, Code, Group, Stack, Text, Title } from "@mantine/core";
+import {
+  Anchor,
+  Button,
+  Card,
+  Code,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 import { SiteHeader } from "docs-shell/SiteHeader.tsx";
 import {
@@ -74,17 +83,6 @@ export function HomePage() {
     <>
       <SiteHeader site={null} />
       <main className={classes.main}>
-        <Title order={1} className={classes.title}>
-          @jielga packages
-        </Title>
-        <Text c="dimmed" mb="xl">
-          React packages published on npm under the <Code>@jielga</Code> scope,
-          from the{" "}
-          <Anchor href="https://github.com/Jielga/react" target="_blank" rel="noreferrer">
-            Jielga/react
-          </Anchor>{" "}
-          repository. Each package has its own documentation site.
-        </Text>
         <div className={classes.grid}>
           {sites.map((site) => (
             <SiteCard key={site.slug} site={site} />
