@@ -52,9 +52,14 @@ export function planDispatch({ slug, ref, version, mirrorRoot }) {
  * `homepage` - answered 404 for as long as the wave ran. An entry point showing
  * a prerelease is worse than one showing the last stable release and far better
  * than one showing nothing, so an empty root now takes whatever a run has.
+ *
+ * A package that is not released yet (`"private": true`) gets no version line:
+ * its version is a placeholder, not something on npm. Only `next` is built,
+ * and the root mirrors it until the first release takes over.
  */
 export function planPush({
   version,
+  released,
   lineVersion,
   rootExists,
   rootSlug,
@@ -70,6 +75,10 @@ export function planPush({
     mirrorRoot: false,
   };
   const targets = [next];
+  if (!released) {
+    next.mirrorRoot = true;
+    return { targets, remove: [] };
+  }
   const line = lineOf(version);
 
   const takesRoot =

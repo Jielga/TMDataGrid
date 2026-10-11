@@ -11,6 +11,7 @@ import { planDispatch, planPush } from "./docs-plan.mjs";
 /** A push to a branch at 2.0.0-beta.0 with the site root already seeded. */
 const seeded = {
   version: "2.0.0-beta.0",
+  released: true,
   lineVersion: "2.0.0-beta.0",
   rootExists: true,
   rootSlug: "v1.1",
@@ -75,6 +76,7 @@ describe("planPush", () => {
   test("hands the root to the release its prerelease led up to", () => {
     const plan = planPush({
       version: "2.0.0",
+      released: true,
       lineVersion: "2.0.0-beta.0",
       rootExists: true,
       rootSlug: "v2.0",
@@ -96,6 +98,7 @@ describe("planPush", () => {
   test("does not take the root for a release the root already outranks", () => {
     const plan = planPush({
       version: "1.1.2",
+      released: true,
       lineVersion: undefined,
       rootExists: true,
       rootSlug: "v2.0",
@@ -109,6 +112,39 @@ describe("planPush", () => {
     const moved = { ...seeded, version: "2.0.0-beta.1", tag: "@jielga/tmdatagrid@2.0.0-beta.1" };
     expect(planPush(moved).targets[1].ref).toBe("@jielga/tmdatagrid@2.0.0-beta.1");
     expect(planPush({ ...moved, tag: null }).targets[1].ref).toBe("");
+  });
+
+  // A private package's version is a placeholder, so a line for it would list
+  // a version that was never on npm.
+  test("builds no line for a package that is not released, and serves main at the root", () => {
+    const unreleased = {
+      version: "0.0.0",
+      released: false,
+      lineVersion: undefined,
+      rootExists: false,
+      rootSlug: null,
+      rootServesVersion: null,
+      tag: null,
+    };
+    expect(slugs(planPush(unreleased))).toEqual(["next"]);
+    expect(root(planPush(unreleased))).toMatchObject({ slug: "next" });
+    expect(
+      root(planPush({ ...unreleased, rootExists: true, rootSlug: "next", rootServesVersion: "0.0.0" })),
+    ).toMatchObject({ slug: "next" });
+  });
+
+  test("hands the root from main to the first release", () => {
+    const plan = planPush({
+      version: "0.1.0",
+      released: true,
+      lineVersion: undefined,
+      rootExists: true,
+      rootSlug: "next",
+      rootServesVersion: "0.0.0",
+      tag: null,
+    });
+    expect(slugs(plan)).toEqual(["next", "v0.1"]);
+    expect(root(plan)).toMatchObject({ slug: "v0.1", kind: "stable" });
   });
 });
 
