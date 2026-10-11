@@ -1154,4 +1154,23 @@ describe("testing contract", () => {
       "true",
     );
   });
+
+  it("unticks a row enableRowSelection locks along with the rest", async () => {
+    const user = userEvent.setup();
+    renderGridUi({
+      enableRowSelection: (row) => row.original.id !== 1,
+      initialState: { rowSelection: { "1": true, "2": true } },
+    });
+    const header = () => part("select-all") as HTMLInputElement;
+
+    // Some rows ticked: the first click ticks the rest, the second clears.
+    await user.click(header());
+    await user.click(header());
+
+    for (const rowId of ["1", "2", "3"]) {
+      expect(part("row", { rowId })).not.toHaveAttribute("data-selected");
+    }
+    expect(header().checked).toBe(false);
+    expect(header().indeterminate).toBe(false);
+  });
 });

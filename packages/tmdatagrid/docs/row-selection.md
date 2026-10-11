@@ -40,6 +40,11 @@ focusable in this mode, and Space or Enter toggles the focused row.
 selection in any mode. It has no effect under `"highlight"`, which selects
 nothing.
 
+As a predicate, `enableRowSelection` decides row by row:
+
+- a row it turns down has a disabled checkbox, and the header checkbox does not tick it
+- unticking the header checkbox clears every row the filters show, including a turned-down row ticked through `initialState` or `setRowSelection`
+
 ## The highlighted row
 
 The highlighted row is state of its own rather than a slice of `rowSelection`,

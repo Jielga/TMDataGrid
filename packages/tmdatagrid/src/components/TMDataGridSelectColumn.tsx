@@ -50,7 +50,21 @@ function SelectAllCheckbox<TData extends RowData>({
       data-dg-part="select-all"
       checked={allSelected}
       indeterminate={someSelected && !allSelected}
-      onChange={table.getToggleAllRowsSelectedHandler()}
+      onChange={(event) => {
+        if (event.currentTarget.checked) {
+          table.toggleAllRowsSelected(true);
+          return;
+        }
+        // Not `toggleAllRowsSelected(false)`: since TanStack 9.2 it keeps a
+        // ticked row that `enableRowSelection` turns down, so the box could
+        // never clear. Every row the filters show is unticked; rows a filter
+        // hides keep their tick, as they always have.
+        const next = { ...table.store.state.rowSelection };
+        for (const row of table.getPreGroupedRowModel().flatRows) {
+          delete next[row.id];
+        }
+        table.setRowSelection(next);
+      }}
     />
   );
 }
