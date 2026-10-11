@@ -2,12 +2,12 @@
 //
 // GitHub Pages answers every missing path with the site root's `404.html`,
 // whatever directory the path was under. A copy's own `404.html` is never
-// consulted, so `/TMDataGrid/next/docs/testing` arrives running the root's
+// consulted, so `/react/next/docs/testing` arrives running the root's
 // bundle: the wrong version's documentation, and a bundle whose idea of the
 // current page is off by the directory it never knew it was in.
 //
 // So the root's 404 sends such a path to the copy that owns it, parking the
-// path in the query - `/TMDataGrid/next/?/docs/testing` - because that URL is
+// path in the query - `/react/next/?/docs/testing` - because that URL is
 // a real file and Pages serves it. The same script, running in that copy,
 // puts the path back before the router reads it.
 //
