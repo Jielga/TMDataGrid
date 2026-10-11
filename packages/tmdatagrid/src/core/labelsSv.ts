@@ -45,7 +45,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   columnsShowHideAll: "Visa/dölj alla",
   columnsReset: "Återställ layout",
   columnsResetHint:
-    "Återställer kolumnernas synlighet, ordning, bredder, fästning och gruppering",
+    "Återställer kolumnernas synlighet, ordning, bredd, låsning och gruppering",
   rowNumberColumnLabel: "Radnummer",
   noRows: "Inga rader att visa",
 
@@ -70,16 +70,16 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   sortAsc: "Sortera stigande",
   sortDesc: "Sortera fallande",
   filterMenuItem: "Filtrera",
-  groupBy: (column) => `Gruppera på ${column}`,
-  ungroup: (column) => `Avgruppera ${column}`,
+  groupBy: (column) => `Gruppera efter ${column}`,
+  ungroup: (column) => `Sluta gruppera efter ${column}`,
   expandAllGroups: "Expandera alla grupper",
   collapseAllGroups: "Fäll ihop alla grupper",
-  pinLeft: "Fäst till vänster",
-  pinRight: "Fäst till höger",
-  unpin: "Lossa",
+  pinLeft: "Lås till vänster",
+  pinRight: "Lås till höger",
+  unpin: "Lås upp",
   moveLeft: "Flytta åt vänster",
   moveRight: "Flytta åt höger",
-  autosizeColumn: "Anpassa kolumnbredd",
+  autosizeColumn: "Autopassa kolumnbredd",
   hideColumn: "Dölj kolumn",
   filterOn: (column) => `Filtrera på ${column}`,
   sortColumn: (column) => `Sortera ${column}`,
@@ -91,7 +91,7 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
     pageCount < 0 ? `Sida ${page}` : `Sida ${page} av ${pageCount}`,
   groupedAllRows: (total) => `Grupperad · alla ${total} rader`,
   pagingSuspendedHint:
-    "Sidindelningen är avstängd medan raderna är grupperade: hela trädet renderas och virtualiseras. Avgruppera för att bläddra igen.",
+    "Sidindelningen är avstängd medan raderna är grupperade, och alla rader visas. Sluta gruppera för att bläddra igen.",
   previousPage: "Föregående sida",
   nextPage: "Nästa sida",
 
@@ -107,11 +107,11 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   cancelRowEdit: "Avbryt redigering",
   editRowErrors: "Åtgärda de markerade cellerna",
   saveAllEdits: (rows) => (rows === 1 ? "Spara 1 rad" : `Spara ${rows} rader`),
-  discardAllEdits: "Förkasta",
+  discardAllEdits: "Ångra alla",
   editRowsStillOpen: (rows) =>
     rows === 1 ? "1 rad redigeras fortfarande" : `${rows} rader redigeras fortfarande`,
   confirmNewRow: "Lägg till rad",
-  discardNewRow: "Släng ny rad",
+  discardNewRow: "Avbryt ny rad",
   deleteRow: "Ta bort rad",
   restoreRow: "Återställ rad",
   revertRow: "Ångra ändringar",
@@ -122,37 +122,37 @@ export const TMDATAGRID_LABELS_SV: TMDataGridLabels = {
   cellCount: (count) => (count === 1 ? "1 cell" : `${count} celler`),
   copy: "Kopiera",
   exportCells: "Exportera celler",
-  includeHeaders: "Inkludera rubriker",
+  includeHeaders: "Ta med rubriker",
 
   exportAll: "Exportera alla rader",
   exportSelected: (count) =>
-    count === 1 ? "Exportera 1 vald rad" : `Exportera ${count} valda rader`,
+    count === 1 ? "Exportera 1 markerad rad" : `Exportera ${count} markerade rader`,
   exportPickerTitle: (format) => `Exportera som ${format}`,
   exportPickerHint: (selected) =>
     selected === null
       ? "Välj kolumner att exportera"
       : selected === 1
-        ? "Välj kolumner att exportera för den valda raden"
-        : `Välj kolumner att exportera för de ${selected} valda raderna`,
+        ? "Välj kolumner att exportera för den markerade raden"
+        : `Välj kolumner att exportera för de ${selected} markerade raderna`,
   exportPickerConfirm: "Exportera",
   exportPickerCancel: "Avbryt",
-  exportPickerSelectAll: "Välj alla",
+  exportPickerSelectAll: "Markera alla",
   exportPickerCount: (checked, total) => `${checked} av ${total}`,
   exportPickerHidden: "Dold",
 
-  selectColumnLabel: "Kryssrutemarkering",
-  selectAllRows: "Välj alla rader",
-  selectRow: "Välj rad",
-  selectGroup: "Välj grupp",
+  selectColumnLabel: "Radmarkering",
+  selectAllRows: "Markera alla rader",
+  selectRow: "Markera rad",
+  selectGroup: "Markera grupp",
 
   detailsColumnLabel: "Detaljer",
   showDetails: "Visa detaljer",
   hideDetails: "Dölj detaljer",
-  expandAllDetails: "Expandera alla detaljer",
-  collapseAllDetails: "Fäll ihop alla detaljer",
+  expandAllDetails: "Visa alla detaljer",
+  collapseAllDetails: "Dölj alla detaljer",
 
   groupColumnLabel: "Grupp",
-  blankGroupValue: "(Tom)",
+  blankGroupValue: "(Tomt)",
   expandGroup: (label) => `Expandera ${label}`,
   collapseGroup: (label) => `Fäll ihop ${label}`,
 };

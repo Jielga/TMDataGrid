@@ -553,7 +553,7 @@ describe("labels", () => {
     expect(screen.getByRole("button", { name: "Meny" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument();
     expect(
-      screen.getByRole("checkbox", { name: "Välj alla rader" }),
+      screen.getByRole("checkbox", { name: "Markera alla rader" }),
     ).toBeInTheDocument();
   });
 
@@ -577,7 +577,7 @@ describe("labels", () => {
 
     expect(
       result.current.table.getColumn(SELECT_COLUMN_ID)?.columnDef.meta?.label,
-    ).toBe("Kryssrutemarkering");
+    ).toBe("Radmarkering");
   });
 });
 

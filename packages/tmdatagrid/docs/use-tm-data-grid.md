@@ -134,7 +134,7 @@ where its grammar requires:
 
 ```tsx
 labels: {
-  groupBy: (column) => `Gruppera på ${column}`,
+  groupBy: (column) => `Gruppera efter ${column}`,
   pageRange: ({ from, to, total }) => `${from}–${to} av ${total}`,
 }
 ```

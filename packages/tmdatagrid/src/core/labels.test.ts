@@ -22,8 +22,8 @@ describe("mergeLabels", () => {
   });
 
   it("keeps function labels callable through an override", () => {
-    const labels = mergeLabels({ groupBy: (column) => `Gruppera på ${column}` });
-    expect(labels.groupBy("Avdelning")).toBe("Gruppera på Avdelning");
+    const labels = mergeLabels({ groupBy: (column) => `Gruppera efter ${column}` });
+    expect(labels.groupBy("Avdelning")).toBe("Gruppera efter Avdelning");
     expect(labels.ungroup("Age")).toBe("Ungroup Age");
   });
 
