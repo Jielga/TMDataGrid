@@ -15,7 +15,7 @@ description: >
 metadata:
   type: core
   library: '@jielga/tmdatagrid'
-  library_version: '2.1.2'
+  library_version: '2.1.3'
 sources:
   - 'Jielga/react:packages/tmdatagrid/docs/server-side.md'
   - 'Jielga/react:packages/tmdatagrid/docs/server-query.md'

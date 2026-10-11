@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.1.3
+
+### Patch Changes
+
+- [#151](https://github.com/Jielga/react/pull/151) [`88b6647`](https://github.com/Jielga/react/commit/88b664715c5385753ee1dce8229def1039c3301d) Thanks [@Psvensso](https://github.com/Psvensso)! - The repository moved to `Jielga/react`; the manifest's `repository`, `homepage` and `bugs` fields and the README links point at the new repository and documentation URL.
+
 ## 2.1.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @jielga/react-popup-window
 
+## 0.3.1
+
+### Patch Changes
+
+- [#152](https://github.com/Jielga/react/pull/152) [`e9645c4`](https://github.com/Jielga/react/commit/e9645c498530d04d6552b79b31344dda45e4ce4a) Thanks [@Psvensso](https://github.com/Psvensso)! - The package moved into the `Jielga/react` monorepo; the manifest's `repository`, `homepage` and `bugs` fields and the README links point at the new repository and documentation URL.
+
 ## 0.3.0
 
 ### Minor Changes
