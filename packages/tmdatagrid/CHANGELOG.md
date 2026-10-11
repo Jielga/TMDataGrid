@@ -1,5 +1,28 @@
 # @jielga/tmdatagrid
 
+## 2.1.2
+
+### Patch Changes
+
+- [`e8832bd`](https://github.com/Jielga/TMDataGrid/commit/e8832bd7ae9975ba097ecc1b3f1108bbf17b54b9) Thanks [@Psvensso](https://github.com/Psvensso)! - Under `editing.draft`, a group row's checkbox updates when a row in the group is marked deleted or restored.
+
+- [`6fae1b8`](https://github.com/Jielga/TMDataGrid/commit/6fae1b84d632fc6326a46a5c35ed40905d12eb39) Thanks [@Psvensso](https://github.com/Psvensso)! - English labels: the column menu says "Sort ascending" and "Sort descending" instead of "Sort by ASC" and "Sort by DESC", and the grouped-paging hint no longer mentions rendering. Tests that find these items by name need the new text.
+
+- [`e8832bd`](https://github.com/Jielga/TMDataGrid/commit/e8832bd7ae9975ba097ecc1b3f1108bbf17b54b9) Thanks [@Psvensso](https://github.com/Psvensso)! - The quick search decides which columns it reads once per data change instead of on every render. A column empty in every row no longer costs a scan of all rows per header render.
+
+- [`e8832bd`](https://github.com/Jielga/TMDataGrid/commit/e8832bd7ae9975ba097ecc1b3f1108bbf17b54b9) Thanks [@Psvensso](https://github.com/Psvensso)! - `getRowCanExpand` decides which data rows have a detail panel: a row it turns down shows no chevron, and expand-all skips it. A group row always expands, whatever the predicate says of its first record.
+
+- [`9ab3e2f`](https://github.com/Jielga/TMDataGrid/commit/9ab3e2fbce096c61653875df61832406cecc1151) Thanks [@Psvensso](https://github.com/Psvensso)! - Unticking the header checkbox clears every row the filters show again, including a ticked row that `enableRowSelection` turns down. Since TanStack 9.2 such a row stayed ticked and the header checkbox could never clear.
+
+- [`5d732cd`](https://github.com/Jielga/TMDataGrid/commit/5d732cd058efa406ebf28ab4bed0a4addff4e608) Thanks [@Psvensso](https://github.com/Psvensso)! - Swedish labels (`TMDATAGRID_LABELS_SV`) follow Excel's and the common data grids' wording. Tests that find controls by their Swedish name need the new text:
+
+  - Selection says "Markera": "Markera alla rader", "Markera rad", "Markera grupp", "Markera alla" in the export picker, "markerade rader" in export, and "Radmarkering" for the checkbox column
+  - Grouping: "Gruppera efter …", "Sluta gruppera efter …", and the paging hint
+  - Pinning: "Lås till vänster", "Lås till höger", "Lås upp"
+  - "Autopassa kolumnbredd", "Ångra alla", "Avbryt ny rad", "Ta med rubriker", "(Tomt)", "Visa alla detaljer", "Dölj alla detaljer"
+
+- [`ea364de`](https://github.com/Jielga/TMDataGrid/commit/ea364de266f7c21f859f125b11c05bf7b32059b5) Thanks [@Psvensso](https://github.com/Psvensso)! - Under cell selection, Tab or Shift+Tab back into the grid returns to the cursor cell when the body is scrolled, instead of scrolling to the top and losing the focus.
+
 ## 2.1.1
 
 ### Patch Changes
