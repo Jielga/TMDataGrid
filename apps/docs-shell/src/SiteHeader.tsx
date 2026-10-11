@@ -140,9 +140,31 @@ function VersionItem({
   );
 }
 
-function VersionMenu({ packageName }: { packageName: string }) {
-  const manifest = useDocsManifest();
+/** What npm serves today. Rendered only for a published package, so nothing asks the registry about one it does not have. */
+function NpmItem({ packageName }: { packageName: string }) {
   const npmVersion = headlineVersion(useDistTags(packageName));
+
+  return (
+    <Menu.Item
+      component="a"
+      href={npmHref(packageName)}
+      target="_blank"
+      rel="noreferrer"
+      rightSection={<IconExternalLink size={13} stroke={1.8} />}
+    >
+      {npmVersion ? `v${npmVersion} on npm` : "This package on npm"}
+    </Menu.Item>
+  );
+}
+
+function VersionMenu({
+  packageName,
+  published,
+}: {
+  packageName: string;
+  published: boolean;
+}) {
+  const manifest = useDocsManifest();
   const { versions, previews } = docsMenu(manifest, DOCS_SLUG);
   const here = currentEntry(manifest, DOCS_SLUG);
 
@@ -198,15 +220,11 @@ function VersionMenu({ packageName }: { packageName: string }) {
             navigate to. Under the same heading as the copies it read as one
             more of them, which is the one thing it must not do. */}
         <Menu.Label>Package</Menu.Label>
-        <Menu.Item
-          component="a"
-          href={npmHref(packageName)}
-          target="_blank"
-          rel="noreferrer"
-          rightSection={<IconExternalLink size={13} stroke={1.8} />}
-        >
-          {npmVersion ? `v${npmVersion} on npm` : "This package on npm"}
-        </Menu.Item>
+        {published ? (
+          <NpmItem packageName={packageName} />
+        ) : (
+          <Menu.Item disabled>Not on npm yet</Menu.Item>
+        )}
       </Menu.Dropdown>
     </Menu>
   );
@@ -220,19 +238,32 @@ export type SiteHeaderProps = {
   site: string | null;
   /** Shown before the package title. Defaults to a generic package icon. */
   mark?: ReactNode;
+  /** Before everything else, for a site's own control such as a navigation toggle. */
+  start?: ReactNode;
   /** The centre of the header, for a site's search. */
   children?: ReactNode;
 };
 
-export function SiteHeader({ site: slug, mark, children }: SiteHeaderProps) {
+export function SiteHeader({
+  site: slug,
+  mark,
+  start,
+  children,
+}: SiteHeaderProps) {
   const sites = useSites();
   const site = slug === null ? undefined : findSite(sites, slug);
 
   return (
     <header className={classes.header}>
       <Group gap="sm" wrap="nowrap" className={classes.brand}>
+        {start}
         <PackageMenu sites={sites} site={site} mark={mark} />
-        {site && <VersionMenu packageName={site.packages[0]} />}
+        {site && (
+          <VersionMenu
+            packageName={site.packages[0]}
+            published={site.published}
+          />
+        )}
       </Group>
 
       <div className={classes.centre}>{children}</div>

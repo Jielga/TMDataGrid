@@ -25,11 +25,20 @@ function SiteCard({ site }: { site: Site }) {
         <Stack gap={4} component="ul" className={classes.packages}>
           {site.packages.map((name) => (
             <li key={name}>
-              <Anchor href={npmHref(name)} target="_blank" rel="noreferrer">
+              {site.published ? (
+                <Anchor href={npmHref(name)} target="_blank" rel="noreferrer">
+                  <Code>{name}</Code>
+                </Anchor>
+              ) : (
                 <Code>{name}</Code>
-              </Anchor>
+              )}
             </li>
           ))}
+          {!site.published && (
+            <Text component="li" size="xs" c="dimmed">
+              Not on npm yet
+            </Text>
+          )}
         </Stack>
         <Group gap="xs" mt="auto">
           <Button

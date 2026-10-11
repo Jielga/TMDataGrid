@@ -8,6 +8,9 @@ const GALLERY_URL = `http://localhost:${GALLERY_PORT}/`;
 // Must match the `dev` script in apps/popup-docs/package.json.
 const POPUP_DOCS_PORT = 5275;
 const POPUP_DOCS_URL = `http://localhost:${POPUP_DOCS_PORT}/`;
+// Must match the `dev` script in apps/nordic-map-docs/package.json.
+const NORDIC_MAP_PORT = 5277;
+const NORDIC_MAP_URL = `http://localhost:${NORDIC_MAP_PORT}/`;
 // Must match the `dev` script in apps/docs-home/package.json.
 const HOME_PORT = 5276;
 const HOME_URL = `http://localhost:${HOME_PORT}/`;
@@ -54,6 +57,12 @@ export default defineConfig({
       use: { baseURL: POPUP_DOCS_URL },
     },
     {
+      // The @jielga/nordic-map demos in apps/nordic-map-docs.
+      name: "nordic-map",
+      testDir: "playwright/nordic-map",
+      use: { baseURL: NORDIC_MAP_URL },
+    },
+    {
       // The index page at the Pages root, in apps/docs-home.
       name: "home",
       testDir: "playwright/home",
@@ -82,6 +91,12 @@ export default defineConfig({
     {
       command: "bun run --cwd apps/popup-docs dev",
       url: POPUP_DOCS_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: "bun run --cwd apps/nordic-map-docs dev",
+      url: NORDIC_MAP_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

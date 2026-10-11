@@ -25,6 +25,11 @@ export type Site = {
   dir: string;
   /** The application that builds the site. */
   app: string;
+  /**
+   * Whether the packages are on npm. A site whose packages are not shows no
+   * registry version and no npm links. Defaults to `true`.
+   */
+  published: boolean;
 };
 
 /**
@@ -38,7 +43,7 @@ export const REPO_URL = "https://github.com/Jielga/react";
 
 function readSite(value: unknown): Site | null {
   if (!isRecord(value)) return null;
-  const { slug, title, description, packages, dir, app } = value;
+  const { slug, title, description, packages, dir, app, published } = value;
   if (typeof slug !== "string" || slug === "") return null;
   if (typeof title !== "string" || typeof description !== "string") {
     return null;
@@ -46,8 +51,17 @@ function readSite(value: unknown): Site | null {
   if (typeof dir !== "string" || typeof app !== "string") return null;
   if (!Array.isArray(packages) || packages.length === 0) return null;
   if (!packages.every((name) => typeof name === "string")) return null;
+  if (published !== undefined && typeof published !== "boolean") return null;
 
-  return { slug, title, description, packages, dir, app };
+  return {
+    slug,
+    title,
+    description,
+    packages,
+    dir,
+    app,
+    published: published ?? true,
+  };
 }
 
 /**
