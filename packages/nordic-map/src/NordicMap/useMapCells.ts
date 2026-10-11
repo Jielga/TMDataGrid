@@ -1,11 +1,12 @@
 import { geoPath } from "d3-geo";
 import type { Geometry } from "geojson";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toMap } from "./camera.ts";
 import type { Camera, Frame, MapBounds, Point } from "./camera.ts";
+import { rewindPolygon } from "./geometry.ts";
+import { viewBox } from "./mapProjection.ts";
 import type { MapProjection } from "./mapProjection.ts";
 import { cellKey, cellsInBox, levelForZoom } from "./mapSource.ts";
-import type { LonLatBox, MapCell, MapLayers, MapSource, RoadClass } from "./mapSource.ts";
+import type { MapCell, MapLayers, MapSource, PlaceClass, RoadClass } from "./mapSource.ts";
 
 /** A loaded cell, projected to map units and ready to draw */
 export type PreparedCell = {
@@ -14,7 +15,8 @@ export type PreparedCell = {
   water: Path2D | null;
   borders: Path2D | null;
   roads: { roadClass: RoadClass; path: Path2D }[];
-  labels: { text: string; at: Point }[];
+  roadLabels: { text: string; at: Point }[];
+  places: { name: string; at: Point; placeClass: PlaceClass; population: number }[];
   /** Background land and borders around the map's own area. Only overview cells have them. */
   contextLand: Path2D | null;
   contextBorders: Path2D | null;
@@ -36,14 +38,16 @@ function prepareCell({ key, layers, projection }: { key: string; layers: MapLaye
     return d ? new Path2D(d) : null;
   };
 
-  const outline: Geometry[] = [...layers.land, ...layers.borders];
+  // Custom sources may wind their polygons either way, and d3-geo fills the whole map for the wrong one
+  const land = layers.land.map(rewindPolygon);
+  const outline: Geometry[] = [...land, ...layers.borders];
   const [[minX, minY], [maxX, maxY]] = toPath.bounds({ type: "GeometryCollection", geometries: outline });
   const bounds = [minX, minY, maxX, maxY].every(Number.isFinite) ? { minX, minY, maxX, maxY } : null;
 
   return {
     key,
-    land: toPath2D(layers.land),
-    water: toPath2D(layers.water),
+    land: toPath2D(land),
+    water: toPath2D(layers.water.map(rewindPolygon)),
     borders: toPath2D(layers.borders),
     roads: roadClasses.flatMap((roadClass) => {
       const path = toPath2D(
@@ -57,35 +61,18 @@ function prepareCell({ key, layers, projection }: { key: string; layers: MapLaye
       );
       return path ? [{ roadClass, path }] : [];
     }),
-    labels: layers.labels.flatMap((label) => {
+    roadLabels: (layers.roadLabels ?? []).flatMap((label) => {
       const at = projection.project(label.at);
       return at ? [{ text: label.text, at }] : [];
     }),
-    contextLand: toPath2D(layers.context?.land ?? []),
+    places: (layers.places ?? []).flatMap((place) => {
+      const at = projection.project(place.at);
+      return at ? [{ name: place.name, at, placeClass: place.placeClass, population: place.population ?? 0 }] : [];
+    }),
+    contextLand: toPath2D((layers.context?.land ?? []).map(rewindPolygon)),
     contextBorders: toPath2D(layers.context?.borders ?? []),
     bounds,
   };
-}
-
-/** The area on screen in degrees, a bit larger so cells just outside the view are ready when panning. */
-function visibleBox({ camera, frame, projection }: { camera: Camera; frame: Frame; projection: MapProjection }): LonLatBox | null {
-  const { width, height } = frame.size;
-  const margin = Math.max(width, height) * 0.25;
-  const xs = [-margin, width / 2, width + margin];
-  const ys = [-margin, height / 2, height + margin];
-  const box: LonLatBox = { west: Infinity, south: Infinity, east: -Infinity, north: -Infinity };
-  for (const x of xs) {
-    for (const y of ys) {
-      const lonLat = projection.invert(toMap({ camera, frame, point: [x, y] }));
-      if (lonLat) {
-        box.west = Math.min(box.west, lonLat[0]);
-        box.east = Math.max(box.east, lonLat[0]);
-        box.south = Math.min(box.south, lonLat[1]);
-        box.north = Math.max(box.north, lonLat[1]);
-      }
-    }
-  }
-  return Number.isFinite(box.west) ? box : null;
 }
 
 function parseKey(key: string): MapCell | null {
@@ -197,7 +184,11 @@ export function useDetailCells({
   overview: PreparedCell[];
 }): PreparedCell[] {
   const level = camera ? levelForZoom({ source, zoom: camera.k }) : 0;
-  const box = camera && frame && level > 0 ? visibleBox({ camera, frame, projection }) : null;
+  // A bit larger than the view, so cells just outside it are ready when panning
+  const box =
+    camera && frame && level > 0
+      ? viewBox({ camera, frame, projection, margin: Math.max(frame.size.width, frame.size.height) * 0.25 })
+      : null;
 
   // From the wanted level down to level 1, the cells that cover the view
   const candidates: MapCell[][] = [];

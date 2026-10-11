@@ -1,42 +1,52 @@
 ---
 name: getting-started
 description: >
-  Set up @jielga/nordic-map: the NordicMap canvas map and the SwedenMap SVG map,
-  the bundled map sources (swedenOsmSource, swedenOverviewSource), GPS pins with
-  drag selection (pins, selected, defaultSelected, onSelectionChange,
-  onPinClick), layer visibility by zoom (showBorder, showRoads, showRoadLabels),
-  colors and the MapSource type for custom data. Load when rendering an offline
-  map of Sweden or the Nordic countries, when the map is blank, stays on its
-  loader, reloads on every render, or its cells 404 after a build.
+  Set up @jielga/nordic-map: the NordicMap canvas map of Sweden, the bundled
+  map sources (swedenOsmSource, swedenOverviewSource), GPS pins (MapPin with
+  label, color, priority and data), pin labels, selection (selectionMode,
+  selected, defaultSelected, onSelectionChange, onPinClick, highlighted,
+  onPinHover), layer visibility by zoom (LayerVisibility on showBorder,
+  showRoads, showRoadLabels, showPlaceLabels, showPins, showPinLabels),
+  colorScheme and mapStyle with lightMapStyle / darkMapStyle, the CSS
+  variables, and labels with NORDIC_MAP_LABELS_EN / NORDIC_MAP_LABELS_SV.
+  Load when rendering an offline map of Sweden, when the map is blank, stays
+  on its loader, reloads on every render, or its cells 404 after a build.
+  Clusters, tooltips, the camera ref, areas, paths and custom sources are the
+  map-content skill.
 metadata:
   type: core
   library: '@jielga/nordic-map'
   library_version: '0.1.0'
 sources:
-  - 'Jielga/react:packages/nordic-map/README.md'
+  - 'Jielga/react:packages/nordic-map/docs/getting-started.md'
+  - 'Jielga/react:packages/nordic-map/docs/pins.md'
+  - 'Jielga/react:packages/nordic-map/docs/selection.md'
+  - 'Jielga/react:packages/nordic-map/docs/layers.md'
+  - 'Jielga/react:packages/nordic-map/docs/styling.md'
+  - 'Jielga/react:packages/nordic-map/docs/localization.md'
+  - 'Jielga/react:packages/nordic-map/docs/accessibility.md'
+  - 'Jielga/react:packages/nordic-map/docs/data-and-licenses.md'
   - 'Jielga/react:packages/nordic-map/src/index.ts'
   - 'Jielga/react:packages/nordic-map/src/NordicMap/NordicMap.tsx'
-  - 'Jielga/react:packages/nordic-map/src/NordicMap/mapSource.ts'
-  - 'Jielga/react:packages/nordic-map/src/SwedenMap/SwedenMap.tsx'
 ---
 
 # nordic-map - Getting started
 
-`NordicMap` draws a `MapSource` on a canvas, loading each data cell when it
-comes into view, and zooms up to 50 times. `SwedenMap` draws Sweden's border
-and E-roads as SVG from bundled Natural Earth data. Both take GPS pins and
-share the same selection model.
+`NordicMap` draws an offline map of Sweden on a canvas, with GPS pins on top.
+Its data ships with the package; no tile server or API key. The only peer
+dependencies are `react` and `react-dom` 19.1+.
 
 ## Setup
 
 ```tsx
-import "@mantine/core/styles.css";
-import "@jielga/nordic-map/styles.css";
-import { NordicMap, swedenOsmSource, type NordicMapPin } from "@jielga/nordic-map";
+import "@jielga/nordic-map/styles.css"; // or styles.layer.css: layer `nordic-map`
+import { NordicMap, swedenOsmSource, type MapPin } from "@jielga/nordic-map";
 import { useState } from "react";
 
-const pins: NordicMapPin[] = [
-  { id: "sto", lat: 59.33, lon: 18.07, label: "Stockholm" },
+type Office = { staff: number };
+
+const pins: MapPin<Office>[] = [
+  { id: "sto", lat: 59.33, lon: 18.07, label: "Stockholm", data: { staff: 420 } },
 ];
 
 export function Offices() {
@@ -49,36 +59,62 @@ export function Offices() {
         pins={pins}
         selected={selected}
         onSelectionChange={setSelected}
+        onPinClick={(pin) => console.log(pin.data?.staff)}
       />
     </div>
   );
 }
 ```
 
-Peer dependencies: `react`, `react-dom` (19.1+), `@mantine/core`,
-`@tabler/icons-react`. Render inside a `MantineProvider`.
+`NordicMap<T>` and `NordicMapProps<T>` take the type of the pins' `data`.
 
-## Sources
+## Pins
 
-- `swedenOsmSource` - OpenStreetMap, three detail levels, neighbouring
-  countries as background. Its cells are JSON files in `dist/cells/`, named
-  with `new URL(..., import.meta.url)`; Vite and webpack 5 copy them.
-- `swedenOverviewSource` - Natural Earth 1:10m, one level.
-- A custom `MapSource` gives `extent`, `levels` (the first starts at
-  `minZoom: 1`), optional `attribution` and `loadCell(cell)` returning
-  `MapLayers`.
+- `MapPin`: `id`, `lat`, `lon` (WGS 84), `label` (visible label, tooltip,
+  accessible name), `color`, `priority` (wins label collisions and starts
+  clusters), `data`.
+- `showPinLabels` (default `false`) draws labels beside pins; they never
+  overlap pins or each other.
 
 ## Selection
 
-- Drag a box to select pins; Shift, Ctrl or Cmd + drag adds.
-- Click a pin to toggle it; click the empty map to clear.
-- Leave out `selected` to let the map keep its own selection, seeded by
-  `defaultSelected`.
+- `selectionMode`: `"multiple"` (default; drag a box, click toggles),
+  `"single"` (click selects one, drag pans), `"none"` (drag pans). Type
+  `SelectionMode`.
+- `selected` / `onSelectionChange` controlled, or `defaultSelected`.
+- `highlighted` (pin id) draws a ring; `onPinHover` reports pointer and
+  keyboard focus. Together they link the map to a list.
 
 ## Layers
 
-`showBorder`, `showRoads` and `showRoadLabels` take `true`, `false` or a zoom
-range: `showRoadLabels={{ minZoom: 3 }}`.
+Every `show*` prop takes a `LayerVisibility`: `true`, `false`, or
+`{ minZoom, maxZoom }` (zoom 1 is the whole map, both ends included):
+`showBorder`, `showRoads`, `showRoadLabels`, `showPlaceLabels`, `showPins`,
+`showPinLabels`, `showAreas`, `showPaths`. Hidden pins can not be clicked,
+selected or tabbed to.
+
+## Styling
+
+- `colorScheme`: `"auto"` (default, follows the system), `"light"`, `"dark"`.
+  Type `MapColorScheme`. Pass your app's scheme if it has its own switch.
+- `mapStyle`: any `MapStyle` field over `lightMapStyle` / `darkMapStyle`
+  (`sea`, `land`, `border`, `road`, `text`, `pin`, `pinSelected`, `pinRadius`,
+  `areaFill`, `path`, `highlight` and more).
+- Buttons, tooltip and credit line use CSS variables such as
+  `--nordic-map-control-bg`, `--nordic-map-focus-ring`,
+  `--nordic-map-tooltip-bg`; set them on the map or an ancestor.
+
+## Text
+
+`labels` merges `NordicMapLabels` over `NORDIC_MAP_LABELS_EN`;
+`NORDIC_MAP_LABELS_SV` is Swedish. `label` names the map.
+
+## Sources
+
+- `swedenOsmSource` - OpenStreetMap, three levels, lakes, roads, place names.
+  Cells are JSON files in `dist/cells/`, found with
+  `new URL(..., import.meta.url)`; Vite and webpack 5 copy them.
+- `swedenOverviewSource` - Natural Earth, one level, no lakes or places.
 
 ## Common mistakes
 
@@ -98,19 +134,22 @@ range: `showRoadLabels={{ minZoom: 3 }}`.
 
 ### HIGH: the stylesheet is missing
 
-Import `@jielga/nordic-map/styles.css` after Mantine's stylesheet; without it
-the canvas and its input overlay are not laid out, and the map does not fill
-its container.
+Without `@jielga/nordic-map/styles.css` the canvas and its input layer are not
+laid out, and the map does not fill its container.
+
+### MEDIUM: pins without unique ids
+
+`id` keys the selection, the keyboard buttons and the callbacks. Two pins with
+one id select together and confuse screen readers.
 
 ### MEDIUM: the attribution is removed
 
-The OpenStreetMap data is under the ODbL, and a map that shows it must
-credit "© OpenStreetMap contributors". `swedenOsmSource` sets
-`attribution`, and `NordicMap` shows it; keep it when wrapping the source.
+OpenStreetMap data is under the ODbL and must be credited "© OpenStreetMap
+contributors". `swedenOsmSource` sets `attribution` and `NordicMap` shows it;
+keep it when wrapping the source.
 
-### MEDIUM: a bundler that does not handle `new URL(..., import.meta.url)`
+### MEDIUM: cells 404 after a build
 
-The cells of `swedenOsmSource` are found through `new URL` asset references.
-A bundler without support for them leaves the files out and every cell
-request fails. Use Vite or webpack 5, or a custom `MapSource` whose
-`loadCell` fetches from your own server.
+A bundler without `new URL(..., import.meta.url)` support leaves the cell
+files out and the map shows its load error. Use Vite or webpack 5, or a
+`MapSource` whose `loadCell` fetches from your own server.

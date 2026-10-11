@@ -1,11 +1,11 @@
 import type { MapLayers, MapSource } from "../../NordicMap/mapSource.ts";
 import { cellUrls, levels } from "./cellUrls.ts";
 
-const emptyLayers: MapLayers = { land: [], water: [], borders: [], roads: [], labels: [] };
+const emptyLayers: MapLayers = { land: [], water: [], borders: [], roads: [] };
 
 /**
- * Sweden from OpenStreetMap: coast and land border, lakes, E-roads, national roads and regional roads,
- * in three detail levels. Built by scripts/map-data/build_sweden_osm.py.
+ * Sweden from OpenStreetMap: coast and land border, lakes, E-roads, national roads, regional roads and the names
+ * of cities, towns and villages, in three detail levels. Built by scripts/map-data/build_sweden_osm.py.
  * Each cell is a separate file that the bundler copies, and it loads when it comes into view.
  */
 export const swedenOsmSource: MapSource = {

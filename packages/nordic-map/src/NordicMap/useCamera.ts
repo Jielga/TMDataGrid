@@ -33,8 +33,11 @@ export type CameraControls = {
   zoomSmooth: (args: { anchor: Point; factor: number }) => void;
   /** Keeps panning with `velocity` (pixels per millisecond) and slows down */
   fling: (velocity: Point) => void;
-  /** Animates back to the whole map */
-  reset: () => void;
+  /**
+   * Moves to the camera `to` returns for the current frame, eased over `duration` milliseconds,
+   * or at once when `duration` is 0
+   */
+  moveTo: (args: { to: (frame: Frame) => Camera; duration: number }) => void;
   stop: () => void;
 };
 
@@ -160,12 +163,18 @@ export function useCamera(frame: Frame | null): CameraControls {
         start({ kind: "fling", velocity });
       }
     },
-    reset: () => {
+    moveTo: ({ to, duration }) => {
       const { camera: from, frame: currentFrame } = latest.current;
       stop();
-      if (from && currentFrame) {
-        start({ kind: "tween", from, to: homeCamera(currentFrame), startTime: performance.now(), duration: 300 });
+      if (!from || !currentFrame) {
+        return;
       }
+      const target = clampCamera({ camera: to(currentFrame), frame: currentFrame });
+      if (duration <= 0) {
+        commit(target);
+        return;
+      }
+      start({ kind: "tween", from, to: target, startTime: performance.now(), duration });
     },
     stop,
   };

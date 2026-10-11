@@ -24,8 +24,6 @@ export default {
   external: [
     /^react($|\/)/,
     /^react-dom($|\/)/,
-    /^@mantine\//,
-    /^@tabler\//,
     /^d3-geo$/,
     /^topojson-client$/,
     /^geojson$/,

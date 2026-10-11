@@ -1,7 +1,8 @@
 import { geoTransverseMercator } from "d3-geo";
 import type { GeoProjection } from "d3-geo";
 import type { MultiPoint } from "geojson";
-import type { Point } from "./camera.ts";
+import { boundsOfPoints, toMap } from "./camera.ts";
+import type { Camera, Frame, MapBounds, Point } from "./camera.ts";
 import type { LonLat, LonLatBox, MapSource } from "./mapSource.ts";
 
 /** Size of the projected map, in map units. Only the ratio matters, the camera scales it to the view. */
@@ -14,6 +15,7 @@ export type MapProjection = {
 };
 
 /** Points along the edge of the box. Its edges curve in the projection, so the corners alone are not enough. */
+export
 function boxOutline(box: LonLatBox): MultiPoint {
   const coordinates: LonLat[] = [];
   const steps = 16;
@@ -47,4 +49,45 @@ export function createMapProjection(source: MapSource): MapProjection {
       return lonLat ? [lonLat[0], lonLat[1]] : null;
     },
   };
+}
+
+/** The box in map units, around its curved edges */
+export function projectBox({ projection, box }: { projection: MapProjection; box: LonLatBox }): MapBounds | null {
+  return boundsOfPoints(
+    boxOutline(box).coordinates.flatMap((position) => {
+      const [lon, lat] = position;
+      const point = lon === undefined || lat === undefined ? null : projection.project([lon, lat]);
+      return point ? [point] : [];
+    }),
+  );
+}
+
+/** The area the view shows, in degrees, grown by `margin` pixels on every side */
+export function viewBox({
+  camera,
+  frame,
+  projection,
+  margin = 0,
+}: {
+  camera: Camera;
+  frame: Frame;
+  projection: MapProjection;
+  margin?: number;
+}): LonLatBox | null {
+  const { width, height } = frame.size;
+  const xs = [-margin, width / 2, width + margin];
+  const ys = [-margin, height / 2, height + margin];
+  const box: LonLatBox = { west: Infinity, south: Infinity, east: -Infinity, north: -Infinity };
+  for (const x of xs) {
+    for (const y of ys) {
+      const lonLat = projection.invert(toMap({ camera, frame, point: [x, y] }));
+      if (lonLat) {
+        box.west = Math.min(box.west, lonLat[0]);
+        box.east = Math.max(box.east, lonLat[0]);
+        box.south = Math.min(box.south, lonLat[1]);
+        box.north = Math.max(box.north, lonLat[1]);
+      }
+    }
+  }
+  return Number.isFinite(box.west) ? box : null;
 }

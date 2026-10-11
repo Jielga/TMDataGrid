@@ -44,6 +44,12 @@ from shapely.prepared import prep
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = ROOT / ".cache" / "geodata"
 OUTPUT = ROOT / "src" / "data" / "swedenOsm"
+REGIONS_OUTPUT = ROOT / "src" / "data" / "swedenRegions"
+
+# Simplification of the counties and municipalities, in meters, and the smallest island they keep, in square kilometers
+REGION_TOLERANCE = 200
+REGION_MIN_ISLAND_KM2 = 0.5
+REGION_PRECISION = 4
 
 # Area to read, in degrees. A little larger than Sweden.
 WEST, SOUTH, EAST, NORTH = 10.0, 55.0, 24.5, 69.2
@@ -52,6 +58,10 @@ WEST, SOUTH, EAST, NORTH = 10.0, 55.0, 24.5, 69.2
 CONTEXT_AREA = (-10.0, 50.0, 45.0, 75.0)
 
 CACHE = SOURCES / "osm-extract.pickle"
+PLACES_CACHE = SOURCES / "osm-places-regions.pickle"
+
+# OSM `place` values the map names, from the most important
+PLACE_CLASSES = ("city", "town", "village")
 
 to_metric = Transformer.from_crs("EPSG:4326", "EPSG:3006", always_xy=True)
 to_degrees = Transformer.from_crs("EPSG:3006", "EPSG:4326", always_xy=True)
@@ -79,6 +89,8 @@ class Level:
     min_island_km2: float
     # Decimals kept in coordinates
     precision: int
+    # OSM `place` classes the level names
+    place_classes: tuple[str, ...] = ()
 
 
 LEVELS = [
@@ -90,6 +102,7 @@ LEVELS = [
         min_lake_km2=150,
         min_island_km2=3,
         precision=4,
+        place_classes=("city",),
     ),
     Level(
         min_zoom=3,
@@ -99,6 +112,7 @@ LEVELS = [
         min_lake_km2=20,
         min_island_km2=0.2,
         precision=5,
+        place_classes=("city", "town"),
     ),
     Level(
         min_zoom=10,
@@ -108,6 +122,7 @@ LEVELS = [
         min_lake_km2=3,
         min_island_km2=0.01,
         precision=5,
+        place_classes=PLACE_CLASSES,
     ),
 ]
 
@@ -284,6 +299,70 @@ def read_osm(boundary: MultiPolygon) -> tuple[dict[tuple[str, str], list[LineStr
     return roads, lakes
 
 
+@dataclass(frozen=True)
+class Place:
+    name: str
+    place_class: str
+    population: int | None
+    lon: float
+    lat: float
+
+
+@dataclass(frozen=True)
+class Region:
+    admin_level: int
+    tags: dict[str, str]
+    geometry: MultiPolygon
+
+
+def parse_population(value: str | None) -> int | None:
+    digits = re.sub(r"[\s,.]", "", value or "")
+    return int(digits) if digits.isdigit() else None
+
+
+def read_places_and_regions(boundary: MultiPolygon) -> tuple[list[Place], list[Region]]:
+    """Named cities, towns and villages, and the county and municipality areas, from the Geofabrik extract."""
+    places: list[Place] = []
+    regions: list[Region] = []
+    wkb = osmium.geom.WKBFactory()
+    processor = (
+        osmium.FileProcessor(str(SOURCES / "sweden-latest.osm.pbf"))
+        .with_locations()
+        .with_areas(osmium.filter.TagFilter(("boundary", "administrative")))
+        .with_filter(osmium.filter.EntityFilter(osmium.osm.NODE | osmium.osm.AREA))
+        .with_filter(osmium.filter.KeyFilter("place").enable_for(osmium.osm.NODE))
+        .with_filter(osmium.filter.TagFilter(("boundary", "administrative")).enable_for(osmium.osm.AREA))
+    )
+    for item in processor:
+        if item.is_area():
+            level = item.tags.get("admin_level")
+            if level not in ("4", "7") or item.from_way():
+                continue
+            try:
+                geometry = shapely.make_valid(shapely.from_wkb(wkb.create_multipolygon(item)))
+            except RuntimeError:
+                continue
+            regions.append(Region(admin_level=int(level), tags=dict(item.tags), geometry=as_multipolygon(geometry)))
+            continue
+        place_class = item.tags.get("place")
+        name = item.tags.get("name")
+        if place_class not in PLACE_CLASSES or not name or not item.location.valid():
+            continue
+        places.append(
+            Place(
+                name=name,
+                place_class=place_class,
+                population=parse_population(item.tags.get("population")),
+                lon=item.location.lon,
+                lat=item.location.lat,
+            )
+        )
+    prepared = prep(boundary)
+    places = [place for place in places if prepared.contains(Point(place.lon, place.lat))]
+    log(f"  {len(places):,} places, {len(regions)} counties and municipalities")
+    return places, regions
+
+
 # ---------------------------------------------------------------- geometry
 
 
@@ -397,7 +476,28 @@ def build_level(level: Level, land: MultiPolygon, lakes: list[Polygon], roads) -
     return LevelData(land=simple_land, borders=borders, lakes=simple_lakes, roads=simple_roads)
 
 
-def cell_layers(data: LevelData, area, level: Level, level_index: int) -> dict | None:
+def cell_places(places: list[Place], area, level: Level) -> list[dict]:
+    """The places of the level whose point is in the cell. A point on an edge belongs to the cell east or north of it."""
+    west, south, east, north = area.bounds
+    inside = [
+        place
+        for place in places
+        if place.place_class in level.place_classes and west <= place.lon < east and south <= place.lat < north
+    ]
+    rank = {name: index for index, name in enumerate(PLACE_CLASSES)}
+    inside.sort(key=lambda place: (rank[place.place_class], -(place.population or 0), place.name))
+    return [
+        {
+            "name": place.name,
+            "at": rounded([place.lon, place.lat], level.precision),
+            "placeClass": place.place_class,
+            **({"population": place.population} if place.population is not None else {}),
+        }
+        for place in inside
+    ]
+
+
+def cell_layers(data: LevelData, area, level: Level, level_index: int, places: list[Place]) -> dict | None:
     precision = level.precision
     land = as_multipolygon(data.land.intersection(area))
     borders = [line for border in data.borders for line in as_lines(border.intersection(area))]
@@ -420,20 +520,91 @@ def cell_layers(data: LevelData, area, level: Level, level_index: int) -> dict |
         if road_class_name == "european":
             for single in ref.split(";"):
                 e_road_lines.setdefault(single, []).extend(clipped)
-    labels = []
+    road_labels = []
     for single, lines in sorted(e_road_lines.items()):
         at = label_on(lines, LABEL_HINTS.get(single) if level_index == 0 else None)
         if at:
-            labels.append({"text": single, "at": rounded(list(at), precision)})
-    if land.is_empty and not roads and not water:
+            road_labels.append({"text": single, "at": rounded(list(at), precision)})
+    named = cell_places(places, area, level)
+    if land.is_empty and not roads and not water and not named:
         return None
     return {
         "land": [geometry_json(polygon, precision) for polygon in land.geoms],
         "water": [geometry_json(lake, precision) for lake in water],
         "borders": [geometry_json(line, precision) for line in borders],
         "roads": roads,
-        "labels": labels,
+        "roadLabels": road_labels,
+        "places": named,
     }
+
+
+# ---------------------------------------------------------------- counties and municipalities
+
+
+def shared_arc_simplify(areas: dict[str, MultiPolygon], tolerance: float) -> dict[str, MultiPolygon]:
+    """
+    Simplifies areas that share borders so they still meet exactly. Simplifying each area on its own moves the
+    two copies of a shared border differently, which leaves slivers and gaps between neighbours. Here the borders
+    are cut into arcs between the points where three areas or the coast meet, each arc is simplified once,
+    and the areas are built again from the simplified arcs.
+    """
+    metric = {key: reproject(area, to_metric) for key, area in areas.items()}
+    # union_all nodes the lines where they meet, and line_merge joins the pieces between those nodes into arcs
+    linework = shapely.line_merge(shapely.union_all([area.boundary for area in metric.values()]))
+    arcs = [arc.simplify(tolerance, preserve_topology=False) for arc in as_lines(linework)]
+    # Simplified arcs can cross where the coast is dense, and polygonize only builds faces from lines that meet
+    # at their ends. Noding them again splits them at every crossing; the small faces that adds are assigned below.
+    faces = list(shapely.get_parts(shapely.polygonize(as_lines(shapely.union_all(arcs)))))
+    prepared = {key: prep(area) for key, area in metric.items()}
+    pieces: dict[str, list[Polygon]] = {key: [] for key in metric}
+    for face in faces:
+        point = face.representative_point()
+        owner = next((key for key, area in prepared.items() if area.contains(point)), None)
+        if owner is not None:
+            pieces[owner].append(face)
+    result = {}
+    for key, parts in pieces.items():
+        merged = as_multipolygon(shapely.make_valid(shapely.union_all(parts))) if parts else MultiPolygon()
+        kept = merged.area / max(metric[key].area, 1)
+        if kept < 0.97:
+            log(f"  warning: {key} kept {kept:.1%} of its area after simplifying")
+        result[key] = reproject(merged, to_degrees)
+    return result
+
+
+def area_json(key: str, label: str, geometry: MultiPolygon) -> dict:
+    return {"id": key, "label": label, "geometry": geometry_json(geometry, REGION_PRECISION)}
+
+
+def build_regions(regions: list[Region], land: MultiPolygon) -> None:
+    """Writes the municipalities, and the counties built from them, as `MapArea` lists clipped to the land."""
+    municipalities = {region.tags["ref:scb"]: region for region in regions if region.admin_level == 7}
+    counties = {region.tags["ref:SE:scb"]: region for region in regions if region.admin_level == 4}
+    log(f"Building {len(municipalities)} municipalities and {len(counties)} counties")
+    clipped = {
+        key: drop_small(as_multipolygon(shapely.make_valid(region.geometry.intersection(land))), REGION_MIN_ISLAND_KM2)
+        for key, region in municipalities.items()
+    }
+    simple = shared_arc_simplify(clipped, REGION_TOLERANCE)
+    # A municipality code starts with the code of its county, so the counties are unions of the same faces
+    # and share their borders exactly
+    county_areas = {
+        code: as_multipolygon(shapely.make_valid(shapely.union_all([area for key, area in simple.items() if key[:2] == code])))
+        for code in counties
+    }
+    REGIONS_OUTPUT.mkdir(parents=True, exist_ok=True)
+    outputs = {
+        "sweden-municipalities.json": [
+            area_json(key, municipalities[key].tags["name"], simple[key]) for key in sorted(simple) if not simple[key].is_empty
+        ],
+        "sweden-counties.json": [
+            area_json(code, counties[code].tags["name"], county_areas[code]) for code in sorted(county_areas)
+        ],
+    }
+    for name, areas in outputs.items():
+        text = json.dumps(areas, separators=(",", ":"), ensure_ascii=False)
+        (REGIONS_OUTPUT / name).write_text(text, encoding="utf-8")
+        log(f"  {name}: {len(areas)} areas, {len(text.encode('utf-8')) / 1e6:.2f} MB")
 
 
 def cell_range(start: float, end: float, origin: float, size: float) -> range:
@@ -454,6 +625,13 @@ def main() -> None:
         log("Reading roads and lakes from the OSM extract (takes a few minutes)")
         roads, water_areas = read_osm(boundary)
         CACHE.write_bytes(pickle.dumps((roads, water_areas)))
+    if PLACES_CACHE.exists() and PLACES_CACHE.stat().st_mtime > pbf.stat().st_mtime:
+        log("Reading places, counties and municipalities from their cache")
+        places, regions = pickle.loads(PLACES_CACHE.read_bytes())
+    else:
+        log("Reading places, counties and municipalities from the OSM extract")
+        places, regions = read_places_and_regions(boundary)
+        PLACES_CACHE.write_bytes(pickle.dumps((places, regions)))
     land_area = prep(land)
     lakes = [as_multipolygon(lake.intersection(land)) for lake in water_areas if km2(lake) >= 3 and land_area.intersects(lake)]
     lakes = [lake for lake in lakes if not lake.is_empty]
@@ -478,7 +656,7 @@ def main() -> None:
             for y in cell_range(SOUTH, NORTH, 90, size):
                 west, south = x * size - 180, y * size - 90
                 area = box(west, south, west + size, south + size)
-                layers = cell_layers(data, area, level, level_index)
+                layers = cell_layers(data, area, level, level_index, places)
                 if layers is None:
                     continue
                 if level_index == 0:
@@ -510,6 +688,8 @@ def main() -> None:
     lines.append("};")
     (OUTPUT / "cellUrls.ts").write_text("\n".join(lines) + "\n", encoding="utf-8")
     log(f"Done: {len(written)} cells, {total_bytes / 1e6:.2f} MB in total")
+
+    build_regions(regions, land)
 
 
 if __name__ == "__main__":

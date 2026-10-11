@@ -37,7 +37,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** Pixels per map unit at zoom 1 */
-function fitScale(frame: Frame): number {
+export function fitScale(frame: Frame): number {
   const { size, bounds, padding } = frame;
   const width = Math.max(size.width - padding * 2, 1);
   const height = Math.max(size.height - padding * 2, 1);
@@ -151,6 +151,38 @@ export function pinchCamera({
     },
     frame,
   });
+}
+
+/**
+ * The camera that shows `bounds` (map units) as large as fits, with `margin` pixels around it.
+ * The zoom stays between 1 and `maxZoom`, so a very small area, such as a single point, shows at `maxZoom`.
+ */
+export function cameraForBounds({ frame, bounds, margin }: { frame: Frame; bounds: MapBounds; margin: number }): Camera {
+  const width = Math.max(frame.size.width - margin * 2, 1);
+  const height = Math.max(frame.size.height - margin * 2, 1);
+  const scale = Math.min(
+    width / Math.max(bounds.maxX - bounds.minX, 1e-9),
+    height / Math.max(bounds.maxY - bounds.minY, 1e-9),
+  );
+  return clampCamera({
+    camera: { k: scale / fitScale(frame), center: [(bounds.minX + bounds.maxX) / 2, (bounds.minY + bounds.maxY) / 2] },
+    frame,
+  });
+}
+
+/** The smallest rectangle around `points`, or null when there are none */
+export function boundsOfPoints(points: Point[]): MapBounds | null {
+  if (points.length === 0) {
+    return null;
+  }
+  const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (const [x, y] of points) {
+    bounds.minX = Math.min(bounds.minX, x);
+    bounds.minY = Math.min(bounds.minY, y);
+    bounds.maxX = Math.max(bounds.maxX, x);
+    bounds.maxY = Math.max(bounds.maxY, y);
+  }
+  return bounds;
 }
 
 export function sameCamera(a: Camera, b: Camera): boolean {

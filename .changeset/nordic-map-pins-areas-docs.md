@@ -1,0 +1,22 @@
+---
+"@jielga/nordic-map": minor
+---
+
+Pin labels, clusters, areas, paths, place names, a camera ref, keyboard access and docs pages.
+
+- Pins: `MapPin<T>` with `priority` and `data`, visible labels that never overlap (`showPinLabels`), `showPins` zoom ranges, `cluster`, `selectionMode`, `highlighted`, `onPinHover` and `renderTooltip`.
+- Areas and paths: `areas`, `paths` and their callbacks, with Sweden's counties and municipalities from `loadSwedenCounties` and `loadSwedenMunicipalities`.
+- Place names of cities, towns and villages in `swedenOsmSource`, shown with `showPlaceLabels`.
+- A `ref` with `flyTo`, `fitBounds`, `fitPins`, `zoomIn`, `zoomOut`, `reset` and `getView`, and `onMapClick`.
+- Light and dark colors through `colorScheme`, `mapStyle` with `lightMapStyle` and `darkMapStyle`, CSS variables for the buttons, and `styles.layer.css`.
+- `labels`, with English and Swedish texts.
+- Every pin and cluster on screen is a button in the tab order.
+
+Breaking:
+
+- `@mantine/core` and `@tabler/icons-react` are no longer peer dependencies, and the map needs no `MantineProvider`.
+- `SwedenMap` is removed; use `<NordicMap source={swedenOverviewSource} />`.
+- `NordicMapPin` is now `MapPin`, and `MapLabel` with `MapLayers.labels` is now `MapRoadLabel` with `MapLayers.roadLabels`.
+- The color and size props (`background`, `landFill`, `pinColor`, `pinRadius`, `borderWidth`, `roadColor` and the others) moved into `mapStyle`, under the names on the Styling page.
+- `loadErrorText` is now `labels.loadError`, and `onZoomChange` is now `onViewChange`, called with the whole view.
+- The default colors follow the system's light or dark setting; pass `colorScheme="dark"` for the old colors.

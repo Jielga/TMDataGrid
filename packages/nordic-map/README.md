@@ -1,6 +1,6 @@
 # @jielga/nordic-map
 
-React components that render offline maps of the Nordic countries, with GPS pins and drag selection.
+An offline map of Sweden for React, with GPS pins, labels, clusters, areas and paths.
 The map data ships with the package, so no tile server or API key is needed.
 
 - Documentation and live demos: <https://jielga.github.io/react/nordic-map/>
@@ -12,26 +12,25 @@ The map data ships with the package, so no tile server or API key is needed.
 npm install @jielga/nordic-map
 ```
 
-Peer dependencies: `react` and `react-dom` (19.1 or later), `@mantine/core` and `@tabler/icons-react`.
+The peer dependencies are `react` and `react-dom`, 19.1 or later.
 
-Import the stylesheet once, after Mantine's:
+Import the stylesheet once:
 
 ```ts
-import "@mantine/core/styles.css";
 import "@jielga/nordic-map/styles.css";
 ```
 
-Render the maps inside a Mantine `MantineProvider`.
+`@jielga/nordic-map/styles.layer.css` holds the same rules in the cascade layer `nordic-map`.
 
 ## Usage
 
 `NordicMap` fills its container, so give the container a height:
 
 ```tsx
-import { NordicMap, swedenOsmSource, type NordicMapPin } from "@jielga/nordic-map";
+import { NordicMap, swedenOsmSource, type MapPin } from "@jielga/nordic-map";
 import { useState } from "react";
 
-const pins: NordicMapPin[] = [
+const pins: MapPin[] = [
   { id: "sto", lat: 59.33, lon: 18.07, label: "Stockholm" },
   { id: "got", lat: 57.71, lon: 11.97, label: "Göteborg" },
 ];
@@ -53,43 +52,28 @@ export function Offices() {
 }
 ```
 
-Define `source` outside the component; a new object on every render reloads every map cell.
+Define `source` outside the component; a new object on every render loads every map cell again.
 
-## Components
+## Features
 
-- `NordicMap` - a canvas map that zooms up to 50 times and draws any `MapSource`.
-  Cells of the source load when they come into view.
-- `SwedenMap` - an SVG map of Sweden's border and E-roads, drawn from bundled Natural Earth data.
+- Pins with labels that never overlap, colors, priorities and your own data
+- Drag-select, single or no selection, and a highlighted pin for linking the map to a list
+- Clusters of close pins, which open on click
+- Areas, with Sweden's counties and municipalities built in for choropleth maps
+- Paths, such as GPS tracks and routes
+- Place names, roads and road signs, each shown in a zoom range of your choice
+- A camera you move from code: `flyTo`, `fitBounds`, `fitPins`
+- Light and dark colors, a style object for every color, and CSS variables for the buttons
+- English and Swedish texts
+- Keyboard access to every pin on screen
 
-Both maps share the same pin selection:
-
-- Drag a box to select the pins in it. Shift, Ctrl or Cmd + drag adds to the selection.
-- Click a pin to toggle it. Click the empty map to clear the selection.
-- Scroll or pinch to zoom. Drag with the right or middle mouse button, or with two fingers, to pan.
-
-`NordicMap` also takes the keyboard: `+` and `-` zoom, the arrow keys pan, and `0` shows the whole map.
-
-## Map sources
-
-`NordicMap` draws a `MapSource`: an extent, a list of detail levels and a `loadCell` function that returns the layers of one cell.
-
-- `swedenOsmSource` - Sweden from OpenStreetMap in three detail levels, with the neighbouring countries as a plain background
-- `swedenOverviewSource` - Sweden from Natural Earth 1:10m in one level, the data `SwedenMap` draws
-
-The cells of `swedenOsmSource` are separate JSON files in `dist/cells/`.
-The bundle names each with `new URL(..., import.meta.url)`, so Vite and webpack 5 copy them into your build.
-
-The border, the roads and the road number signs can each be turned off, or shown only in a zoom range, with `showBorder`, `showRoads` and `showRoadLabels`:
-
-```tsx
-<NordicMap source={swedenOsmSource} showRoadLabels={{ minZoom: 3 }} />
-```
+The documentation in [`docs/`](docs/) has one page per feature, and ships with the package.
 
 ## Data licenses
 
 The OpenStreetMap data is © OpenStreetMap contributors, under the Open Database License (ODbL).
 A map that shows it must credit "© OpenStreetMap contributors"; `swedenOsmSource` sets this credit, and `NordicMap` shows it in the corner.
-The Natural Earth data is in the public domain.
+The Natural Earth data of `swedenOverviewSource` is in the public domain.
 
 ## Development
 

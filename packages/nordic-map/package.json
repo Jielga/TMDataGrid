@@ -1,7 +1,7 @@
 {
   "name": "@jielga/nordic-map",
   "version": "0.1.0",
-  "description": "React components that render offline maps of the Nordic countries, with GPS pins and drag selection.",
+  "description": "React component that renders offline maps of Sweden, with GPS pins, labels, clusters, areas and paths.",
   "license": "MIT",
   "author": "jielga",
   "type": "module",
@@ -23,23 +23,23 @@
     "sweden",
     "nordic",
     "offline",
-    "svg",
     "canvas",
     "openstreetmap",
-    "mantine",
     "tanstack-intent"
   ],
   "publishConfig": {
     "access": "public"
   },
   "intent": {
-    "docs": "README.md"
+    "docs": "docs/"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.*",
     "!src/data/swedenOsm/cells",
+    "!src/data/swedenRegions/*.json",
+    "docs",
     "skills",
     "!skills/_artifacts"
   ],
@@ -51,6 +51,8 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./styles.layer.css": "./dist/styles.layer.css",
+    "./docs/*": "./docs/*",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -58,8 +60,6 @@
     "test": "vitest run"
   },
   "peerDependencies": {
-    "@mantine/core": "^9.4.0",
-    "@tabler/icons-react": "^3.46.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -69,13 +69,11 @@
   },
   "devDependencies": {
     "@babel/core": "catalog:",
-    "@mantine/core": "catalog:",
-    "@mantine/hooks": "catalog:",
     "@rolldown/plugin-babel": "catalog:",
-    "@tabler/icons-react": "catalog:",
     "@tanstack/intent": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
     "@types/babel__core": "catalog:",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",

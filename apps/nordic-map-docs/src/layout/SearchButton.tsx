@@ -14,9 +14,9 @@ export function SearchButton() {
         fw={400}
         c="dimmed"
       >
-        Search demos
+        Search the docs
       </Button>
-      <ActionIcon variant="default" size="lg" hiddenFrom="sm" onClick={spotlight.open} aria-label="Search demos">
+      <ActionIcon variant="default" size="lg" hiddenFrom="sm" onClick={spotlight.open} aria-label="Search the docs">
         <IconSearch size={18} stroke={1.5} />
       </ActionIcon>
     </>

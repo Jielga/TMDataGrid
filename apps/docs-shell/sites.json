@@ -24,7 +24,7 @@
     {
       "slug": "nordic-map",
       "title": "Nordic Map",
-      "description": "React components that render offline maps of the Nordic countries, with GPS pins and drag selection.",
+      "description": "An offline map of Sweden for React, with GPS pins, labels, clusters, areas and paths.",
       "packages": [
         "@jielga/nordic-map"
       ],

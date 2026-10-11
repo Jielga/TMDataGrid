@@ -27,9 +27,25 @@ export type MapRoad = {
   ref?: string;
 };
 
-export type MapLabel = {
+/** A road number sign, drawn where the road runs */
+export type MapRoadLabel = {
+  /** Road number, for example "E4" */
   text: string;
   at: LonLat;
+};
+
+/**
+ * Importance of a named place, from the most important. The map names cities first, and towns and villages
+ * where there is room.
+ */
+export type PlaceClass = "city" | "town" | "village";
+
+export type MapPlace = {
+  name: string;
+  at: LonLat;
+  placeClass: PlaceClass;
+  /** Breaks ties between places of the same class: the larger one is named first */
+  population?: number;
 };
 
 /**
@@ -43,8 +59,10 @@ export type MapLayers = {
   /** Coastline and country borders */
   borders: (LineString | MultiLineString)[];
   roads: MapRoad[];
-  /** Road number labels */
-  labels: MapLabel[];
+  /** Road number signs */
+  roadLabels?: MapRoadLabel[];
+  /** Names of cities, towns and villages */
+  places?: MapPlace[];
   /**
    * Plain background around the map's own area, for example the neighbouring countries. Only overview cells
    * (level 0) carry it, and it is drawn at every zoom under everything else.

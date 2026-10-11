@@ -1,5 +1,5 @@
 import type { Point } from "./camera.ts";
-import type { RoadClass } from "./mapSource.ts";
+import type { PlaceClass, RoadClass } from "./mapSource.ts";
 import type { PreparedCell } from "./useMapCells.ts";
 
 /** Everything to draw, with each layer of all cells joined into one path */
@@ -10,8 +10,12 @@ export type MapScene = {
   water: Path2D | null;
   borders: Path2D | null;
   roads: { roadClass: RoadClass; path: Path2D }[];
-  labels: { text: string; at: Point }[];
+  roadLabels: { text: string; at: Point }[];
+  /** From the most important, which gets its name drawn first */
+  places: { name: string; at: Point; placeClass: PlaceClass; population: number }[];
 };
+
+const placeRank: Record<PlaceClass, number> = { city: 0, town: 1, village: 2 };
 
 const roadClasses: RoadClass[] = ["regional", "national", "european"];
 
@@ -76,8 +80,15 @@ export function buildScene({ cells, contextCells }: { cells: PreparedCell[]; con
       );
       return path ? [{ roadClass, path }] : [];
     }),
-    labels: cells.flatMap((cell) => {
-      return cell.labels;
+    roadLabels: cells.flatMap((cell) => {
+      return cell.roadLabels;
     }),
+    places: cells
+      .flatMap((cell) => {
+        return cell.places;
+      })
+      .sort((a, b) => {
+        return placeRank[a.placeClass] - placeRank[b.placeClass] || b.population - a.population;
+      }),
   };
 }

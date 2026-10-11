@@ -1,35 +1,141 @@
-import { AppShell } from "@mantine/core";
-import { useDisclosure, useHash } from "@mantine/hooks";
-import { findDemo } from "../demos/demoRegistry.ts";
+import { Burger, Flex, NavLink, Text, Tooltip } from "@mantine/core";
+import { useDocumentTitle, useMediaQuery } from "@mantine/hooks";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
+import { docsPageHref, docsSections, findDocsPage } from "../docs/docsPages.ts";
 import { AppHeader } from "./AppHeader.tsx";
-import { DemoNavbar } from "./DemoNavbar.tsx";
-import { DemoSearch } from "./DemoSearch.tsx";
-import { DemoView } from "./DemoView.tsx";
-import { WelcomeView } from "./WelcomeView.tsx";
+import { DocsSearch } from "./DocsSearch.tsx";
+
+const NAV_LINK_STYLE = { borderRadius: "var(--mantine-radius-sm)" };
+
+/** The router marks the active link with `aria-current`. Exact, so `/docs` is not active on every page under it. */
+const EXACT = { exact: true } as const;
+
+/** Wide enough for the navigation to sit open beside the page */
+const WIDE_VIEWPORT = "(min-width: 1000px)";
+const NAV_WIDTH_OPEN = 260;
+/** Collapsed, the navigation keeps a rail wide enough for the button that opens it */
+const NAV_WIDTH_RAIL = 44;
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Text size="xs" fw={600} c="dimmed" px="sm" py="xs" style={{ letterSpacing: "0.05em" }}>
+      {children}
+    </Text>
+  );
+}
+
+function titleFor(pathname: string): string {
+  if (pathname === "/") {
+    return "Nordic Map";
+  }
+  if (pathname === "/docs") {
+    return "Documentation · Nordic Map";
+  }
+  if (pathname === "/playground") {
+    return "Playground · Nordic Map";
+  }
+  const page = findDocsPage(pathname.replace("/docs/", ""));
+  return page ? `${page.label} · Nordic Map` : "Nordic Map";
+}
+
+/** The front page and the playground, then every docs page by section */
+function Navigation() {
+  return (
+    <>
+      <NavLink
+        component={Link}
+        to="/"
+        activeOptions={EXACT}
+        label="Getting started"
+        description="Installation and a first map"
+        style={NAV_LINK_STYLE}
+      />
+      <NavLink
+        component={Link}
+        to="/playground"
+        activeOptions={EXACT}
+        label="Playground"
+        description="Every layer and color behind switches"
+        style={NAV_LINK_STYLE}
+      />
+      <SectionLabel>DOCUMENTATION</SectionLabel>
+      <NavLink component={Link} to="/docs" activeOptions={EXACT} label="Overview" style={NAV_LINK_STYLE} />
+      {docsSections()
+        .filter(({ section }) => {
+          return section !== "Start here";
+        })
+        .map(({ section, pages }) => {
+          return (
+            <NavLink key={section} label={section} defaultOpened childrenOffset={12} style={NAV_LINK_STYLE}>
+              {pages.map((page) => {
+                return (
+                  <NavLink
+                    key={page.id}
+                    component={Link}
+                    to={docsPageHref(page)}
+                    activeOptions={EXACT}
+                    label={page.label}
+                    style={NAV_LINK_STYLE}
+                  />
+                );
+              })}
+            </NavLink>
+          );
+        })}
+    </>
+  );
+}
 
 export function AppLayout() {
-  const [navbarOpened, { toggle: toggleNavbar, close: closeNavbar }] = useDisclosure();
-  const [hash] = useHash();
-  const activeDemo = findDemo(hash.replace(/^#/, ""));
+  const wide = useMediaQuery(WIDE_VIEWPORT, true, { getInitialValueInEffect: false });
+  // The viewport decides until someone clicks, and then it is their call
+  const [navOpen, setNavOpen] = useState<boolean | null>(null);
+  const open = navOpen ?? wide;
+  const pathname = useRouterState({
+    select: (state) => {
+      return state.location.pathname;
+    },
+  });
+
+  useDocumentTitle(titleFor(pathname));
 
   return (
-    <AppShell
-      header={{ height: 52 }}
-      navbar={{ width: 260, breakpoint: "sm", collapsed: { mobile: !navbarOpened } }}
-      padding="lg"
-    >
-      {/* The shared header draws its own border. */}
-      <AppShell.Header withBorder={false}>
-        <AppHeader navbarOpened={navbarOpened} onToggleNavbar={toggleNavbar} />
-      </AppShell.Header>
+    <Flex direction="column" h="100vh" style={{ overflow: "hidden" }}>
+      <AppHeader />
+      <DocsSearch />
 
-      <AppShell.Navbar>
-        <DemoNavbar activeDemoId={activeDemo?.id} onNavigate={closeNavbar} />
-      </AppShell.Navbar>
+      <Flex flex={1} style={{ minHeight: 0, overflow: "hidden" }}>
+        <nav
+          style={{
+            width: open ? NAV_WIDTH_OPEN : NAV_WIDTH_RAIL,
+            flexShrink: 0,
+            borderRight: "1px solid var(--mantine-color-default-border)",
+            padding: "8px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
+          <Tooltip label={open ? "Hide navigation" : "Show navigation"} withArrow>
+            <Burger
+              size="sm"
+              opened={open}
+              onClick={() => {
+                setNavOpen(!open);
+              }}
+              aria-label={open ? "Hide navigation" : "Show navigation"}
+            />
+          </Tooltip>
+          {open && <Navigation />}
+        </nav>
 
-      <AppShell.Main>{activeDemo ? <DemoView demo={activeDemo} /> : <WelcomeView />}</AppShell.Main>
-
-      <DemoSearch />
-    </AppShell>
+        <main style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+          <Outlet />
+        </main>
+      </Flex>
+    </Flex>
   );
 }

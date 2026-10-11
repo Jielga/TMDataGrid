@@ -13,4 +13,5 @@ const map = (path: string) =>
  */
 export const workspaceAlias: AliasOptions = [
   { find: /^@jielga\/nordic-map$/, replacement: map("src/index.ts") },
+  { find: /^@jielga\/nordic-map\/docs\//, replacement: map("docs/") },
 ];
