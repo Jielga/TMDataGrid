@@ -72,6 +72,11 @@ function metaAt(siteDir, slug) {
   return slug ? readJson(join(siteDir, slug, "meta.json")) : null;
 }
 
+/** Whether the site's first package is released, that is, not `"private": true`. */
+function isReleased(site) {
+  return readJson(`${site.dir}/package.json`)?.private !== true;
+}
+
 function planSite(site) {
   const siteDir = join(pages, site.slug);
   const version = versionAt("", site);
@@ -86,6 +91,7 @@ function planSite(site) {
 
   return planPush({
     version,
+    released: isReleased(site),
     lineVersion: metaAt(siteDir, line)?.version,
     rootExists: existsSync(join(siteDir, "index.html")),
     rootSlug,
