@@ -1,7 +1,13 @@
-# TMDataGrid
+# jielga/react
 
-`@jielga/tmdatagrid` - a published React data grid built on TanStack Table v9 (beta) and Mantine v9.
-A bun workspaces monorepo: `packages/tmdatagrid/` is the library with its docs and skills, `apps/docs/` is the site that renders them, and `scripts/` is the tooling both share.
+The bun workspaces monorepo for the `@jielga` React packages, each published on npm on its own.
+`packages/<name>/` is a library with its docs and skills, `apps/` holds the sites that render them, and `scripts/` is the tooling they share.
+
+- `@jielga/tmdatagrid` - a React data grid built on TanStack Table v9 (beta) and Mantine v9; `apps/docs/` is its site.
+- `@jielga/tmdatagrid-xlsx` - xlsx export for the grid.
+- `@jielga/react-popup-window` - a hook that renders part of the UI in a separate browser window; `apps/popup-docs/` is its demo site.
+
+Most of this file is about the grid, because that is where the rules were learned; the workspace, test, docs and release rules hold for every package.
 
 ## Where work is tracked
 
@@ -21,14 +27,14 @@ All from the repository root.
 
 | Command | What it does |
 | --- | --- |
-| `bun run dev` | Docs site: docs, examples, playground |
+| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/popup-docs dev` for the popup demo site) |
 | `bun run test` | Vitest once, every workspace project (`test:watch` to iterate) |
-| `bun run test:e2e` | Playwright, Chromium: the docs-site specs and the component specs (`--project=docs` or `--project=components` for one of them) |
+| `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs and the popup demo specs (`--project=docs`, `--project=components` or `--project=popup` for one of them) |
 | `bun run lint` | oxlint - types are **not** checked here |
 | `bun run check:skills` | `intent validate` over every package's `skills/*/SKILL.md` |
 | `bun run typecheck` | `tsc -b` over every project |
 | `bun run build:lib` | Every published package into its `dist/` |
-| `bun run build:docs` | The site into `apps/docs/dist/` |
+| `bun run build:docs` | The grid site into `apps/docs/dist/` |
 | `bun run build` | Both |
 
 The pre-commit hook runs lint, both checks above, the typecheck, the changeset check, and `build:lib` when a `packages/*/src/` path changed.
@@ -52,8 +58,8 @@ A new package that tests against the grid copies that pair; its declaration buil
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` form one changesets `fixed` group: one version, released together, each package published on its own.
 Every other published package is versioned on its own.
 The xlsx package has a peer dependency on the grid, and changesets majors a peer dependent on any minor of its peer unless `onlyUpdatePeerDependentsWhenOutOfRange` is on; the config sets it, so a minor of the grid stays a minor for the group.
-A private package stays outside that scope (the docs app is `tmdatagrid-docs`): the glob would pull it into the group, and in pre mode `changeset version` crashes on any group member missing from `.changeset/pre.json`.
-For the same reason a new published package added during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
+A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs` and `react-popup-window-docs`), so no changesets glob can ever pull it into a release.
+In pre mode `changeset version` crashes on any fixed-group member missing from `.changeset/pre.json`, so a package added to the group during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
 
 ## The library boundary
 
@@ -103,12 +109,16 @@ Playwright covers what jsdom cannot, in Chromium, from `bun run test:e2e`; the c
   `bun run --cwd packages/tmdatagrid gallery` serves the gallery alone; `?story=Grid/Default` mounts one story for a manual look.
 - The page object is embedded verbatim in [testing.md](packages/tmdatagrid/docs/testing.md) below a `<!-- source: playwright/support/DataGrid.ts -->` marker, and [testingPageObject.test.ts](apps/docs/src/docs/testingPageObject.test.ts) fails when the two drift.
   Change the file, then paste it into the fence.
-- Both servers run on fixed ports with `--strictPort` (5273 for the docs site, 5274 for the gallery), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
+- [playwright/popup/](playwright/popup) drives the popup demo site in `apps/popup-docs/`: real browser windows, stylesheet copying and Mantine context across windows, which jsdom cannot model at all.
+- Every server runs on a fixed port with `--strictPort` (5273 for the grid docs site, 5274 for the gallery, 5275 for the popup demo site), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
 
 ## Docs and demos
 
-Docs are markdown under [packages/tmdatagrid/docs/](packages/tmdatagrid/docs), registered in [docsPages.ts](apps/docs/src/docs/docsPages.ts) as `@jielga/tmdatagrid/docs/<page>.md?raw` imports.
+Grid docs are markdown under [packages/tmdatagrid/docs/](packages/tmdatagrid/docs), registered in [docsPages.ts](apps/docs/src/docs/docsPages.ts) as `@jielga/tmdatagrid/docs/<page>.md?raw` imports.
 They stay plain markdown: they ship in the package and the `SKILL.md` files cite them as sources, so no MDX.
+
+The popup window package documents itself in its `README.md`, and `apps/popup-docs/` is a demo site, not a docs renderer.
+Whether every package moves into one shared docs site with a package switcher is an open decision to take before the next package lands; until then a new package follows one of these two shapes.
 
 One topic, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
 
@@ -152,8 +162,29 @@ Each package's `CHANGELOG.md` and the `library_version` in each `SKILL.md` are g
 Never edit them by hand.
 
 Nothing publishes from an ordinary push.
-Merging the **chore: version packages** PR is the release: `scripts/publish-missing.mjs` packs each public package with bun and publishes the tarball with npm under trusted publishing.
-A new package's first version is published by hand and its trusted-publishing config added on npmjs.com before the workflow can take it over.
+Merging the **chore: version packages** PR is the release: `scripts/publish-missing.mjs` packs each public package whose version is missing from the registry with bun and publishes the tarball with npm under trusted publishing.
+A new package's first version is published by hand and its trusted-publishing config (repo `Jielga/react`, workflow `release.yml`) added on npmjs.com before the workflow can take it over.
+
+Each published version gets its own git tag and GitHub release named `<name>@<version>`, for example `@jielga/react-popup-window@0.3.0`.
+`scripts/publish-missing.mjs` writes `published=<JSON array>` to `$GITHUB_OUTPUT`, one `{ name, version, changelog }` entry per package it published, and the Release workflow loops over it.
+The release notes are that version's section of the package's own `CHANGELOG.md`, read by `scripts/changelog-entry.mjs`; a package without a `CHANGELOG.md` gets GitHub's generated notes instead.
+A version with a hyphen is marked as a prerelease.
+The step is idempotent: an existing tag is not created again, and an existing release is skipped.
+The older `v2.x` tags and releases come from when all packages shared one version line, and they stay as history.
+
+## Adding a package
+
+Copy the closest existing package: `packages/tmdatagrid-xlsx` for a package without React, `packages/react-popup-window` for a React package without Mantine, `packages/tmdatagrid` for one with CSS.
+Then go through this list; every item has bitten once.
+
+- `package.json`: `name @jielga/<name>`, `repository` with `directory`, `homepage`, `bugs`, `sideEffects`, `files` (`dist`, `src` without tests, docs, `skills` without `_artifacts`), `exports` with `types` first and `./package.json`, `publishConfig.access public`, literal peer ranges, devDependencies from `catalog:`.
+- `vite.config.ts` in lib mode with every peer external; `tsconfig.json` extending `tsconfig.base.json`; `tsconfig.build.json` plus `rolldown.dts.config.mjs` flattening the declarations into one `dist/index.d.ts`.
+- `vitest.config.ts` with a `name`; the root config picks up `packages/*/vitest.config.ts` and `apps/*/vitest.config.ts` by glob.
+- Root wiring by hand: `build:lib` in the root `package.json` (xlsx needs the grid's `dist` first, so order matters) and `references` in the root `tsconfig.json`.
+- A site under `apps/` is private, named without the `@jielga/` scope, aliases the package to source, gets a fixed port with `--strictPort`, a Playwright project and a `webServer` entry, and a step in `deploy-docs.yml`.
+- At least one `skills/<name>/SKILL.md` whose `sources:` cite `Jielga/react:<repo path>`; `bun run check:skills` validates it.
+- Changesets: only a package that must release with another joins a `fixed` group in `.changeset/config.json`; everything else versions on its own.
+- Release: build it, `npm publish` the first version by hand from the package directory, add the trusted publisher on npmjs.com, and from then on the Release workflow publishes it.
 
 ## Skill Loading
 

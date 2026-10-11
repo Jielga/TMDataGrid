@@ -6,6 +6,10 @@ This repository holds the `@jielga` React packages.
 | ------- | -------- | ---- |
 | [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/> |
 | [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/docs/xlsx> |
+| [`@jielga/react-popup-window`](packages/react-popup-window/README.md) | Hook that renders part of the UI in a separate browser window | <https://jielga.github.io/react/react-popup-window/> |
+
+`@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` release together at one version.
+Every other package has its own version line, and every release is tagged `<name>@<version>`.
 
 ## TMDataGrid
 
@@ -206,10 +210,11 @@ works everywhere without putting `.js` extensions in the sources.
 ### Publishing
 
 Releases are managed by [Changesets](https://github.com/changesets/changesets).
-Every published package sits in one fixed group, so a release moves all of them
-to the same version; each is still published as its own npm package. Nothing
-publishes from an ordinary push. A release happens only when the version PR is
-merged.
+`@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` sit in one fixed group, so a
+release moves both to the same version; each is still published as its own npm
+package, and each published version gets its own `<name>@<version>` tag and
+GitHub release. Nothing publishes from an ordinary push. A release happens only
+when the version PR is merged.
 
 Describe your change in the same PR that makes it:
 
