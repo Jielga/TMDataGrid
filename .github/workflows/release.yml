@@ -1,13 +1,15 @@
 name: Release
 
 # Changesets owns versions; this workflow owns the publish. Pushing to main
-# opens (or updates) a "Version Packages" PR that bumps every package manifest,
-# writes each CHANGELOG.md and syncs the skills' library_version. Merging that
-# PR is what releases, and the merge is itself just another push to main.
+# opens (or updates) a "Version Packages" PR that bumps the package manifests
+# the pending changesets touch, writes their CHANGELOG.md and syncs the skills'
+# library_version. Merging that PR is what releases, and the merge is itself
+# just another push to main.
 #
 # Every push publishes whatever version main's package manifests say, package
 # by package, if and only if the registry does not already have it, which holds
-# however the merges are ordered.
+# however the merges are ordered. Each package it publishes gets its own tag
+# and GitHub release, `<name>@<version>`.
 on:
   push:
     branches: [main]
@@ -94,42 +96,69 @@ jobs:
 
       # The action does this for the releases it publishes; these are ours.
       #
+      # Packages do not share one version line, so each published package
+      # gets a tag and a GitHub release of its own, named `<name>@<version>`
+      # (for example `@jielga/react-popup-window@0.3.0`), which is the scheme
+      # changesets uses for independently versioned packages. The `v2.x` tags
+      # from when every package was released at one version stay as history.
+      # The publish step lists what it published as JSON, each entry with the
+      # repo-relative path of the package's CHANGELOG.md, or null when it has
+      # none, in which case GitHub generates the notes.
+      #
       # Idempotent throughout. The publish above has already happened by the
       # time this runs, so a tag or a release that is somehow already there is
       # not a reason to fail the job and send someone looking for a release
-      # that did reach the registry.
-      - name: Tag the published version and write its release
-        if: steps.publish.outputs.version != ''
+      # that did reach the registry. It also runs when the publish step failed
+      # part way: the packages that did publish are in the output and get
+      # their tag now, since the next run skips them as already on the registry.
+      - name: Tag each published package and write its release
+        if: ${{ !cancelled() && fromJSON(steps.publish.outputs.published || '[]')[0] != null }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.publish.outputs.version }}
+          PUBLISHED: ${{ steps.publish.outputs.published }}
         run: |
           set -euo pipefail
-          tag="v$VERSION"
 
-          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "$tag is already tagged."
-          else
-            git tag "$tag"
-            git push origin "$tag"
-          fi
+          # Read up front rather than piped into the loop, so nothing in the
+          # loop can read the list from stdin, and a jq failure fails the step.
+          entries="$(jq -c '.[]' <<<"$PUBLISHED")"
+          mapfile -t entries <<<"$entries"
 
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "$tag already has a release."
-            exit 0
-          fi
+          for entry in "${entries[@]}"; do
+            name="$(jq -r '.name' <<<"$entry")"
+            version="$(jq -r '.version' <<<"$entry")"
+            changelog="$(jq -r '.changelog // empty' <<<"$entry")"
+            tag="$name@$version"
 
-          notes="$RUNNER_TEMP/notes.md"
-          if ! node scripts/changelog-entry.mjs "$VERSION" packages/tmdatagrid/CHANGELOG.md > "$notes"; then
-            echo "::warning::No changelog section for $VERSION; releasing without notes."
-            echo "$tag" > "$notes"
-          fi
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "$tag is already tagged."
+            else
+              git tag "$tag"
+              git push origin "refs/tags/$tag"
+            fi
 
-          # Marked a prerelease on the same rule the action uses: a version
-          # with a hyphen in it.
-          set -- gh release create "$tag" --title "$tag" --notes-file "$notes"
-          case "$VERSION" in *-*) set -- "$@" --prerelease ;; esac
-          "$@"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "$tag already has a release."
+              continue
+            fi
+
+            set -- gh release create "$tag" --title "$tag"
+            if [ -n "$changelog" ]; then
+              notes="$RUNNER_TEMP/notes.md"
+              if ! node scripts/changelog-entry.mjs "$version" "$changelog" > "$notes"; then
+                echo "::warning::No $changelog section for $version; releasing without notes."
+                echo "$tag" > "$notes"
+              fi
+              set -- "$@" --notes-file "$notes"
+            else
+              set -- "$@" --generate-notes
+            fi
+
+            # Marked a prerelease on the same rule the action uses: a version
+            # with a hyphen in it.
+            case "$version" in *-*) set -- "$@" --prerelease ;; esac
+            "$@"
+          done
 
       # `publish` is set but does not publish. The step above has already
       # published anything missing, and the input has to be non-empty or the
