@@ -7,6 +7,7 @@ This repository holds the `@jielga` React packages.
 | [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/tmdatagrid/> |
 | [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/tmdatagrid/docs/xlsx> |
 | [`@jielga/react-popup-window`](packages/react-popup-window/README.md) | Hook that renders part of the UI in a separate browser window | <https://jielga.github.io/react/react-popup-window/> |
+| [`@jielga/nordic-map`](packages/nordic-map/README.md) | Offline maps of the Nordic countries with GPS pins (not published yet) | <https://jielga.github.io/react/nordic-map/> |
 
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` release together at one version.
 Every other package has its own version line, and every release is tagged `<name>@<version>`.
@@ -23,6 +24,7 @@ That root page lists every site, and the header of every site has a menu that sw
 | [`apps/docs-home/`](apps/docs-home) | The index page at the Pages root |
 | [`apps/docs/`](apps/docs) | The TMDataGrid site, at `/react/tmdatagrid/` |
 | [`apps/popup-docs/`](apps/popup-docs) | The react-popup-window site, at `/react/react-popup-window/` |
+| [`apps/nordic-map-docs/`](apps/nordic-map-docs) | The nordic-map site, at `/react/nordic-map/` |
 
 Every site is versioned by the first package it lists.
 The site's own directory serves the newest release, `next/` serves the tip of `main`, and each minor line has a directory such as `v2.0/`.

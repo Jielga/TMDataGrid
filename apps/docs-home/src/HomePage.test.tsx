@@ -22,10 +22,16 @@ describe("HomePage", () => {
         `https://jielga.github.io/react/${site.slug}/`,
       );
       for (const name of site.packages) {
-        expect(screen.getByRole("link", { name })).toHaveAttribute(
-          "href",
-          `https://www.npmjs.com/package/${name}`,
-        );
+        if (site.published) {
+          expect(screen.getByRole("link", { name })).toHaveAttribute(
+            "href",
+            `https://www.npmjs.com/package/${name}`,
+          );
+        } else {
+          // No npm page to link to yet.
+          expect(screen.queryByRole("link", { name })).toBeNull();
+          expect(screen.getByText(name)).toBeVisible();
+        }
       }
     }
   });
