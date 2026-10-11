@@ -1,11 +1,20 @@
-# TMDataGrid
+# jielga/react
+
+This repository holds the `@jielga` React packages.
+
+| Package | Contents | Docs |
+| ------- | -------- | ---- |
+| [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/> |
+| [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/docs/xlsx> |
+
+## TMDataGrid
 
 A data grid for React built on [TanStack Table v9](https://tanstack.com/table)
 and [Mantine](https://mantine.dev). Rows are always virtualized, columns are
 resizable, reorderable, sortable, filterable, hideable and pinnable, and every
 part of the grid interface is a component you render yourself.
 
-## Installation
+### Installation
 
 ```sh
 npm install @jielga/tmdatagrid
@@ -29,7 +38,7 @@ import "@jielga/tmdatagrid/styles.css";
 
 The grid must be rendered inside a Mantine `MantineProvider`.
 
-## Usage
+### Usage
 
 `useTMDataGrid` creates the table, `TMDataGrid` provides it through context, and
 the parts rendered inside read what they need from that context.
@@ -83,7 +92,7 @@ Pagination is opt in through `enablePagination` (implied by `manualPagination`);
 by default every row renders, virtualized. A column that defines no filter shows
 no filter control.
 
-## Documentation
+### Documentation
 
 The documentation is markdown under [`packages/tmdatagrid/docs/`](packages/tmdatagrid/docs),
 shipped in the package and served by the docs site. There is one page per topic,
@@ -101,7 +110,7 @@ order.
 | Appearance           | [Size, styling and theming](packages/tmdatagrid/docs/styling.md), [Toolbar](packages/tmdatagrid/docs/toolbar.md), [Localization](packages/tmdatagrid/docs/localization.md) |
 | Reference            | [useTMDataGrid](packages/tmdatagrid/docs/use-tm-data-grid.md), [Testing](packages/tmdatagrid/docs/testing.md) |
 
-## Development
+### Development
 
 A [bun](https://bun.sh) workspaces monorepo:
 
@@ -125,7 +134,7 @@ does, and resolves it to the workspace source through
 [`vite.alias.ts`](apps/docs/vite.alias.ts) and the `paths` in its tsconfig, so
 `bun run dev` hot-reloads library files and nothing has to be built first.
 
-### Examples
+#### Examples
 
 The site's examples live in [`apps/docs/src/examples/`](apps/docs/src/examples):
 
@@ -152,7 +161,7 @@ bun run test       # vitest, once, every project
 bun run test:watch
 ```
 
-## Testing
+### Testing
 
 For testing an application that *uses* the grid, including the test ids, roles
 and ARIA attributes it publishes and how to drive it from Playwright, see
@@ -173,7 +182,7 @@ Two things to know before adding to them:
   transitions. Without it a popover never finishes mounting and its panel is
   never found.
 
-## Building
+### Building
 
 Two independent outputs, neither committed:
 
@@ -194,7 +203,7 @@ resolves only under `moduleResolution: bundler` and breaks for anyone on
 `node16`/`nodenext`. A single file has no relative imports to resolve, so it
 works everywhere without putting `.js` extensions in the sources.
 
-## Publishing
+### Publishing
 
 Releases are managed by [Changesets](https://github.com/changesets/changesets).
 Every published package sits in one fixed group, so a release moves all of them
@@ -223,7 +232,7 @@ the tarball with `npm publish` under trusted publishing. A brand-new package is
 published by hand once and its trusted-publishing config added on npmjs.com
 before the workflow can take it over.
 
-### Skill versions
+#### Skill versions
 
 `bun run version-packages` is `changeset version` followed by
 [`scripts/sync-skill-version.mjs`](scripts/sync-skill-version.mjs), which sets

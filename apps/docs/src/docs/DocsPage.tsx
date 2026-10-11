@@ -77,7 +77,7 @@ const markdownComponents: Components = {
   h4: heading(4),
   // A root-relative link points somewhere else on this site, so it
   // goes through the router: client-side navigation, and the
-  // deploy base path (the site lives under /TMDataGrid/ on GitHub
+  // deploy base path (the site lives under /react/ on GitHub
   // Pages) handled by the router rather than by hand. Anything
   // else (an external URL, an in-page anchor) is left alone.
   a: ({ href, children, ...props }: ComponentPropsWithoutRef<"a">) => {

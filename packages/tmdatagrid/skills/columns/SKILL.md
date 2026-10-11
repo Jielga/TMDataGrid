@@ -18,12 +18,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/columns.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/column-layout.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/sorting.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/columnUtils.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/columnOrdering.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/autosize.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/columns.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/column-layout.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/sorting.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/columnUtils.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/columnOrdering.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/autosize.ts'
 ---
 
 # TMDataGrid - Columns

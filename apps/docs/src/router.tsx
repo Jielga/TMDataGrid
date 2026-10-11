@@ -131,7 +131,7 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   history: createBrowserHistory(),
-  // "/" in dev; "/TMDataGrid/" on GitHub Pages (set via vite --base).
+  // "/" in dev; "/react/" on GitHub Pages (set via vite --base).
   basepath: import.meta.env.BASE_URL,
 });
 

@@ -19,13 +19,13 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-selection.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-interaction.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/column-menu.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-styling.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-details.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/row-pinning.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/rowSelection.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/row-selection.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/row-interaction.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/column-menu.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/row-styling.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/row-details.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/row-pinning.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/rowSelection.ts'
 ---
 
 # TMDataGrid - Rows

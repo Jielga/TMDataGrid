@@ -16,10 +16,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/use-tm-data-grid.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/persistence.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/persistence.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/use-tm-data-grid.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/persistence.md'
+  - 'Jielga/react:packages/tmdatagrid/src/useTMDataGrid.tsx'
+  - 'Jielga/react:packages/tmdatagrid/src/core/persistence.ts'
 ---
 
 # TMDataGrid - useTMDataGrid

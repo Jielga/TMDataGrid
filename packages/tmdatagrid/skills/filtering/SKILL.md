@@ -20,10 +20,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/filtering.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/quick-search.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/filterOperators.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/quickSearch.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/filtering.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/quick-search.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/filterOperators.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/quickSearch.ts'
 ---
 
 # TMDataGrid - Filtering

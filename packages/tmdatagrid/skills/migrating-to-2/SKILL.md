@@ -17,8 +17,8 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/migrating-to-2.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/index.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/migrating-to-2.md'
+  - 'Jielga/react:packages/tmdatagrid/src/index.ts'
 ---
 
 # TMDataGrid - Migrating from the 2.0 beta to 2.0.0

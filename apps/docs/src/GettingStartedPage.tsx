@@ -43,7 +43,7 @@ export function GettingStartedPage() {
             </Button>
             <Button
               component="a"
-              href="https://github.com/Jielga/TMDataGrid"
+              href="https://github.com/Jielga/react"
               variant="default"
             >
               GitHub

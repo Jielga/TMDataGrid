@@ -2,8 +2,8 @@
 
 Excel (xlsx) export format for [@jielga/tmdatagrid](https://www.npmjs.com/package/@jielga/tmdatagrid), on [exceljs](https://www.npmjs.com/package/exceljs).
 
-- Documentation: <https://jielga.github.io/TMDataGrid/docs/xlsx>
-- Source, issues and the contributor guide: <https://github.com/Jielga/TMDataGrid>
+- Documentation: <https://jielga.github.io/react/docs/xlsx>
+- Source, issues and the contributor guide: <https://github.com/Jielga/react>
 
 ```sh
 bun add @jielga/tmdatagrid-xlsx

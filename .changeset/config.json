@@ -3,13 +3,14 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "Jielga/TMDataGrid"
+      "repo": "Jielga/react"
     }
   ],
   "commit": false,
   "fixed": [
     [
-      "@jielga/*"
+      "@jielga/tmdatagrid",
+      "@jielga/tmdatagrid-xlsx"
     ]
   ],
   "linked": [],

@@ -7,7 +7,7 @@ A bun workspaces monorepo: `packages/tmdatagrid/` is the library with its docs a
 
 Start here after a break, or on a cold session:
 
-- The GitHub issues of `Jielga/TMDataGrid` - `gh issue list` is the backlog, and an issue is the only place item status lives.
+- The GitHub issues of `Jielga/react` - `gh issue list` is the backlog, and an issue is the only place item status lives.
   `held` marks planned work waiting on the stakeholder's go, `icebox` a known gap with no decision to build; an issue without either label is cleared.
   Close the issue from the pull request that ships it, and put what shipped in the changeset, not in a file here.
 
@@ -49,7 +49,8 @@ The site depends on `@jielga/tmdatagrid` by name, as a user does, and resolves i
 The published manifest knows nothing of this.
 A new package that tests against the grid copies that pair; its declaration build must not, so that the grid resolves to the published `dist/index.d.ts` and stays external in its dts rollup.
 
-Every published package sits in one changesets `fixed` group, `@jielga/*`: one version, one release, each package published on its own.
+`@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` form one changesets `fixed` group: one version, released together, each package published on its own.
+Every other published package is versioned on its own.
 The xlsx package has a peer dependency on the grid, and changesets majors a peer dependent on any minor of its peer unless `onlyUpdatePeerDependentsWhenOutOfRange` is on; the config sets it, so a minor of the grid stays a minor for the group.
 A private package stays outside that scope (the docs app is `tmdatagrid-docs`): the glob would pull it into the group, and in pre mode `changeset version` crashes on any group member missing from `.changeset/pre.json`.
 For the same reason a new published package added during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.

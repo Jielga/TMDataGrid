@@ -14,10 +14,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/test/gallery/main.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/test/stories/Grid.story.tsx'
-  - 'Jielga/TMDataGrid:playwright/components/virtualization.spec.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/testing.md'
+  - 'Jielga/react:packages/tmdatagrid/test/gallery/main.tsx'
+  - 'Jielga/react:packages/tmdatagrid/test/stories/Grid.story.tsx'
+  - 'Jielga/react:playwright/components/virtualization.spec.ts'
 ---
 
 # TMDataGrid - Component tests in a browser

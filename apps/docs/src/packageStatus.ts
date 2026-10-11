@@ -11,7 +11,7 @@ import { isRecord, useJson } from "./useJson";
  */
 
 export const PACKAGE = "@jielga/tmdatagrid";
-export const REPO = "Jielga/TMDataGrid";
+export const REPO = "Jielga/react";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const NPM_PAGE = `https://www.npmjs.com/package/${PACKAGE}`;
 

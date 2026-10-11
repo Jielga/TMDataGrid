@@ -2,11 +2,11 @@ name: Deploy docs
 
 # The site is published as several complete builds under one Pages root:
 #
-#   /TMDataGrid/              the newest release, or the newest line there is
-#   /TMDataGrid/next/         the tip of main
-#   /TMDataGrid/v2.0/         one directory per minor line
-#   /TMDataGrid/b/<branch>/   a build published by hand from a branch
-#   /TMDataGrid/versions.json the manifest the header's version menu reads
+#   /react/              the newest release, or the newest line there is
+#   /react/next/         the tip of main
+#   /react/v2.0/         one directory per minor line
+#   /react/b/<branch>/   a build published by hand from a branch
+#   /react/versions.json the manifest the header's version menu reads
 #
 # The gh-pages branch is the store: a run writes its directories there and then
 # deploys the whole branch as the Pages artifact. Keeping the artifact flow
@@ -61,7 +61,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     env:
-      SITE_ROOT: /TMDataGrid/
+      SITE_ROOT: /react/
     steps:
       - uses: actions/checkout@v7
         with:
