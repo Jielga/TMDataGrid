@@ -1,0 +1,98 @@
+{
+  "name": "@jielga/nordic-map",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React components that render offline maps of the Nordic countries, with GPS pins and drag selection.",
+  "license": "MIT",
+  "author": "jielga",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jielga/react.git",
+    "directory": "packages/nordic-map"
+  },
+  "homepage": "https://jielga.github.io/react/nordic-map/",
+  "bugs": {
+    "url": "https://github.com/Jielga/react/issues"
+  },
+  "keywords": [
+    "react",
+    "map",
+    "sweden",
+    "nordic",
+    "offline",
+    "svg",
+    "canvas",
+    "openstreetmap",
+    "mantine",
+    "tanstack-intent"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "intent": {
+    "docs": "README.md"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.*",
+    "!src/data/swedenOsm/cells",
+    "skills",
+    "!skills/_artifacts"
+  ],
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json && rolldown -c rolldown.dts.config.mjs",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@mantine/core": "^9.4.0",
+    "@tabler/icons-react": "^3.46.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "dependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "catalog:",
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:",
+    "@rolldown/plugin-babel": "catalog:",
+    "@tabler/icons-react": "catalog:",
+    "@tanstack/intent": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/babel__core": "catalog:",
+    "@types/d3-geo": "^3.1.1",
+    "@types/geojson": "^7946.0.16",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "jsdom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "rolldown": "~1.1.5",
+    "rolldown-plugin-dts": "^0.27.14",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

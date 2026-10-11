@@ -1,0 +1,70 @@
+/* Fills its parent, so the parent sets the size */
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.canvas,
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  /* A finger drag selects pins and two fingers zoom, instead of scrolling the page */
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+  outline: none;
+}
+
+.overlay:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
+.overlay[data-panning] {
+  cursor: grabbing;
+}
+
+.status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* Small license credit in the bottom right corner, readable on any map background */
+.attribution {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #3d4451;
+  background: rgb(255 255 255 / 75%);
+  border-top-left-radius: 4px;
+}
+
+.attribution a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.attribution a:hover {
+  text-decoration: underline;
+}

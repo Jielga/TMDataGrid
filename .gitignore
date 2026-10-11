@@ -35,3 +35,8 @@ user-feedback/
 test-results/
 playwright-report/
 blob-report/
+
+# Map data sources and the Python environment of the nordic-map data scripts
+packages/nordic-map/.cache/
+packages/nordic-map/scripts/map-data/.venv/
+__pycache__/

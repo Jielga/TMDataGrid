@@ -47,6 +47,9 @@ export function parseSites(value) {
     ) {
       throw new Error(`${where}: "packages" must list at least one package.`);
     }
+    if (site.published !== undefined && typeof site.published !== "boolean") {
+      throw new Error(`${where}: "published" must be true or false.`);
+    }
     return site;
   });
 }

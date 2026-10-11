@@ -1,0 +1,34 @@
+{
+  "name": "nordic-map-docs",
+  "private": true,
+  "type": "module",
+  "description": "The @jielga/nordic-map documentation site: getting started and one live demo per component.",
+  "scripts": {
+    "dev": "vite --port 5277 --strictPort",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@jielga/nordic-map": "workspace:*",
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:",
+    "@mantine/spotlight": "catalog:",
+    "@tabler/icons-react": "catalog:",
+    "docs-shell": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@babel/core": "catalog:",
+    "@rolldown/plugin-babel": "catalog:",
+    "@types/babel__core": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "postcss": "^8.5.29",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

@@ -48,6 +48,18 @@ describe("SiteHeader", () => {
     ).toHaveTextContent("dev");
   });
 
+  it("does not ask npm about an unpublished package", async () => {
+    renderHeader("nordic-map");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Documentation version" }),
+    );
+    expect(
+      screen.getByRole("menuitem", { name: "Not on npm yet" }),
+    ).toBeDisabled();
+    const urls = vi.mocked(fetch).mock.calls.map(([url]) => String(url));
+    expect(urls.some((url) => url.includes("registry.npmjs.org"))).toBe(false);
+  });
+
   it("has no version menu on the index page", () => {
     renderHeader(null);
     expect(
@@ -74,6 +86,7 @@ describe("readSites", () => {
     expect(BUNDLED_SITES.map((site) => site.slug)).toEqual([
       "tmdatagrid",
       "react-popup-window",
+      "nordic-map",
     ]);
   });
 
@@ -92,6 +105,23 @@ describe("readSites", () => {
       ],
     });
     expect(sites?.map((site) => site.slug)).toEqual(["ok"]);
+  });
+
+  it("reads a missing published flag as published", () => {
+    const [site] =
+      readSites({
+        sites: [
+          {
+            slug: "ok",
+            title: "OK",
+            description: "d",
+            packages: ["@jielga/ok"],
+            dir: "packages/ok",
+            app: "apps/ok-docs",
+          },
+        ],
+      }) ?? [];
+    expect(site?.published).toBe(true);
   });
 
   it("answers null for something that is not a registry", () => {

@@ -6,6 +6,7 @@ The bun workspaces monorepo for the `@jielga` React packages, each published on 
 - `@jielga/tmdatagrid` - a React data grid built on TanStack Table v9 (beta) and Mantine v9; `apps/docs/` is its site.
 - `@jielga/tmdatagrid-xlsx` - xlsx export for the grid.
 - `@jielga/react-popup-window` - a hook that renders part of the UI in a separate browser window; `apps/popup-docs/` is its demo site.
+- `@jielga/nordic-map` - offline maps of the Nordic countries with GPS pins, not published yet; `apps/nordic-map-docs/` is its site.
 
 Most of this file is about the grid, because that is where the rules were learned; the workspace, test, docs and release rules hold for every package.
 
@@ -27,9 +28,9 @@ All from the repository root.
 
 | Command | What it does |
 | --- | --- |
-| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/<app> dev` for another site: `popup-docs`, `docs-home`) |
+| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/<app> dev` for another site: `popup-docs`, `nordic-map-docs`, `docs-home`) |
 | `bun run test` | Vitest once, every workspace project (`test:watch` to iterate) |
-| `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs, the popup demo specs and the index page specs (`--project=docs`, `components`, `popup` or `home` for one of them) |
+| `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs, the popup demo specs, the nordic-map site specs and the index page specs (`--project=docs`, `components`, `popup`, `nordic-map` or `home` for one of them) |
 | `bun run lint` | oxlint - types are **not** checked here |
 | `bun run check:skills` | `intent validate` over every package's `skills/*/SKILL.md` |
 | `bun run typecheck` | `tsc -b` over every project |
@@ -58,7 +59,9 @@ A new package that tests against the grid copies that pair; its declaration buil
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` form one changesets `fixed` group: one version, released together, each package published on its own.
 Every other published package is versioned on its own.
 The xlsx package has a peer dependency on the grid, and changesets majors a peer dependent on any minor of its peer unless `onlyUpdatePeerDependentsWhenOutOfRange` is on; the config sets it, so a minor of the grid stays a minor for the group.
-A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs`, `react-popup-window-docs`, `docs-shell` and `docs-home`), so no changesets glob can ever pull it into a release.
+A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs`, `react-popup-window-docs`, `nordic-map-docs`, `docs-shell` and `docs-home`), so no changesets glob can ever pull it into a release.
+The one exception is a library waiting for its first release, `@jielga/nordic-map`: it is `"private": true` under its final name, and `privatePackages.version: false` in `.changeset/config.json` keeps changesets from versioning it until the flag is removed.
+Its first release removes `"private"` from its `package.json` and `"published": false` from its `sites.json` entry, and adds a changeset.
 In pre mode `changeset version` crashes on any fixed-group member missing from `.changeset/pre.json`, so a package added to the group during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
 
 ## The library boundary
@@ -110,8 +113,8 @@ Playwright covers what jsdom cannot, in Chromium, from `bun run test:e2e`; the c
 - The page object is embedded verbatim in [testing.md](packages/tmdatagrid/docs/testing.md) below a `<!-- source: playwright/support/DataGrid.ts -->` marker, and [testingPageObject.test.ts](apps/docs/src/docs/testingPageObject.test.ts) fails when the two drift.
   Change the file, then paste it into the fence.
 - [playwright/popup/](playwright/popup) drives the popup demo site in `apps/popup-docs/`: real browser windows, stylesheet copying and Mantine context across windows, which jsdom cannot model at all.
-- [playwright/home/](playwright/home) checks the index page in `apps/docs-home/`.
-- Every server runs on a fixed port with `--strictPort` (5273 for the grid docs site, 5274 for the gallery, 5275 for the popup demo site, 5276 for the index page), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
+- [playwright/nordic-map/](playwright/nordic-map) checks the nordic-map site in `apps/nordic-map-docs/`, and [playwright/home/](playwright/home) the index page in `apps/docs-home/`.
+- Every server runs on a fixed port with `--strictPort` (5273 for the grid docs site, 5274 for the gallery, 5275 for the popup demo site, 5276 for the index page, 5277 for the nordic-map site), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
 - The shared fixtures in [playwright/support/test.ts](playwright/support/test.ts) answer the npm registry and the published site list, and fail a test on any console error.
   Once a page routes any request, Playwright stalls the requests of a scripted about:blank popup, so a popup spec that times stylesheet loads uses the base `test` instead.
 
@@ -122,11 +125,16 @@ They stay plain markdown: they ship in the package and the `SKILL.md` files cite
 
 The popup window package documents itself in its `README.md`, and `apps/popup-docs/` is a demo site, not a docs renderer.
 
+The nordic-map package documents itself in its `README.md` and its site's front page, and `apps/nordic-map-docs/` holds one live demo per component.
+Its map data in `packages/nordic-map/src/data/` is generated by the Python scripts in `packages/nordic-map/scripts/map-data/`; never edit it by hand.
+The cell files ship in `dist/cells/` because their `new URL(..., import.meta.url)` carries `?no-inline`: without it, Vite's library mode inlines every asset into `index.js`.
+
 ## Docs sites
 
 Every package has its own docs site, a separate Vite app under `apps/`, and they share a frame rather than a renderer.
 
 - [apps/docs-shell/sites.json](apps/docs-shell/sites.json) is the one list of sites.
+  `"published": false` on an entry stops the header and the index page from asking npm about a package that is not there yet; remove it with the package's first release.
   The header's package menu, the index page and the deploy all read it, and the deploy publishes it at the Pages root so a frozen copy of one site still lists packages added after it was built.
 - `apps/docs-shell/` (private, `docs-shell`) holds the shared `SiteHeader`: the package menu, the version menu, the GitHub link and the colour scheme switch.
   A site imports its modules by path, `docs-shell/SiteHeader.tsx`, and lists `../docs-shell/src/env.d.ts` in its tsconfig `include`.
