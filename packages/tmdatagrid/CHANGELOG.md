@@ -1,5 +1,11 @@
 # @jielga/tmdatagrid
 
+## 2.1.4
+
+### Patch Changes
+
+- [#154](https://github.com/Jielga/react/pull/154) [`3b42249`](https://github.com/Jielga/react/commit/3b42249fd9fd6c0b3fb79b49c448aed5a3109444) Thanks [@Psvensso](https://github.com/Psvensso)! - The documentation moved to <https://jielga.github.io/react/tmdatagrid/>. Links to the old address redirect there.
+
 ## 2.1.3
 
 ### Patch Changes
