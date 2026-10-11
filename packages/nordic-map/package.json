@@ -1,7 +1,6 @@
 {
   "name": "@jielga/nordic-map",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "React components that render offline maps of the Nordic countries, with GPS pins and drag selection.",
   "license": "MIT",
   "author": "jielga",

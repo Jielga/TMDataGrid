@@ -1,18 +1,17 @@
 ---
 name: getting-started
 description: >
-  Set up @jielga/nordic-map: the NordicMap canvas map and the SwedenMap SVG
-  map, the bundled map sources (swedenOsmSource, swedenOverviewSource), GPS
-  pins with drag selection (pins, selected, defaultSelected,
-  onSelectionChange, onPinClick), layer visibility by zoom (showBorder,
-  showRoads, showRoadLabels), colors and the MapSource type for custom data.
-  Load when rendering an offline map of Sweden or the Nordic countries, when
-  the map is blank, stays on its loader, reloads on every render, or its
-  cells 404 after a build.
+  Set up @jielga/nordic-map: the NordicMap canvas map and the SwedenMap SVG map,
+  the bundled map sources (swedenOsmSource, swedenOverviewSource), GPS pins with
+  drag selection (pins, selected, defaultSelected, onSelectionChange,
+  onPinClick), layer visibility by zoom (showBorder, showRoads, showRoadLabels),
+  colors and the MapSource type for custom data. Load when rendering an offline
+  map of Sweden or the Nordic countries, when the map is blank, stays on its
+  loader, reloads on every render, or its cells 404 after a build.
 metadata:
   type: core
   library: '@jielga/nordic-map'
-  library_version: '0.0.0'
+  library_version: '0.1.0'
 sources:
   - 'Jielga/react:packages/nordic-map/README.md'
   - 'Jielga/react:packages/nordic-map/src/index.ts'

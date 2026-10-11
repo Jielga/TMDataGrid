@@ -6,7 +6,7 @@ The bun workspaces monorepo for the `@jielga` React packages, each published on 
 - `@jielga/tmdatagrid` - a React data grid built on TanStack Table v9 (beta) and Mantine v9; `apps/docs/` is its site.
 - `@jielga/tmdatagrid-xlsx` - xlsx export for the grid.
 - `@jielga/react-popup-window` - a hook that renders part of the UI in a separate browser window; `apps/popup-docs/` is its demo site.
-- `@jielga/nordic-map` - offline maps of the Nordic countries with GPS pins, not published yet; `apps/nordic-map-docs/` is its site.
+- `@jielga/nordic-map` - offline maps of the Nordic countries with GPS pins; `apps/nordic-map-docs/` is its site.
 
 Most of this file is about the grid, because that is where the rules were learned; the workspace, test, docs and release rules hold for every package.
 
@@ -60,8 +60,8 @@ A new package that tests against the grid copies that pair; its declaration buil
 Every other published package is versioned on its own.
 The xlsx package has a peer dependency on the grid, and changesets majors a peer dependent on any minor of its peer unless `onlyUpdatePeerDependentsWhenOutOfRange` is on; the config sets it, so a minor of the grid stays a minor for the group.
 A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs`, `react-popup-window-docs`, `nordic-map-docs`, `docs-shell` and `docs-home`), so no changesets glob can ever pull it into a release.
-The one exception is a library waiting for its first release, `@jielga/nordic-map`: it is `"private": true` under its final name, and `privatePackages.version: false` in `.changeset/config.json` keeps changesets from versioning it until the flag is removed.
-Its first release removes `"private"` from its `package.json` and `"published": false` from its `sites.json` entry, and adds a changeset.
+The one exception is a library waiting for its first release: it is `"private": true` under its final name, and `privatePackages.version: false` in `.changeset/config.json` keeps changesets from versioning it until the flag is removed.
+Its first release does not go through a changeset; the last item of [Adding a package](#adding-a-package) has the steps.
 In pre mode `changeset version` crashes on any fixed-group member missing from `.changeset/pre.json`, so a package added to the group during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
 
 ## The library boundary
@@ -210,7 +210,11 @@ Then go through this list; every item has bitten once.
   The entry is all the deploy needs: it builds every registered site with `bun run --cwd <app> build --base=<path>`.
 - At least one `skills/<name>/SKILL.md` whose `sources:` cite `Jielga/react:<repo path>`; `bun run check:skills` validates it.
 - Changesets: only a package that must release with another joins a `fixed` group in `.changeset/config.json`; everything else versions on its own.
-- Release: build it, `npm publish` the first version by hand from the package directory, add the trusted publisher on npmjs.com, and from then on the Release workflow publishes it.
+- Release: one pull request sets the first version in `package.json` by hand and removes `"private"` there and `"published": false` from the `sites.json` entry, with no changeset.
+  A changeset does not work here: the merge would make the Release workflow publish the package at its old version, and trusted publishing fails for a package that is not on npm yet.
+  Before merging, build the package, pack it with `bun pm pack` (it resolves `catalog:`, which a plain `npm publish` ships unchanged), `npm publish` the tarball with `--access public`, and add the trusted publisher on npmjs.com.
+  After merging, push the `<name>@<version>` tag on the merge commit and create its GitHub release, because the workflow tags only what it published itself and the docs build a release line only from its tag.
+  From then on the Release workflow publishes it.
 
 ## Skill Loading
 

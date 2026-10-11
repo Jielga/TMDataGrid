@@ -49,14 +49,33 @@ describe("SiteHeader", () => {
   });
 
   it("does not ask npm about an unpublished package", async () => {
-    renderHeader("nordic-map");
+    const registry = {
+      sites: [
+        {
+          slug: "unpublished",
+          title: "Unpublished",
+          description: "d",
+          packages: ["@jielga/unpublished"],
+          dir: "packages/unpublished",
+          app: "apps/unpublished-docs",
+          published: false,
+        },
+      ],
+    };
+    vi.mocked(fetch).mockImplementation((url) =>
+      String(url).endsWith("/sites.json")
+        ? Promise.resolve(Response.json(registry))
+        : Promise.reject(new Error("offline")),
+    );
+    renderHeader("unpublished");
     await userEvent.click(
-      screen.getByRole("button", { name: "Documentation version" }),
+      await screen.findByRole("button", { name: "Documentation version" }),
     );
     expect(
       screen.getByRole("menuitem", { name: "Not on npm yet" }),
     ).toBeDisabled();
     const urls = vi.mocked(fetch).mock.calls.map(([url]) => String(url));
+    expect(urls.some((url) => url.endsWith("/sites.json"))).toBe(true);
     expect(urls.some((url) => url.includes("registry.npmjs.org"))).toBe(false);
   });
 

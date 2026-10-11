@@ -7,7 +7,7 @@ This repository holds the `@jielga` React packages.
 | [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/tmdatagrid/> |
 | [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/tmdatagrid/docs/xlsx> |
 | [`@jielga/react-popup-window`](packages/react-popup-window/README.md) | Hook that renders part of the UI in a separate browser window | <https://jielga.github.io/react/react-popup-window/> |
-| [`@jielga/nordic-map`](packages/nordic-map/README.md) | Offline maps of the Nordic countries with GPS pins (not published yet) | <https://jielga.github.io/react/nordic-map/> |
+| [`@jielga/nordic-map`](packages/nordic-map/README.md) | Offline maps of the Nordic countries with GPS pins | <https://jielga.github.io/react/nordic-map/> |
 
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` release together at one version.
 Every other package has its own version line, and every release is tagged `<name>@<version>`.

@@ -29,8 +29,7 @@
         "@jielga/nordic-map"
       ],
       "dir": "packages/nordic-map",
-      "app": "apps/nordic-map-docs",
-      "published": false
+      "app": "apps/nordic-map-docs"
     }
   ]
 }
