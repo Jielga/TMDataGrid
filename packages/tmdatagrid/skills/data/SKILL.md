@@ -20,13 +20,13 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/pagination.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/scrolling.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/loading-and-empty.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/export.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridFooter.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/pagination.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/export.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/pagination.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/scrolling.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/loading-and-empty.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/export.md'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGridFooter.tsx'
+  - 'Jielga/react:packages/tmdatagrid/src/core/pagination.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/export.ts'
 ---
 
 # TMDataGrid - Pagination, scrolling and empty states

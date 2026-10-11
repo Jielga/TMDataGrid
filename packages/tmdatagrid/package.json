@@ -9,12 +9,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jielga/TMDataGrid.git",
+    "url": "git+https://github.com/Jielga/react.git",
     "directory": "packages/tmdatagrid"
   },
-  "homepage": "https://jielga.github.io/TMDataGrid/",
+  "homepage": "https://jielga.github.io/react/",
   "bugs": {
-    "url": "https://github.com/Jielga/TMDataGrid/issues"
+    "url": "https://github.com/Jielga/react/issues"
   },
   "keywords": [
     "react",

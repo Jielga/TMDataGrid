@@ -20,14 +20,14 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/draft-store.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/adding-rows.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/query-builder.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editors.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/portfolio-rebalancer.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/editEngine.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/useTMDataGrid.tsx'
+  - 'Jielga/react:packages/tmdatagrid/docs/editing.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/draft-store.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/adding-rows.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/query-builder.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/editors.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/portfolio-rebalancer.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/editEngine.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/useTMDataGrid.tsx'
 ---
 
 # TMDataGrid - Editing

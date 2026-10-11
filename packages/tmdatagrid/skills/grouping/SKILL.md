@@ -16,10 +16,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/grouping.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/summary-row.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/grouping.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/summary.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/grouping.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/summary-row.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/grouping.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/summary.ts'
 ---
 
 # TMDataGrid - Grouping and totals

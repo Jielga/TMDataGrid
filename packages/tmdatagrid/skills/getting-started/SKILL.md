@@ -15,12 +15,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/getting-started.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/anatomy.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/components.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/card-view.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/sizes.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/getting-started.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/anatomy.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/components.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/card-view.md'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGrid.tsx'
+  - 'Jielga/react:packages/tmdatagrid/src/core/sizes.ts'
 ---
 
 # TMDataGrid - Getting started

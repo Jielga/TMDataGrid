@@ -36,7 +36,7 @@ async function run({
     : "";
 
   const script = document.createElement("script");
-  script.setAttribute("data-site-root", "/TMDataGrid/");
+  script.setAttribute("data-site-root", "/react/");
   script.setAttribute("data-slug", slug);
   Object.defineProperty(document, "currentScript", {
     value: script,
@@ -59,7 +59,7 @@ describe("the standalone version switcher", () => {
   });
 
   it("offers every released copy and marks the one being read", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/docs/columns" });
+    await run({ slug: "root", pathname: "/react/docs/columns" });
 
     const select = document.querySelector("select");
     const options = [...(select?.options ?? [])];
@@ -67,51 +67,51 @@ describe("the standalone version switcher", () => {
       "1.1.1",
       "next",
     ]);
-    expect(select?.value).toBe("/TMDataGrid/docs/columns");
+    expect(select?.value).toBe("/react/docs/columns");
   });
 
   it("carries the page across, and sends the mirrored entry to the root", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/docs/columns" });
+    await run({ slug: "root", pathname: "/react/docs/columns" });
 
     const values = [...(document.querySelector("select")?.options ?? [])].map(
       (option) => option.value,
     );
     expect(values).toEqual([
-      "/TMDataGrid/docs/columns",
-      "/TMDataGrid/next/docs/columns",
+      "/react/docs/columns",
+      "/react/next/docs/columns",
     ]);
   });
 
   it("reads the page out of a copy served from a subdirectory", async () => {
-    await run({ slug: "next", pathname: "/TMDataGrid/next/docs/columns" });
+    await run({ slug: "next", pathname: "/react/next/docs/columns" });
 
     const values = [...(document.querySelector("select")?.options ?? [])].map(
       (option) => option.value,
     );
     expect(values).toEqual([
-      "/TMDataGrid/docs/columns",
-      "/TMDataGrid/next/docs/columns",
+      "/react/docs/columns",
+      "/react/next/docs/columns",
     ]);
   });
 
   it("stays out of the way when there is nothing to switch to", async () => {
     await run({
       slug: "root",
-      pathname: "/TMDataGrid/",
+      pathname: "/react/",
       manifest: { entries: [MANIFEST.entries[0]] },
     });
     expect(document.querySelector("select")).toBeNull();
   });
 
   it("says nothing when there is no manifest", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/", manifest: null });
+    await run({ slug: "root", pathname: "/react/", manifest: null });
     expect(document.querySelector("select")).toBeNull();
   });
 
   // These copies name the version npm serves today beside the wordmark, which
   // on a frozen copy is some other version than the one being read.
   it("takes down the header version that is not this copy's", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/" });
+    await run({ slug: "root", pathname: "/react/" });
 
     const badge = document.querySelector<HTMLElement>("header a");
     expect(badge?.style.display).toBe("none");
@@ -119,7 +119,7 @@ describe("the standalone version switcher", () => {
 
   // Floating it over the corner put it on top of the controls already there.
   it("stands in the header, where that version stood", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/" });
+    await run({ slug: "root", pathname: "/react/" });
 
     const select = document.querySelector("select");
     expect(select?.closest("header")).not.toBeNull();
@@ -127,7 +127,7 @@ describe("the standalone version switcher", () => {
   });
 
   it("falls back to the corner when the header is shaped some other way", async () => {
-    await run({ slug: "root", pathname: "/TMDataGrid/", header: false });
+    await run({ slug: "root", pathname: "/react/", header: false });
 
     const box = document.querySelector<HTMLElement>("[role='group']");
     expect(box?.parentElement).toBe(document.body);
@@ -137,7 +137,7 @@ describe("the standalone version switcher", () => {
   it("leaves the header alone when it renders nothing", async () => {
     await run({
       slug: "root",
-      pathname: "/TMDataGrid/",
+      pathname: "/react/",
       manifest: { entries: [MANIFEST.entries[0]] },
     });
 

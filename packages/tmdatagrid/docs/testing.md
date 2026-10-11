@@ -728,7 +728,7 @@ declare module "@playwright/test" {
 A clipboard test needs `cellSelection` on in the story and the `permissions` above in the project; it selects a range, presses `Control+C` and reads `navigator.clipboard.readText()` through `page.evaluate`.
 The copied text separates cells with a tab and rows with `\r\n`.
 
-The grid's own component suite is written this way: the stories, the gallery and the specs are in the [repository](https://github.com/Jielga/TMDataGrid/tree/main/playwright).
+The grid's own component suite is written this way: the stories, the gallery and the specs are in the [repository](https://github.com/Jielga/react/tree/main/playwright).
 
 ## React Testing Library
 

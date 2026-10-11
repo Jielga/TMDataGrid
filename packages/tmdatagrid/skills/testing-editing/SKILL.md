@@ -14,11 +14,11 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/editing.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/draft-store.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridEntryRows.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridEditColumn.tsx'
+  - 'Jielga/react:packages/tmdatagrid/docs/testing.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/editing.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/draft-store.md'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGridEntryRows.tsx'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGridEditColumn.tsx'
 ---
 
 # TMDataGrid - Testing editing

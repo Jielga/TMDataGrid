@@ -15,10 +15,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/testing.md'
-  - 'Jielga/TMDataGrid:playwright/support/DataGrid.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGrid.tsx'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/components/TMDataGridTable.tsx'
+  - 'Jielga/react:packages/tmdatagrid/docs/testing.md'
+  - 'Jielga/react:playwright/support/DataGrid.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGrid.tsx'
+  - 'Jielga/react:packages/tmdatagrid/src/components/TMDataGridTable.tsx'
 ---
 
 # TMDataGrid - Testing

@@ -16,14 +16,17 @@
 # left for this job to find is a source doc changing under a skill, which a
 # schedule catches perfectly well.
 #
-# Diverges from the upstream template in one way, and `intent setup` would
-# undo it: the template installs the CLI globally at `latest`, which validated
+# Diverges from the upstream template in two ways, and `intent setup` would
+# undo both. The template installs the CLI globally at `latest`, which validated
 # CI against a different version than the pinned devDependency anyone runs
-# locally. Both jobs use the repo's own copy through scripts/intent.mjs.
+# locally; both jobs use the repo's own copy through scripts/intent.mjs. And the
+# template passes `--package-label` with one package name, which `intent setup`
+# fills in. The workspace has several packages that version on their own, so
+# the review job leaves it out: the label is only a fallback for review items
+# that belong to no package (workflow advisories, a failed stale check), and
+# without it they read `workspace`. Items about a package carry its own name.
 #
 # intent-workflow-version: 3
-#
-# Package label below is substituted by `intent setup`.
 
 name: Check Skills
 
@@ -99,7 +102,7 @@ jobs:
       - name: Check skills
         id: stale
         run: |
-          node scripts/intent.mjs stale --github-review --package-label "@jielga/tmdatagrid"
+          node scripts/intent.mjs stale --github-review
 
       - name: Open or update review PR
         if: steps.stale.outputs.has_review == 'true'

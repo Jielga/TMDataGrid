@@ -14,8 +14,8 @@
   "overrides": [
     {
       "files": [
-        "packages/tmdatagrid/test/**",
-        "apps/docs/src/test/**",
+        "packages/*/test/**",
+        "apps/*/src/test/**",
         "**/*.test.tsx"
       ],
       "rules": {

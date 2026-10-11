@@ -11,7 +11,7 @@ import SOURCE from "../public/docs-spa-path.js?raw";
  * jsdom over a location it refuses to let go of.
  */
 
-const ROOT = "/TMDataGrid/";
+const ROOT = "/react/";
 
 function run({ slug, url }: { slug: string; url: string }) {
   const parsed = new URL(url, "https://example.test");
@@ -47,34 +47,34 @@ describe("the deep-link handler", () => {
   // Pages answers a missing path with the site root's 404 whatever directory
   // it was under, so this arrives running the root's bundle.
   it("sends a version's deep link to that version", () => {
-    expect(run({ slug: "root", url: "/TMDataGrid/next/docs/testing" }).sentTo)
-      .toBe("/TMDataGrid/next/?/docs/testing");
+    expect(run({ slug: "root", url: "/react/next/docs/testing" }).sentTo)
+      .toBe("/react/next/?/docs/testing");
   });
 
   it("sends a preview's deep link to that preview", () => {
-    expect(run({ slug: "root", url: "/TMDataGrid/b/feat/docs/testing" }).sentTo)
-      .toBe("/TMDataGrid/b/feat/?/docs/testing");
+    expect(run({ slug: "root", url: "/react/b/feat/docs/testing" }).sentTo)
+      .toBe("/react/b/feat/?/docs/testing");
   });
 
   it("puts the parked path back before the router reads it", () => {
-    expect(run({ slug: "next", url: "/TMDataGrid/next/?/docs/testing" }).settledOn)
-      .toBe("/TMDataGrid/next/docs/testing");
+    expect(run({ slug: "next", url: "/react/next/?/docs/testing" }).settledOn)
+      .toBe("/react/next/docs/testing");
   });
 
   it("carries a query and a hash across the round trip", () => {
     const out = run({
       slug: "root",
-      url: "/TMDataGrid/v2.0/docs/testing?a=1&b=2#parts",
+      url: "/react/v2.0/docs/testing?a=1&b=2#parts",
     });
-    expect(out.sentTo).toBe("/TMDataGrid/v2.0/?/docs/testing&a=1~and~b=2#parts");
+    expect(out.sentTo).toBe("/react/v2.0/?/docs/testing&a=1~and~b=2#parts");
 
     expect(run({ slug: "v2.0", url: out.sentTo! }).settledOn).toBe(
-      "/TMDataGrid/v2.0/docs/testing?a=1&b=2#parts",
+      "/react/v2.0/docs/testing?a=1&b=2#parts",
     );
   });
 
   it("leaves the root's own deep link where it is", () => {
-    const out = run({ slug: "root", url: "/TMDataGrid/docs/testing" });
+    const out = run({ slug: "root", url: "/react/docs/testing" });
     expect(out.sentTo).toBeNull();
     expect(out.settledOn).toBeNull();
   });
@@ -82,7 +82,7 @@ describe("the deep-link handler", () => {
   // A copy's index is a real file, so it is served rather than missed.
   // Redirecting it again would be a loop.
   it("leaves a copy's own front page alone", () => {
-    const out = run({ slug: "next", url: "/TMDataGrid/next/" });
+    const out = run({ slug: "next", url: "/react/next/" });
     expect(out.sentTo).toBeNull();
     expect(out.settledOn).toBeNull();
   });

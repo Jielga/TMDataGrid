@@ -2,11 +2,13 @@ name: Deploy docs
 
 # The site is published as several complete builds under one Pages root:
 #
-#   /TMDataGrid/              the newest release, or the newest line there is
-#   /TMDataGrid/next/         the tip of main
-#   /TMDataGrid/v2.0/         one directory per minor line
-#   /TMDataGrid/b/<branch>/   a build published by hand from a branch
-#   /TMDataGrid/versions.json the manifest the header's version menu reads
+#   /react/              the newest release, or the newest line there is
+#   /react/next/         the tip of main
+#   /react/v2.0/         one directory per minor line
+#   /react/b/<branch>/   a build published by hand from a branch
+#   /react/versions.json the manifest the header's version menu reads
+#   /react/react-popup-window/  the @jielga/react-popup-window docs, one
+#                        unversioned build of the commit this run is for
 #
 # The gh-pages branch is the store: a run writes its directories there and then
 # deploys the whole branch as the Pages artifact. Keeping the artifact flow
@@ -61,7 +63,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     env:
-      SITE_ROOT: /TMDataGrid/
+      SITE_ROOT: /react/
     steps:
       - uses: actions/checkout@v7
         with:
@@ -215,6 +217,28 @@ jobs:
 
           cp "$tools/docs-spa-path.js" "$tools/docs-version-switcher.js" site/
           node "$tools/docs-manifest.mjs" site
+
+      # The react-popup-window docs: one unversioned copy at
+      # /react/react-popup-window/, outside the grid's version manifest. It
+      # carries no meta.json, so docs-manifest.mjs does not list it.
+      - name: Build and stage the popup-window docs
+        if: steps.plan.outputs.work == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+
+          # The loop above checks each target's ref out into this same working
+          # tree, so it can leave an older snapshot behind. Build from the
+          # commit this run was started for.
+          if [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
+            git checkout --force "$GITHUB_SHA"
+            bun install --frozen-lockfile
+          fi
+
+          bun run --cwd apps/popup-docs build --base=/react/react-popup-window/
+          rm -rf site/react-popup-window
+          mkdir -p site/react-popup-window
+          cp -R apps/popup-docs/dist/. site/react-popup-window/
+          cp site/react-popup-window/index.html site/react-popup-window/404.html
 
       - name: Commit the site
         if: steps.plan.outputs.work == 'true'

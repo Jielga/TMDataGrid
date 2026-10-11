@@ -15,7 +15,7 @@ metadata:
   library: '@jielga/tmdatagrid-xlsx'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid-xlsx/docs/xlsx.md'
+  - 'Jielga/react:packages/tmdatagrid-xlsx/docs/xlsx.md'
 ---
 
 # TMDataGrid - Excel export (xlsx)

@@ -20,12 +20,12 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/styling.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/toolbar.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/menu.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/localization.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/capabilities.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/labels.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/styling.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/toolbar.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/menu.md'
+  - 'Jielga/react:packages/tmdatagrid/docs/localization.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/capabilities.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/labels.ts'
 ---
 
 # TMDataGrid - Appearance, toolbar and labels

@@ -6,7 +6,7 @@
  * it is looking at a local build.
  */
 interface ImportMetaEnv {
-  /** Site root of the Pages deployment, "/TMDataGrid/" in production. */
+  /** Site root of the Pages deployment, "/react/" in production. */
   readonly VITE_DOCS_SITE_ROOT?: string;
   /** Which copy this bundle is: "root", "next", "v2.0", "b/some-branch". */
   readonly VITE_DOCS_SLUG?: string;

@@ -5,6 +5,9 @@ const DOCS_URL = `http://localhost:${DOCS_PORT}`;
 // Must match `server.port` in packages/tmdatagrid/test/gallery/vite.config.ts.
 const GALLERY_PORT = 5274;
 const GALLERY_URL = `http://localhost:${GALLERY_PORT}/`;
+// Must match the `dev` script in apps/popup-docs/package.json.
+const POPUP_DOCS_PORT = 5275;
+const POPUP_DOCS_URL = `http://localhost:${POPUP_DOCS_PORT}/`;
 
 // A default export, because the Playwright runner requires one.
 export default defineConfig({
@@ -40,9 +43,17 @@ export default defineConfig({
         reuseContext: true,
       },
     },
+    {
+      // The react-popup-window demos in apps/popup-docs, driven through real
+      // popup windows.
+      name: "popup",
+      testDir: "playwright/popup",
+      use: { baseURL: POPUP_DOCS_URL },
+    },
   ],
   // Playwright starts every entry on every run, whatever `--project` says;
-  // the gallery is up in about a second, so both always start.
+  // the gallery and the popup docs are each up in about a second, so all
+  // three always start.
   webServer: [
     {
       // Its own port, so a `bun run dev` on 5173 is never mistaken for the
@@ -56,6 +67,12 @@ export default defineConfig({
     {
       command: "bun run --cwd packages/tmdatagrid gallery",
       url: GALLERY_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: "bun run --cwd apps/popup-docs dev",
+      url: POPUP_DOCS_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

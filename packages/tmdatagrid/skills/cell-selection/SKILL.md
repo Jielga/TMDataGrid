@@ -16,10 +16,10 @@ metadata:
   library: '@jielga/tmdatagrid'
   library_version: '2.1.2'
 sources:
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/docs/cell-selection.md'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellNavigation.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/cellRange.ts'
-  - 'Jielga/TMDataGrid:packages/tmdatagrid/src/core/export.ts'
+  - 'Jielga/react:packages/tmdatagrid/docs/cell-selection.md'
+  - 'Jielga/react:packages/tmdatagrid/src/core/cellNavigation.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/cellRange.ts'
+  - 'Jielga/react:packages/tmdatagrid/src/core/export.ts'
 ---
 
 # TMDataGrid - Cell selection

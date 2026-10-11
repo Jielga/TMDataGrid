@@ -1,5 +1,5 @@
 {
-  "name": "tmdatagrid-monorepo",
+  "name": "jielga-react",
   "private": true,
   "type": "module",
   "workspaces": {
@@ -15,6 +15,7 @@
       "@tanstack/intent": "0.3.6",
       "@tanstack/match-sorter-utils": "^8.19.4",
       "@tanstack/react-form": "^1.33.5",
+      "@tanstack/react-query": "^5.101.4",
       "@tanstack/react-store": "^0.11.2",
       "@tanstack/react-table": "^9.2.4",
       "@tanstack/react-virtual": "^3.14.14",
@@ -32,6 +33,7 @@
       "jsdom": "^29.1.1",
       "react": "^19.2.8",
       "react-dom": "^19.2.8",
+      "react-resizable-panels": "^4.12.2",
       "typescript": "~7.0.2",
       "vite": "^8.1.6",
       "vitest": "^4.1.10",
@@ -41,7 +43,7 @@
   "scripts": {
     "dev": "bun run --cwd apps/docs dev",
     "build": "bun run build:lib && bun run build:docs",
-    "build:lib": "bun run --cwd packages/tmdatagrid build && bun run --cwd packages/tmdatagrid-xlsx build",
+    "build:lib": "bun run --cwd packages/tmdatagrid build && bun run --cwd packages/tmdatagrid-xlsx build && bun run --cwd packages/react-popup-window build",
     "build:docs": "bun run --cwd apps/docs build",
     "lint": "oxlint",
     "typecheck": "tsc -b",
