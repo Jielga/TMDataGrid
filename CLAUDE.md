@@ -186,6 +186,7 @@ Reasoning belongs in the code comments; the only thing worth spelling out is a w
 
 Each package's `CHANGELOG.md` and the `library_version` in each `SKILL.md` are generated; `bun run version-packages` writes both.
 Never edit them by hand.
+The same script refreshes `bun.lock`, because `changeset version` bumps the workspace versions without touching the lockfile.
 
 Nothing publishes from an ordinary push.
 Merging the **chore: version packages** PR is the release: `scripts/publish-missing.mjs` packs each public package whose version is missing from the registry with bun and publishes the tarball with npm under trusted publishing.

@@ -53,7 +53,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-skill-version.mjs",
+    "version-packages": "changeset version && node scripts/sync-skill-version.mjs && bun install --lockfile-only",
     "prepare": "husky"
   },
   "devDependencies": {
