@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 /**
  * One JSON endpoint, read once, or given up on quietly.
  *
- * Shared by the npm registry read in `packageStatus.ts` and the deployed
- * versions manifest in `docsVersions.ts`. Both are optional: offline, an ad
- * blocker, or a manifest that is not there yet each cost the page one badge, so
+ * Shared by the npm registry read in `packageStatus.ts`, the deployed versions
+ * manifest in `docsVersions.ts` and the published site list in `sites.ts`.
+ * Each is optional: offline, an ad blocker, or a manifest that is not there
+ * yet each cost the page one badge or fall back to what the build knows, so
  * nothing is retried and no error is surfaced.
  *
  * `parse` is called with `unknown` rather than trusted, because it is parsing a

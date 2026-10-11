@@ -1,10 +1,10 @@
 // Reads the state a deploy run decides against and prints the plan.
 //
-// The decision itself is in `docs-plan.mjs`; this is the shell around it - git,
-// the gh-pages tree, and the event that fired. Deciding against the tree rather
-// than against git history makes a run idempotent: a line that failed to deploy
-// is picked up by the next push, and a rerun of the same push writes the same
-// directories.
+// The decision itself is in `docs-plan.mjs`, once per site; this is the shell
+// around it - the site registry, git, the gh-pages tree, and the event that
+// fired. Deciding against the tree rather than against git history makes a run
+// idempotent: a line that failed to deploy is picked up by the next push, and a
+// rerun of the same push writes the same directories.
 //
 // The trigger is the push to main rather than a tag or a release, because
 // Changesets creates both with GITHUB_TOKEN and events raised by that token do
@@ -12,17 +12,18 @@
 // request is an ordinary push whose package.json version changed, and that is
 // what a versioned snapshot hangs off.
 //
-// Usage: node scripts/docs-targets.mjs <site-dir>
-// Reads GITHUB_EVENT_NAME and the workflow_dispatch inputs from DOCS_INPUT_REF,
-// DOCS_INPUT_SLUG and DOCS_INPUT_MIRROR_ROOT.
+// Usage: node scripts/docs-targets.mjs <pages-dir>
+// Reads GITHUB_EVENT_NAME and the workflow_dispatch inputs from DOCS_INPUT_SITE,
+// DOCS_INPUT_REF, DOCS_INPUT_SLUG and DOCS_INPUT_MIRROR_ROOT.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { lineOf, planDispatch, planPush } from "./docs-plan.mjs";
+import { readSites } from "./docs-sites.mjs";
 
-const site = process.argv[2];
-if (!site) {
-  console.error("Usage: node scripts/docs-targets.mjs <site-dir>");
+const pages = process.argv[2];
+if (!pages) {
+  console.error("Usage: node scripts/docs-targets.mjs <pages-dir>");
   process.exit(1);
 }
 
@@ -34,82 +35,121 @@ function readJson(path) {
   }
 }
 
-// The site documents the grid, so its version is the grid package's. Refs from
-// before the workspace layout carried it in the root manifest instead.
-const MANIFESTS = ["packages/tmdatagrid/package.json", "package.json"];
-
 function showJson(ref, path) {
   try {
     return JSON.parse(
-      execFileSync("git", ["show", `${ref}:${path}`], { encoding: "utf8" }),
+      execFileSync("git", ["show", `${ref}:${path}`], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }),
     );
   } catch {
     return null;
   }
 }
 
-/** The library's version at a ref, or in the working tree when ref is empty. */
-function versionAt(ref) {
-  for (const path of MANIFESTS) {
-    const version = (ref ? showJson(ref, path) : readJson(path))?.version;
-    if (version) return version;
+/**
+ * The version of the site's first package at a ref, or in the working tree
+ * when ref is empty. A manifest counts only when it names that package: refs
+ * from before the workspace layout carried the grid in the root manifest, and
+ * the root manifest of a later ref is the private workspace root.
+ */
+function versionAt(ref, site) {
+  const name = site.packages[0];
+  for (const path of [`${site.dir}/package.json`, "package.json"]) {
+    const manifest = ref ? showJson(ref, path) : readJson(path);
+    if (manifest?.name === name && manifest.version) return manifest.version;
   }
   return null;
 }
 
-function tagExists(tag) {
-  try {
-    execFileSync("git", ["rev-parse", "-q", "--verify", `refs/tags/${tag}`], {
-      stdio: "ignore",
-    });
-    return true;
-  } catch {
-    return false;
+/**
+ * The release tag of a version: `<name>@<version>` as the release workflow
+ * writes it, or `v<version>` from when every package shared one version line.
+ * A tag counts only when the package at it really is that version, so an old
+ * `v` tag of another package can never be taken for this one's.
+ */
+function tagFor(site, version) {
+  for (const tag of [`${site.packages[0]}@${version}`, `v${version}`]) {
+    if (versionAt(`refs/tags/${tag}`, site) === version) return tag;
   }
+  return null;
 }
 
 /** The metadata a build wrote into its own directory. */
-function metaAt(slug) {
-  return slug ? readJson(join(site, slug, "meta.json")) : null;
+function metaAt(siteDir, slug) {
+  return slug ? readJson(join(siteDir, slug, "meta.json")) : null;
 }
 
-const event = process.env.GITHUB_EVENT_NAME ?? "";
-
-let plan;
-
-if (event === "workflow_dispatch") {
-  const ref = process.env.DOCS_INPUT_REF ?? "";
-  const slug = process.env.DOCS_INPUT_SLUG ?? "";
-  if (!slug) {
-    console.error("workflow_dispatch needs a slug input.");
-    process.exit(1);
+function planSite(site) {
+  const siteDir = join(pages, site.slug);
+  const version = versionAt("", site);
+  if (!version) {
+    console.error(`${site.slug}: no version for ${site.packages[0]}; skipped.`);
+    return { targets: [], remove: [] };
   }
-  plan = planDispatch({
-    slug,
-    ref,
-    version: versionAt(ref),
-    mirrorRoot: process.env.DOCS_INPUT_MIRROR_ROOT === "true",
-  });
-} else {
-  const version = versionAt("");
   const line = lineOf(version);
   // The root carries the slug it mirrors rather than a copy of that build's
   // metadata, so what it serves is read through the copy it points at.
-  const rootSlug = readJson(join(site, "meta.json"))?.slug ?? null;
+  const rootSlug = readJson(join(siteDir, "meta.json"))?.slug ?? null;
 
-  plan = planPush({
+  return planPush({
     version,
-    lineVersion: metaAt(line)?.version,
-    rootExists: existsSync(join(site, "index.html")),
+    lineVersion: metaAt(siteDir, line)?.version,
+    rootExists: existsSync(join(siteDir, "index.html")),
     rootSlug,
-    rootServesVersion: metaAt(rootSlug)?.version ?? null,
-    hasTag: tagExists(`v${version}`),
+    rootServesVersion: metaAt(siteDir, rootSlug)?.version ?? null,
+    tag: tagFor(site, version),
   });
 }
 
-const out = {
-  ...plan,
-  work: plan.targets.length + plan.remove.length > 0,
-};
+/** A plan's targets, each told which site it belongs to and how to build it. */
+function forSite(site, plan) {
+  return {
+    targets: plan.targets.map((target) => ({
+      ...target,
+      site: site.slug,
+      app: site.app,
+      package: site.packages[0],
+    })),
+    remove: plan.remove.map((slug) => `${site.slug}/${slug}`),
+  };
+}
+
+const sites = readSites();
+const event = process.env.GITHUB_EVENT_NAME ?? "";
+const plans = [];
+
+if (event === "workflow_dispatch") {
+  const slug = process.env.DOCS_INPUT_SLUG ?? "";
+  const siteSlug = process.env.DOCS_INPUT_SITE ?? "";
+  const site = sites.find((entry) => entry.slug === siteSlug);
+  if (!site || !slug) {
+    console.error(
+      `workflow_dispatch needs a site input (one of: ${sites
+        .map((entry) => entry.slug)
+        .join(", ")}) and a slug input.`,
+    );
+    process.exit(1);
+  }
+  const ref = process.env.DOCS_INPUT_REF ?? "";
+  plans.push(
+    forSite(
+      site,
+      planDispatch({
+        slug,
+        ref,
+        version: versionAt(ref, site),
+        mirrorRoot: process.env.DOCS_INPUT_MIRROR_ROOT === "true",
+      }),
+    ),
+  );
+} else {
+  for (const site of sites) plans.push(forSite(site, planSite(site)));
+}
+
+const targets = plans.flatMap((plan) => plan.targets);
+const remove = plans.flatMap((plan) => plan.remove);
+const out = { targets, remove, work: targets.length + remove.length > 0 };
 console.error(JSON.stringify(out, null, 2));
 process.stdout.write(JSON.stringify(out));

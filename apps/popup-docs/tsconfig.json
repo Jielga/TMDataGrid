@@ -13,6 +13,6 @@
     }
   },
   // The Vite config and the alias are Node files: tsconfig.node.json checks
-  // them.
-  "include": ["src"]
+  // them. The shell's file declares the deploy's build-time variables.
+  "include": ["src", "../docs-shell/src/env.d.ts"]
 }

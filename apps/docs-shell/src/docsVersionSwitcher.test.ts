@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import SOURCE from "../public/docs-version-switcher.js?raw";
+import SOURCE from "../static/docs-version-switcher.js?raw";
 
 /**
- * `public/docs-version-switcher.js` is the version menu for copies built before
+ * `static/docs-version-switcher.js` is the version menu for copies built before
  * the header grew one, which is what keeps the site root reachable when the
  * latest stable release predates this feature. It ships as plain JS outside the
  * bundle, so nothing else typechecks it or renders it: this is its only cover.

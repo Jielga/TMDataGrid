@@ -1,5 +1,9 @@
 import { Badge, Group } from "@mantine/core";
-import { betaIsAhead, NPM_PAGE, useDistTags } from "./packageStatus";
+import { betaIsAhead, useDistTags } from "docs-shell/packageStatus.ts";
+import { npmHref } from "docs-shell/sites.ts";
+
+const PACKAGE = "@jielga/tmdatagrid";
+const NPM_PAGE = npmHref(PACKAGE);
 
 /**
  * The published versions, for the front page.
@@ -12,7 +16,7 @@ import { betaIsAhead, NPM_PAGE, useDistTags } from "./packageStatus";
  * headline one.
  */
 export function ProjectStatus() {
-  const tags = useDistTags();
+  const tags = useDistTags(PACKAGE);
 
   const beta = betaIsAhead(tags) ? tags?.beta : undefined;
 

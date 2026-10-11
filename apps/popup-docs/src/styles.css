@@ -1,25 +1,18 @@
+/* Mantine's tokens, so the page matches the shared header and every other
+   package site, and follows the colour scheme the header switches. */
 :root {
-  --bg: #f7f8fa;
-  --surface: #ffffff;
-  --border: #e3e6ea;
-  --text: #1c2330;
-  --text-muted: #5b6472;
-  --accent: #3b6ef6;
-  --accent-contrast: #ffffff;
-  --code-bg: #f0f2f5;
-  color-scheme: light;
+  --bg: var(--mantine-color-body);
+  --surface: var(--mantine-color-default);
+  --border: var(--mantine-color-default-border);
+  --text: var(--mantine-color-text);
+  --text-muted: var(--mantine-color-dimmed);
+  --accent: var(--mantine-primary-color-filled);
+  --accent-contrast: var(--mantine-primary-color-contrast);
+  --code-bg: var(--mantine-color-gray-0);
 }
 
-html.dark {
-  --bg: #14181f;
-  --surface: #1d232d;
-  --border: #313a47;
-  --text: #e8ebef;
-  --text-muted: #9aa4b2;
-  --accent: #6b93ff;
-  --accent-contrast: #10131a;
-  --code-bg: #10141b;
-  color-scheme: dark;
+:root[data-mantine-color-scheme='dark'] {
+  --code-bg: var(--mantine-color-dark-8);
 }
 
 * {
@@ -40,11 +33,11 @@ body {
   padding: 0 1.25rem 4rem;
 }
 
-.site-header {
-  padding: 3.5rem 0 2rem;
+.intro {
+  padding: 3rem 0 1rem;
 }
 
-.site-header h1 {
+.intro h1 {
   font-size: 2rem;
   margin: 0 0 0.5rem;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -55,27 +48,6 @@ body {
   font-size: 1.1rem;
   margin: 0 0 1rem;
   max-width: 46rem;
-}
-
-.header-links {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.header-links a {
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.header-links a:hover {
-  text-decoration: underline;
-}
-
-.theme-toggle {
-  margin-left: auto;
 }
 
 section {

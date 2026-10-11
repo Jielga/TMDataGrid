@@ -1,7 +1,8 @@
 import { createServer } from 'node:http'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { expect, test } from '@playwright/test'
+import { test as baseTest } from '@playwright/test'
+import { expect, test } from '../support/test'
 import type { Page } from '@playwright/test'
 import { generatePeople } from '../../apps/popup-docs/src/examples/people'
 
@@ -179,16 +180,20 @@ test('mantine modal opened from the popped-out grid stays in the popup window', 
   await expect(popup.getByTestId('details-body')).toHaveCount(0)
 })
 
-test('dark mode toggled in the main window propagates to the popup', async ({ page }) => {
+test('dark mode switched in the main window propagates to the popup', async ({ page }) => {
   const popup = await openPopup(page, 'open-counter')
 
-  await page.getByRole('button', { name: 'Dark mode' }).click()
+  // Mantine keeps the radio itself hidden; its label is what takes the click.
+  await page.locator('label').filter({ hasText: /^Dark$/ }).click()
+  await expect(page.getByRole('radio', { name: 'Dark' })).toBeChecked()
   await expect
-    .poll(() => popup.evaluate(() => document.documentElement.classList.contains('dark')))
-    .toBe(true)
+    .poll(() =>
+      popup.evaluate(() => document.documentElement.getAttribute('data-mantine-color-scheme')),
+    )
+    .toBe('dark')
 
   const bg = await popup.evaluate(() => getComputedStyle(document.body).backgroundColor)
-  expect(bg).toBe('rgb(20, 24, 31)') // --bg in dark mode
+  expect(bg).toBe('rgb(36, 36, 36)') // --mantine-color-body in dark mode
 })
 
 for (const openTestId of ['open-counter', 'open-results']) {
@@ -329,7 +334,10 @@ async function probeFirstContentFrame(page: Page): Promise<void> {
   })
 }
 
-test.describe('first popup paint', () => {
+// The base `test`, without the shared fixtures: they route requests, and once
+// a page routes anything, Playwright stalls the requests of a scripted
+// about:blank popup - which is the very load these tests time.
+baseTest.describe('first popup paint', () => {
   // Vite dev injects CSS as <style>. Production builds use <link>, which the
   // popup loads again after it opens. Serve a slow one to cover that path.
   // Playwright's request routing cannot be used for it: it stalls requests
@@ -337,7 +345,11 @@ test.describe('first popup paint', () => {
   let server: Server
   let slowCssUrl: string
 
-  test.beforeAll(async () => {
+  baseTest.beforeEach(async ({ page }) => {
+    await page.goto('./')
+  })
+
+  baseTest.beforeAll(async () => {
     server = createServer((_req, res) => {
       setTimeout(() => {
         res.writeHead(200, { 'content-type': 'text/css', 'cache-control': 'no-store' })
@@ -348,13 +360,13 @@ test.describe('first popup paint', () => {
     slowCssUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/slow.css`
   })
 
-  test.afterAll(async () => {
+  baseTest.afterAll(async () => {
     server.closeAllConnections()
     await new Promise((resolve) => server.close(resolve))
   })
 
   for (const openTestId of ['open-counter', 'open-results']) {
-    test(`${openTestId}: linked stylesheets are applied`, async ({ page }) => {
+    baseTest(`${openTestId}: linked stylesheets are applied`, async ({ page }) => {
       await page.evaluate(
         (href) =>
           new Promise((resolve) => {

@@ -12,7 +12,7 @@
     "url": "git+https://github.com/Jielga/react.git",
     "directory": "packages/tmdatagrid"
   },
-  "homepage": "https://jielga.github.io/react/",
+  "homepage": "https://jielga.github.io/react/tmdatagrid/",
   "bugs": {
     "url": "https://github.com/Jielga/react/issues"
   },

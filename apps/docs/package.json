@@ -25,6 +25,7 @@
     "@tanstack/react-virtual": "catalog:",
     "@tanstack/store": "catalog:",
     "@tanstack/table-core": "catalog:",
+    "docs-shell": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-markdown": "^10.1.0",

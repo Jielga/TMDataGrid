@@ -59,7 +59,7 @@ export function planPush({
   rootExists,
   rootSlug,
   rootServesVersion,
-  hasTag,
+  tag,
 }) {
   const next = {
     slug: "next",
@@ -82,11 +82,11 @@ export function planPush({
   if (line && (lineVersion !== version || takesRoot)) {
     targets.push({
       slug: line,
-      // Prefer the tag when it is there. On the merge that releases a version
-      // the tag is still being pushed by the parallel release run, and HEAD is
-      // the release commit anyway; later catch-up runs get the exact source
-      // instead of whatever main has moved on to.
-      ref: hasTag ? `v${version}` : "",
+      // Prefer the release tag when it is there. On the merge that releases a
+      // version the tag is still being pushed by the parallel release run, and
+      // HEAD is the release commit anyway; later catch-up runs get the exact
+      // source instead of whatever main has moved on to.
+      ref: tag ?? "",
       version,
       label: version,
       kind: isPrerelease(version) ? "prerelease" : "stable",

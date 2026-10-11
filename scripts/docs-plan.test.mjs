@@ -15,7 +15,7 @@ const seeded = {
   rootExists: true,
   rootSlug: "v1.1",
   rootServesVersion: "1.1.1",
-  hasTag: true,
+  tag: "@jielga/tmdatagrid@2.0.0-beta.0",
 };
 
 const root = (plan) => plan.targets.find((target) => target.mirrorRoot) ?? null;
@@ -79,7 +79,7 @@ describe("planPush", () => {
       rootExists: true,
       rootSlug: "v2.0",
       rootServesVersion: "2.0.0-beta.0",
-      hasTag: true,
+      tag: null,
     });
     expect(root(plan)).toMatchObject({ slug: "v2.0", kind: "stable" });
   });
@@ -100,15 +100,15 @@ describe("planPush", () => {
       rootExists: true,
       rootSlug: "v2.0",
       rootServesVersion: "2.0.0-beta.0",
-      hasTag: true,
+      tag: null,
     });
     expect(root(plan)).toBeNull();
   });
 
   test("builds the line from its tag when there is one, and from main when there is not", () => {
-    const moved = { ...seeded, version: "2.0.0-beta.1" };
-    expect(planPush(moved).targets[1].ref).toBe("v2.0.0-beta.1");
-    expect(planPush({ ...moved, hasTag: false }).targets[1].ref).toBe("");
+    const moved = { ...seeded, version: "2.0.0-beta.1", tag: "@jielga/tmdatagrid@2.0.0-beta.1" };
+    expect(planPush(moved).targets[1].ref).toBe("@jielga/tmdatagrid@2.0.0-beta.1");
+    expect(planPush({ ...moved, tag: null }).targets[1].ref).toBe("");
   });
 });
 
