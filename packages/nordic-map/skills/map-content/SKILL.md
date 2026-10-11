@@ -7,17 +7,16 @@ description: >
   reset, getView; CameraMoveOptions; NordicMapView and onViewChange; maxZoom,
   padding, showZoomControls), onMapClick, areas and choropleth maps (MapArea,
   areas, onAreaClick, onAreaHover, loadSwedenCounties,
-  loadSwedenMunicipalities), paths and GPS tracks (MapPath, paths,
-  onPathClick), and custom map sources (MapSource, MapLevel, MapCell,
-  MapLayers, MapRoad, RoadClass, MapRoadLabel, MapPlace, PlaceClass,
-  MapContext, MapAttribution, LonLat, LonLatBox). Load when many pins overlap,
-  when zooming to pins or a position from code, when coloring counties or
-  municipalities by a value, when drawing routes, or when feeding the map
-  other data.
+  loadSwedenMunicipalities), paths and GPS tracks (MapPath, paths, onPathClick),
+  and custom map sources (MapSource, MapLevel, MapCell, MapLayers, MapRoad,
+  RoadClass, MapRoadLabel, MapPlace, PlaceClass, MapContext, MapAttribution,
+  LonLat, LonLatBox). Load when many pins overlap, when zooming to pins or a
+  position from code, when coloring counties or municipalities by a value, when
+  drawing routes, or when feeding the map other data.
 metadata:
   type: sub-skill
   library: '@jielga/nordic-map'
-  library_version: '0.1.0'
+  library_version: '0.2.0'
 requires:
   - getting-started
 sources:
