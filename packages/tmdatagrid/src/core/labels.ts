@@ -236,8 +236,8 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
   activeFilters: "Active filters",
   clearFilter: (column) => `Clear ${column} filter`,
 
-  sortAsc: "Sort by ASC",
-  sortDesc: "Sort by DESC",
+  sortAsc: "Sort ascending",
+  sortDesc: "Sort descending",
   filterMenuItem: "Filter",
   groupBy: (column) => `Group by ${column}`,
   ungroup: (column) => `Ungroup ${column}`,
@@ -260,7 +260,7 @@ export const TMDATAGRID_LABELS_EN: TMDataGridLabels = {
     pageCount < 0 ? `Page ${page}` : `Page ${page} of ${pageCount}`,
   groupedAllRows: (total) => `Grouped · all ${total} rows`,
   pagingSuspendedHint:
-    "Paging is off while the rows are grouped: the whole tree is rendered and virtualized. Ungroup to page again.",
+    "Paging is off while the rows are grouped, and every row is shown. Ungroup to page again.",
   previousPage: "Previous page",
   nextPage: "Next page",
 

@@ -169,7 +169,7 @@ describe("renderColumnMenuItems", () => {
     expect(seen[0]).toBeGreaterThan(0);
     // The built-ins survive alongside the addition.
     expect(
-      screen.getByRole("menuitem", { name: "Sort by ASC" }),
+      screen.getByRole("menuitem", { name: "Sort ascending" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("menuitem", { name: "Stats for name" }),
@@ -191,7 +191,7 @@ describe("renderColumnMenuItems", () => {
       screen.getByRole("menuitem", { name: "Only mine" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("menuitem", { name: "Sort by ASC" }),
+      screen.queryByRole("menuitem", { name: "Sort ascending" }),
     ).not.toBeInTheDocument();
   });
 

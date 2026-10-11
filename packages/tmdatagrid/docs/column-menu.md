@@ -14,7 +14,7 @@ The menu shows each group only when the column supports it:
 
 | Item | Shown when |
 | --- | --- |
-| Sort by ASC · Sort by DESC | The column can sort. See [Sorting](/docs/sorting) |
+| Sort ascending · Sort descending | The column can sort. See [Sorting](/docs/sorting) |
 | Filter | The column can filter and `filters.inHeader` is off. See [Filtering](/docs/filtering) |
 | Group by · Ungroup | The column can group. See [Grouping](/docs/grouping) |
 | Expand all groups · Collapse all groups | Grouping is active |
