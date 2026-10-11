@@ -1,6 +1,6 @@
 import { Text } from "@mantine/core";
 import { useParams } from "@tanstack/react-router";
-import { DocsPage } from "./DocsPage";
+import { DocsPage } from "docs-shell/docs/DocsPage.tsx";
 import { findDocsPage } from "./docsPages";
 
 /** Route component for `/docs/$docId`. */

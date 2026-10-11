@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
-/** The shell's own tests: the registry, the header, and the deploy shims. */
+/** The shell's own tests: the registry, the header, the docs renderer, and the deploy shims. */
 export default defineConfig({
   plugins: [react()],
   test: {

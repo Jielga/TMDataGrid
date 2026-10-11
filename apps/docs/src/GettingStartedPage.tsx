@@ -1,7 +1,7 @@
 import { Button, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import { DocsMarkdown } from "./docs/DocsPage";
-import classes from "./docs/DocsPage.module.css";
+import { DocsMarkdown } from "docs-shell/docs/DocsPage.tsx";
+import classes from "docs-shell/docs/DocsPage.module.css";
 import gettingStartedDoc from "@jielga/tmdatagrid/docs/getting-started.md?raw";
 import { ProjectStatus } from "./ProjectStatus";
 

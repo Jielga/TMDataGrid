@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Text } from "@mantine/core";
-import { CodeBlock } from "../CodeBlock";
+import { CodeBlock } from "docs-shell/docs/CodeBlock.tsx";
 import {
   buildStarterSnippet,
   type StarterSnippetConfig,

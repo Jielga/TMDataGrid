@@ -1,8 +1,8 @@
 import { cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { findDemoFences } from "../docs/demoFence";
-import { extractHeadings } from "../docs/headings";
+import { findDemoFences } from "docs-shell/docs/demoFence.ts";
+import { extractHeadings } from "docs-shell/docs/headings.ts";
 import { DOCS_PAGES } from "../docs/docsPages";
 import libraryIndexSource from "../../../../packages/tmdatagrid/src/index.ts?raw";
 import { renderWithMantine } from "../test/renderWithMantine";

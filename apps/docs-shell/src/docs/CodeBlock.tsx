@@ -12,8 +12,8 @@ import type { CSSProperties } from "react";
  * starter snippet, and the fenced blocks in the markdown docs - so they are
  * highlighted, copyable and themed the same way everywhere.
  *
- * The highlighter itself is registered once in `main.tsx`; this is only the
- * shape of the block.
+ * The highlighter itself is registered once by the site, with the adapter from
+ * `codeHighlight.ts`; this is only the shape of the block.
  */
 
 export type CodeBlockFile = CodeHighlightTabsCode;
@@ -56,7 +56,7 @@ const PART_STYLES: Partial<Record<CodeHighlightStylesNames, CSSProperties>> = {
  * #676867 on a #2e2e2e background - 2.4:1, where normal text wants 4.5:1. The
  * adapter only substitutes a bundled theme for the literal strings "light" and
  * "dark", so any other value reaches shiki as a theme name; both are
- * registered in `main.tsx`.
+ * registered in `codeHighlight.ts`.
  *
  * The `-default` variants are GitHub's current themes. The older `github-dark`
  * puts comments at #6a737d, 3.9:1 even on its own background - and these demo

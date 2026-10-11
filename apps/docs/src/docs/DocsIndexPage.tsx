@@ -1,8 +1,8 @@
 import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
+import { findDemoFences } from "docs-shell/docs/demoFence.ts";
+import classes from "docs-shell/docs/DocsPage.module.css";
 import { docsIndexSections, docsPageHref } from "./docsPages";
-import { findDemoFences } from "./demoFence";
-import classes from "./DocsPage.module.css";
 
 /**
  * Every page as a card, grouped the way the sidebar groups them. A tree of

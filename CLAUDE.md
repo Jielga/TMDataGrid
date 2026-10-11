@@ -131,13 +131,16 @@ The cell files ship in `dist/cells/` because their `new URL(..., import.meta.url
 
 ## Docs sites
 
-Every package has its own docs site, a separate Vite app under `apps/`, and they share a frame rather than a renderer.
+Every package has its own docs site, a separate Vite app under `apps/`, and they share a frame and a markdown renderer from `docs-shell`.
 
 - [apps/docs-shell/sites.json](apps/docs-shell/sites.json) is the one list of sites.
   `"published": false` on an entry stops the header and the index page from asking npm about a package that is not there yet; remove it with the package's first release.
   The header's package menu, the index page and the deploy all read it, and the deploy publishes it at the Pages root so a frozen copy of one site still lists packages added after it was built.
 - `apps/docs-shell/` (private, `docs-shell`) holds the shared `SiteHeader`: the package menu, the version menu, the GitHub link and the colour scheme switch.
   A site imports its modules by path, `docs-shell/SiteHeader.tsx`, and lists `../docs-shell/src/env.d.ts` in its tsconfig `include`.
+- `apps/docs-shell/src/docs/` holds the shared markdown renderer: `DocsPage` and `DocsMarkdown`, `DemoBlock`, `CodeBlock`, the demo fence parser in `demoFence.ts`, the heading slugs and the table of contents, and the shiki adapter in `codeHighlight.ts`.
+  A site wraps its app in `DocsSiteProvider` from `docs-shell/docs/DocsSite.ts` and passes it its own demo registry (`loadDemo`, `loadSharedSource`) and, if it has a router, `renderLink` for root-relative links.
+  The grid site's value is in `apps/docs/src/docsSite.tsx`.
 - `apps/docs-home/` is the index page at <https://jielga.github.io/react/>.
 - A site lives at `/react/<slug>/` and is versioned by the first package it lists: the slug directory serves the newest release, `next/` the tip of `main`, `v<major>.<minor>/` each line, `b/<branch>/` a build published by hand.
   [scripts/docs-plan.mjs](scripts/docs-plan.mjs) decides what a push builds, and builds a release line from its `<name>@<version>` tag.

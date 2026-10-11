@@ -2,7 +2,7 @@
   "name": "docs-shell",
   "private": true,
   "type": "module",
-  "description": "What every package's documentation site shares: the site registry, the header with its package and version menus, and the deploy's browser shims.",
+  "description": "What every package's documentation site shares: the site registry, the header with its package and version menus, the markdown docs renderer, and the deploy's browser shims.",
   "exports": {
     "./sites.json": "./sites.json",
     "./*": "./src/*"
@@ -11,11 +11,15 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@mantine/code-highlight": "catalog:",
     "@mantine/core": "catalog:",
     "@mantine/hooks": "catalog:",
     "@tabler/icons-react": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "catalog:",

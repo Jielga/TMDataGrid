@@ -1,7 +1,7 @@
 import { Box, Button, Collapse, Group, Paper, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 import { CodeBlockTabs, type CodeBlockFile } from "./CodeBlock";
-import { loadDemo, loadSharedSource } from "./demoRegistry";
+import { useDocsSite } from "./DocsSite";
 import classes from "./DemoBlock.module.css";
 
 /**
@@ -17,7 +17,10 @@ import classes from "./DemoBlock.module.css";
 export const DEFAULT_DEMO_HEIGHT = 380;
 
 export type DemoBlockDemo = {
-  /** Path under `demos/`. Identifies both the component and its source. */
+  /**
+   * Path under the site's demos folder, as its `loadDemo` takes it. Identifies
+   * both the component and its source.
+   */
   file: string;
   /**
    * Only on an example-tree page. Inside a docs page the heading above the
@@ -33,7 +36,8 @@ export type DemoBlockDemo = {
   hint?: string;
   /**
    * Further files to show as tabs beside the demo - the shared modules it
-   * imports, so nothing it depends on is hidden. Paths under `apps/docs/src/examples/`.
+   * imports, so nothing it depends on is hidden. Paths as the site's
+   * `loadSharedSource` takes them.
    */
   extraSources?: Array<string>;
   /** Height of the live area. Defaults to {@link DEFAULT_DEMO_HEIGHT}. */
@@ -46,6 +50,7 @@ const languageOf = (path: string) => (path.endsWith(".tsx") ? "tsx" : "ts");
 
 export function DemoBlock({ demo }: { demo: DemoBlockDemo }) {
   const [showCode, setShowCode] = useState(false);
+  const { loadDemo, loadSharedSource } = useDocsSite();
   const { Component, source } = loadDemo(demo.file);
   const titled = demo.title !== undefined || demo.description !== undefined;
 

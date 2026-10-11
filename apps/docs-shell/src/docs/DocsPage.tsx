@@ -1,11 +1,11 @@
 import { Box, Table, Typography } from "@mantine/core";
-import { Link } from "@tanstack/react-router";
 import { useEffect, type ComponentPropsWithoutRef } from "react";
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CodeBlock } from "../examples/CodeBlock";
-import { DemoBlock } from "../examples/DemoBlock";
+import { CodeBlock } from "./CodeBlock";
+import { DemoBlock } from "./DemoBlock";
 import { splitDemoFences } from "./demoFence";
+import { useDocsLinkRenderer } from "./DocsSite";
 import { DocsToc } from "./DocsToc";
 import { headingSlug } from "./headings";
 import classes from "./DocsPage.module.css";
@@ -28,6 +28,31 @@ function heading(level: 2 | 3 | 4) {
       {children}
     </Tag>
   );
+}
+
+/**
+ * A root-relative link points somewhere else on this site, so it goes through
+ * the site's `renderLink` - on a site with a router, client-side navigation and
+ * the deploy base path (the site lives under /react/ on GitHub Pages) handled
+ * by the router rather than by hand. Anything else (an external URL, an
+ * in-page anchor) is left alone.
+ */
+function MarkdownLink({
+  href,
+  children,
+  ...props
+}: ComponentPropsWithoutRef<"a">) {
+  const renderLink = useDocsLinkRenderer();
+
+  if (!href?.startsWith("/") || !renderLink) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  }
+
+  return renderLink({ href, children });
 }
 
 const markdownComponents: Components = {
@@ -75,34 +100,12 @@ const markdownComponents: Components = {
   h2: heading(2),
   h3: heading(3),
   h4: heading(4),
-  // A root-relative link points somewhere else on this site, so it
-  // goes through the router: client-side navigation, and the
-  // deploy base path (the site lives under /react/ on GitHub
-  // Pages) handled by the router rather than by hand. Anything
-  // else (an external URL, an in-page anchor) is left alone.
-  a: ({ href, children, ...props }: ComponentPropsWithoutRef<"a">) => {
-    if (!href?.startsWith("/")) {
-      return (
-        <a href={href} {...props}>
-          {children}
-        </a>
-      );
-    }
-    // `/docs/grouping#aggregation` - the router wants the two halves
-    // apart, and passing the whole string as `to` would look for a
-    // route with a hash in its path.
-    const [to, hash] = href.split("#");
-    return (
-      <Link to={to} hash={hash} {...props}>
-        {children}
-      </Link>
-    );
-  },
+  a: MarkdownLink,
 };
 
 /**
- * The markdown renderer every prose page shares - the docs routes and the
- * getting-started front page. Mantine's `Typography` styles the raw HTML that
+ * The markdown renderer every prose page of a site shares - on the grid site,
+ * the docs routes and the getting-started front page. Mantine's `Typography` styles the raw HTML that
  * react-markdown emits, so the markdown stays plain - no MDX, no component
  * imports in the content.
  *

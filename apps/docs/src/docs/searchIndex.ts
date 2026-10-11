@@ -1,6 +1,6 @@
 import { rankItem, rankings } from "@tanstack/match-sorter-utils";
+import { extractHeadings, headingSlug } from "docs-shell/docs/headings.ts";
 import { DOCS_PAGES } from "./docsPages";
-import { extractHeadings, headingSlug } from "./headings";
 import { SEARCH_ALIASES } from "./searchAliases";
 
 /**

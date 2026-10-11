@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { extractHeadings } from "docs-shell/docs/headings.ts";
 import { DOCS_PAGES, findDocsPage } from "./docsPages";
-import { extractHeadings } from "./headings";
 import { SEARCH_ALIASES } from "./searchAliases";
 import { excerpt, searchDocs, SEARCH_INDEX } from "./searchIndex";
 

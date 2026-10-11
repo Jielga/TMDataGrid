@@ -1,4 +1,4 @@
-import type { DemoBlockDemo } from "../examples/DemoBlock";
+import type { DemoBlockDemo } from "./DemoBlock";
 
 /**
  * A docs page puts a demo where the prose that explains it is, with a fenced
@@ -30,8 +30,8 @@ const isKey = (value: string): value is Key =>
 
 /**
  * Throws rather than rendering a placeholder: a demo that silently vanished
- * from a page is the failure nobody notices, and `docs.test.tsx` parses every
- * fence on every page, so a typo cannot reach the site.
+ * from a page is the failure nobody notices, and a site's smoke test parses
+ * every fence on every page, so a typo cannot reach the site.
  */
 export function parseDemoFence(body: string): DemoBlockDemo {
   const lines = body
