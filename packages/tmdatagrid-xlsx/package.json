@@ -9,7 +9,7 @@
     "url": "git+https://github.com/Jielga/react.git",
     "directory": "packages/tmdatagrid-xlsx"
   },
-  "homepage": "https://jielga.github.io/react/",
+  "homepage": "https://jielga.github.io/react/tmdatagrid/docs/xlsx",
   "bugs": {
     "url": "https://github.com/Jielga/react/issues"
   },

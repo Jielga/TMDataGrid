@@ -27,14 +27,14 @@ All from the repository root.
 
 | Command | What it does |
 | --- | --- |
-| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/popup-docs dev` for the popup demo site) |
+| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/<app> dev` for another site: `popup-docs`, `docs-home`) |
 | `bun run test` | Vitest once, every workspace project (`test:watch` to iterate) |
-| `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs and the popup demo specs (`--project=docs`, `--project=components` or `--project=popup` for one of them) |
+| `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs, the popup demo specs and the index page specs (`--project=docs`, `components`, `popup` or `home` for one of them) |
 | `bun run lint` | oxlint - types are **not** checked here |
 | `bun run check:skills` | `intent validate` over every package's `skills/*/SKILL.md` |
 | `bun run typecheck` | `tsc -b` over every project |
 | `bun run build:lib` | Every published package into its `dist/` |
-| `bun run build:docs` | The grid site into `apps/docs/dist/` |
+| `bun run build:docs` | Every docs site and the index page, each into its `apps/<app>/dist/` |
 | `bun run build` | Both |
 
 The pre-commit hook runs lint, both checks above, the typecheck, the changeset check, and `build:lib` when a `packages/*/src/` path changed.
@@ -58,7 +58,7 @@ A new package that tests against the grid copies that pair; its declaration buil
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` form one changesets `fixed` group: one version, released together, each package published on its own.
 Every other published package is versioned on its own.
 The xlsx package has a peer dependency on the grid, and changesets majors a peer dependent on any minor of its peer unless `onlyUpdatePeerDependentsWhenOutOfRange` is on; the config sets it, so a minor of the grid stays a minor for the group.
-A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs` and `react-popup-window-docs`), so no changesets glob can ever pull it into a release.
+A private package never carries the `@jielga/` scope (the docs apps are `tmdatagrid-docs`, `react-popup-window-docs`, `docs-shell` and `docs-home`), so no changesets glob can ever pull it into a release.
 In pre mode `changeset version` crashes on any fixed-group member missing from `.changeset/pre.json`, so a package added to the group during a prerelease wave goes into `initialVersions` there before the next `chore: version packages` run.
 
 ## The library boundary
@@ -110,7 +110,10 @@ Playwright covers what jsdom cannot, in Chromium, from `bun run test:e2e`; the c
 - The page object is embedded verbatim in [testing.md](packages/tmdatagrid/docs/testing.md) below a `<!-- source: playwright/support/DataGrid.ts -->` marker, and [testingPageObject.test.ts](apps/docs/src/docs/testingPageObject.test.ts) fails when the two drift.
   Change the file, then paste it into the fence.
 - [playwright/popup/](playwright/popup) drives the popup demo site in `apps/popup-docs/`: real browser windows, stylesheet copying and Mantine context across windows, which jsdom cannot model at all.
-- Every server runs on a fixed port with `--strictPort` (5273 for the grid docs site, 5274 for the gallery, 5275 for the popup demo site), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
+- [playwright/home/](playwright/home) checks the index page in `apps/docs-home/`.
+- Every server runs on a fixed port with `--strictPort` (5273 for the grid docs site, 5274 for the gallery, 5275 for the popup demo site, 5276 for the index page), so a `bun run dev` on 5173 never interferes and a taken port fails the run instead of drifting.
+- The shared fixtures in [playwright/support/test.ts](playwright/support/test.ts) answer the npm registry and the published site list, and fail a test on any console error.
+  Once a page routes any request, Playwright stalls the requests of a scripted about:blank popup, so a popup spec that times stylesheet loads uses the base `test` instead.
 
 ## Docs and demos
 
@@ -118,7 +121,21 @@ Grid docs are markdown under [packages/tmdatagrid/docs/](packages/tmdatagrid/doc
 They stay plain markdown: they ship in the package and the `SKILL.md` files cite them as sources, so no MDX.
 
 The popup window package documents itself in its `README.md`, and `apps/popup-docs/` is a demo site, not a docs renderer.
-Whether every package moves into one shared docs site with a package switcher is an open decision to take before the next package lands; until then a new package follows one of these two shapes.
+
+## Docs sites
+
+Every package has its own docs site, a separate Vite app under `apps/`, and they share a frame rather than a renderer.
+
+- [apps/docs-shell/sites.json](apps/docs-shell/sites.json) is the one list of sites.
+  The header's package menu, the index page and the deploy all read it, and the deploy publishes it at the Pages root so a frozen copy of one site still lists packages added after it was built.
+- `apps/docs-shell/` (private, `docs-shell`) holds the shared `SiteHeader`: the package menu, the version menu, the GitHub link and the colour scheme switch.
+  A site imports its modules by path, `docs-shell/SiteHeader.tsx`, and lists `../docs-shell/src/env.d.ts` in its tsconfig `include`.
+- `apps/docs-home/` is the index page at <https://jielga.github.io/react/>.
+- A site lives at `/react/<slug>/` and is versioned by the first package it lists: the slug directory serves the newest release, `next/` the tip of `main`, `v<major>.<minor>/` each line, `b/<branch>/` a build published by hand.
+  [scripts/docs-plan.mjs](scripts/docs-plan.mjs) decides what a push builds; a release tag is `<name>@<version>`, or `v<version>` from before the packages had their own version lines.
+- GitHub Pages serves the root's `404.html` for every missing path.
+  That page runs `docs-shell/static/docs-spa-path.js`, which sends a deep link to the copy that owns it, and sends any path under no site to the grid site, which used to be served from the root.
+- A back version or a branch preview is published with a `workflow_dispatch` of `deploy-docs.yml`, giving the site, the ref and the slug.
 
 One topic, one page - the option, prop, column meta, callback, CSS variable and the live demo all sit on the page for the thing they belong to.
 
@@ -181,7 +198,8 @@ Then go through this list; every item has bitten once.
 - `vite.config.ts` in lib mode with every peer external; `tsconfig.json` extending `tsconfig.base.json`; `tsconfig.build.json` plus `rolldown.dts.config.mjs` flattening the declarations into one `dist/index.d.ts`.
 - `vitest.config.ts` with a `name`; the root config picks up `packages/*/vitest.config.ts` and `apps/*/vitest.config.ts` by glob.
 - Root wiring by hand: `build:lib` in the root `package.json` (xlsx needs the grid's `dist` first, so order matters) and `references` in the root `tsconfig.json`.
-- A site under `apps/` is private, named without the `@jielga/` scope, aliases the package to source, gets a fixed port with `--strictPort`, a Playwright project and a `webServer` entry, and a step in `deploy-docs.yml`.
+- A site under `apps/` is private, named without the `@jielga/` scope, aliases the package to source, renders `SiteHeader` from `docs-shell`, gets a fixed port with `--strictPort`, a Playwright project and a `webServer` entry, a step in the root `build:docs`, and an entry in `apps/docs-shell/sites.json`.
+  The entry is all the deploy needs: it builds every registered site with `bun run --cwd <app> build --base=<path>`.
 - At least one `skills/<name>/SKILL.md` whose `sources:` cite `Jielga/react:<repo path>`; `bun run check:skills` validates it.
 - Changesets: only a package that must release with another joins a `fixed` group in `.changeset/config.json`; everything else versions on its own.
 - Release: build it, `npm publish` the first version by hand from the package directory, add the trusted publisher on npmjs.com, and from then on the Release workflow publishes it.

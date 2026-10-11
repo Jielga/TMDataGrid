@@ -1,6 +1,6 @@
-import { MantineProvider, useMantineColorScheme } from '@mantine/core'
+import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { SiteHeader } from 'docs-shell/SiteHeader.tsx'
 import { CounterExample } from './examples/CounterExample'
 import { DataTableExample } from './examples/DataTableExample'
 import { PanelsExample } from './examples/PanelsExample'
@@ -88,27 +88,9 @@ const results = <ResultsGrid filters={filters} /> // filters state stays here
 // …
 <Popup>{results}</Popup>`
 
-function ThemeToggle() {
-  const [dark, setDark] = useState(false)
-  const { setColorScheme } = useMantineColorScheme()
-  useEffect(() => {
-    // Our docs CSS keys off html.dark; Mantine keys off its
-    // data-mantine-color-scheme attribute. Both are root attributes, so the
-    // popup follows automatically — the library keeps class and data-*
-    // attributes on <html>/<body> in sync.
-    document.documentElement.classList.toggle('dark', dark)
-    setColorScheme(dark ? 'dark' : 'light')
-  }, [dark, setColorScheme])
-  return (
-    <button className="secondary theme-toggle" onClick={() => setDark((d) => !d)}>
-      {dark ? 'Light mode' : 'Dark mode'}
-    </button>
-  )
-}
-
 export function App() {
   return (
-    <MantineProvider defaultColorScheme="light">
+    <MantineProvider defaultColorScheme="auto">
       <AppInner />
     </MantineProvider>
   )
@@ -117,20 +99,16 @@ export function App() {
 function AppInner() {
   return (
     <QueryClientProvider client={queryClient}>
+      <SiteHeader site="react-popup-window" />
       <div className="container">
-        <header className="site-header">
+        <div className="intro">
           <h1>@jielga/react-popup-window</h1>
           <p className="tagline">
             A React hook for rendering part of a component tree in a separate browser window.
             Content is rendered through a portal, so state, context and event handlers work across
             windows.
           </p>
-          <div className="header-links">
-            <a href="https://github.com/Jielga/react/tree/main/packages/react-popup-window">GitHub</a>
-            <a href="https://www.npmjs.com/package/@jielga/react-popup-window">npm</a>
-            <ThemeToggle />
-          </div>
-        </header>
+        </div>
 
         <section>
           <h2>Install</h2>
@@ -150,8 +128,8 @@ function AppInner() {
         <section>
           <h2>Examples</h2>
           <p className="muted">
-            All examples run live on this page. Toggling dark mode while a popup is open
-            demonstrates stylesheet and root-attribute synchronization.
+            All examples run live on this page. Switching the colour scheme in the header while a
+            popup is open demonstrates stylesheet and root-attribute synchronization.
           </p>
 
           <div className="card">
@@ -207,7 +185,10 @@ function AppInner() {
               popped-out grid stays in the popup window. Handlers a component binds on the bare{' '}
               <code>window</code> still attach to the main window - Mantine's Modal listens for
               Escape there - so the grid example adds its own Escape listener on the window it is
-              rendered in.
+              rendered in. Code that compares against the global <code>document</code> fails the
+              same way: Mantine's focus trap walks up to <code>document.body</code>, which is the
+              main window's, so the example turns the modal's <code>trapFocus</code> off when it
+              opens in the popup.
             </p>
             <pre>
               <code>{PORTAL_TARGET_SNIPPET}</code>

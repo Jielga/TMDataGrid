@@ -1,12 +1,13 @@
 import { isRecord, useJson } from "./useJson";
 
 /**
- * Which copy of the documentation this is, and what else is deployed beside
- * it.
+ * Which copy of a site's documentation this is, and what else is deployed
+ * beside it.
  *
- * The site is published as several complete builds under one Pages root: the
- * newest release at the root, the tip of main at `next/`, one directory per
- * minor line at `v1.1/`, and labelled pull request previews at `b/<branch>/`.
+ * Each site is published as several complete builds under its own directory
+ * of the Pages root, `/react/<slug>/`: the newest release at that directory,
+ * the tip of main at `next/`, one directory per minor line at `v1.1/`, and
+ * builds of a branch at `b/<branch>/`.
  * Each build is compiled against its own `--base`, so switching version is a
  * full page load to another bundle, never a router navigation.
  *
@@ -16,7 +17,7 @@ import { isRecord, useJson } from "./useJson";
  * bundle already answers.
  */
 
-/** The root the copies live under. "/" under `npm run dev`. */
+/** The directory this site's copies live under. "/" under `bun run dev`. */
 export const DOCS_SITE_ROOT =
   import.meta.env.VITE_DOCS_SITE_ROOT ?? import.meta.env.BASE_URL;
 

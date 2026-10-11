@@ -44,7 +44,7 @@
     "dev": "bun run --cwd apps/docs dev",
     "build": "bun run build:lib && bun run build:docs",
     "build:lib": "bun run --cwd packages/tmdatagrid build && bun run --cwd packages/tmdatagrid-xlsx build && bun run --cwd packages/react-popup-window build",
-    "build:docs": "bun run --cwd apps/docs build",
+    "build:docs": "bun run --cwd apps/docs build && bun run --cwd apps/popup-docs build && bun run --cwd apps/docs-home build",
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "check:skills": "node scripts/intent.mjs validate",

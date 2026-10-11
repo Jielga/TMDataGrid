@@ -1,8 +1,8 @@
 import { isRecord, useJson } from "./useJson";
 
 /**
- * Live package state: what is on the registry today, shown on the front page's
- * version strip and inside the header's version menu.
+ * Live package state: what is on the registry today, shown inside the header's
+ * version menu and wherever a site lists its published versions.
  *
  * Read at runtime rather than baked in at build time: a stamped figure would be
  * right the moment it shipped and quietly wrong from the next merge that
@@ -10,16 +10,10 @@ import { isRecord, useJson } from "./useJson";
  * and is stamped, in `docsVersions.ts`.
  */
 
-export const PACKAGE = "@jielga/tmdatagrid";
-export const REPO = "Jielga/react";
-export const REPO_URL = `https://github.com/${REPO}`;
-export const NPM_PAGE = `https://www.npmjs.com/package/${PACKAGE}`;
-
 /**
  * The abbreviated registry document: dist-tags and dependency data only, a few
  * kB rather than the full document's every-version metadata and README.
  */
-const REGISTRY_URL = `https://registry.npmjs.org/${PACKAGE}`;
 const REGISTRY_ACCEPT = "application/vnd.npm.install-v1+json";
 
 export type DistTags = { latest?: string; beta?: string };
@@ -36,8 +30,12 @@ function readDistTags(value: unknown): DistTags | null {
   };
 }
 
-export function useDistTags(): DistTags | null {
-  return useJson(REGISTRY_URL, readDistTags, REGISTRY_ACCEPT);
+export function useDistTags(packageName: string): DistTags | null {
+  return useJson(
+    `https://registry.npmjs.org/${packageName}`,
+    readDistTags,
+    REGISTRY_ACCEPT,
+  );
 }
 
 type Parsed = { release: [number, number, number]; pre: Array<string> };

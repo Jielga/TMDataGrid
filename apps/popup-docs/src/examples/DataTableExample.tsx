@@ -50,6 +50,10 @@ function PeopleGrid() {
   })
 
   const [detailsOpen, setDetailsOpen] = useState(false)
+  // Mantine's focus trap walks up from the focused element until it reaches
+  // the global `document.body` - the MAIN window's. In the popup it walks past
+  // the popup's own body and throws, so the trap is on only in the opener.
+  const [detailsTrapFocus, setDetailsTrapFocus] = useState(true)
   const hostRef = useRef<HTMLDivElement>(null)
 
   // Mantine's Modal binds its Escape handler on the bare `window` - the MAIN
@@ -84,7 +88,10 @@ function PeopleGrid() {
           </button>
           <button
             className="secondary"
-            onClick={() => setDetailsOpen(true)}
+            onClick={() => {
+              setDetailsTrapFocus(hostRef.current?.ownerDocument === document)
+              setDetailsOpen(true)
+            }}
             data-testid="open-details"
           >
             Dataset details
@@ -103,7 +110,12 @@ function PeopleGrid() {
           </TMDataGrid.Toolbar>
           <TMDataGrid.Table<Person> />
         </TMDataGrid>
-        <Modal opened={detailsOpen} onClose={() => setDetailsOpen(false)} title="Dataset details">
+        <Modal
+          opened={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+          trapFocus={detailsTrapFocus}
+          title="Dataset details"
+        >
           <p data-testid="details-body">
             12 people fetched through TanStack Query and cached under the{' '}
             <code>['people', 12]</code> key. This modal portals like any other Mantine overlay: with

@@ -4,12 +4,29 @@ This repository holds the `@jielga` React packages.
 
 | Package | Contents | Docs |
 | ------- | -------- | ---- |
-| [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/> |
-| [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/docs/xlsx> |
+| [`@jielga/tmdatagrid`](packages/tmdatagrid/README.md) | Mantine + TanStack data grid | <https://jielga.github.io/react/tmdatagrid/> |
+| [`@jielga/tmdatagrid-xlsx`](packages/tmdatagrid-xlsx/README.md) | xlsx export for the grid | <https://jielga.github.io/react/tmdatagrid/docs/xlsx> |
 | [`@jielga/react-popup-window`](packages/react-popup-window/README.md) | Hook that renders part of the UI in a separate browser window | <https://jielga.github.io/react/react-popup-window/> |
 
 `@jielga/tmdatagrid` and `@jielga/tmdatagrid-xlsx` release together at one version.
 Every other package has its own version line, and every release is tagged `<name>@<version>`.
+
+## Documentation sites
+
+Each package has its own documentation site, published to GitHub Pages under <https://jielga.github.io/react/>.
+That root page lists every site, and the header of every site has a menu that switches between them.
+
+| Path | Contents |
+| ---- | -------- |
+| [`apps/docs-shell/sites.json`](apps/docs-shell/sites.json) | The registry of sites: slug, title, description, packages, app |
+| [`apps/docs-shell/`](apps/docs-shell) | What every site shares: the header with its package and version menus, and the deploy's browser scripts |
+| [`apps/docs-home/`](apps/docs-home) | The index page at the Pages root |
+| [`apps/docs/`](apps/docs) | The TMDataGrid site, at `/react/tmdatagrid/` |
+| [`apps/popup-docs/`](apps/popup-docs) | The react-popup-window site, at `/react/react-popup-window/` |
+
+Every site is versioned by the first package it lists.
+The site's own directory serves the newest release, `next/` serves the tip of `main`, and each minor line has a directory such as `v2.0/`.
+[`deploy-docs.yml`](.github/workflows/deploy-docs.yml) builds every registered site on each push to `main`.
 
 ## TMDataGrid
 
@@ -121,7 +138,8 @@ A [bun](https://bun.sh) workspaces monorepo:
 | Path                   | Contents                                                        |
 | ---------------------- | --------------------------------------------------------------- |
 | `packages/tmdatagrid/` | The published package: `src/`, its `docs/` and its `skills/`     |
-| `apps/docs/`           | The docs site: pages, live demos and the playground              |
+| `apps/docs/`           | The grid's docs site: pages, live demos and the playground       |
+| `apps/docs-shell/`     | The header and registry every docs site shares                   |
 | `scripts/`             | Tooling shared by the hooks and the workflows                    |
 
 Inside `packages/tmdatagrid/src/`:
@@ -193,7 +211,7 @@ Two independent outputs, neither committed:
 | Command              | Output                       | Contents              |
 | -------------------- | ---------------------------- | --------------------- |
 | `bun run build:lib`  | `packages/tmdatagrid/dist/`  | The published package |
-| `bun run build:docs` | `apps/docs/dist/`            | The docs site         |
+| `bun run build:docs` | `apps/*/dist/`               | Every docs site and the index page |
 
 `build:lib` runs three steps in the package. Vite bundles `src/index.ts` into
 `dist/index.js` with every peer dependency left external, and emits the CSS

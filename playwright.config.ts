@@ -8,6 +8,9 @@ const GALLERY_URL = `http://localhost:${GALLERY_PORT}/`;
 // Must match the `dev` script in apps/popup-docs/package.json.
 const POPUP_DOCS_PORT = 5275;
 const POPUP_DOCS_URL = `http://localhost:${POPUP_DOCS_PORT}/`;
+// Must match the `dev` script in apps/docs-home/package.json.
+const HOME_PORT = 5276;
+const HOME_URL = `http://localhost:${HOME_PORT}/`;
 
 // A default export, because the Playwright runner requires one.
 export default defineConfig({
@@ -50,10 +53,16 @@ export default defineConfig({
       testDir: "playwright/popup",
       use: { baseURL: POPUP_DOCS_URL },
     },
+    {
+      // The index page at the Pages root, in apps/docs-home.
+      name: "home",
+      testDir: "playwright/home",
+      use: { baseURL: HOME_URL },
+    },
   ],
   // Playwright starts every entry on every run, whatever `--project` says;
-  // the gallery and the popup docs are each up in about a second, so all
-  // three always start.
+  // the gallery and the other sites are each up in about a second, so all
+  // of them always start.
   webServer: [
     {
       // Its own port, so a `bun run dev` on 5173 is never mistaken for the
@@ -73,6 +82,12 @@ export default defineConfig({
     {
       command: "bun run --cwd apps/popup-docs dev",
       url: POPUP_DOCS_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: "bun run --cwd apps/docs-home dev",
+      url: HOME_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

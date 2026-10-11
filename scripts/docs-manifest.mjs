@@ -1,5 +1,5 @@
-// Rewrites `versions.json` at the root of the gh-pages tree from what is
-// actually deployed there.
+// Rewrites one site's `versions.json`, in that site's directory of the gh-pages
+// tree, from what is actually deployed there.
 //
 // Every deployed copy carries a `meta.json` written by the build that produced
 // it, and this script regenerates the manifest by scanning for them rather than
@@ -7,8 +7,8 @@
 // to retire an entry, and a half-finished run cannot leave the manifest
 // describing a copy that is not there.
 //
-// Usage: node scripts/docs-manifest.mjs <site-dir>
-import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+// Usage: node scripts/docs-manifest.mjs <pages-dir>/<site slug>
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { compareVersions } from "./semver.mjs";
 
@@ -82,11 +82,6 @@ entries.sort((a, b) => {
 
 const manifest = { entries };
 writeFileSync(join(site, "versions.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-
-// Pages serves this tree as-is, and Jekyll would otherwise drop anything whose
-// name starts with an underscore.
-const nojekyll = join(site, ".nojekyll");
-if (!existsSync(nojekyll)) writeFileSync(nojekyll, "");
 
 console.log(`versions.json: ${entries.length} entries`);
 for (const entry of entries) {
