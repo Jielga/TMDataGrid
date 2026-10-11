@@ -115,7 +115,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build and stage every target
-        if: steps.plan.outputs.work == 'true' && github.ref == 'refs/heads/main'
+        if: steps.plan.outputs.work == 'true'
         env:
           PLAN: ${{ steps.plan.outputs.plan }}
         run: |
@@ -241,7 +241,7 @@ jobs:
           cp site/react-popup-window/index.html site/react-popup-window/404.html
 
       - name: Commit the site
-        if: steps.plan.outputs.work == 'true' && github.ref == 'refs/heads/main'
+        if: steps.plan.outputs.work == 'true'
         run: |
           set -euo pipefail
           cd site
@@ -260,7 +260,7 @@ jobs:
           exit 1
 
       - name: Stage the artifact
-        if: steps.plan.outputs.work == 'true' && github.ref == 'refs/heads/main'
+        if: steps.plan.outputs.work == 'true'
         # The branch's history is not part of the site.
         run: rm -rf site/.git
 
@@ -273,5 +273,5 @@ jobs:
           path: site
 
       - id: deployment
-        if: steps.plan.outputs.work == 'true' && github.ref == 'refs/heads/main'
+        if: steps.plan.outputs.work == 'true'
         uses: actions/deploy-pages@v4
