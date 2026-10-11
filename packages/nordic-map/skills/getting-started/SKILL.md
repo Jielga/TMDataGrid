@@ -1,22 +1,21 @@
 ---
 name: getting-started
 description: >
-  Set up @jielga/nordic-map: the NordicMap canvas map of Sweden, the bundled
-  map source swedenOsmSource, GPS pins (MapPin with
-  label, color, priority and data), pin labels, selection (selectionMode,
-  selected, defaultSelected, onSelectionChange, onPinClick, highlighted,
-  onPinHover), layer visibility by zoom (LayerVisibility on showBorder,
-  showRoads, showRoadLabels, showPlaceLabels, showPins, showPinLabels),
-  colorScheme and mapStyle with lightMapStyle / darkMapStyle, the CSS
-  variables, and labels with NORDIC_MAP_LABELS_EN / NORDIC_MAP_LABELS_SV.
-  Load when rendering an offline map of Sweden, when the map is blank, stays
-  on its loader, reloads on every render, or its cells 404 after a build.
-  Clusters, tooltips, the camera ref, areas, paths and custom sources are the
-  map-content skill.
+  Set up @jielga/nordic-map: the NordicMap canvas map of Sweden, the bundled map
+  source swedenOsmSource, GPS pins (MapPin with label, color, priority and
+  data), pin labels, selection (selectionMode, selected, defaultSelected,
+  onSelectionChange, onPinClick, highlighted, onPinHover), layer visibility by
+  zoom (LayerVisibility on showBorder, showRoads, showRoadLabels,
+  showPlaceLabels, showPins, showPinLabels), colorScheme and mapStyle with
+  lightMapStyle / darkMapStyle, the CSS variables, and labels with
+  NORDIC_MAP_LABELS_EN / NORDIC_MAP_LABELS_SV. Load when rendering an offline
+  map of Sweden, when the map is blank, stays on its loader, reloads on every
+  render, or its cells 404 after a build. Clusters, tooltips, the camera ref,
+  areas, paths and custom sources are the map-content skill.
 metadata:
   type: core
   library: '@jielga/nordic-map'
-  library_version: '0.1.0'
+  library_version: '0.2.0'
 sources:
   - 'Jielga/react:packages/nordic-map/docs/getting-started.md'
   - 'Jielga/react:packages/nordic-map/docs/pins.md'
