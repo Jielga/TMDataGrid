@@ -21,17 +21,6 @@ Vite and webpack 5 copy the files into your build, so the map works offline and 
 If the map shows its load error and the browser reports 404 for files under `cells/`, your bundler did not copy them.
 Use a bundler that handles `new URL(..., import.meta.url)`, or a source of your own whose `loadCell` fetches the cells from your server.
 
-## swedenOverviewSource
-
-Sweden from Natural Earth 1:10m, in one level: the coast, the land border and the E-roads, without lakes or place names.
-It is one small chunk instead of 156 cells, and suits a map that shows all of Sweden at a low `maxZoom`:
-
-```demo
-file: map-sources/OverviewSource.tsx
-height: 480
-extraSources: data/cities.ts
-```
-
 ## Your own source
 
 A source can change what another source loads.
@@ -60,7 +49,6 @@ A cell may cut its land and lines at the cell edges, because land is only filled
 | --- | --- | --- | --- | --- |
 | `source` | Prop | `MapSource` | - | Sets where the map data comes from. Required. |
 | `swedenOsmSource` | Constant | `MapSource` | - | Sweden from OpenStreetMap, in three levels. |
-| `swedenOverviewSource` | Constant | `MapSource` | - | Sweden from Natural Earth, in one level. |
 | `MapSource` | Type | - | - | `{ extent: LonLatBox; centralMeridian?: number; levels: MapLevel[]; attribution?: MapAttribution; loadCell: (cell: MapCell) => Promise<MapLayers> }` |
 | `MapLevel` | Type | - | - | `{ minZoom: number; cellSize: number }`. The first level's `minZoom` is 1. A level of one cell has a `cellSize` of 360. |
 | `MapCell` | Type | - | - | `{ level: number; x: number; y: number }`. `level` is the index in `levels`. |

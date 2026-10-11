@@ -15,7 +15,7 @@ Pin labels, clusters, areas, paths, place names, a camera ref, keyboard access a
 Breaking:
 
 - `@mantine/core` and `@tabler/icons-react` are no longer peer dependencies, and the map needs no `MantineProvider`.
-- `SwedenMap` is removed; use `<NordicMap source={swedenOverviewSource} />`.
+- `SwedenMap` and `swedenOverviewSource` are removed, with their Natural Earth data; use `<NordicMap source={swedenOsmSource} />`.
 - `NordicMapPin` is now `MapPin`, and `MapLabel` with `MapLayers.labels` is now `MapRoadLabel` with `MapLayers.roadLabels`.
 - The color and size props (`background`, `landFill`, `pinColor`, `pinRadius`, `borderWidth`, `roadColor` and the others) moved into `mapStyle`, under the names on the Styling page.
 - `loadErrorText` is now `labels.loadError`, and `onZoomChange` is now `onViewChange`, called with the whole view.

@@ -73,7 +73,7 @@ The documentation in [`docs/`](docs/) has one page per feature, and ships with t
 
 The OpenStreetMap data is © OpenStreetMap contributors, under the Open Database License (ODbL).
 A map that shows it must credit "© OpenStreetMap contributors"; `swedenOsmSource` sets this credit, and `NordicMap` shows it in the corner.
-The Natural Earth data of `swedenOverviewSource` is in the public domain.
+The Natural Earth land borders of the neighbouring countries are in the public domain.
 
 ## Development
 

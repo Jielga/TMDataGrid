@@ -2,7 +2,7 @@
 name: getting-started
 description: >
   Set up @jielga/nordic-map: the NordicMap canvas map of Sweden, the bundled
-  map sources (swedenOsmSource, swedenOverviewSource), GPS pins (MapPin with
+  map source swedenOsmSource, GPS pins (MapPin with
   label, color, priority and data), pin labels, selection (selectionMode,
   selected, defaultSelected, onSelectionChange, onPinClick, highlighted,
   onPinHover), layer visibility by zoom (LayerVisibility on showBorder,
@@ -111,10 +111,9 @@ selected or tabbed to.
 
 ## Sources
 
-- `swedenOsmSource` - OpenStreetMap, three levels, lakes, roads, place names.
-  Cells are JSON files in `dist/cells/`, found with
-  `new URL(..., import.meta.url)`; Vite and webpack 5 copy them.
-- `swedenOverviewSource` - Natural Earth, one level, no lakes or places.
+`swedenOsmSource` is OpenStreetMap in three levels, with lakes, roads and
+place names. Its cells are JSON files in `dist/cells/`, found with
+`new URL(..., import.meta.url)`; Vite and webpack 5 copy them.
 
 ## Common mistakes
 

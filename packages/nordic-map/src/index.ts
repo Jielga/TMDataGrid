@@ -24,5 +24,4 @@ export type {
 } from "./NordicMap/mapSource.ts";
 
 export { swedenOsmSource } from "./data/swedenOsm/swedenOsmSource.ts";
-export { swedenOverviewSource } from "./data/swedenNaturalEarth/swedenOverviewSource.ts";
 export { loadSwedenCounties, loadSwedenMunicipalities } from "./data/swedenRegions/swedenRegions.ts";

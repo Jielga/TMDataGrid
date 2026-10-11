@@ -54,10 +54,6 @@ height: 480
 
 ## Map data
 
-The package has two map sources:
-
-- `swedenOsmSource` - Sweden from OpenStreetMap in three detail levels, with lakes, roads and place names
-- `swedenOverviewSource` - Sweden from Natural Earth in one level, with the coast, the border and the E-roads
-
+`swedenOsmSource` is Sweden from OpenStreetMap in three detail levels, with lakes, roads and place names.
 A map that shows OpenStreetMap data must credit its contributors, and `NordicMap` shows that credit in its corner.
-[Map sources](/docs/map-sources) describes both sources and how to write your own, and [Data and licenses](/docs/data-and-licenses) the credit each one needs.
+[Map sources](/docs/map-sources) describes the source and how to write your own, and [Data and licenses](/docs/data-and-licenses) the credit it needs.

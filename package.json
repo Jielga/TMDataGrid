@@ -42,10 +42,15 @@
     }
   },
   "scripts": {
-    "dev": "bun run --cwd apps/docs dev",
+    "dev": "bun run --filter './apps/*' dev",
+    "dev:grid": "bun run --filter tmdatagrid-docs dev",
+    "dev:popup": "bun run --filter react-popup-window-docs dev",
+    "dev:map": "bun run --filter nordic-map-docs dev",
+    "dev:home": "bun run --filter docs-home dev",
+    "gallery": "bun run --filter @jielga/tmdatagrid gallery",
     "build": "bun run build:lib && bun run build:docs",
-    "build:lib": "bun run --cwd packages/tmdatagrid build && bun run --cwd packages/tmdatagrid-xlsx build && bun run --cwd packages/react-popup-window build && bun run --cwd packages/nordic-map build",
-    "build:docs": "bun run --cwd apps/docs build && bun run --cwd apps/popup-docs build && bun run --cwd apps/nordic-map-docs build && bun run --cwd apps/docs-home build",
+    "build:lib": "node scripts/run-workspaces.mjs build packages",
+    "build:docs": "node scripts/run-workspaces.mjs build apps",
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "check:skills": "node scripts/intent.mjs validate",

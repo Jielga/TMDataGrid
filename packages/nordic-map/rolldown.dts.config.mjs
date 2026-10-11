@@ -25,7 +25,6 @@ export default {
     /^react($|\/)/,
     /^react-dom($|\/)/,
     /^d3-geo$/,
-    /^topojson-client$/,
     /^geojson$/,
   ],
 };

@@ -28,13 +28,15 @@ All from the repository root.
 
 | Command | What it does |
 | --- | --- |
-| `bun run dev` | Grid docs site: docs, examples, playground (`bun run --cwd apps/<app> dev` for another site: `popup-docs`, `nordic-map-docs`, `docs-home`) |
+| `bun run dev` | Every docs site at once, each on its fixed port |
+| `bun run dev:grid` / `dev:popup` / `dev:map` / `dev:home` | One docs site |
+| `bun run gallery` | The grid's Playwright story gallery |
 | `bun run test` | Vitest once, every workspace project (`test:watch` to iterate) |
 | `bun run test:e2e` | Playwright, Chromium: the grid docs-site specs, the component specs, the popup demo specs, the nordic-map site specs and the index page specs (`--project=docs`, `components`, `popup`, `nordic-map` or `home` for one of them) |
 | `bun run lint` | oxlint - types are **not** checked here |
 | `bun run check:skills` | `intent validate` over every package's `skills/*/SKILL.md` |
 | `bun run typecheck` | `tsc -b` over every project |
-| `bun run build:lib` | Every published package into its `dist/` |
+| `bun run build:lib` | Every published package into its `dist/`, each after the packages it depends on |
 | `bun run build:docs` | Every docs site and the index page, each into its `apps/<app>/dist/` |
 | `bun run build` | Both |
 

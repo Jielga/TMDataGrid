@@ -34,7 +34,6 @@ const EXTERNAL = [
   /^react($|\/)/,
   /^react-dom($|\/)/,
   /^d3-geo$/,
-  /^topojson-client$/,
 ];
 
 export default defineConfig({
