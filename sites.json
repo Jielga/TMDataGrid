@@ -20,6 +20,17 @@
       ],
       "dir": "packages/react-popup-window",
       "app": "apps/popup-docs"
+    },
+    {
+      "slug": "nordic-map",
+      "title": "Nordic Map",
+      "description": "React components that render offline maps of the Nordic countries, with GPS pins and drag selection.",
+      "packages": [
+        "@jielga/nordic-map"
+      ],
+      "dir": "packages/nordic-map",
+      "app": "apps/nordic-map-docs",
+      "published": false
     }
   ]
 }
