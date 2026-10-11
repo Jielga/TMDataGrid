@@ -6,8 +6,6 @@ The map data ships with the package, so no tile server or API key is needed.
 - Documentation and live demos: <https://jielga.github.io/react/nordic-map/>
 - Source: <https://github.com/Jielga/react/tree/main/packages/nordic-map>
 
-> The package is not published to npm yet.
-
 ## Installation
 
 ```sh
