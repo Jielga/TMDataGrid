@@ -140,7 +140,8 @@ Every package has its own docs site, a separate Vite app under `apps/`, and they
   A site imports its modules by path, `docs-shell/SiteHeader.tsx`, and lists `../docs-shell/src/env.d.ts` in its tsconfig `include`.
 - `apps/docs-home/` is the index page at <https://jielga.github.io/react/>.
 - A site lives at `/react/<slug>/` and is versioned by the first package it lists: the slug directory serves the newest release, `next/` the tip of `main`, `v<major>.<minor>/` each line, `b/<branch>/` a build published by hand.
-  [scripts/docs-plan.mjs](scripts/docs-plan.mjs) decides what a push builds; a release tag is `<name>@<version>`, or `v<version>` from before the packages had their own version lines.
+  [scripts/docs-plan.mjs](scripts/docs-plan.mjs) decides what a push builds, and builds a release line from its `<name>@<version>` tag.
+  Versions released before that tag scheme (the grid's 2.1.2 and older) are not published.
 - GitHub Pages serves the root's `404.html` for every missing path.
   That page runs `docs-shell/static/docs-spa-path.js`, which sends a deep link to the copy that owns it, and sends any path under no site to the grid site, which used to be served from the root.
 - A back version or a branch preview is published with a `workflow_dispatch` of `deploy-docs.yml`, giving the site, the ref and the slug.

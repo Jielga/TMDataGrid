@@ -144,28 +144,20 @@ jobs:
           out=""
 
           build() {
-            local site="$1" app="$2" package="$3" slug="$4" ref="$5"
-            local label="$6" version="$7" kind="$8"
+            local site="$1" app="$2" slug="$3" ref="$4"
+            local label="$5" version="$6" kind="$7"
             local site_root="$PAGES_ROOT$site/"
             local base="$site_root"
             if [ "$slug" != "root" ]; then base="$site_root$slug/"; fi
 
-            if [ -f "$app/package.json" ]; then
-              VITE_SITES_ROOT="$PAGES_ROOT" VITE_DOCS_SITE_ROOT="$site_root" \
-                VITE_DOCS_SLUG="$slug" \
-                bun run --cwd "$app" build --base="$base"
-              out="$app/dist"
-            elif [ "$(jq -r .name package.json)" = "$package" ]; then
-              # From before the workspace layout, when the grid was the
-              # repository's own package and its site built into dist-demo.
-              VITE_SITES_ROOT="$PAGES_ROOT" VITE_DOCS_SITE_ROOT="$site_root" \
-                VITE_DOCS_SLUG="$slug" \
-                npm run build -- --base="$base"
-              out=dist-demo
-            else
+            if [ ! -f "$app/package.json" ]; then
               echo "Cannot build $site at $ref: there is no $app/package.json."
               exit 1
             fi
+            VITE_SITES_ROOT="$PAGES_ROOT" VITE_DOCS_SITE_ROOT="$site_root" \
+              VITE_DOCS_SLUG="$slug" \
+              bun run --cwd "$app" build --base="$base"
+            out="$app/dist"
 
             # Pages answers every missing path with the Pages root's 404 page,
             # which sends a deep link here with the path parked in the query;
@@ -185,8 +177,7 @@ jobs:
             # without the shared header, and without the grid's own header
             # from before it.
             if ! git grep -q '"docs-shell"' "$ref" -- "$app/package.json" &&
-               ! git cat-file -e "$ref:$app/src/docsVersions.ts" 2>/dev/null &&
-               ! git cat-file -e "$ref:src/docsVersions.ts" 2>/dev/null; then
+               ! git cat-file -e "$ref:$app/src/docsVersions.ts" 2>/dev/null; then
               local tag="<script src=\"${PAGES_ROOT}docs-version-switcher.js\" data-site-root=\"$site_root\" data-slug=\"$slug\" defer></script>"
               sed -i "s#</body>#$tag</body>#" "$out/index.html"
             fi
@@ -196,7 +187,6 @@ jobs:
             target=$(jq -c ".targets[$i]" <<<"$PLAN")
             site=$(jq -r .site <<<"$target")
             app=$(jq -r .app <<<"$target")
-            package=$(jq -r .package <<<"$target")
             slug=$(jq -r .slug <<<"$target")
             ref=$(jq -r .ref <<<"$target")
             label=$(jq -r '.label // ""' <<<"$target")
@@ -211,13 +201,13 @@ jobs:
             fi
             sha=$(git rev-parse HEAD)
 
-            build "$site" "$app" "$package" "$slug" "$sha" "$label" "$version" "$kind"
+            build "$site" "$app" "$slug" "$sha" "$label" "$version" "$kind"
             rm -rf "site/$site/$slug"
             mkdir -p "site/$site/$slug"
             cp -a "$out/." "site/$site/$slug/"
 
             if [ "$mirror" = "true" ]; then
-              build "$site" "$app" "$package" root "$sha" "$label" "$version" "$kind"
+              build "$site" "$app" root "$sha" "$label" "$version" "$kind"
               # Replace the root copy's own files and leave every versioned
               # directory beside it alone.
               find "site/$site" -maxdepth 1 -type f -delete

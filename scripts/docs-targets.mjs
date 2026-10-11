@@ -50,30 +50,21 @@ function showJson(ref, path) {
 
 /**
  * The version of the site's first package at a ref, or in the working tree
- * when ref is empty. A manifest counts only when it names that package: refs
- * from before the workspace layout carried the grid in the root manifest, and
- * the root manifest of a later ref is the private workspace root.
+ * when ref is empty. The manifest counts only when it names that package.
  */
 function versionAt(ref, site) {
-  const name = site.packages[0];
-  for (const path of [`${site.dir}/package.json`, "package.json"]) {
-    const manifest = ref ? showJson(ref, path) : readJson(path);
-    if (manifest?.name === name && manifest.version) return manifest.version;
-  }
-  return null;
+  const path = `${site.dir}/package.json`;
+  const manifest = ref ? showJson(ref, path) : readJson(path);
+  return manifest?.name === site.packages[0] ? (manifest.version ?? null) : null;
 }
 
 /**
- * The release tag of a version: `<name>@<version>` as the release workflow
- * writes it, or `v<version>` from when every package shared one version line.
- * A tag counts only when the package at it really is that version, so an old
- * `v` tag of another package can never be taken for this one's.
+ * The release tag of a version, `<name>@<version>` as the release workflow
+ * writes it, when the package at that tag really is that version.
  */
 function tagFor(site, version) {
-  for (const tag of [`${site.packages[0]}@${version}`, `v${version}`]) {
-    if (versionAt(`refs/tags/${tag}`, site) === version) return tag;
-  }
-  return null;
+  const tag = `${site.packages[0]}@${version}`;
+  return versionAt(`refs/tags/${tag}`, site) === version ? tag : null;
 }
 
 /** The metadata a build wrote into its own directory. */
@@ -110,7 +101,6 @@ function forSite(site, plan) {
       ...target,
       site: site.slug,
       app: site.app,
-      package: site.packages[0],
     })),
     remove: plan.remove.map((slug) => `${site.slug}/${slug}`),
   };
