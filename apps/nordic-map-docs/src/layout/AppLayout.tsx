@@ -35,6 +35,9 @@ function titleFor(pathname: string): string {
   if (pathname === "/playground") {
     return "Playground · Nordic Map";
   }
+  if (pathname === "/editor") {
+    return "Area editor · Nordic Map";
+  }
   const page = findDocsPage(pathname.replace("/docs/", ""));
   return page ? `${page.label} · Nordic Map` : "Nordic Map";
 }
@@ -57,6 +60,14 @@ function Navigation() {
         activeOptions={EXACT}
         label="Playground"
         description="Every layer and color behind switches"
+        style={NAV_LINK_STYLE}
+      />
+      <NavLink
+        component={Link}
+        to="/editor"
+        activeOptions={EXACT}
+        label="Area editor"
+        description="Draw your own areas and export them"
         style={NAV_LINK_STYLE}
       />
       <SectionLabel>DOCUMENTATION</SectionLabel>

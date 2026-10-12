@@ -17,6 +17,11 @@ const district: MapArea = {
 
 Rings may run either way round.
 
+## Draw your own areas
+
+The [area editor](/editor) on this site draws areas over the map and exports them as a `MapArea[]` TypeScript module, as `MapArea[]` JSON, or as GeoJSON.
+It snaps points to your other areas and to the county and municipality borders, adds whole counties or municipalities to an area, and can clip the areas to Sweden's land.
+
 ## Counties and municipalities
 
 The package has Sweden's 21 counties and 290 municipalities as areas, clipped to the land:

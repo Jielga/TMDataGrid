@@ -17,6 +17,7 @@
     "@tabler/icons-react": "catalog:",
     "@tanstack/react-router": "^1.170.42",
     "docs-shell": "workspace:*",
+    "polyclip-ts": "^0.16.8",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
@@ -27,6 +28,7 @@
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/babel__core": "catalog:",
+    "@types/geojson": "^7946.0.16",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",

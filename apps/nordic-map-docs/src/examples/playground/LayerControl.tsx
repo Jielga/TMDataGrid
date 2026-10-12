@@ -25,7 +25,7 @@ type LayerControlProps = {
 export function LayerControl({ label, value, onChange }: LayerControlProps) {
   const [minZoom, maxZoom] = value.range;
   return (
-    <Stack gap={8} pb="lg">
+    <Stack gap={8} pb="md">
       <Switch
         size="sm"
         label={label}
@@ -51,6 +51,8 @@ export function LayerControl({ label, value, onChange }: LayerControlProps) {
           return `${toZoom(position)}×`;
         }}
         marks={marks}
+        // The mark labels hang below the slider without taking up room, so the margin makes room for them
+        mb="lg"
       />
     </Stack>
   );

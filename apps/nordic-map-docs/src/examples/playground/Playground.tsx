@@ -12,16 +12,32 @@ import {
   Text,
   useComputedColorScheme,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { loadSwedenCounties, NordicMap, swedenOsmSource } from "@jielga/nordic-map";
-import type { MapArea, SelectionMode } from "@jielga/nordic-map";
+import type { MapArea, NordicMapHandle, SelectionMode } from "@jielga/nordic-map";
+import { toMapAreas } from "../../editor/areaFiles.ts";
+import { boundsOfParts } from "../../editor/editorModel.ts";
+import type { EditorArea } from "../../editor/editorModel.ts";
+import { useStoredAreas } from "../../editor/editorStorage.ts";
 import { cities } from "../data/cities.ts";
 import { ColorControls } from "./ColorControls.tsx";
+import { CustomAreasControl } from "./CustomAreasControl.tsx";
 import { LayerControl } from "./LayerControl.tsx";
 import { toVisibility } from "./layerSetting.ts";
+import { isBoolean, isLayerSetting, isNumber, isPickedColors, isSelectionMode, useStoredState } from "./useStoredState.ts";
 import type { LayerSetting } from "./layerSetting.ts";
 import { darkColors, lightColors } from "./mapColors.ts";
 import type { MapColors } from "./mapColors.ts";
+
+/** Full precision: these areas are shown, not exported */
+const SHOWN_DECIMALS = 9;
+
+/** The areas as MapAreas, with ids under `prefix` so areas from two sources never share an id */
+function shownAreas({ areas, prefix }: { areas: EditorArea[]; prefix: string }): MapArea[] {
+  return toMapAreas({ areas, decimals: SHOWN_DECIMALS }).map((area) => {
+    return { ...area, id: `${prefix}:${area.id}` };
+  });
+}
 
 const allZooms: LayerSetting = { enabled: true, range: [1, 50] };
 const pinLabelZooms: LayerSetting = { enabled: true, range: [3, 50] };
@@ -40,19 +56,31 @@ export function Playground() {
   const colorScheme = useComputedColorScheme("light", { getInitialValueInEffect: false });
   const [selected, setSelected] = useState<string[]>([]);
   const [zoom, setZoom] = useState(1);
-  const [border, setBorder] = useState<LayerSetting>(allZooms);
-  const [borderWidth, setBorderWidth] = useState(1);
-  const [roads, setRoads] = useState<LayerSetting>(allZooms);
-  const [roadLabels, setRoadLabels] = useState<LayerSetting>(allZooms);
-  const [places, setPlaces] = useState<LayerSetting>(allZooms);
-  const [pins, setPins] = useState<LayerSetting>(allZooms);
-  const [pinLabels, setPinLabels] = useState<LayerSetting>(pinLabelZooms);
-  const [cluster, setCluster] = useState(false);
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>("multiple");
-  const [showCounties, setShowCounties] = useState(false);
+  const [border, setBorder] = useStoredState({ key: "border", initial: allZooms, isValid: isLayerSetting });
+  const [borderWidth, setBorderWidth] = useStoredState({ key: "borderWidth", initial: 1, isValid: isNumber });
+  const [roads, setRoads] = useStoredState({ key: "roads", initial: allZooms, isValid: isLayerSetting });
+  const [roadLabels, setRoadLabels] = useStoredState({ key: "roadLabels", initial: allZooms, isValid: isLayerSetting });
+  const [places, setPlaces] = useStoredState({ key: "places", initial: allZooms, isValid: isLayerSetting });
+  const [pins, setPins] = useStoredState({ key: "pins", initial: allZooms, isValid: isLayerSetting });
+  const [pinLabels, setPinLabels] = useStoredState({ key: "pinLabels", initial: pinLabelZooms, isValid: isLayerSetting });
+  const [cluster, setCluster] = useStoredState({ key: "cluster", initial: false, isValid: isBoolean });
+  const [selectionMode, setSelectionMode] = useStoredState<SelectionMode>({ key: "selectionMode", initial: "multiple", isValid: isSelectionMode });
+  const [selectByArea, setSelectByArea] = useStoredState({ key: "selectByArea", initial: false, isValid: isBoolean });
+  const [showCounties, setShowCounties] = useStoredState({ key: "counties", initial: false, isValid: isBoolean });
   const [counties, setCounties] = useState<MapArea[]>([]);
+  const storedAreas = useStoredAreas();
+  const [showStored, setShowStored] = useStoredState({ key: "myAreas", initial: false, isValid: isBoolean });
+  const [imported, setImported] = useState<EditorArea[]>([]);
+  const map = useRef<NordicMapHandle>(null);
+  const areas = useMemo(() => {
+    return [
+      ...(showCounties ? counties : []),
+      ...(showStored ? shownAreas({ areas: storedAreas, prefix: "editor" }) : []),
+      ...shownAreas({ areas: imported, prefix: "import" }),
+    ];
+  }, [showCounties, counties, showStored, storedAreas, imported]);
   // The map follows the site's light or dark scheme until colors are picked here
-  const [pickedColors, setPickedColors] = useState<MapColors | null>(null);
+  const [pickedColors, setPickedColors] = useStoredState<MapColors | null>({ key: "colors", initial: null, isValid: isPickedColors });
   const colors = pickedColors ?? (colorScheme === "dark" ? darkColors : lightColors);
 
   useEffect(() => {
@@ -75,6 +103,7 @@ export function Playground() {
       <Group align="flex-start" gap="xl" wrap="wrap" p="lg">
         <Box h="calc(100vh - 120px)" mih={520} miw={320} style={{ flex: "1 1 420px" }}>
           <NordicMap
+            ref={map}
             source={swedenOsmSource}
             label="Map of Sweden"
             colorScheme={colorScheme}
@@ -83,6 +112,7 @@ export function Playground() {
             selected={selected}
             onSelectionChange={setSelected}
             selectionMode={selectionMode}
+            selectPinsByArea={selectByArea}
             cluster={cluster}
             showBorder={toVisibility(border)}
             showRoads={toVisibility(roads)}
@@ -90,7 +120,7 @@ export function Playground() {
             showPlaceLabels={toVisibility(places)}
             showPins={toVisibility(pins)}
             showPinLabels={toVisibility(pinLabels)}
-            areas={showCounties ? counties : []}
+            areas={areas}
             onViewChange={(view) => {
               setZoom(view.zoom);
             }}
@@ -138,6 +168,26 @@ export function Playground() {
                   setShowCounties(event.currentTarget.checked);
                 }}
               />
+              <CustomAreasControl
+                stored={storedAreas}
+                showStored={showStored}
+                onShowStoredChange={setShowStored}
+                imported={imported}
+                onImport={(added) => {
+                  setImported([...imported, ...added]);
+                  const box = boundsOfParts(
+                    added.flatMap((area) => {
+                      return area.parts;
+                    }),
+                  );
+                  if (box) {
+                    map.current?.fitBounds(box);
+                  }
+                }}
+                onClearImported={() => {
+                  setImported([]);
+                }}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value="pins" pt="md">
@@ -164,6 +214,20 @@ export function Playground() {
                     { value: "single", label: "Single" },
                     { value: "none", label: "None" },
                   ]}
+                />
+                <Switch
+                  size="sm"
+                  label="Click an area to select its pins"
+                  description={
+                    selectionMode === "multiple"
+                      ? "Shift, Ctrl or Cmd + click adds. Show areas on the Layers tab."
+                      : "Works with Multiple selection."
+                  }
+                  disabled={selectionMode !== "multiple"}
+                  checked={selectByArea && selectionMode === "multiple"}
+                  onChange={(event) => {
+                    setSelectByArea(event.currentTarget.checked);
+                  }}
                 />
               </Stack>
               <Group justify="space-between" pb="xs">
