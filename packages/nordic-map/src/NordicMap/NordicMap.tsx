@@ -15,6 +15,7 @@ import { layerOpacity } from "./layerVisibility.ts";
 import type { LayerVisibility } from "./layerVisibility.ts";
 import type { ClusterOptions, MapArea, MapPath, MapPin, MapTooltipTarget, SelectionMode } from "./mapItems.ts";
 import { createMapProjection, projectBox, viewBox } from "./mapProjection.ts";
+import { pinsInArea } from "./pinsInArea.ts";
 import { buildScene } from "./mapScene.ts";
 import type { LonLatBox, MapSource } from "./mapSource.ts";
 import { darkMapStyle, lightMapStyle } from "./mapStyle.ts";
@@ -68,6 +69,13 @@ export type NordicMapHandle = {
   reset: (options?: CameraMoveOptions) => void;
   /** The current view, or null while the map data is loading */
   getView: () => NordicMapView | null;
+  /**
+   * The point on screen of a position, in CSS pixels from the map's top left corner. The point may lie outside
+   * the view. Null while the map data is loading.
+   */
+  project: (position: { lat: number; lon: number }) => { x: number; y: number } | null;
+  /** The position at a point on screen, given in CSS pixels from the map's top left corner. Null while the map data is loading. */
+  unproject: (point: { x: number; y: number }) => { lat: number; lon: number } | null;
 };
 
 export type NordicMapProps<T = unknown> = {
@@ -117,8 +125,13 @@ export type NordicMapProps<T = unknown> = {
   selected?: string[];
   /** Selection at the start, when `selected` is left out */
   defaultSelected?: string[];
-  /** Called after a drag-select, a pin click or a clear. The ids are in `pins` order. */
+  /** Called after a drag-select, a pin click, an area click that selects pins, or a clear. The ids are in `pins` order. */
   onSelectionChange?: (ids: string[]) => void;
+  /**
+   * With `selectionMode` `"multiple"`, a click on an area selects the pins inside it instead of clearing the
+   * selection. Shift, Ctrl or Cmd + click adds them, or removes them when they are all selected. @default false
+   */
+  selectPinsByArea?: boolean;
   /** Pin drawn with a ring and labelled first, for example the row under the pointer in a list next to the map */
   highlighted?: string | null;
   onPinClick?: (pin: MapPin<T>) => void;
@@ -289,6 +302,7 @@ export function NordicMap<T = unknown>({
   selected,
   defaultSelected = [],
   onSelectionChange,
+  selectPinsByArea = false,
   highlighted = null,
   onPinClick,
   onPinHover,
@@ -585,8 +599,56 @@ export function NordicMap<T = unknown>({
         moveCamera({ to: homeCamera, options });
       },
       getView: currentView,
+      project: ({ lat, lon }) => {
+        if (!camera || !frame) {
+          return null;
+        }
+        const point = projection.project([lon, lat]);
+        if (!point) {
+          return null;
+        }
+        const [x, y] = toScreen({ camera, frame, point });
+        return { x, y };
+      },
+      unproject: ({ x, y }) => {
+        if (!camera || !frame) {
+          return null;
+        }
+        const lonLat = projection.invert(toMap({ camera, frame, point: [x, y] }));
+        return lonLat ? { lat: lonLat[1], lon: lonLat[0] } : null;
+      },
     };
   });
+
+  const areaSelects = selectPinsByArea && selectionMode === "multiple";
+
+  /**
+   * Selects the pins inside an area. With `additive` they are added, or removed when they are all selected
+   * already.
+   */
+  function selectArea({ area, additive }: { area: MapArea; additive: boolean }) {
+    const inside = pinsInArea(pins, area).map((pin) => {
+      return pin.id;
+    });
+    if (!additive) {
+      commitSelection(new Set(inside));
+      return;
+    }
+    const allSelected =
+      inside.length > 0 &&
+      inside.every((id) => {
+        return selectedSet.has(id);
+      });
+    const next = new Set(selectedSet);
+    for (const id of inside) {
+      if (allSelected) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+    }
+    commitSelection(next);
+  }
 
   /** A click or Enter on a marker: a cluster zooms in, a pin is selected or unselected */
   function activateMarker(marker: Marker<T>) {
@@ -670,6 +732,9 @@ export function NordicMap<T = unknown>({
         return item.area.id === shape.id;
       });
       if (area) {
+        if (areaSelects) {
+          selectArea({ area: area.area, additive });
+        }
         onAreaClick?.(area.area);
       }
     }
@@ -679,7 +744,9 @@ export function NordicMap<T = unknown>({
         onMapClick({ lat: lonLat[1], lon: lonLat[0] });
       }
     }
-    if (selectionMode !== "none" && !additive && selectedSet.size > 0) {
+    // A click that selected the pins of an area is not a click on the empty map
+    const selectedByArea = shape?.kind === "area" && areaSelects;
+    if (selectionMode !== "none" && !additive && !selectedByArea && selectedSet.size > 0) {
       commitSelection(new Set());
     }
   }
@@ -1069,7 +1136,7 @@ export function NordicMap<T = unknown>({
 
   const clickable =
     (hover?.kind === "marker" && pinsShown) ||
-    (hover?.kind === "area" && onAreaClick !== undefined) ||
+    (hover?.kind === "area" && (onAreaClick !== undefined || areaSelects)) ||
     (hover?.kind === "path" && onPathClick !== undefined);
 
   return (

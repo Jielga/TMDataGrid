@@ -3,6 +3,7 @@ import gettingStartedDoc from "@jielga/nordic-map/docs/getting-started.md?raw";
 import { Link } from "@tanstack/react-router";
 import { DocsMarkdown } from "docs-shell/docs/DocsPage.tsx";
 import classes from "docs-shell/docs/DocsPage.module.css";
+import { DemoMapSettingsScope } from "./examples/DemoMapSettings.tsx";
 
 /**
  * The hero renders the page's h1 and its first paragraph, so both are cut from the markdown before it renders
@@ -36,7 +37,9 @@ export function GettingStartedPage() {
           </Group>
         </Stack>
 
-        <DocsMarkdown source={doc} />
+        <DemoMapSettingsScope>
+          <DocsMarkdown source={doc} />
+        </DemoMapSettingsScope>
       </article>
     </div>
   );

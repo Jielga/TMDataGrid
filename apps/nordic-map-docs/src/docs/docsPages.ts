@@ -52,7 +52,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     id: "selection",
     section: "Pins",
     label: "Selection",
-    description: "Drag-select and click to select pins, and highlight one from outside the map",
+    description: "Select pins by drag, click or area, and highlight one from a list",
     source: selectionDoc,
   },
   {
@@ -87,7 +87,7 @@ export const DOCS_PAGES: DocsPageEntry[] = [
     id: "areas",
     section: "Map",
     label: "Areas",
-    description: "Filled regions, counties and municipalities, and choropleth maps",
+    description: "Filled regions, counties and municipalities, choropleth maps, and drawing your own",
     source: areasDoc,
   },
   {

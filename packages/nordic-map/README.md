@@ -57,7 +57,7 @@ Define `source` outside the component; a new object on every render loads every 
 ## Features
 
 - Pins with labels that never overlap, colors, priorities and your own data
-- Drag-select, single or no selection, and a highlighted pin for linking the map to a list
+- Selection by drag box, by click or by clicking an area, and a highlighted pin for linking the map to a list
 - Clusters of close pins, which open on click
 - Areas, with Sweden's counties and municipalities built in for choropleth maps
 - Paths, such as GPS tracks and routes

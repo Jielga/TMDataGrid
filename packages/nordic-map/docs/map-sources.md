@@ -23,7 +23,7 @@ Use a bundler that handles `new URL(..., import.meta.url)`, or a source of your 
 
 ## Your own source
 
-A source can change what another source loads.
+A source can wrap another source and change what it loads.
 This one keeps only the E-roads and the cities:
 
 ```demo

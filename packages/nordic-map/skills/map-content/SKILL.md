@@ -4,7 +4,7 @@ description: >
   Put more on a @jielga/nordic-map NordicMap and move it from code: clusters
   (cluster, ClusterOptions), tooltips (renderTooltip, MapTooltipTarget), the
   camera ref (NordicMapHandle with flyTo, fitBounds, fitPins, zoomIn, zoomOut,
-  reset, getView; CameraMoveOptions; NordicMapView and onViewChange; maxZoom,
+  reset, getView, project, unproject; CameraMoveOptions; NordicMapView and onViewChange; maxZoom,
   padding, showZoomControls), onMapClick, areas and choropleth maps (MapArea,
   areas, onAreaClick, onAreaHover, loadSwedenCounties,
   loadSwedenMunicipalities), paths and GPS tracks (MapPath, paths, onPathClick),
@@ -58,10 +58,12 @@ map.current?.fitPins(["sto", "got"]); // all pins when left out
 map.current?.fitBounds({ west: 18.1, south: 56.9, east: 19.4, north: 58.0 });
 map.current?.reset({ animate: false }); // CameraMoveOptions
 map.current?.getView(); // NordicMapView | null while loading
+map.current?.project({ lat: 59.33, lon: 18.07 }); // { x, y } in CSS pixels from the map's top left, or null
+map.current?.unproject({ x: 100, y: 200 }); // { lat, lon }, or null
 ```
 
 Calls made before the data loads apply once the map shows. Moves ease unless
-the system asks for reduced motion. `onViewChange` runs every animation frame.
+the system asks for reduced motion. `onViewChange` runs every animation frame; use it with `project` to keep your own overlay in place.
 `maxZoom` (50), `padding` (16), `showZoomControls` (true).
 `onMapClick({ lat, lon })` fires for clicks that hit no pin or cluster.
 

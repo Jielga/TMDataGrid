@@ -1,7 +1,7 @@
 # Localization
 
 Every text the map shows, and every name it gives to screen readers, comes from one labels object.
-English by default.
+By default, the texts are English.
 
 `labels` takes any of the `NordicMapLabels` fields and merges them over the English ones.
 A full Swedish set ships as `NORDIC_MAP_LABELS_SV`:

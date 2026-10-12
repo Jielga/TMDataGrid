@@ -1,4 +1,5 @@
 export { NordicMap } from "./NordicMap/NordicMap.tsx";
+export { pinsInArea } from "./NordicMap/pinsInArea.ts";
 export type { CameraMoveOptions, NordicMapHandle, NordicMapProps, NordicMapView } from "./NordicMap/NordicMap.tsx";
 export type { ClusterOptions, MapArea, MapPath, MapPin, MapTooltipTarget, SelectionMode } from "./NordicMap/mapItems.ts";
 export type { LayerVisibility } from "./NordicMap/layerVisibility.ts";

@@ -30,7 +30,7 @@ height: 480
 
 A label never covers a pin or another label, and a label that does not fit is left out.
 The map tries each label right of its pin, then left of it, above it and below it.
-When labels compete for the same space, they win in this order:
+When labels compete for the same space, they are placed in this order:
 
 - the label of the highlighted pin, and of the pin with keyboard focus
 - the labels of selected pins

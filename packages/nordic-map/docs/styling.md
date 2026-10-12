@@ -11,7 +11,7 @@ The buttons, the tooltip, the loading spinner and the credit line are HTML, styl
 - `"light"` and `"dark"` - fixed
 
 By default, `colorScheme` is `"auto"`.
-If your app has its own light and dark switch, pass its value, so the map does not follow the system while the page does not.
+If your app has its own light and dark switch, pass its value, so that the map and the page always agree.
 
 ## Map colors
 

@@ -6,7 +6,7 @@
     // Mirrors the alias in vite.alias.ts: the library by package name,
     // resolved to its source.
     "paths": {
-      "@jielga/nordic-map": ["../../packages/nordic-map/src/index.ts"]
+      "@jielga/nordic-map": ["./src/examples/nordicMapForDemos.tsx"]
     }
   },
   // The Vite config and the alias are Node files: tsconfig.node.json checks

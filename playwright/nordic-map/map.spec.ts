@@ -84,3 +84,54 @@ test("flyTo moves the camera", async ({ page }) => {
   await block.getByRole("button", { name: "Fly to Stockholm" }).click();
   await expect(block.getByText(/^Zoom 12\.0×, center 59\.33° N 18\.07° E$/)).toBeVisible();
 });
+
+test("a click on a county selects its cities, and Shift + click adds and removes", async ({ page }) => {
+  const counties = page.waitForResponse((response) => /sweden-counties\.json/.test(response.url()) && response.ok());
+  const block = await demo(page, "/docs/selection", "selection/SelectByCounty.tsx");
+  await counties;
+  const box = await block.getByRole("application").boundingBox();
+  if (!box) {
+    throw new Error("The map has no box");
+  }
+  const status = block.getByText(/^(\d+) selected: |^No cities selected$/);
+  const count = async () => {
+    const text = (await status.textContent()) ?? "";
+    return Number(/^(\d+) selected/.exec(text)?.[1] ?? 0);
+  };
+  const x = box.x + box.width / 2;
+
+  // Sweden runs top to bottom through the middle of the view at zoom 1. Some counties have no city of the list.
+  let first = 0;
+  for (const share of [0.3, 0.4, 0.5, 0.6]) {
+    await page.mouse.click(x, box.y + box.height * share);
+    first = await count();
+    if (first > 0) {
+      break;
+    }
+  }
+  expect(first).toBeGreaterThan(0);
+
+  // Southern Sweden, away from the first county. A county without a city of the list adds nothing.
+  await page.keyboard.down("Shift");
+  let added: { x: number; y: number } | null = null;
+  for (const [dx, dy] of [
+    [-0.04, 0.9],
+    [-0.08, 0.82],
+    [-0.02, 0.78],
+    [-0.1, 0.74],
+  ] as const) {
+    const point = { x: x + box.width * dx, y: box.y + box.height * dy };
+    await page.mouse.click(point.x, point.y);
+    if ((await count()) > first) {
+      added = point;
+      break;
+    }
+  }
+  expect(added).not.toBeNull();
+  // Its cities are all selected now, so a second Shift + click removes them
+  if (added) {
+    await page.mouse.click(added.x, added.y);
+  }
+  await page.keyboard.up("Shift");
+  await expect.poll(count).toBe(first);
+});

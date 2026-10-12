@@ -186,4 +186,24 @@ describe("NordicMap", () => {
     expect(view?.center.lon).toBeCloseTo(18.07, 1);
     expect(onViewChange).toHaveBeenLastCalledWith(view);
   });
+
+  it("converts between positions and points on screen", async () => {
+    const ref = createRef<NordicMapHandle>();
+    render(<NordicMap ref={ref} source={source} />);
+    expect(ref.current?.project({ lat: 59.33, lon: 18.07 })).toBeNull();
+    expect(ref.current?.unproject({ x: 0, y: 0 })).toBeNull();
+    await shown();
+    ref.current?.flyTo({ lat: 59.33, lon: 18.07, zoom: 8 }, { animate: false });
+    await waitFor(() => {
+      expect(ref.current?.getView()?.zoom).toBe(8);
+    });
+    // The setup gives every element a 1200 × 600 box, so the middle of the view is at 600, 300
+    const middle = ref.current?.project({ lat: 59.33, lon: 18.07 });
+    expect(middle?.x).toBeCloseTo(600, 0);
+    expect(middle?.y).toBeCloseTo(300, 0);
+    const position = ref.current?.unproject({ x: 100, y: 450 });
+    const back = position ? ref.current?.project(position) : null;
+    expect(back?.x).toBeCloseTo(100, 6);
+    expect(back?.y).toBeCloseTo(450, 6);
+  });
 });

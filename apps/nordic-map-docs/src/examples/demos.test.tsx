@@ -34,7 +34,8 @@ function publicExportNames(source: string): string[] {
 
 /** The prop names of `NordicMapProps`, read from its source */
 function propNames(source: string): string[] {
-  const block = /^export type NordicMapProps<[^>]*> = \{\n([\s\S]*?)\n\};/m.exec(source)?.[1] ?? "";
+  // A Windows checkout with core.autocrlf has CRLF line ends
+  const block = /^export type NordicMapProps<[^>]*> = \{\r?\n([\s\S]*?)\r?\n\};/m.exec(source)?.[1] ?? "";
   return [...block.matchAll(/^ {2}(\w+)\??:/gm)].map((match) => {
     return match[1] ?? "";
   });

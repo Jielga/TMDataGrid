@@ -4,7 +4,7 @@ The user moves the map like this:
 
 - scroll, pinch on a trackpad, or pinch with two fingers to zoom
 - drag with the right or middle mouse button, hold Space and drag, or drag with two fingers to pan
-- release a pan while moving, and the map glides on
+- let go while dragging, and the map keeps moving a short way
 - with `selectionMode` set to `"single"` or `"none"`, a drag with the left mouse button or one finger pans too
 
 The zoom factor runs from 1, the whole map, to `maxZoom`.
@@ -37,6 +37,8 @@ The handle has these methods:
 - `zoomIn()` and `zoomOut()` - zoom by one step around the middle of the view
 - `reset()` - shows the whole map
 - `getView()` - returns the current `NordicMapView`, or `null` while the map data is loading
+- `project({ lat, lon })` - returns the point on screen of a position, as `{ x, y }` in CSS pixels from the map's top left corner, or `null` while the map data is loading
+- `unproject({ x, y })` - returns the position at a point on screen, as `{ lat, lon }`, or `null` while the map data is loading
 
 A single pin, or a very small area, shows at `maxZoom`; use `flyTo` to choose the zoom.
 A call made while the map data is still loading takes effect, without animation, once the map is shown.
@@ -54,6 +56,9 @@ map.current?.flyTo({ lat: 59.33, lon: 18.07, zoom: 12 }, { animate: false });
 
 `onViewChange` is called with a `NordicMapView` when the view changes.
 During a zoom or a pan it is called on every animation frame, so keep it cheap.
+
+To draw your own elements over the map, position them with `project` and update them in `onViewChange`.
+A point from `project` may lie outside the view.
 
 ## Reference
 
