@@ -4,14 +4,15 @@ description: >
   Set up @jielga/nordic-map: the NordicMap canvas map of Sweden, the bundled map
   source swedenOsmSource, GPS pins (MapPin with label, color, priority and
   data), pin labels, selection (selectionMode, selected, defaultSelected,
-  onSelectionChange, onPinClick, highlighted, onPinHover), layer visibility by
-  zoom (LayerVisibility on showBorder, showRoads, showRoadLabels,
-  showPlaceLabels, showPins, showPinLabels), colorScheme and mapStyle with
-  lightMapStyle / darkMapStyle, the CSS variables, and labels with
-  NORDIC_MAP_LABELS_EN / NORDIC_MAP_LABELS_SV. Load when rendering an offline
-  map of Sweden, when the map is blank, stays on its loader, reloads on every
-  render, or its cells 404 after a build. Clusters, tooltips, the camera ref,
-  areas, paths and custom sources are the map-content skill.
+  onSelectionChange, onPinClick, highlighted, onPinHover, selectPinsByArea,
+  pinsInArea), layer visibility by zoom (LayerVisibility on showBorder,
+  showRoads, showRoadLabels, showPlaceLabels, showPins, showPinLabels),
+  colorScheme and mapStyle with lightMapStyle / darkMapStyle, the CSS
+  variables, and labels with NORDIC_MAP_LABELS_EN / NORDIC_MAP_LABELS_SV. Load
+  when rendering an offline map of Sweden, when the map is blank, stays on its
+  loader, reloads on every render, or its cells 404 after a build. Clusters,
+  tooltips, the camera ref, areas, paths and custom sources are the
+  map-content skill.
 metadata:
   type: core
   library: '@jielga/nordic-map'
@@ -83,6 +84,11 @@ export function Offices() {
 - `selected` / `onSelectionChange` controlled, or `defaultSelected`.
 - `highlighted` (pin id) draws a ring; `onPinHover` reports pointer and
   keyboard focus. Together they link the map to a list.
+- `selectPinsByArea` (default `false`, `"multiple"` mode only): a click on an
+  area selects the pins inside it instead of clearing the selection;
+  Shift/Ctrl/Cmd + click adds them, or removes them when all are selected.
+  `pinsInArea(pins, area)` returns the pins inside an area (holes excluded,
+  great-circle edges as drawn), for selecting by area from your own code.
 
 ## Layers
 
