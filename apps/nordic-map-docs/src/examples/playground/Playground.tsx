@@ -24,7 +24,8 @@ import { ColorControls } from "./ColorControls.tsx";
 import { CustomAreasControl } from "./CustomAreasControl.tsx";
 import { LayerControl } from "./LayerControl.tsx";
 import { toVisibility } from "./layerSetting.ts";
-import { isBoolean, isLayerSetting, isNumber, isPickedColors, isSelectionMode, useStoredState } from "./useStoredState.ts";
+import { isBoolean, isNumber, useStoredState } from "../../useStoredState.ts";
+import { isLayerSetting, isPickedColors, isSelectionMode } from "./playgroundSettings.ts";
 import type { LayerSetting } from "./layerSetting.ts";
 import { darkColors, lightColors } from "./mapColors.ts";
 import type { MapColors } from "./mapColors.ts";
@@ -56,20 +57,20 @@ export function Playground() {
   const colorScheme = useComputedColorScheme("light", { getInitialValueInEffect: false });
   const [selected, setSelected] = useState<string[]>([]);
   const [zoom, setZoom] = useState(1);
-  const [border, setBorder] = useStoredState({ key: "border", initial: allZooms, isValid: isLayerSetting });
-  const [borderWidth, setBorderWidth] = useStoredState({ key: "borderWidth", initial: 1, isValid: isNumber });
-  const [roads, setRoads] = useStoredState({ key: "roads", initial: allZooms, isValid: isLayerSetting });
-  const [roadLabels, setRoadLabels] = useStoredState({ key: "roadLabels", initial: allZooms, isValid: isLayerSetting });
-  const [places, setPlaces] = useStoredState({ key: "places", initial: allZooms, isValid: isLayerSetting });
-  const [pins, setPins] = useStoredState({ key: "pins", initial: allZooms, isValid: isLayerSetting });
-  const [pinLabels, setPinLabels] = useStoredState({ key: "pinLabels", initial: pinLabelZooms, isValid: isLayerSetting });
-  const [cluster, setCluster] = useStoredState({ key: "cluster", initial: false, isValid: isBoolean });
-  const [selectionMode, setSelectionMode] = useStoredState<SelectionMode>({ key: "selectionMode", initial: "multiple", isValid: isSelectionMode });
-  const [selectByArea, setSelectByArea] = useStoredState({ key: "selectByArea", initial: false, isValid: isBoolean });
-  const [showCounties, setShowCounties] = useStoredState({ key: "counties", initial: false, isValid: isBoolean });
+  const [border, setBorder] = useStoredState({ key: "playground:border", initial: allZooms, isValid: isLayerSetting });
+  const [borderWidth, setBorderWidth] = useStoredState({ key: "playground:borderWidth", initial: 1, isValid: isNumber });
+  const [roads, setRoads] = useStoredState({ key: "playground:roads", initial: allZooms, isValid: isLayerSetting });
+  const [roadLabels, setRoadLabels] = useStoredState({ key: "playground:roadLabels", initial: allZooms, isValid: isLayerSetting });
+  const [places, setPlaces] = useStoredState({ key: "playground:places", initial: allZooms, isValid: isLayerSetting });
+  const [pins, setPins] = useStoredState({ key: "playground:pins", initial: allZooms, isValid: isLayerSetting });
+  const [pinLabels, setPinLabels] = useStoredState({ key: "playground:pinLabels", initial: pinLabelZooms, isValid: isLayerSetting });
+  const [cluster, setCluster] = useStoredState({ key: "playground:cluster", initial: false, isValid: isBoolean });
+  const [selectionMode, setSelectionMode] = useStoredState<SelectionMode>({ key: "playground:selectionMode", initial: "multiple", isValid: isSelectionMode });
+  const [selectByArea, setSelectByArea] = useStoredState({ key: "playground:selectByArea", initial: false, isValid: isBoolean });
+  const [showCounties, setShowCounties] = useStoredState({ key: "playground:counties", initial: false, isValid: isBoolean });
   const [counties, setCounties] = useState<MapArea[]>([]);
   const storedAreas = useStoredAreas();
-  const [showStored, setShowStored] = useStoredState({ key: "myAreas", initial: false, isValid: isBoolean });
+  const [showStored, setShowStored] = useStoredState({ key: "playground:myAreas", initial: false, isValid: isBoolean });
   const [imported, setImported] = useState<EditorArea[]>([]);
   const map = useRef<NordicMapHandle>(null);
   const areas = useMemo(() => {
@@ -80,7 +81,7 @@ export function Playground() {
     ];
   }, [showCounties, counties, showStored, storedAreas, imported]);
   // The map follows the site's light or dark scheme until colors are picked here
-  const [pickedColors, setPickedColors] = useStoredState<MapColors | null>({ key: "colors", initial: null, isValid: isPickedColors });
+  const [pickedColors, setPickedColors] = useStoredState<MapColors | null>({ key: "playground:colors", initial: null, isValid: isPickedColors });
   const colors = pickedColors ?? (colorScheme === "dark" ? darkColors : lightColors);
 
   useEffect(() => {

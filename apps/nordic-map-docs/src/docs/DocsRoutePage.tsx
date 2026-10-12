@@ -1,6 +1,7 @@
 import { Text } from "@mantine/core";
 import { useParams } from "@tanstack/react-router";
 import { DocsPage } from "docs-shell/docs/DocsPage.tsx";
+import { DemoMapSettingsScope } from "../examples/DemoMapSettings.tsx";
 import { findDocsPage } from "./docsPages.ts";
 
 /** Route component for `/docs/$docId` */
@@ -16,5 +17,9 @@ export function DocsRoutePage() {
     );
   }
 
-  return <DocsPage source={page.source} />;
+  return (
+    <DemoMapSettingsScope>
+      <DocsPage source={page.source} />
+    </DemoMapSettingsScope>
+  );
 }
