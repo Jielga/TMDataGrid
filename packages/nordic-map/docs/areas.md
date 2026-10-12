@@ -15,12 +15,12 @@ const district: MapArea = {
 <NordicMap source={swedenOsmSource} areas={[district]} />;
 ```
 
-Rings may run either way round.
+Rings may be wound in either direction.
 
 ## Draw your own areas
 
-The [area editor](/editor) on this site draws areas over the map and exports them as a `MapArea[]` TypeScript module, as `MapArea[]` JSON, or as GeoJSON.
-It snaps points to your other areas and to the county and municipality borders, adds whole counties or municipalities to an area, and can clip the areas to Sweden's land.
+The [area editor](/editor) draws areas over the map and exports them as a `MapArea[]` TypeScript module, as `MapArea[]` JSON or as GeoJSON.
+It snaps to your other areas and to the county, municipality and national borders, joins selected counties or municipalities into one area, and clips areas to Sweden's land.
 
 ## Counties and municipalities
 

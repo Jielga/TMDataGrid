@@ -5,7 +5,8 @@ By default, the user selects pins in three ways:
 - drag a box to select the pins in it, and hold Shift, Ctrl or Cmd to add them to the selection
 - click a pin to select it, or to unselect it when it is selected
 - click the empty map to clear the selection
-- with `selectPinsByArea`, click an area to select the pins in it, as described in [Select the pins in an area](#select-the-pins-in-an-area)
+
+[Select the pins in an area](#select-the-pins-in-an-area) adds a fourth way: a click on an area selects the pins in it.
 
 `selected` holds the selected pin ids, and `onSelectionChange` is called with the new ids after each change.
 Leave out `selected` to let the map keep its own selection, starting from `defaultSelected`.
@@ -41,9 +42,10 @@ height: 480
 
 ## Select the pins in an area
 
-With `selectPinsByArea` set and `selectionMode` `"multiple"`, a click on an area selects the pins inside it, in place of the selection.
+Set `selectPinsByArea` to make a click on an area select the pins inside it, replacing the selection.
 Shift, Ctrl or Cmd + click adds them to the selection, or removes them when they are all selected already.
-Without `selectPinsByArea`, a click on an area clears the selection, as a click on the empty map does.
+`selectPinsByArea` requires `selectionMode` `"multiple"`.
+Without it, a click on an area clears the selection, as a click on the empty map does.
 
 ```demo
 file: selection/SelectByCounty.tsx
@@ -52,9 +54,9 @@ height: 520
 extraSources: data/cities.ts
 ```
 
-Every pin in `pins` counts, also pins outside the view or hidden at the current zoom.
+Every pin in `pins` counts, including pins outside the view and pins hidden at the current zoom.
 A pin in a hole of the area is outside it.
-Where areas overlap, the area drawn on top is the one clicked.
+Where areas overlap, the click goes to the area drawn on top.
 `onAreaClick` is still called.
 
 To select by area from your own code, for example from a list of regions, pass the pins and the area to `pinsInArea`:
@@ -63,7 +65,8 @@ To select by area from your own code, for example from a list of regions, pass t
 const ids = pinsInArea(pins, county).map((pin) => pin.id);
 ```
 
-It returns the pins inside the area, in `pins` order, and follows the edges as the map draws them, along great circles.
+It returns the pins inside the area, in `pins` order.
+The edges of the area are great circles, as the map draws them.
 
 ## Reference
 
@@ -72,8 +75,8 @@ It returns the pins inside the area, in `pins` order, and follows the edges as t
 | `selectionMode` | Prop | `SelectionMode` | `"multiple"` | Determines how pins are selected, and whether a drag selects or pans. |
 | `selected` | Prop | `string[]` | - | Sets the selected pin ids. If not set, the map keeps its own selection. |
 | `defaultSelected` | Prop | `string[]` | `[]` | Sets the selection at the start, when `selected` is not set. |
-| `onSelectionChange` | Prop | `(ids: string[]) => void` | - | Called after a drag-select, a pin click, an area click that selects pins, or a clear, with the selected ids in `pins` order. |
-| `selectPinsByArea` | Prop | `boolean` | `false` | Determines whether a click on an area selects the pins in it, when `selectionMode` is `"multiple"`. |
+| `onSelectionChange` | Prop | `(ids: string[]) => void` | - | Called after each change of the selection, with the selected ids in `pins` order. |
+| `selectPinsByArea` | Prop | `boolean` | `false` | Determines whether a click on an area selects the pins in it. Requires `selectionMode` `"multiple"`. |
 | `onPinClick` | Prop | `(pin: MapPin<T>) => void` | - | Called when a pin is clicked, or pressed with Enter or Space. |
 | `highlighted` | Prop | `string \| null` | `null` | Sets the id of a pin drawn with a ring and labelled first. |
 | `onPinHover` | Prop | `(pin: MapPin<T> \| null) => void` | - | Called when the pointer or the keyboard focus moves onto a pin, and with `null` when it leaves. |

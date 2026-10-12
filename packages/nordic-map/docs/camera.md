@@ -4,7 +4,7 @@ The user moves the map like this:
 
 - scroll, pinch on a trackpad, or pinch with two fingers to zoom
 - drag with the right or middle mouse button, hold Space and drag, or drag with two fingers to pan
-- release a pan while moving, and the map glides on
+- let go while dragging, and the map keeps moving a short way
 - with `selectionMode` set to `"single"` or `"none"`, a drag with the left mouse button or one finger pans too
 
 The zoom factor runs from 1, the whole map, to `maxZoom`.

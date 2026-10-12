@@ -18,13 +18,13 @@ A canvas map drawn from a `MapSource`, with pins, areas and paths on top.
 
 A click on an area or a path calls `onMapClick` too, after `onAreaClick` or `onPathClick`.
 
-## Every prop
+## Props by page
 
 | Prop | Described on |
 | --- | --- |
 | `source` | [Map sources](/docs/map-sources) |
 | `pins`, `showPins`, `showPinLabels` | [Pins](/docs/pins) |
-| `selectionMode`, `selected`, `defaultSelected`, `onSelectionChange`, `onPinClick`, `highlighted`, `onPinHover` | [Selection](/docs/selection) |
+| `selectionMode`, `selected`, `defaultSelected`, `onSelectionChange`, `selectPinsByArea`, `onPinClick`, `highlighted`, `onPinHover` | [Selection](/docs/selection) |
 | `cluster` | [Clusters](/docs/clusters) |
 | `renderTooltip` | [Tooltips](/docs/tooltips) |
 | `showBorder`, `showRoads`, `showRoadLabels`, `showPlaceLabels` | [Layers](/docs/layers) |

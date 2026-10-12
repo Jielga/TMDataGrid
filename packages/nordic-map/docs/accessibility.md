@@ -31,4 +31,4 @@ The zoom buttons are named from `labels`, as described on [Localization](/docs/l
 ## Reduced motion
 
 When the user's system asks for reduced motion, `flyTo`, `fitBounds`, `fitPins`, `reset` and a click on a cluster move the map at once instead of easing.
-The loading spinner turns slower.
+The loading spinner turns more slowly.
