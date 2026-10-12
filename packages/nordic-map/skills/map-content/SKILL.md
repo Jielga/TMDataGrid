@@ -4,9 +4,9 @@ description: >
   Put more on a @jielga/nordic-map NordicMap and move it from code: clusters
   (cluster, ClusterOptions), tooltips (renderTooltip, MapTooltipTarget), the
   camera ref (NordicMapHandle with flyTo, fitBounds, fitPins, zoomIn, zoomOut,
-  reset, getView, project, unproject; CameraMoveOptions; NordicMapView and onViewChange; maxZoom,
-  padding, showZoomControls), onMapClick, areas and choropleth maps (MapArea,
-  areas, onAreaClick, onAreaHover, loadSwedenCounties,
+  reset, getView, project, unproject; CameraMoveOptions; NordicMapView and
+  onViewChange; maxZoom, padding, showZoomControls), onMapClick, areas and
+  choropleth maps (MapArea, areas, onAreaClick, onAreaHover, loadSwedenCounties,
   loadSwedenMunicipalities), paths and GPS tracks (MapPath, paths, onPathClick),
   and custom map sources (MapSource, MapLevel, MapCell, MapLayers, MapRoad,
   RoadClass, MapRoadLabel, MapPlace, PlaceClass, MapContext, MapAttribution,
@@ -16,7 +16,7 @@ description: >
 metadata:
   type: sub-skill
   library: '@jielga/nordic-map'
-  library_version: '0.2.0'
+  library_version: '0.3.0'
 requires:
   - getting-started
 sources:

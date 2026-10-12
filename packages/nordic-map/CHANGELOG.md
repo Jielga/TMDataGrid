@@ -1,5 +1,14 @@
 # @jielga/nordic-map
 
+## 0.3.0
+
+### Minor Changes
+
+- [#163](https://github.com/Jielga/react/pull/163) [`72ded1a`](https://github.com/Jielga/react/commit/72ded1acdcbd23ffb4e24c999f35b80b593f1748) Thanks [@Psvensso](https://github.com/Psvensso)! - `NordicMapHandle.project` and `NordicMapHandle.unproject` convert between positions and points on screen, for drawing your own elements over the map.
+
+- [#163](https://github.com/Jielga/react/pull/163) [`72ded1a`](https://github.com/Jielga/react/commit/72ded1acdcbd23ffb4e24c999f35b80b593f1748) Thanks [@Psvensso](https://github.com/Psvensso)! - - `selectPinsByArea`: a click on an area selects the pins inside it, and Shift, Ctrl or Cmd + click adds or removes them.
+  - `pinsInArea(pins, area)` returns the pins inside an area.
+
 ## 0.2.0
 
 ### Minor Changes
