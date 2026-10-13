@@ -1,6 +1,6 @@
 {
   "name": "@jielga/nordic-map",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "An offline map of Sweden for React, with GPS pins, labels, clusters, areas and paths.",
   "license": "MIT",
   "author": "jielga",
